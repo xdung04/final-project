@@ -33,9 +33,27 @@ const logout = async (req, res) => {
   }
 };
 
+const googleLogin = async (req, res) => {
+  try {
+    const { token } = req.body; // token từ frontend (Google)
+
+    const result = await AuthService.googleLogin(token);
+
+    res.json({
+      message: "Đăng nhập Google thành công",
+      ...result,
+    });
+  } catch (err) {
+    res.status(err.status || 500).json({
+      message: err.message || "Lỗi server",
+    });
+  }
+};
+
 // Export tất cả thành 1 object
 export default {
   login,
   refresh,
   logout,
+  googleLogin,
 };

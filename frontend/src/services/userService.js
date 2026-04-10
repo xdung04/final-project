@@ -27,3 +27,19 @@ export const updateProfile = async (token, data) => {
     throw error.response?.data || error;
   }
 };
+// ====== Update phone riêng ======
+export const updatePhone = async (token, phoneNumber) => {
+  try {
+    const res = await request.put(
+      "/user/profile/phone",
+      { phoneNumber },
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    console.log("API updatePhone trả về:", res);
+    return res;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+};

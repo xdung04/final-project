@@ -8,29 +8,39 @@ export default function Footer() {
   useEffect(() => {
     const fetchBranches = async () => {
       try {
-        const res = await BranchAPI.getAll(); // giả sử API trả về array
+        const res = await BranchAPI.getAll(); 
         setBranches(res);
       } catch (err) {
         console.error("Lỗi khi lấy chi nhánh:", err);
       }
     };
-
     fetchBranches();
   }, []);
 
   return (
     <footer className={styles.footer}>
-      <div className={styles.footerContent}>
-        {/* Logo & Slogan */}
+      <div className={styles.footerGrid}>
+        
+        {/* Cột 1: Thông tin thương hiệu */}
         <div className={styles.footerBrand}>
-          <h2>BarberShop</h2>
-          <p>Chuyên nghiệp – Sang trọng – Đẳng cấp</p>
+          <a href="/" className={styles.navLogo}>
+            <div className={styles.logoIcon}>
+              <svg viewBox="0 0 24 24"><path d="M12 2L2 22h20L12 2zm0 4.5l6.5 13.5h-13L12 6.5z"/></svg>
+            </div>
+            <div>
+              <div className={styles.logoText}>NOBLE</div>
+              <div className={styles.logoSub}>Barbershop</div>
+            </div>
+          </a>
+          <p className={styles.footerDesc}>
+            Khởi nguồn từ đam mê và kỹ năng điêu luyện, chúng tôi mang đến trải nghiệm cắt tóc đẳng cấp dành riêng cho những quý ông hiện đại.
+          </p>
         </div>
 
-        {/* Quick Links */}
-        <div className={styles.footerLinks}>
-          <h3>Liên kết nhanh</h3>
-          <ul>
+        {/* Cột 2: Khám phá */}
+        <div className={styles.footerCol}>
+          <h4 className={styles.footerTitle}>Khám phá</h4>
+          <ul className={styles.footerLinks}>
             <li><a href="/">Trang chủ</a></li>
             <li><a href="/about">Về chúng tôi</a></li>
             <li><a href="/services">Dịch vụ</a></li>
@@ -38,42 +48,37 @@ export default function Footer() {
           </ul>
         </div>
 
-        {/* Branches */}
-        <div className={styles.footerBranches}>
-          <h3>Chi nhánh</h3>
-          {branches.length ? (
-            <ul>
-              {branches.map(branch => (
+        {/* Cột 3: Chi nhánh (Đổ từ API của bạn) */}
+        <div className={styles.footerCol}>
+          <h4 className={styles.footerTitle}>Chi nhánh</h4>
+          <ul className={styles.footerBranches}>
+            {branches.length > 0 ? (
+              branches.map(branch => (
                 <li key={branch.idBranch}>
-                  <strong>{branch.name}</strong><br />
+                  <strong>{branch.name}</strong>
                   <span>{branch.address}</span>
                 </li>
-              ))}
-            </ul>
-          ) : (
-            <p>Đang tải chi nhánh...</p>
-          )}
+              ))
+            ) : (
+              <li><span className={styles.loadingText}>Đang tải chi nhánh...</span></li>
+            )}
+          </ul>
         </div>
 
-        {/* Social */}
-        <div className={styles.footerSocial}>
-          <h3>Mạng xã hội</h3>
-          <div className={styles.socialIcons}>
-            <a href="https://www.facebook.com/YourPage" target="_blank" rel="noopener noreferrer">
-              <img src="https://upload.wikimedia.org/wikipedia/commons/5/51/Facebook_f_logo_%282019%29.svg" alt="Facebook" />
-            </a>
-            <a href="https://www.instagram.com/YourProfile" target="_blank" rel="noopener noreferrer">
-              <img src="https://upload.wikimedia.org/wikipedia/commons/e/e7/Instagram_logo_2016.svg" alt="Instagram" />
-            </a>
-            <a href="https://www.tiktok.com/@YourProfile" target="_blank" rel="noopener noreferrer">
-              <img src="https://img.freepik.com/vector-cao-cap/logo-tiktok_628407-1683.jpg?semt=ais_hybrid&w=740&q=80" alt="TikTok" />
-            </a>
+        {/* Cột 4: Mạng xã hội */}
+        <div className={styles.footerCol}>
+          <h4 className={styles.footerTitle}>Kết nối</h4>
+          <div className={styles.footerSocials}>
+            <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className={styles.socialLink}>FB</a>
+            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className={styles.socialLink}>IG</a>
+            <a href="https://tiktok.com" target="_blank" rel="noopener noreferrer" className={styles.socialLink}>TT</a>
           </div>
         </div>
+
       </div>
 
       <div className={styles.footerBottom}>
-        <p>&copy; 2025 BarberShop. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} NOBLE Barbershop. All rights reserved.</p>
       </div>
     </footer>
   );

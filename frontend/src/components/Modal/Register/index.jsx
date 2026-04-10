@@ -1,7 +1,5 @@
 import { useState } from "react";
 import classNames from "classnames/bind";
-
-import { useAuth } from "~/context/AuthContext";
 import { useToast } from "~/context/ToastContext";
 import { AuthAPI } from "~/apis/AuthAPI";
 
@@ -12,15 +10,20 @@ import styles from "./Register.module.scss";
 const cx = classNames.bind(styles);
 
 function Register({ onSwitch, onClose }) {
+  const [step, setStep] = useState("form"); 
+  // form | googleChoice | setupPassword
+
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
     phoneNumber: "",
     password: "",
-    confirmPassword: "", // ✅ thêm confirmPassword
+    confirmPassword: "",
     otp: "",
   });
+
   const [otpSent, setOtpSent] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const { showToast } = useToast();
 
@@ -29,50 +32,137 @@ function Register({ onSwitch, onClose }) {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Gửi OTP & đăng ký
+  // ==================== GỬI OTP ====================
   const handleSendOtp = async () => {
+    setLoading(true);
+
     try {
+      // 🧩 CASE SET PASSWORD (Google)
+      if (step === "setupPassword") {
+        await AuthAPI.forgotPassword({ email: formData.email });
+
+        showToast({
+          text: "OTP đã gửi để thiết lập mật khẩu",
+          type: "success",
+        });
+
+        setOtpSent(true);
+        return;
+      }
+
+      // 🧩 CASE REGISTER BÌNH THƯỜNG
       const res = await AuthAPI.register({
         fullName: formData.fullName,
         email: formData.email,
         phoneNumber: formData.phoneNumber,
         password: formData.password,
-        confirmPassword: formData.confirmPassword, // ✅ truyền confirmPassword
+        confirmPassword: formData.confirmPassword,
       });
-      console.log("Register response:", res);
+
+      // 👉 Email trùng Google
+      if (res?.isGoogleAccount) {
+        setStep("googleChoice");
+        showToast({
+          text: res.message,
+          type: "info",
+        });
+        return;
+      }
 
       showToast({
-        text: res.message || "OTP đã gửi",
+        text: "OTP đã được gửi đến email của bạn",
         type: "success",
       });
 
       setOtpSent(true);
+
     } catch (error) {
       showToast({
-        text: error.response?.data?.error || error,
+        text:
+          error.response?.data?.error ||
+          error.message ||
+          "Không thể gửi OTP",
         type: "error",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Xác thực OTP
+  // ==================== CHỌN SET PASSWORD ====================
+  const handleSetupPassword = () => {
+    setStep("setupPassword");
+    setOtpSent(false);
+    setFormData((prev) => ({
+      ...prev,
+      otp: "",
+      password: "",
+      confirmPassword: "",
+    }));
+  };
+
+  const handleContinueGoogle = () => {
+    showToast({
+      text: "Vui lòng đăng nhập bằng Google",
+      type: "info",
+    });
+    onSwitch("login");
+    onClose?.();
+  };
+
+  // ==================== SUBMIT ====================
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!formData.otp) {
+      showToast({ text: "Vui lòng nhập OTP", type: "error" });
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      showToast({ text: "Mật khẩu không khớp", type: "error" });
+      return;
+    }
+
     try {
-      const result = await AuthAPI.verifyOtp({
-        email: formData.email,
-        otp: formData.otp,
-      });
+      // 🧩 CASE SET PASSWORD GOOGLE
+      if (step === "setupPassword") {
+        await AuthAPI.verifyForgotOtp({
+          email: formData.email,
+          otp: formData.otp,
+        });
 
-      showToast({
-        text: result.message || "Đăng ký thành công",
-        type: "success",
-      });
+        await AuthAPI.resetPassword({
+          email: formData.email,
+          newPassword: formData.password,
+        });
 
-      onSwitch("Login");
+        showToast({
+          text: "Thiết lập mật khẩu thành công!",
+          type: "success",
+        });
+      } else {
+        // 🧩 CASE REGISTER
+        await AuthAPI.verifyOtp({
+          email: formData.email,
+          otp: formData.otp,
+        });
+
+        showToast({
+          text: "Đăng ký thành công",
+          type: "success",
+        });
+      }
+
+      onSwitch("login");
+      onClose?.();
+
     } catch (error) {
       showToast({
-        text: error.response?.data?.error || error.message || "Xác thực OTP thất bại",
+        text:
+          error.response?.data?.error ||
+          error.message ||
+          "Xác thực thất bại",
         type: "error",
       });
     }
@@ -81,83 +171,97 @@ function Register({ onSwitch, onClose }) {
   return (
     <div className={cx("wrapper")}>
       <div className={cx("inner")}>
-        <h4 className={cx("heading")}>Tạo tài khoản mới</h4>
+        <h4 className={cx("heading")}>
+          {step === "setupPassword"
+            ? "Thiết lập mật khẩu"
+            : "Tạo tài khoản"}
+        </h4>
+
         <div className={cx("body")}>
           <p>
-            Nếu bạn đã có tài khoản,{" "}
-            <a href="#" onClick={() => onSwitch("Login")}>
-              đăng nhập
+            Đã có tài khoản?{" "}
+            <a href="#" onClick={() => onSwitch("login")}>
+              Đăng nhập
             </a>
           </p>
-          <form onSubmit={handleSubmit}>
-            <Input
-              primary
-              name="fullName"
-              required
-              placeholder="Họ và tên"
-              value={formData.fullName}
-              onChange={handleChange}
-            />
-            <Input
-              primary
-              name="email"
-              required
-              placeholder="Email"
-              value={formData.email}
-              onChange={handleChange}
-            />
-            <Input
-              primary
-              name="phoneNumber"
-              required
-              placeholder="Số điện thoại"
-              value={formData.phoneNumber}
-              onChange={handleChange}
-            />
-            <Input
-              primary
-              name="password"
-              type="password"
-              required
-              placeholder="Mật khẩu"
-              value={formData.password}
-              onChange={handleChange}
-            />
-            <Input
-              primary
-              name="confirmPassword" // ✅ bind confirmPassword
-              type="password"
-              required
-              placeholder="Nhập lại mật khẩu"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-            />
 
-            <div className={cx("otp")}>
-              <Input
-                primary
-                name="otp"
-                required
-                placeholder="OTP"
-                type="number"
-                value={formData.otp}
-                onChange={handleChange}
-              />
-              <Button
-                primary
-                noMargin
-                type="button"
-                onClick={handleSendOtp}
-                disabled={otpSent}
-              >
-                {otpSent ? "OTP đã gửi" : "Gửi OTP"}
+          {/* ==================== FORM REGISTER ==================== */}
+          {step === "form" && (
+            <form onSubmit={handleSubmit}>
+              <Input name="fullName" placeholder="Họ tên" required onChange={handleChange} />
+              <Input name="email" placeholder="Email" required onChange={handleChange} />
+              <Input name="phoneNumber" placeholder="SĐT" required onChange={handleChange} />
+              <Input name="password" type="password" placeholder="Mật khẩu" required onChange={handleChange} />
+              <Input name="confirmPassword" type="password" placeholder="Nhập lại mật khẩu" required onChange={handleChange} />
+
+              <div className={cx("otp")}>
+                <Input
+                  name="otp"
+                  placeholder="OTP"
+                  disabled={!otpSent}
+                  onChange={handleChange}
+                />
+                <Button type="button" onClick={handleSendOtp} disabled={loading}>
+                  {loading ? "Đang gửi..." : "Gửi OTP"}
+                </Button>
+              </div>
+
+              <Button type="submit" disabled={!otpSent}>
+                Đăng ký
+              </Button>
+            </form>
+          )}
+
+          {/* ==================== GOOGLE CHOICE ==================== */}
+          {step === "googleChoice" && (
+            <div>
+              <p>Email này đã dùng Google</p>
+
+              <Button onClick={handleSetupPassword}>
+                Thiết lập mật khẩu
+              </Button>
+
+              <Button outline onClick={handleContinueGoogle}>
+                Đăng nhập bằng Google
               </Button>
             </div>
+          )}
 
-            <Button primary type="submit">
-              Đăng ký
-            </Button>
-          </form>
+          {/* ==================== SET PASSWORD ==================== */}
+          {step === "setupPassword" && (
+            <form onSubmit={handleSubmit}>
+              <Input value={formData.email} disabled />
+
+              <Input
+                name="password"
+                type="password"
+                placeholder="Mật khẩu mới"
+                onChange={handleChange}
+              />
+              <Input
+                name="confirmPassword"
+                type="password"
+                placeholder="Nhập lại mật khẩu"
+                onChange={handleChange}
+              />
+
+              <div className={cx("otp")}>
+                <Input
+                  name="otp"
+                  placeholder="OTP"
+                  disabled={!otpSent}
+                  onChange={handleChange}
+                />
+                <Button type="button" onClick={handleSendOtp}>
+                  Gửi OTP
+                </Button>
+              </div>
+
+              <Button type="submit" disabled={!otpSent}>
+                Xác nhận
+              </Button>
+            </form>
+          )}
         </div>
       </div>
     </div>

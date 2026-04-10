@@ -14,27 +14,37 @@ export async function up(queryInterface, Sequelize) {
     },
     password: {
       type: Sequelize.STRING(255),
-      allowNull: false,
+      allowNull: true, // Cho phép null cho OAuth
     },
     fullName: {
       type: Sequelize.STRING(100),
       allowNull: false,
     },
-    phoneNumber: { 
+    phoneNumber: {
       type: Sequelize.STRING(20),
-      allowNull: false,
+      allowNull: true, // Cho phép null cho OAuth
       unique: true,
     },
-    isStatus: { // đổi từ status → isStatus
+    googleId: {
+      type: Sequelize.STRING(255),
+      allowNull: true,
+      unique: true,
+    },
+    authProvider: {
+      type: Sequelize.STRING(50),
+      allowNull: false,
+      defaultValue: "local",
+    },
+    isStatus: {
       type: Sequelize.BOOLEAN,
       allowNull: false,
       defaultValue: false,
     },
-    image: { 
+    image: {
       type: Sequelize.STRING,
       allowNull: true,
     },
-    role: { // enum khớp với model
+    role: {
       type: Sequelize.ENUM("customer", "barber", "admin"),
       allowNull: false,
       defaultValue: "customer",

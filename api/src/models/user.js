@@ -37,7 +37,7 @@ export default (sequelize) => {
       },
       password: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true, // Đổi thành true vì Google Login không có mật khẩu
       },
       fullName: {
         type: DataTypes.STRING,
@@ -45,9 +45,19 @@ export default (sequelize) => {
       },
       phoneNumber: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true, // Đổi thành true vì Google không phải lúc nào cũng trả về số điện thoại
         unique: true,
-        field: "phoneNumber", // map với DB
+        field: "phoneNumber",
+      },
+      googleId: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+        unique: true, // ID từ Google là duy nhất
+      },
+      authProvider: {
+        type: DataTypes.STRING(50),
+        allowNull: false,
+        defaultValue: "local", // 'local' hoặc 'google'
       },
       isStatus: {
         type: DataTypes.BOOLEAN,
