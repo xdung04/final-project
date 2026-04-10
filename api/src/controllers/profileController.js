@@ -75,7 +75,47 @@ const updateProfile = async (req, res) => {
   }
 };
 
+const updatePhone = async (req, res) => {
+  try {
+    const { idUser } = req.user || {};
+    const { phoneNumber } = req.body;
+
+    if (!idUser) {
+      return res.status(401).json({
+        message: "Token không hợp lệ",
+      });
+    }
+
+    // validate
+    if (!phoneNumber || !/^[0-9]{10,15}$/.test(phoneNumber)) {
+      return res.status(400).json({
+        message: "Số điện thoại không hợp lệ",
+      });
+    }
+
+    const user = await profileService.updatePhone(idUser, phoneNumber);
+
+    if (!user) {
+      return res.status(404).json({ message: "User không tồn tại" });
+    }
+
+    return res.json({
+      message: "Cập nhật số điện thoại thành công",
+      user: {
+        idUser: user.idUser,
+        phoneNumber: user.phoneNumber,
+      },
+    });
+  } catch (err) {
+    console.error("Lỗi updatePhone:", err);
+    res.status(500).json({
+      message: "Lỗi server",
+      error: err.message,
+    });
+  }
+};
 export default {
   getProfile,
   updateProfile,
+  updatePhone,
 };

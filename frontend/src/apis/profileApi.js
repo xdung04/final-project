@@ -24,4 +24,15 @@ export const ProfileAPI = {
       throw error;
     }
   },
+
+  updatePhone: async (token, phoneNumber) => {
+    try {
+      const res = await profileService.updatePhone(token, phoneNumber);
+      console.log("ProfileAPI.updatePhone trả về:", res);
+      return res;
+    } catch (error) {
+      console.error("Lỗi ProfileAPI.updatePhone:", error);
+      throw error;
+    }
+  },
 };
