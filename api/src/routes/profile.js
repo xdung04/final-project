@@ -11,4 +11,6 @@ router.get("/", authenticate, profileController.getProfile);
 // Cập nhật profile
 router.put("/", authenticate, uploadBasic.single("avatar"), profileController.updateProfile);
 
+router.put("/phone", authenticate, profileController.updatePhone);
+
 export default router;

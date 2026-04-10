@@ -60,8 +60,18 @@ const updateUserProfile = async (idUser, { fullName, email, phoneNumber, avatarF
   return user;
 };
 
+const updatePhone = async (idUser, phoneNumber) => {
+  const user = await db.User.findByPk(idUser);
+  if (!user) return null;
+
+  user.phoneNumber = phoneNumber;
+  await user.save();
+
+  return user;
+};
 // ====== Export ======
 export default {
   getUserProfileWithRole,
   updateUserProfile,
+  updatePhone,
 };

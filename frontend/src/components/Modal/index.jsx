@@ -3,6 +3,7 @@ import Login from "./Login";
 import Register from "./Register";
 import ForgetPass from "./ForgetPass";
 import NewPass from "./NewPass";
+import AddPhone from "./AddPhone";           // ← MỚI
 import styles from "./Modal.module.scss";
 import classNames from "classnames/bind";
 
@@ -18,7 +19,8 @@ function Modal({ isOpen, onClose }) {
   };
 
   const handleLoginSuccess = () => {
-     setModalType(null); // chỉ đóng modal khi login thành công
+    setModalType(null);
+    if (onClose) onClose();
   };
 
   const renderModalContent = () => {
@@ -29,6 +31,14 @@ function Modal({ isOpen, onClose }) {
         return <ForgetPass onSwitch={handleSwitch} />;
       case "newpass":
         return <NewPass onSwitch={handleSwitch} email={modalData.email} />;
+      case "add-phone":
+        return (
+          <AddPhone
+            onClose={onClose}
+            onSuccess={handleLoginSuccess}
+            initialData={modalData}
+          />
+        );
       default:
         return <Login onSwitch={handleSwitch} onClose={onClose} onLoginSuccess={handleLoginSuccess} />;
     }
@@ -37,12 +47,7 @@ function Modal({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   return (
-    <div
-      className={cx("overlay")}
-      onClick={(e) => {
-        if (e.target === e.currentTarget && onClose) onClose();
-      }}
-    >
+    <div className={cx("overlay")} onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className={cx("modal")} onClick={(e) => e.stopPropagation()}>
         <button className={cx("close")} onClick={onClose}>×</button>
         {renderModalContent()}

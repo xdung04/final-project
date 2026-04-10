@@ -54,6 +54,8 @@ const authRoutes = (app) => {
     res.json({ message: "Xin chào Barber", user: req.user });
   });
 
+  router.post("/google", authController.googleLogin);
+
   return app.use("/api/auth", router);
 };
 

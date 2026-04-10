@@ -1,4 +1,4 @@
-import * as request from "~/apis/configs/httpRequest";
+import * as request from "~/apis/configs/httpRequest"; // file này export các hàm post
 
 // Đăng nhập
 export const login = async ({ email, password }) => {
@@ -11,46 +11,55 @@ export const login = async ({ email, password }) => {
   }
 };
 
-// Gửi OTP khi đăng ký
-export const register = async ({ fullName, email, phoneNumber, password, confirmPassword }) => {
+// Google Login
+export const googleLogin = async ({ token }) => {
   try {
-    // 1️⃣ Validate dữ liệu trước khi gửi xuống backend
+    const res = await request.post("/auth/google", { token });
+    return res;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Gửi OTP khi đăng ký
+export const register = async ({
+  fullName,
+  email,
+  phoneNumber,
+  password,
+  confirmPassword,
+}) => {
+  try {
     if (!fullName || !email || !phoneNumber || !password || !confirmPassword) {
       throw new Error("Vui lòng điền đầy đủ thông tin");
     }
 
-    // 2️⃣ Email hợp lệ
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      throw new Error("Email không hợp lệ");
-    }
+    if (!emailRegex.test(email)) throw new Error("Email không hợp lệ");
 
-    // 3️⃣ Số điện thoại hợp lệ (10-15 số)
     const phoneRegex = /^[0-9]{10,15}$/;
-    if (!phoneRegex.test(phoneNumber)) {
+    if (!phoneRegex.test(phoneNumber))
       throw new Error("Số điện thoại không hợp lệ");
-    }
 
-    // 4️⃣ Password trùng confirmPassword
-    if (password !== confirmPassword) {
+    if (password !== confirmPassword)
       throw new Error("Mật khẩu và xác nhận mật khẩu không khớp");
-    }
 
-    // ✅ Chuẩn bị payload gửi xuống API (chỉ gửi 1 password)
     const payload = { fullName, email, phoneNumber, password };
     console.log("Register payload gửi xuống backend:", payload);
 
-    // 5️⃣ Gọi API
     const res = await request.post("/auth/register", payload);
     return res;
-
-  }catch (error) {
-  console.error("Lỗi khi gọi API register:", error.response?.data || error.message);
-  const message = error.response?.data?.error || error.message;
-  throw message;
-}
+  } catch (error) {
+    console.error(
+      "Lỗi khi gọi API register:",
+      error.response?.data || error.message,
+    );
+    const message = error.response?.data?.error || error.message;
+    throw message;
+  }
 };
-// Xác thực OTP và tạo user
+
+// Xác thực OTP
 export const verifyOtp = async ({ email, otp }) => {
   try {
     const res = await request.post("/auth/verify-otp", { email, otp });
@@ -60,7 +69,7 @@ export const verifyOtp = async ({ email, otp }) => {
   }
 };
 
-// Quên mật khẩu → gửi OTP
+// Quên mật khẩu
 export const forgotPassword = async ({ email }) => {
   try {
     const res = await request.post("/auth/forgot-password", { email });
@@ -70,7 +79,6 @@ export const forgotPassword = async ({ email }) => {
   }
 };
 
-// Xác thực OTP quên mật khẩu
 export const verifyForgotOtp = async ({ email, otp }) => {
   try {
     const res = await request.post("/auth/verify-forgot-otp", { email, otp });
@@ -80,7 +88,6 @@ export const verifyForgotOtp = async ({ email, otp }) => {
   }
 };
 
-// Đặt lại mật khẩu mới
 export const resetPassword = async ({ email, newPassword }) => {
   try {
     const res = await request.post("/auth/reset-password", {
@@ -93,7 +100,6 @@ export const resetPassword = async ({ email, newPassword }) => {
   }
 };
 
-// Refresh token
 export const refreshToken = async ({ refreshToken }) => {
   try {
     const res = await request.post("/auth/refresh", { refreshToken });
@@ -103,7 +109,6 @@ export const refreshToken = async ({ refreshToken }) => {
   }
 };
 
-// Logout
 export const logout = async ({ refreshToken }) => {
   try {
     const res = await request.post("/auth/logout", { refreshToken });

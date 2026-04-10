@@ -1,8 +1,10 @@
+// components/auth/Login.jsx
 import { useState } from "react";
 import classNames from "classnames/bind";
 import { useToast } from "~/context/ToastContext";
 import { useAuth } from "~/context/AuthContext";
 import { AuthAPI } from "~/apis/AuthAPI";
+import { GoogleLogin } from "@react-oauth/google"; // ← Quan trọng
 
 import Input from "~/components/Input";
 import Button from "~/components/Button";
@@ -12,65 +14,96 @@ const cx = classNames.bind(styles);
 
 function Login({ onSwitch, onClose, onLoginSuccess }) {
   const [formData, setFormData] = useState({ email: "", password: "" });
-  const { login } = useAuth();
+  const [loading, setLoading] = useState(false);
+
+  const { login: authLogin } = useAuth();
   const { showToast } = useToast();
 
-  // Cập nhật state khi input thay đổi
   const handleChange = (name, value) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Login thường (email + password)
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!formData.email || !formData.password) {
       showToast({ text: "Vui lòng nhập đầy đủ thông tin", type: "error" });
       return;
     }
 
+    setLoading(true);
     try {
       const result = await AuthAPI.login(formData);
+      if (result.accessToken) {
+        const userWithAvatar = {
+          ...result.user,
+          avatar: result.user.image || "/user.png",
+        };
+        authLogin(userWithAvatar, result.accessToken, result.refreshToken);
 
-      if (result.accessToken && result.refreshToken && result.user) {
-        // Login thành công → cập nhật context
-        const userWithAvatar = { ...result.user, avatar: result.user.image || "/user.png" };
-        login(userWithAvatar, result.accessToken, result.refreshToken);
-
-        showToast({ text: result.message || "Đăng nhập thành công", type: "success" });
-
-        // Chỉ gọi khi login thành công
+        showToast({ text: "Đăng nhập thành công", type: "success" });
         if (onLoginSuccess) onLoginSuccess();
         if (onClose) onClose();
-        return;
       }
-
-      // Nếu API trả về OK nhưng không có token/user
-      showToast({ text: result.message || "Email hoặc mật khẩu không chính xác", type: "error" });
-
     } catch (err) {
-      console.error("Login error:", err);
-
-      const status = err.response?.status;
-      const message = err.response?.data?.message;
-
-      if (status === 401) {
-        // Sai email/password → chỉ show toast, KHÔNG đóng modal
-        showToast({ text: message || "Email hoặc mật khẩu không đúng", type: "error" });
-        return;
-      }
-
-      if (status === 403 || message?.includes("bị khóa")) {
-        showToast({ text: message || "Tài khoản của bạn đã bị khóa!", type: "error" });
-        return;
-      }
-
-      showToast({ text: "Đăng nhập không thành công, vui lòng thử lại sau", type: "error" });
+      const message =
+        err.response?.data?.message || "Email hoặc mật khẩu không đúng";
+      showToast({ text: message, type: "error" });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleSwitch = (e, target) => {
-    e.preventDefault();
-    if (onSwitch) onSwitch(target);
+  // ====================== GOOGLE LOGIN ======================
+  const handleGoogleSuccess = async (credentialResponse) => {
+    const googleIdToken = credentialResponse?.credential;
+
+    if (!googleIdToken) {
+      showToast({ text: "Không nhận được dữ liệu từ Google", type: "error" });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const result = await AuthAPI.googleLogin(googleIdToken);
+
+      if (result.needPhone) {
+        onSwitch("add-phone", {
+          accessToken: result.accessToken,
+        });
+        return;
+      }
+
+      if (result.accessToken) {
+        const userWithAvatar = {
+          ...result.user,
+          avatar: result.user.image || "/user.png",
+        };
+
+        authLogin(userWithAvatar, result.accessToken, result.refreshToken);
+
+        showToast({
+          text: "Đăng nhập Google thành công",
+          type: "success",
+        });
+
+        if (onLoginSuccess) onLoginSuccess();
+        if (onClose) onClose();
+      }
+    } catch (err) {
+      const message =
+        err.response?.data?.message || "Đăng nhập Google thất bại";
+      showToast({ text: message, type: "error" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleError = () => {
+    showToast({
+      text: "Đăng nhập bằng Google thất bại. Vui lòng thử lại.",
+      type: "error",
+    });
   };
 
   return (
@@ -80,7 +113,7 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
         <div className={cx("body")}>
           <p>
             Nếu bạn chưa có tài khoản,{" "}
-            <a href="#" onClick={(e) => handleSwitch(e, "register")}>
+            <a href="#" onClick={() => onSwitch("register")}>
               đăng ký ngay
             </a>
           </p>
@@ -108,17 +141,32 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
             <div className={cx("forgetpass-wrapper")}>
               <div
                 className={cx("forgetpass")}
-                onClick={() => onSwitch && onSwitch("forgetpass")}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => e.key === "Enter" && onSwitch && onSwitch("forgetpass")}
+                onClick={() => onSwitch("forgetpass")}
               >
-                Quên mật khẩu ?
+                Quên mật khẩu?
               </div>
             </div>
 
-            <Button primary type="submit">Đăng nhập</Button>
+            <Button primary type="submit" disabled={loading}>
+              {loading ? "Đang đăng nhập..." : "Đăng nhập"}
+            </Button>
           </form>
+
+          <div className={cx("divider")}>HOẶC</div>
+
+          {/* Nút Google Login */}
+          <div className={cx("google-wrapper")}>
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+              useOneTap={false}
+              theme="outline"
+              size="large"
+              text="signin_with"
+              shape="rectangular"
+              width="100%"
+            />
+          </div>
         </div>
       </div>
     </div>
