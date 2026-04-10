@@ -15,6 +15,12 @@ export default (sequelize) => {
         foreignKey: "idBarber",
         as: "barber",
       });
+
+      // Quan hệ 1-1 với Receptionist
+      User.hasOne(models.Receptionist, {
+        foreignKey: "idReceptionist",
+        as: "receptionist",
+      });
     }
   }
   User.init(
@@ -62,7 +68,7 @@ export default (sequelize) => {
         allowNull: true,
       },
       role: {
-        type: DataTypes.ENUM("customer", "barber", "admin"),
+        type: DataTypes.ENUM("customer", "barber", "admin", "receptionist"),
         allowNull: false,
         defaultValue: "customer",
       },
@@ -72,7 +78,7 @@ export default (sequelize) => {
       modelName: "User",
       tableName: "users",
       timestamps: true,
-    }
+    },
   );
 
   return User;

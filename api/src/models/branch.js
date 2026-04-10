@@ -13,6 +13,11 @@ export default (sequelize, DataTypes) => {
         otherKey: "idService",
         as: "services",
       });
+
+      this.hasOne(models.Receptionist, {
+        foreignKey: "idBranch",
+        as: "receptionist",
+      });
     }
   }
 
@@ -36,7 +41,7 @@ export default (sequelize, DataTypes) => {
       sequelize,
       modelName: "Branch",
       tableName: "branches",
-    }
+    },
   );
 
   return Branch;
