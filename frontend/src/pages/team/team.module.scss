@@ -1,161 +1,198 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;700&family=Bebas+Neue&display=swap');
+
+:root {
+  --bg-white:  #ffffff;
+  --bg-cream:  #fdfbf8;
+  --gold:      #b8966a;
+  --gold-dark: #967a54;
+  --charcoal:  #2c2c2c;
+  --text-dim:  #666666;
+  --border:    #e0d7cc;
+
+  --ff-serif:  'Playfair Display', serif;
+  --ff-display:'Bebas Neue', sans-serif;
+  --ff-body:   'DM Sans', sans-serif;
+}
+
 .page {
   display: flex;
-  background: #fff; // ✅ Đổi sang trắng
+  background: var(--bg-white);
   min-height: 100vh;
-  color: #111; // ✅ Text tối cho nền trắng
-  font-family: 'Inter', sans-serif;
+  font-family: var(--ff-body);
+  position: relative;
 }
 
-/* Sidebar */
+/* Hiệu ứng hạt giấy mỹ thuật */
+.grainOverlay {
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.02'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 1;
+}
+
+/* Sidebar phong cách Studio */
 .sidebar {
-  width: 260px;
-  background: #fafafa; // ✅ Nhạt hơn nhưng vẫn khác với main
-  border-right: 1px solid #e5e5e5; // ✅ Tạo phân tách tinh tế
-  padding: 24px 20px;
+  width: 300px;
+  background: var(--bg-cream);
+  border-right: 1px solid var(--border);
+  padding: 40px 30px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  z-index: 10;
 }
 
-/* Brand */
 .brand {
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  margin-bottom: 28px;
-  color: #111;
+  font-family: var(--ff-display);
+  font-size: 28px;
+  letter-spacing: 3px;
+  margin-bottom: 40px;
+  color: var(--charcoal);
 
   span {
-    color: #9B111E; // ✅ Điểm nhấn đỏ sang trọng
+    color: var(--gold);
   }
 }
 
-/* Search */
 .searchBox {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 10px 12px;
-  background: #fff;
-  border-radius: 8px;
-  border: 1px solid #ddd; // ✅ Nhẹ
-  margin-bottom: 20px;
+  gap: 10px;
+  padding: 12px 15px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  margin-bottom: 30px;
+  color: var(--gold);
 
   input {
     flex: 1;
     border: none;
     background: transparent;
     font-size: 14px;
+    color: var(--charcoal);
+    font-family: var(--ff-body);
 
-    &:focus {
-      outline: none;
-    }
+    &:focus { outline: none; }
+    &::placeholder { color: #bbb; }
   }
 }
 
-/* Filters */
 .filters {
-  margin-top: 15px;
-
   h4 {
-    margin-bottom: 10px;
-    font-size: 14px;
-    color: #555;
+    font-family: var(--ff-display);
+    font-size: 13px;
+    letter-spacing: 2px;
+    color: var(--gold-dark);
+    margin-bottom: 20px;
+    text-transform: uppercase;
   }
 }
 
 .filterBtn, .filterActive {
   width: 100%;
-  padding: 8px 12px;
-  border-radius: 6px;
-  background: #fff;
-  border: 1px solid #ddd;
-  margin-bottom: 8px;
+  padding: 12px 15px;
+  border: none;
+  background: transparent;
+  margin-bottom: 5px;
   cursor: pointer;
   text-align: left;
   font-size: 14px;
-  transition: 0.2s;
+  font-family: var(--ff-body);
+  transition: 0.3s;
+  border-left: 2px solid transparent;
+  color: var(--text-dim);
 
   &:hover {
-    background: #f1f1f1;
+    color: var(--gold);
+    padding-left: 20px;
   }
 }
 
 .filterActive {
-  background: #111;
-  color: #fff;
-  border-color: #111;
+  color: var(--charcoal);
+  font-weight: 700;
+  border-left: 2px solid var(--gold);
+  background: rgba(184, 150, 106, 0.05);
 }
 
-/* Main */
+.branchFilter {
+  margin-top: 30px;
+  label {
+    font-family: var(--ff-display);
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: var(--gold-dark);
+    display: block;
+    margin-bottom: 10px;
+  }
+  select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border);
+    background: white;
+    font-family: var(--ff-body);
+    font-size: 14px;
+    color: var(--charcoal);
+    border-radius: 4px;
+    outline: none;
+    &:focus { border-color: var(--gold); }
+  }
+}
+
+.quickInfo {
+  position: absolute;
+  bottom: 40px;
+  left: 30px;
+  h5 {
+    font-family: var(--ff-display);
+    font-size: 12px;
+    color: var(--gold-dark);
+    margin-bottom: 5px;
+  }
+  p {
+    font-size: 13px;
+    color: var(--charcoal);
+    strong { color: var(--gold); }
+  }
+}
+
+/* Main Content */
 .main {
   flex: 1;
-  padding: 32px;
-  background: #fff;
+  padding: 60px 50px;
+  position: relative;
+  z-index: 2;
 }
 
 .headerMain {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-
+  margin-bottom: 50px;
   h1 {
-    font-size: 26px;
-    font-weight: 700;
-    color: #111;
+    font-family: var(--ff-serif);
+    font-size: 48px;
+    color: var(--charcoal);
+    letter-spacing: -1px;
+    
+    &::after {
+      content: "";
+      display: block;
+      width: 60px;
+      height: 3px;
+      background: var(--gold);
+      margin-top: 15px;
+    }
   }
 }
 
-.btnPrimary {
-  background: #111;
-  color: white;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-size: 14px;
-  border: none;
-  cursor: pointer;
-  transition: 0.25s;
-
-  &:hover {
-    background: #222;
-  }
-}
-
-/* Grid */
 .listGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 16px;
-  overflow: visible; // quan trọng
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 30px;
 }
-/* Branch Filter */
-.branchFilter {
-  display: flex;
-  flex-direction: column;
-  margin-top: 12px;
 
-  label {
-    font-size: 13px;
-    color: #555;
-    margin-bottom: 4px;
-    font-weight: 500;
-  }
-
-  select {
-    padding: 8px 10px;
-    border-radius: 6px;
-    border: 1px solid #ddd;
-    font-size: 14px;
-    cursor: pointer;
-    background: #fff;
-    transition: 0.2s;
-
-    &:hover {
-      border-color: #111;
-    }
-
-    &:focus {
-      outline: none;
-      border-color: #111;
-      box-shadow: 0 0 0 2px rgba(0,0,0,0.05);
-    }
-  }
+.emptyState {
+  font-family: var(--ff-serif);
+  font-style: italic;
+  color: var(--text-dim);
+  font-size: 18px;
+  margin-top: 50px;
 }

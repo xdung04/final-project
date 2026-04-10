@@ -6,16 +6,15 @@ import Toast from "~/components/Toast";
 import { BranchAPI } from "~/apis/branchAPI";
 import serviceApi from "~/apis/serviceAPI";
 import { useToast } from "~/context/ToastContext";
+import { Plus, Store, CalendarClock } from "lucide-react"; // Bổ sung Icon
 
 const cx = classNames.bind(styles);
 
 function ChiNhanh() {
-  
   const [branches, setBranches] = useState([]);
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
-  
 
   const [showForm, setShowForm] = useState(false);
   const [editingBranch, setEditingBranch] = useState(null);
@@ -24,7 +23,7 @@ function ChiNhanh() {
   const [showSuspendForm, setShowSuspendForm] = useState(false);
   const [suspendBranch, setSuspendBranch] = useState(null);
   const [suspendFormData, setSuspendFormData] = useState({ suspendDate: "", resumeDate: "" });
-  const [suspendMode, setSuspendMode] = useState("suspend"); // ✅ thêm state này
+  const [suspendMode, setSuspendMode] = useState("suspend");
 
   const [allProvinces, setAllProvinces] = useState([]);
   const [allDistricts, setAllDistricts] = useState([]);
@@ -47,48 +46,47 @@ function ChiNhanh() {
 
   const normalize = (str) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
-const fetchBranches = async () => {
-  try {
-    const data = await BranchAPI.getAll();
-    const list = Array.isArray(data) ? data : [];
+  const fetchBranches = async () => {
+    try {
+      const data = await BranchAPI.getAll();
+      const list = Array.isArray(data) ? data : [];
 
-    setBranches(
-      list.map((b) => {
-        const today = new Date().toISOString().split("T")[0];
+      setBranches(
+        list.map((b) => {
+          const today = new Date().toISOString().split("T")[0];
 
-        let isSuspended = false;          // ĐANG tạm ngưng
-let isScheduledSuspend = false;  // Đã set ngày nhưng CHƯA tới
+          let isSuspended = false;
+          let isScheduledSuspend = false;
 
-if (b.suspendDate && b.resumeDate) {
-  if (b.suspendDate > today) {
-    isScheduledSuspend = true;
-  } else if (b.suspendDate <= today && b.resumeDate > today) {
-    isSuspended = true;
-  }
-}
+          if (b.suspendDate && b.resumeDate) {
+            if (b.suspendDate > today) {
+              isScheduledSuspend = true;
+            } else if (b.suspendDate <= today && b.resumeDate > today) {
+              isSuspended = true;
+            }
+          }
 
-
-        return {
-          ...b,
-          id: b.idBranch,
-          manager: b.manager?.fullName || "Chưa có quản lý",
-          staff: b.totalBarbers || 0,
-          revenue: b.revenue || "Đang cập nhật",
-          status: b.status === "Active" ? "Hoạt động" : "Tạm ngưng",
-          suspendInfo: {
-            isSuspended,
-            isScheduledSuspend,
-            suspendDate: b.suspendDate || null,
-            resumeDate: b.resumeDate || null,
-          },
-        };
-      })
-    );
-  } catch (err) {
-    console.error(err);
-    showToast("error", "Lỗi khi tải chi nhánh");
-  }
-};
+          return {
+            ...b,
+            id: b.idBranch,
+            manager: b.manager?.fullName || "Chưa có quản lý",
+            staff: b.totalBarbers || 0,
+            revenue: b.revenue || "Đang cập nhật",
+            status: b.status === "Active" ? "Hoạt động" : "Tạm ngưng",
+            suspendInfo: {
+              isSuspended,
+              isScheduledSuspend,
+              suspendDate: b.suspendDate || null,
+              resumeDate: b.resumeDate || null,
+            },
+          };
+        })
+      );
+    } catch (err) {
+      console.error(err);
+      showToast("error", "Lỗi khi tải chi nhánh");
+    }
+  };
 
   const fetchServices = async () => {
     try {
@@ -177,16 +175,16 @@ if (b.suspendDate && b.resumeDate) {
     setShowForm(true);
   };
 
-const openEditForm = (branch) => {
-  setEditingBranch(branch);
-  setFormData({
-    ...branch,
-    selectedServices: branch.services?.map((s) => s.idService) || [],
-    isEditable: branch.status === "Tạm ngưng", // check backend status
-    startDate: branch.startDate || "",
-  });
-  setShowForm(true);
-};
+  const openEditForm = (branch) => {
+    setEditingBranch(branch);
+    setFormData({
+      ...branch,
+      selectedServices: branch.services?.map((s) => s.idService) || [],
+      isEditable: branch.status === "Tạm ngưng",
+      startDate: branch.startDate || "",
+    });
+    setShowForm(true);
+  };
 
   const openSuspendForm = (branch, mode) => {
     setSuspendBranch(branch);
@@ -204,25 +202,23 @@ const openEditForm = (branch) => {
 
   const handleSuspendSubmit = async (e) => {
     e.preventDefault();
-
     const { suspendDate, resumeDate } = suspendFormData;
 
     try {
       let res;
       if (suspendMode === "suspend") {
-      res=  await BranchAPI.setSuspend(suspendBranch.id, { suspendDate });
+        res = await BranchAPI.setSuspend(suspendBranch.id, { suspendDate });
       } else {
-       res= await BranchAPI.setResume(suspendBranch.id, { resumeDate });
+        res = await BranchAPI.setResume(suspendBranch.id, { resumeDate });
       }
 
-  if (res.success) {
-      showToast("success", res.message);
-       fetchBranches();
-    } else {
-      showToast("error", res.message);
-    }
-
-
+      if (res.success) {
+        showToast("success", res.message);
+        fetchBranches();
+        setShowSuspendForm(false);
+      } else {
+        showToast("error", res.message);
+      }
     } catch (err) {
       console.error(err);
       showToast("error", "Lỗi khi lưu ngày!");
@@ -249,68 +245,45 @@ const openEditForm = (branch) => {
 
       showToast("success", editingBranch ? "Cập nhật thành công!" : "Thêm chi nhánh thành công!");
       setShowForm(false);
-      
       fetchBranches();
     } catch (err) {
       console.error(err);
       showToast("error", "Lỗi khi lưu chi nhánh!");
     }
   };
-const formatVNDate = (dateStr) => {
-  if (!dateStr) return "";
-  const [year, month, day] = dateStr.split("-"); // tách từ 'YYYY-MM-DD'
-  return `${day}/${month}/${year}`;
-};
 
-const handleToggleStatus = (branch) => {
-  const today = new Date().toISOString().split("T")[0];
+  const handleToggleStatus = (branch) => {
+    const today = new Date().toISOString().split("T")[0];
+    const startDate = branch.resumeDate;
+    const { suspendDate, resumeDate } = branch.suspendInfo;
 
-  const startDate = branch.resumeDate; // ngày bắt đầu hoạt động
-  const { suspendDate, resumeDate } = branch.suspendInfo;
-
-  // 0️⃣ CHƯA TỚI NGÀY HOẠT ĐỘNG
-  if (startDate && startDate > today) {
-    showToast(
-      "info",
-      `Chi nhánh sẽ bắt đầu hoạt động từ ${new Date(startDate).toLocaleDateString("vi-VN")}`,
-      3000
-    );
-    return;
-  }
-
-  // 1️⃣ ĐÃ LÊN LỊCH TẠM NGƯNG (CHƯA TỚI)
-  if (suspendDate && suspendDate > today) {
-    showToast(
-      "info",
-      `Chi nhánh sẽ tạm ngưng từ ${new Date(suspendDate).toLocaleDateString("vi-VN")}`,
-      3000
-    );
-    return;
-  }
-
-  // 2️⃣ ĐANG TẠM NGƯNG → CHỈ ĐƯỢC SET RESUME
-  if (
-    suspendDate &&
-    suspendDate <= today &&
-    (!resumeDate || resumeDate > today)
-  ) {
-    openSuspendForm(branch, "resume");
-    return;
-  }
-
-  // 3️⃣ ĐANG HOẠT ĐỘNG → CHO SET TẠM NGƯNG
-  openSuspendForm(branch, "suspend");
-};
-
+    if (startDate && startDate > today) {
+      showToast("info", `Chi nhánh sẽ bắt đầu hoạt động từ ${new Date(startDate).toLocaleDateString("vi-VN")}`, 3000);
+      return;
+    }
+    if (suspendDate && suspendDate > today) {
+      showToast("info", `Chi nhánh sẽ tạm ngưng từ ${new Date(suspendDate).toLocaleDateString("vi-VN")}`, 3000);
+      return;
+    }
+    if (suspendDate && suspendDate <= today && (!resumeDate || resumeDate > today)) {
+      openSuspendForm(branch, "resume");
+      return;
+    }
+    openSuspendForm(branch, "suspend");
+  };
 
   if (loading) return <div className={cx("loading")}>Đang tải dữ liệu...</div>;
 
   return (
     <div className={cx("branchList")}>
       <div className={cx("header")}>
-        <h2>Quản lý chi nhánh</h2>
+        <div className={cx("titleBox")}>
+          <Store size={28} strokeWidth={1.5} className={cx("titleIcon")} />
+          <h2>Quản lý chi nhánh</h2>
+        </div>
         <button className={cx("addBtn")} onClick={openCreateForm}>
-          + Thêm chi nhánh
+          <Plus size={18} strokeWidth={2} />
+          Thêm chi nhánh
         </button>
       </div>
 
@@ -325,16 +298,18 @@ const handleToggleStatus = (branch) => {
         ))}
       </div>
 
- {/* ======================= MODAL FORM ======================= */}
+      {/* ======================= MODAL FORM CHI NHÁNH ======================= */}
       {showForm && (
         <div className={cx("modalOverlay")}>
           <div className={cx("modal")}>
-            <h3>{editingBranch ? "Cập nhật chi nhánh" : "Thêm chi nhánh mới"}</h3>
+            <div className={cx("modalHeader")}>
+              <h3>{editingBranch ? "Cập nhật chi nhánh" : "Thêm chi nhánh mới"}</h3>
+            </div>
             <form onSubmit={handleSubmit}>
               <div className={cx("formGrid")}>
                 <div>
                   <label>Tên chi nhánh</label>
-                  <input name="name" value={formData.name} onChange={handleChange} required disabled={!formData.isEditable} />
+                  <input name="name" value={formData.name} onChange={handleChange} required disabled={!formData.isEditable} placeholder="Vd: Barber Quận 1..." />
                 </div>
                 <div style={{ position: "relative" }}>
                   <label>Địa chỉ</label>
@@ -350,9 +325,7 @@ const handleToggleStatus = (branch) => {
                   {suggestions.length > 0 && formData.isEditable && (
                     <ul className={cx("suggestList")}>
                       {suggestions.map((item, idx) => (
-                        <li key={idx} onClick={() => selectSuggestion(item)}>
-                          {item}
-                        </li>
+                        <li key={idx} onClick={() => selectSuggestion(item)}>{item}</li>
                       ))}
                     </ul>
                   )}
@@ -360,15 +333,8 @@ const handleToggleStatus = (branch) => {
 
                 {!editingBranch && (
                   <div>
-                    <label>Ngày bắt đầu hoạt động</label>
-                    <input
-                      type="date"
-                      name="startDate"
-                      required
-                      min={new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split("T")[0]}
-                      value={formData.startDate}
-                      onChange={handleChange}
-                    />
+                    <label>Ngày khai trương</label>
+                    <input type="date" name="startDate" required min={new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split("T")[0]} value={formData.startDate} onChange={handleChange} />
                   </div>
                 )}
 
@@ -383,78 +349,68 @@ const handleToggleStatus = (branch) => {
                 </div>
 
                 <div>
-                  <label>Thời lượng slot (phút)</label>
+                  <label>Thời lượng 1 ca (phút)</label>
                   <input type="number" name="slotDuration" min="10" max="120" value={formData.slotDuration} onChange={handleChange} disabled={!formData.isEditable} />
                 </div>
               </div>
 
-              <label>Dịch vụ áp dụng</label>
-              <div className={cx("serviceListModal")}>
-                {services.map((s) => (
-                  <label key={s.idService} className={cx("serviceItem")}>
-                    <input type="checkbox" checked={formData.selectedServices.includes(s.idService)} onChange={() => toggleService(s.idService)} disabled={!formData.isEditable} />
-                    {s.name}
-                  </label>
-                ))}
+              <div className={cx("serviceSection")}>
+                <label>Dịch vụ cung cấp</label>
+                <div className={cx("serviceListModal")}>
+                  {services.map((s) => (
+                    <label key={s.idService} className={cx("serviceItem")}>
+                      <input type="checkbox" checked={formData.selectedServices.includes(s.idService)} onChange={() => toggleService(s.idService)} disabled={!formData.isEditable} />
+                      <span>{s.name}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
 
               <div className={cx("modalActions")}>
-                {formData.isEditable && <button className={cx("saveBtn")}>Lưu</button>}
-                <button type="button" className={cx("cancelBtn")} onClick={() => setShowForm(false)}>
-                  Hủy
-                </button>
+                <button type="button" className={cx("cancelBtn")} onClick={() => setShowForm(false)}>Hủy bỏ</button>
+                {formData.isEditable && <button type="submit" className={cx("saveBtn")}>Lưu thông tin</button>}
               </div>
             </form>
           </div>
         </div>
       )}
 
-{showSuspendForm && (
-  <div className={cx("modalOverlay")}>
-    <div className={cx("modal", "modalSuspendForm")}>
-      <h3>
-        {suspendMode === "suspend"
-          ? "Đặt ngày tạm ngưng chi nhánh"
-          : "Đặt ngày hoạt động trở lại"}
-      </h3>
-      <form onSubmit={handleSuspendSubmit}>
-        <div className={cx("formGrid")}>
-          {suspendMode === "suspend" && (
-            <div>
-              <label>Ngày bắt đầu tạm ngưng</label>
-              <input
-                type="date"
-                name="suspendDate"
-                value={suspendFormData.suspendDate}
-                onChange={handleSuspendChange}
-                required
-              />
+      {/* ======================= MODAL TẠM NGƯNG/HOẠT ĐỘNG ======================= */}
+      {showSuspendForm && (
+        <div className={cx("modalOverlay")}>
+          <div className={cx("modal", "modalSuspendForm")}>
+            <div className={cx("modalHeader")}>
+              <CalendarClock size={28} strokeWidth={1.5} style={{ color: "var(--gold-dark)", marginBottom: 10 }} />
+              <h3>
+                {suspendMode === "suspend"
+                  ? "Lịch tạm ngưng hoạt động"
+                  : "Lịch mở cửa trở lại"}
+              </h3>
             </div>
-          )}
-          {suspendMode === "resume" && (
-            <div>
-              <label>Ngày hoạt động trở lại</label>
-              <input
-                type="date"
-                name="resumeDate"
-                value={suspendFormData.resumeDate}
-                onChange={handleSuspendChange}
-                required
-              />
-            </div>
-          )}
+            <form onSubmit={handleSuspendSubmit}>
+              <div className={cx("formGridSuspend")}>
+                {suspendMode === "suspend" && (
+                  <div>
+                    <label>Chọn ngày bắt đầu đóng cửa</label>
+                    <input type="date" name="suspendDate" value={suspendFormData.suspendDate} onChange={handleSuspendChange} required />
+                  </div>
+                )}
+                {suspendMode === "resume" && (
+                  <div>
+                    <label>Chọn ngày mở cửa đón khách</label>
+                    <input type="date" name="resumeDate" value={suspendFormData.resumeDate} onChange={handleSuspendChange} required />
+                  </div>
+                )}
+              </div>
+              <div className={cx("modalActions")}>
+                <button type="button" className={cx("cancelBtn")} onClick={() => setShowSuspendForm(false)}>Hủy</button>
+                <button type="submit" className={cx("saveBtn")}>Xác nhận</button>
+              </div>
+            </form>
+          </div>
         </div>
-        <div className={cx("modalActions")}>
-          <button className={cx("saveBtn")}>Lưu</button>
-          <button type="button" className={cx("cancelBtn")} onClick={() => setShowSuspendForm(false)}>
-            Hủy
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-)}
-      {/* ======================= TOAST ======================= */}
+      )}
+
       {toast && <Toast type={toast.type} text={toast.text} duration={toast.duration} onClose={() => setToast(null)} />}
     </div>
   );
