@@ -288,6 +288,7 @@ finally {
   return (
     <DefaultLayout>
       <div className={styles.bookingWrapper}>
+        <div className={styles.grainOverlay}></div>
         <div className={styles.logoBarber}>
           <img src="/rau.png" alt="Barber Logo" />
         </div>

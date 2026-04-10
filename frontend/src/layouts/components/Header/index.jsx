@@ -1,25 +1,21 @@
-// src/components/Header/Header.jsx
+import React, { useState, useRef, useEffect } from "react";
 import classNames from "classnames/bind";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useState, useRef, useEffect } from "react";
+import { faChevronDown } from "@fortawesome/free-solid-svg-icons";
+import { faBell } from "@fortawesome/free-regular-svg-icons";
 
 import styles from "./Header.module.scss";
-import { faChevronDown, faCut } from "@fortawesome/free-solid-svg-icons";
-
 import Button from "~/components/Button";
 import Modal from "~/components/Modal";
 import UserMenu from "~/components/Popper/UserMenu";
 import { useAuth } from "~/context/AuthContext";
-import { faBell } from "@fortawesome/free-regular-svg-icons";
-import {
-  fetchMyNotifications,
-  markNotificationAsRead,
-} from "~/services/notificationService";
+import { fetchMyNotifications, markNotificationAsRead } from "~/services/notificationService";
 
 const cx = classNames.bind(styles);
 
 function Header() {
   const [showModal, setShowModal] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const { user, isLogin, accessToken } = useAuth();
 
   const [showNotify, setShowNotify] = useState(false);
@@ -27,11 +23,19 @@ function Header() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loadingNotify, setLoadingNotify] = useState(false);
 
-  // State cho custom dialog chi tiết thông báo
   const [selectedNotification, setSelectedNotification] = useState(null);
 
   const notifyRef = useRef(null);
-  const dialogRef = useRef(null); // Ref cho dialog để loại trừ khi click outside
+  const dialogRef = useRef(null);
+
+  // Hiệu ứng cuộn chuột (Scroll)
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 50);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // Fetch thông báo
   useEffect(() => {
@@ -52,11 +56,8 @@ function Header() {
     setLoadingNotify(false);
   };
 
-  // Click vào thông báo → mở dialog chi tiết, giữ dropdown mở
   const handleNotificationClick = async (noti) => {
     setSelectedNotification(noti);
-
-    // Đánh dấu đã đọc nếu chưa đọc
     if (!noti.isRead && accessToken) {
       const success = await markNotificationAsRead(noti.idNotification, accessToken);
       if (success) {
@@ -70,10 +71,8 @@ function Header() {
     }
   };
 
-  // Click outside: chỉ đóng dropdown khi KHÔNG có dialog chi tiết đang mở
   useEffect(() => {
     function handleClickOutside(event) {
-      // Nếu click ngoài cả notify wrapper VÀ dialog → đóng dropdown
       if (
         notifyRef.current &&
         !notifyRef.current.contains(event.target) &&
@@ -82,147 +81,103 @@ function Header() {
         setShowNotify(false);
       }
     }
-
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   return (
     <>
-      <header className={cx("wrapper")}>
-        <div className={cx("inner")}>
-          {/* Left */}
-          <div className={cx("left-section")}>
-            <div className={cx("logo")}>
-              <div className={cx("logo-icon")}>
-                <FontAwesomeIcon icon={faCut} className={cx("logo-icon-inner")} />
-              </div>
-              <span>Barbershop</span>
-            </div>
+      <nav className={cx("nav", { scrolled })}>
+        {/* LOGO MẪU */}
+        <a href="/" className={cx("navLogo")}>
+          <div className={cx("logoIcon")}>
+            <svg viewBox="0 0 24 24"><path d="M12 2L2 22h20L12 2zm0 4.5l6.5 13.5h-13L12 6.5z"/></svg>
           </div>
-
-          {/* Middle */}
-          <div className={cx("mid-section")}>
-            <div className={cx("nav-menu")}>
-              <Button href="/" text className={cx("menu-button")}>
-                Trang chủ
-              </Button>
-              <Button href="/reels" text className={cx("menu-button")}>
-                Video Ngắn
-              </Button>
-              <Button href="/team" text className={cx("menu-button")}>
-                Thợ
-              </Button>
-              <Button href="/about" text className={cx("menu-button")}>
-                Về chúng tôi
-              </Button>
-            </div>
+          <div>
+            <div className={cx("logoText")}>NOBLE</div>
+            <div className={cx("logoSub")}>Barbershop</div>
           </div>
+        </a>
 
-          {/* Right */}
-          <div className={cx("right-section")}>
-            {!isLogin && (
-              <div className={cx("not-logged")}>
-                <Button
-                  rounded
-                  onClick={() => setShowModal(true)}
-                  className={cx("guest-button")}
-                >
-                  <span>Thành viên</span>
-                  <img
-                    src="/user.png"
-                    alt="Avatar của thành viên"
-                    className={cx("user-avatar")}
-                  />
-                </Button>
-              </div>
-            )}
+        {/* CẬP NHẬT LẠI MENU THEO THỨ TỰ */}
+        <ul className={cx("navLinks")}>
+          <li><Button href="/" text className={cx("menuLink")}>Trang chủ</Button></li>
+          <li><Button href="/reels" text className={cx("menuLink")}>Reels</Button></li>
+          <li><Button href="/team" text className={cx("menuLink")}>Thợ</Button></li>
+          <li><Button href="/branches" text className={cx("menuLink")}>Chi nhánh</Button></li>
+          <li><Button href="/news" text className={cx("menuLink")}>Tin tức</Button></li>
+          <li><Button href="/about" text className={cx("menuLink")}>Về chúng tôi</Button></li>
+        </ul>
 
-            {isLogin && (
-              <div className={cx("notification-wrapper")} ref={notifyRef}>
-                {/* Chỉ phần chuông mới toggle dropdown */}
-                <div
-                  className={cx("bell-trigger")}
-                  onClick={() => setShowNotify((prev) => !prev)}
-                >
-                  <FontAwesomeIcon icon={faBell} className={cx("bell-icon")} />
+        {/* AUTH & NOTIFICATIONS */}
+        <div className={cx("rightSection")}>
+          {!isLogin ? (
+            <button className={cx("navCta")} onClick={() => setShowModal(true)}>
+              Đăng nhập
+            </button>
+          ) : (
+            <>
+              {/* Notifications */}
+              <div className={cx("notificationWrapper")} ref={notifyRef}>
+                <div className={cx("bellTrigger")} onClick={() => setShowNotify((prev) => !prev)}>
+                  <FontAwesomeIcon icon={faBell} className={cx("bellIcon")} />
                   {unreadCount > 0 && (
-                    <span className={cx("badge")}>
-                      {unreadCount > 99 ? "99+" : unreadCount}
-                    </span>
+                    <span className={cx("badge")}>{unreadCount > 99 ? "99+" : unreadCount}</span>
                   )}
                 </div>
 
-                {/* Dropdown - KHÔNG có onClick để tránh toggle lại */}
                 {showNotify && (
-                  <div className={cx("notify-dropdown")}>
-                    {loadingNotify ? (
-                      <div className={cx("notify-item")}>Đang tải...</div>
-                    ) : notifications.length === 0 ? (
-                      <div className={cx("notify-item")}>Không có thông báo</div>
-                    ) : (
-                      notifications.map((noti) => (
-                        <div
-                          key={noti.idNotification}
-                          className={cx("notify-item", { unread: !noti.isRead })}
-                          onClick={() => handleNotificationClick(noti)}
-                        >
-                          <p className={cx("title")}>{noti.title}</p>
-                        </div>
-                      ))
-                    )}
+                  <div className={cx("notifyDropdown")}>
+                    <div className={cx("notifyHeader")}>Thông báo của bạn</div>
+                    <div className={cx("notifyList")}>
+                      {loadingNotify ? (
+                        <div className={cx("notifyItem")}>Đang tải...</div>
+                      ) : notifications.length === 0 ? (
+                        <div className={cx("notifyItem")}>Không có thông báo</div>
+                      ) : (
+                        notifications.map((noti) => (
+                          <div
+                            key={noti.idNotification}
+                            className={cx("notifyItem", { unread: !noti.isRead })}
+                            onClick={() => handleNotificationClick(noti)}
+                          >
+                            <p className={cx("title")}>{noti.title}</p>
+                          </div>
+                        ))
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
-            )}
 
-            {isLogin && (
+              {/* User Menu */}
               <UserMenu>
-                <div className={cx("logged")}>
-                  <span>{user.fullName}</span>
-                  <div className={cx("user-avatar")}>
-                    <img
-                      src={user.image || "/user.png"}
-                      alt={user.fullName}
-                    />
+                <div className={cx("loggedUser")}>
+                  <div className={cx("userAvatar")}>
+                    <img src={user.image || "/user.png"} alt={user.fullName} />
                   </div>
-                  <div className={cx("faChevronDown-icon")}>
-                    <FontAwesomeIcon icon={faChevronDown} />
-                  </div>
+                  <span className={cx("userName")}>{user.fullName}</span>
+                  <FontAwesomeIcon icon={faChevronDown} className={cx("chevronIcon")} />
                 </div>
               </UserMenu>
-            )}
-          </div>
+            </>
+          )}
         </div>
-      </header>
+      </nav>
 
-      {/* Modal login cũ */}
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} />
 
-      {/* Custom Dialog chi tiết thông báo */}
+      {/* DIALOG THÔNG BÁO THEO DARK THEME */}
       {selectedNotification && (
-        <div className={cx("custom-dialog-overlay")} onClick={() => setSelectedNotification(null)}>
-          <div
-            ref={dialogRef}
-            className={cx("custom-dialog")}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className={cx("dialog-title")}>{selectedNotification.title}</h3>
+        <div className={cx("customDialogOverlay")} onClick={() => setSelectedNotification(null)}>
+          <div ref={dialogRef} className={cx("customDialog")} onClick={(e) => e.stopPropagation()}>
+            <h3 className={cx("dialogTitle")}>{selectedNotification.title}</h3>
             {selectedNotification.content ? (
-              <p className={cx("dialog-content")}>
-                {selectedNotification.content}
-              </p>
+              <p className={cx("dialogContent")}>{selectedNotification.content}</p>
             ) : (
-              <p className={cx("dialog-content", "no-content")}>
-                Không có nội dung chi tiết.
-              </p>
+              <p className={cx("dialogContent", "noContent")}>Không có nội dung chi tiết.</p>
             )}
-            <button
-              className={cx("dialog-close-btn")}
-              onClick={() => setSelectedNotification(null)}
-            >
+            <button className={cx("dialogCloseBtn")} onClick={() => setSelectedNotification(null)}>
               Đóng
             </button>
           </div>
