@@ -1,31 +1,138 @@
-.wrapper {
-  width: 312px;
-}
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap');
 
-.inner {
+.wrapper {
+  width: 100%;
+  max-width: 400px;
+  background: #ffffff;
+  border-radius: 8px; // Bo góc nhẹ cho nam tính, sang trọng
+  padding: 48px 40px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+  border: 1px solid #111111; 
+  font-family: 'DM Sans', sans-serif;
+  animation: fadeIn 0.4s ease-out;
 }
 
 .heading {
-  font-weight: 600;
-  line-height: 1.5;
-  font-size: 1.4em;
-  color: var(--white);
-  margin-bottom: 16px;
+  font-family: 'Playfair Display', serif;
+  font-size: 30px;
+  font-weight: 800;
+  color: #000000;
+  text-align: center;
+  margin-bottom: 8px;
 }
 
 .body {
   p {
-    margin-bottom: 1.5rem;
-    color: var(--text-base);
+    text-align: center;
+    font-size: 14px;
+    margin-bottom: 30px;
+    color: #666666;
+
+    a {
+      color: #4b382a !important; 
+      font-weight: 700;
+      text-decoration: none; // Bỏ gạch chân mặc định
+      border-bottom: 1.5px solid #4b382a; // Thay bằng border cho sang
+      margin-left: 4px;
+      &:hover { color: #000000 !important; border-bottom-color: #000000; }
+    }
   }
-  a {
-    color: var(--primary) !important;
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
   }
 }
 
+/* 🏆 CẬP NHẬT Ô INPUT ĐỂ THẤY CHỮ HƯỚNG DẪN */
+:global(input) {
+  width: 100% !important;
+  height: 52px;
+  padding: 0 16px;
+  background-color: #ffffff !important;
+  border: 1px solid #cccccc !important; // Viền rõ ràng hơn
+  border-radius: 4px;
+  font-size: 15px;
+  color: #000000 !important;
+  transition: all 0.2s ease;
+
+  // Làm chữ Placeholder (Email, OTP...) hiện rõ lên
+  &::placeholder {
+    color: #888888 !important; 
+    font-weight: 400;
+    opacity: 1; /* Firefox fix */
+  }
+
+  &:focus {
+    border-color: #000000 !important;
+    border-width: 1.5px;
+    outline: none;
+  }
+}
+
+/* 🏆 HÀNG OTP SẮC NÉT */
 .otp {
-  display: flex;
+  display: flex !important;
+  flex-direction: row !important;
   align-items: center;
-  justify-content: center;
-  gap: 1rem;
+  gap: 12px;
+  width: 100%;
+
+  .otpInputWrapper {
+    flex: 0 0 140px; // Tăng độ rộng để chứa chữ "Mã OTP"
+  }
+
+  :global(input) {
+    text-align: center;
+    letter-spacing: 2px; // Giảm bớt để đọc được chữ placeholder khi chưa nhập
+    font-weight: 700;
+    border: 1px solid #000000 !important;
+
+    &:focus {
+      letter-spacing: 4px; // Khi bắt đầu nhập số thì giãn ra cho đẹp
+    }
+  }
+}
+
+.otpBtn {
+  flex: 1;
+  height: 52px;
+  background: transparent !important;
+  border: 1.5px solid #4b382a !important;
+  color: #4b382a !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-radius: 4px !important;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: #4b382a !important;
+    color: #ffffff !important;
+  }
+  &:disabled { color: #ccc !important; border-color: #eee !important; }
+}
+
+.submitBtn {
+  width: 100%;
+  height: 54px;
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 4px !important;
+  font-size: 15px !important;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: 0.3s;
+
+  &:hover { background-color: #4b382a !important; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }

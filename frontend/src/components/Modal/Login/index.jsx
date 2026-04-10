@@ -4,7 +4,7 @@ import classNames from "classnames/bind";
 import { useToast } from "~/context/ToastContext";
 import { useAuth } from "~/context/AuthContext";
 import { AuthAPI } from "~/apis/AuthAPI";
-import { GoogleLogin } from "@react-oauth/google"; // ← Quan trọng
+import { GoogleLogin } from "@react-oauth/google";
 
 import Input from "~/components/Input";
 import Button from "~/components/Button";
@@ -23,7 +23,6 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Login thường (email + password)
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.email || !formData.password) {
@@ -54,7 +53,6 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
     }
   };
 
-  // ====================== GOOGLE LOGIN ======================
   const handleGoogleSuccess = async (credentialResponse) => {
     const googleIdToken = credentialResponse?.credential;
 
@@ -82,10 +80,7 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
 
         authLogin(userWithAvatar, result.accessToken, result.refreshToken);
 
-        showToast({
-          text: "Đăng nhập Google thành công",
-          type: "success",
-        });
+        showToast({ text: "Đăng nhập Google thành công", type: "success" });
 
         if (onLoginSuccess) onLoginSuccess();
         if (onClose) onClose();
@@ -109,36 +104,40 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
   return (
     <div className={cx("wrapper")}>
       <div className={cx("inner")}>
-        <h4 className={cx("heading")}>Đăng nhập</h4>
-        <div className={cx("body")}>
-          <p>
-            Nếu bạn chưa có tài khoản,{" "}
-            <a href="#" onClick={() => onSwitch("register")}>
-              đăng ký ngay
-            </a>
+        <div className={cx("headerText")}>
+          <h4 className={cx("heading")}>Đăng nhập</h4>
+          <p className={cx("subTitle")}>
+            Chưa có tài khoản?{" "}
+            <span className={cx("linkText")} onClick={() => onSwitch("register")}>
+              Đăng ký ngay
+            </span>
           </p>
+        </div>
 
-          <form onSubmit={handleSubmit}>
-            <Input
-              primary
-              name="email"
-              required
-              placeholder="Email"
-              value={formData.email}
-              onChange={(e) => handleChange("email", e.target.value)}
-            />
-            <Input
-              primary
-              name="password"
-              type="password"
-              required
-              placeholder="Mật khẩu"
-              showToggleIcon
-              value={formData.password}
-              onChange={(e) => handleChange("password", e.target.value)}
-            />
+        <div className={cx("body")}>
+          <form className={cx("loginForm")} onSubmit={handleSubmit}>
+            <div className={cx("inputGroup")}>
+              <Input
+                primary
+                name="email"
+                required
+                placeholder="Email"
+                value={formData.email}
+                onChange={(e) => handleChange("email", e.target.value)}
+              />
+              <Input
+                primary
+                name="password"
+                type="password"
+                required
+                placeholder="Mật khẩu"
+                showToggleIcon
+                value={formData.password}
+                onChange={(e) => handleChange("password", e.target.value)}
+              />
+            </div>
 
-            <div className={cx("forgetpass-wrapper")}>
+            <div className={cx("actionRow")}>
               <div
                 className={cx("forgetpass")}
                 onClick={() => onSwitch("forgetpass")}
@@ -147,14 +146,15 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
               </div>
             </div>
 
-            <Button primary type="submit" disabled={loading}>
-              {loading ? "Đang đăng nhập..." : "Đăng nhập"}
+            <Button primary type="submit" disabled={loading} className={cx("submitBtn")}>
+              {loading ? "Đang xử lý..." : "Đăng nhập"}
             </Button>
           </form>
 
-          <div className={cx("divider")}>HOẶC</div>
+          <div className={cx("divider")}>
+            <span>HOẶC</span>
+          </div>
 
-          {/* Nút Google Login */}
           <div className={cx("google-wrapper")}>
             <GoogleLogin
               onSuccess={handleGoogleSuccess}

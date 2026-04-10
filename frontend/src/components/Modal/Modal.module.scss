@@ -1,60 +1,89 @@
 @keyframes slideDown {
   from {
-    transform: translateY(-50px);
+    transform: translateY(-30px) scale(0.98);
     opacity: 0;
   }
   to {
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
     opacity: 1;
   }
 }
+
 .overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: #131727;
+  /* Chuyển sang lớp phủ xám than trong suốt + hiệu ứng làm mờ nền */
+  background-color: rgba(44, 44, 44, 0.6);
+  backdrop-filter: blur(5px);
   z-index: 999;
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0.95;
 }
 
 .modal {
-  min-height: 400px;
-  padding: 4rem 4rem 4rem calc(420px + 4rem);
-  background-color: #1e2545;
-  border-radius: 0.75rem;
+  display: flex; /* Dùng Flexbox chia 2 cột thay vì dùng ::before */
+  width: 880px;
+  max-width: 95vw;
+  min-height: 520px;
+  background-color: #fdfbf8; /* Nền kem sáng */
+  border-radius: 20px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.15); /* Đổ bóng mềm mại */
   position: relative;
-  animation: slideDown 0.3s ease-out;
+  animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   overflow: hidden;
+}
 
-  &::before {
-    content: "";
+/* Khu vực ảnh bên trái */
+.imageSection {
+  width: 420px;
+  background-image: url("/assets/images/barbershop-login.jpg");
+  background-size: cover;
+  background-position: center;
+  position: relative;
+
+  /* Thêm một lớp gradient phủ nhẹ lên ảnh để ảnh không bị quá gắt */
+  &::after {
+    content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    width: 420px;
-    height: 100%;
-    background-image: url("/assets/images/barbershop-login.jpg");
-    border-radius: 0.75rem;
-    z-index: 0;
-    background-size: cover;
-    background-position: 0 100%;
-    border-radius: 0.75rem 0 0 0.75rem;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(184, 150, 106, 0.1) 0%, rgba(44, 44, 44, 0.4) 100%);
   }
 }
 
+/* Khu vực form bên phải */
+.contentSection {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  /* Nền khu vực form. 
+     Do form Login của bạn đã có nền #ffffff (trắng), 
+     nó sẽ nổi bật đẹp mắt trên lớp nền kem nhạt này */
+  background-color: #fdfbf8; 
+}
+
+/* Nút tắt */
 .close {
-  color: var(--white);
   position: absolute;
-  right: 10px;
-  top: 5px;
+  right: 20px;
+  top: 16px;
   background: none;
   border: none;
-  font-size: 28px;
+  font-size: 32px;
+  color: #999999;
   cursor: pointer;
+  line-height: 1;
+  transition: color 0.2s ease, transform 0.2s ease;
+  z-index: 10;
+
+  &:hover {
+    color: #b8966a; /* Màu Gold */
+    transform: scale(1.1);
+  }
 }

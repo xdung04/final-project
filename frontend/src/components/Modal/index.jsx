@@ -3,7 +3,7 @@ import Login from "./Login";
 import Register from "./Register";
 import ForgetPass from "./ForgetPass";
 import NewPass from "./NewPass";
-import AddPhone from "./AddPhone";           // ← MỚI
+import AddPhone from "./AddPhone";
 import styles from "./Modal.module.scss";
 import classNames from "classnames/bind";
 
@@ -49,8 +49,14 @@ function Modal({ isOpen, onClose }) {
   return (
     <div className={cx("overlay")} onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className={cx("modal")} onClick={(e) => e.stopPropagation()}>
-        <button className={cx("close")} onClick={onClose}>×</button>
-        {renderModalContent()}
+        {/* Cột hiển thị ảnh bên trái */}
+        <div className={cx("imageSection")}></div>
+
+        {/* Cột hiển thị nội dung form bên phải */}
+        <div className={cx("contentSection")}>
+          <button className={cx("close")} onClick={onClose}>&times;</button>
+          {renderModalContent()}
+        </div>
       </div>
     </div>
   );
