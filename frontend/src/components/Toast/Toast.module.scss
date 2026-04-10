@@ -1,123 +1,122 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500&family=Bebas+Neue&display=swap');
+
+:root {
+  --gold: #b8966a;
+  --gold-dark: #967a54;
+  --charcoal: #2c2c2c;
+  --bg-white: #ffffff;
+  --bg-cream: #fdfbf8;
+  --border: #e0d7cc;
+  --ff-body: 'DM Sans', sans-serif;
+  --ff-display: 'Bebas Neue', sans-serif;
+}
+
 @keyframes toastSlideIn {
-  0% {
-    transform: translateX(120%) translateY(0);
-    opacity: 0;
-  }
-  60% {
-    transform: translateX(-10%) translateY(0);
-    opacity: 1;
-  }
-  80% {
-    transform: translateX(5%) translateY(0);
-  }
-  100% {
-    transform: translateX(0%) translateY(0);
-  }
+  0% { transform: translateX(120%); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
 }
 
 @keyframes toastSlideOut {
-  0% {
-    transform: translateX(0%) translateY(0);
-    opacity: 1;
-  }
-  100% {
-    transform: translateX(120%) translateY(0);
-    opacity: 0;
-  }
+  0% { transform: translateX(0); opacity: 1; }
+  100% { transform: translateX(120%); opacity: 0; }
+}
+
+@keyframes progressShrink {
+  from { width: 100%; }
+  to { width: 0%; }
 }
 
 .wrapper {
   position: fixed;
-  top: 16px;   /* lên trên */
-  right: 16px; /* bên phải */
-  z-index: 9999;
-  width: 360px;
+  top: 24px;
+  right: 24px;
+  z-index: 10000;
+  width: 380px;
   max-width: 90%;
-  color: #fff;
-  animation: toastSlideIn 0.5s ease forwards;
+  animation: toastSlideIn 0.4s cubic-bezier(0.23, 1, 0.32, 1) forwards;
 }
 
 .fade-out {
-  animation: toastSlideOut 0.5s ease forwards;
+  animation: toastSlideOut 0.4s cubic-bezier(0.23, 1, 0.32, 1) forwards;
 }
 
 .inner {
   display: flex;
+  flex-direction: column;
+  background: var(--bg-white);
+  border: 1px solid var(--gold); /* Viền vàng mảnh sang trọng */
+  padding: 16px 20px;
+  box-shadow: 0 10px 30px rgba(184, 150, 106, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.body {
+  display: flex;
   align-items: center;
-  background: rgba(0,0,0,0.85); /* nền đậm */
-  border-radius: 0.75rem;
-  padding: 12px 16px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
-  backdrop-filter: blur(10px);
-  min-height: 70px;
-  cursor: pointer;
+  gap: 15px;
 }
 
 .icon {
-  margin-right: 12px;
-  width: 28px;
-  height: 28px;
-}
-
-.text {
-  flex: 1;
-  font-size: 16px;
-  font-weight: 500;
-  color: #fff;
-}
-
-.close {
-  position: absolute;  /* giữ ở góc trên cùng bên phải */
-  top: 8px;            /* cách viền trên 8px */
-  right: 8px;          /* cách viền phải 8px */
-  background: rgba(255,255,255,0.2); /* nền nhẹ để nổi bật */
-  border: none;
-  border-radius: 50%;  /* làm tròn */
-  width: 28px;
-  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0.9;
+  flex-shrink: 0;
+  
+  // Tùy chỉnh màu icon để hợp với tone Gold
+  svg {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+.success .icon { color: #2ecc71; } // Giữ xanh lá nhẹ nhưng thanh mảnh
+.error .icon { color: #e74c3c; }
+
+.text {
+  flex: 1;
+  font-size: 14px;
+  font-family: var(--ff-body);
+  font-weight: 500;
+  color: var(--charcoal);
+  line-height: 1.4;
+  letter-spacing: 0.3px;
+}
+
+.close {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
   cursor: pointer;
-  transition: all 0.2s ease;
-}
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  opacity: 0.6;
 
-.close:hover {
-  background: rgba(255,255,255,0.4);
-  opacity: 1;
-  transform: scale(1.1); /* hơi phóng to khi hover */
+  &:hover {
+    opacity: 1;
+    color: var(--gold);
+    transform: rotate(90deg);
+  }
 }
-
 
 .progress-bar {
   position: absolute;
   bottom: 0;
-  height: 4px;
+  left: 0;
+  height: 3px;
   width: 100%;
-  border-radius: 2px;
-  overflow: hidden;
-}
-
-.background {
-  opacity: 0.2;
-  width: 100%;
-  height: 100%;
+  background: rgba(184, 150, 106, 0.1);
 }
 
 .fill {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
   height: 100%;
-  animation: slideOutLeft 4.8s linear forwards; /* hoặc tuỳ duration */
+  background: var(--gold); /* Thanh tiến trình màu vàng kim */
+  animation: progressShrink linear forwards;
 }
 
-.success {
-  background: #07bc0c;
-}
-
-.error {
-  background: #e74c3c;
-}
+// Màu sắc nhấn cho icon/text tùy loại
+.success-text { border-left: 3px solid #2ecc71; }
+.error-text { border-left: 3px solid #e74c3c; }

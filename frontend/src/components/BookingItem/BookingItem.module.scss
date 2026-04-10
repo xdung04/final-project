@@ -1,18 +1,39 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500&family=Bebas+Neue&display=swap');
+
+:root {
+  --gold: #b8966a;
+  --gold-light: rgba(184, 150, 106, 0.1);
+  --charcoal: #2c2c2c;
+  --text-dim: #666666;
+  --border: #e0d7cc;
+  --bg-card: rgba(255, 255, 255, 0.9);
+  
+  --ff-serif: 'Playfair Display', serif;
+  --ff-display: 'Bebas Neue', sans-serif;
+  --ff-body: 'DM Sans', sans-serif;
+}
+
 .card {
-  background: rgba(255, 255, 255, 0.15);  // trong suốt
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 16px;
-  padding: 20px;
-  color: #fff;
-  margin-bottom: 20px;
-  backdrop-filter: blur(10px);  // hiệu ứng Glassmorphism
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  transition: 0.3s ease, transform 0.3s ease;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px; /* Góc bo nhẹ kiểu Classic */
+  padding: 24px;
+  color: var(--charcoal);
+  margin-bottom: 0; // Để Grid của cha điều khiển gap
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+  position: relative;
+  font-family: var(--ff-body);
 
   &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
-    border-color: #ffb300;
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(184, 150, 106, 0.15);
+    border-color: var(--gold);
+    
+    .barberAvatar {
+      border-color: var(--gold);
+    }
   }
 }
 
@@ -20,73 +41,87 @@
 .header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #f5f0eb;
+  padding-bottom: 15px;
 
   .barberInfo {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 16px;
 
-    img {
-      width: 60px;
-      height: 60px;
+    .barberAvatar {
+      width: 50px;
+      height: 50px;
       border-radius: 50%;
       object-fit: cover;
-      border: 2px solid #ffb300;
+      border: 1px solid var(--border);
+      padding: 2px;
+      background: white;
+      transition: 0.3s;
     }
 
     h3 {
       margin: 0;
+      font-family: var(--ff-serif);
       font-size: 18px;
-      font-weight: 600;
-      color: #fff;
+      font-weight: 700;
+      color: var(--charcoal);
     }
 
     .branchName {
-      font-size: 14px;
-      color: #ddd;
+      font-family: var(--ff-display);
+      font-size: 13px;
+      letter-spacing: 1px;
+      color: var(--gold-dark);
+      margin-top: 2px;
     }
   }
 }
 
 /* Details */
 .details {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: 1fr 1fr; // Chia làm 2 cột cho gọn
+  gap: 12px;
 
   p {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 15px;
-    color: #f0f0f0;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--text-dim);
+    margin: 0;
 
     svg {
-      color: #ffb300; // icon màu vàng nổi bật
+      color: var(--gold);
+      stroke-width: 1.5px;
     }
   }
 }
 
-/* Footer (nếu cần) */
-.footer {
-  margin-top: 16px;
-  text-align: right;
-
-  .detailBtn {
-    background: rgba(255, 179, 0, 0.8);
-    border: none;
-    padding: 8px 16px;
-    border-radius: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    color: #111;
-    transition: 0.3s ease, transform 0.3s ease;
-
-    &:hover {
-      background: rgba(255, 179, 0, 1);
-      transform: scale(1.05);
-    }
+/* Status Badge */
+.status {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  font-family: var(--ff-display);
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  padding: 4px 12px;
+  border-radius: 50px;
+  text-transform: uppercase;
+  
+  &.pending {
+    background: #fff8eb;
+    color: #d4a017;
+    border: 1px solid #ffecb3;
+  }
+  
+  &.completed {
+    background: #f0fdf4;
+    color: #16a34a;
+    border: 1px solid #bbf7d0;
   }
 }
