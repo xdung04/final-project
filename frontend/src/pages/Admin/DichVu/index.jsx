@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import classNames from "classnames/bind";
 import styles from "./DichVu.module.scss";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPenToSquare, faPlus } from "@fortawesome/free-solid-svg-icons";
+import { Plus, Edit2, Scissors } from "lucide-react"; // Dùng lucide-react thay cho FontAwesome
 import ServiceAPI from "~/apis/serviceAPI";
 import { BranchAPI } from "~/apis/branchAPI";
 import ServiceFormModal from "~/components/ServiceFormModal";
@@ -19,82 +18,96 @@ function DichVu() {
 
   const fetchAll = async () => {
     setLoading(true);
-    const s = await ServiceAPI.getAll();
-    const b = await BranchAPI.getAll();
-    setServices(s);
-    setBranches(b);
-    setLoading(false);
+    try {
+      const s = await ServiceAPI.getAll();
+      const b = await BranchAPI.getAll();
+      setServices(s);
+      setBranches(b);
+    } catch (error) {
+      console.error("Lỗi khi tải dữ liệu dịch vụ:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
     fetchAll();
   }, []);
 
-  if (loading) return <div>Đang tải...</div>;
+  if (loading) return <div className={cx("loading")}>Đang tải dữ liệu...</div>;
 
   return (
     <div className={cx("serviceList")}>
-      <h2>Quản lý dịch vụ</h2>
+      <div className={cx("header")}>
+        <div className={cx("titleBox")}>
+          <Scissors size={28} strokeWidth={1.5} className={cx("titleIcon")} />
+          <h2>Quản lý dịch vụ</h2>
+        </div>
 
-      {/* Nút thêm dịch vụ */}
-      <button
-        className={cx("addButton")}
-        onClick={() => {
-          setSelectedService(null); // bật chế độ thêm mới
-          setFormVisible(true);
-        }}
-      >
-        <FontAwesomeIcon icon={faPlus} /> &nbsp; Thêm dịch vụ
-      </button>
+        <button
+          className={cx("addButton")}
+          onClick={() => {
+            setSelectedService(null);
+            setFormVisible(true);
+          }}
+        >
+          <Plus size={18} strokeWidth={2} /> Thêm dịch vụ
+        </button>
+      </div>
 
-      <table className={cx("table")}>
-        <thead>
-          <tr>
-            <th>Tên dịch vụ</th>
-            <th>Mô tả</th>
-            <th>Giá</th>
-            <th>Thời lượng</th>
-            <th>Trạng thái</th>
-            <th>Thao tác</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {services.map((s) => (
-            <tr key={s.idService}>
-              <td>{s.name}</td>
-              <td>{s.description}</td>
-              <td>{parseInt(s.price).toLocaleString()} đ</td>
-              <td>{s.duration} phút</td>
-              <td>
-                <span className={cx(s.status === "Active" ? "active" : "inactive")}>
-                  {s.status === "Active" ? "Hoạt động" : "Ngừng"}
-                </span>
-              </td>
-              <td>
-                <button
-                  className={cx("editBtn")}
-                  onClick={() => {
-                    setSelectedService(s.idService);
-                    setFormVisible(true);
-                  }}
-                >
-                  <FontAwesomeIcon icon={faPenToSquare} />
-                </button>
-              </td>
+      <div className={cx("tableContainer")}>
+        <table className={cx("table")}>
+          <thead>
+            <tr>
+              <th>Tên dịch vụ</th>
+              <th>Mô tả</th>
+              <th>Giá</th>
+              <th>Thời lượng</th>
+              <th>Trạng thái</th>
+              <th className={cx("textCenter")}>Thao tác</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+
+          <tbody>
+            {services.map((s) => (
+              <tr key={s.idService}>
+                <td className={cx("fw-bold")}>{s.name}</td>
+                <td className={cx("desc")}>{s.description}</td>
+                <td className={cx("price")}>{parseInt(s.price).toLocaleString()} đ</td>
+                <td>{s.duration} phút</td>
+                <td>
+                  <span className={cx("statusBadge", s.status === "Active" ? "active" : "inactive")}>
+                    {s.status === "Active" ? "Hoạt động" : "Ngừng"}
+                  </span>
+                </td>
+                <td className={cx("textCenter")}>
+                  <button
+                    className={cx("editBtn")}
+                    onClick={() => {
+                      setSelectedService(s.idService);
+                      setFormVisible(true);
+                    }}
+                    title="Chỉnh sửa dịch vụ"
+                  >
+                    <Edit2 size={16} strokeWidth={2} />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       {/* Modal create/update */}
-      <ServiceFormModal
-        show={formVisible}
-        onClose={() => setFormVisible(false)}
-        serviceId={selectedService} // null = tạo mới
-        branches={branches}
-        onUpdated={fetchAll}
-      />
+      {formVisible && (
+        <ServiceFormModal
+          show={formVisible}
+          onClose={() => setFormVisible(false)}
+          serviceId={selectedService} // null = tạo mới
+          branches={branches}
+          onUpdated={fetchAll}
+        />
+      )}
     </div>
   );
 }

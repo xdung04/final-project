@@ -1,26 +1,61 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;700&family=Bebas+Neue&display=swap');
+
+:root {
+  --bg-white:  #ffffff;
+  --bg-cream:  #fdfbf8;
+  --gold:      #b8966a;
+  --gold-dark: #967a54;
+  --charcoal:  #2c2c2c;
+  --text-dim:  #666666;
+  --border:    #e0d7cc;
+
+  --ff-serif:  'Playfair Display', serif;
+  --ff-display:'Bebas Neue', sans-serif;
+  --ff-body:   'DM Sans', sans-serif;
+}
+
 .container {
-  max-width: 1000px;
-  margin: 40px auto;
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-  padding: 32px;
-  font-family: "Inter", sans-serif;
+  max-width: 1100px;
+  margin: 60px auto;
+  background: var(--bg-white);
+  padding: 0;
+  font-family: var(--ff-body);
+  position: relative;
+}
+
+/* Lớp phủ hạt tinh tế */
+.grainOverlay {
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.02'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 1;
 }
 
 .profileSection {
   display: flex;
-  gap: 24px;
-  border-bottom: 1px solid #e5e7eb;
-  padding-bottom: 24px;
+  gap: 40px;
+  padding: 40px;
+  background: var(--bg-cream);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  align-items: flex-start;
+  position: relative;
+  z-index: 2;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
 }
 
 .avatar {
-  width: 160px;
-  height: 160px;
-  border-radius: 50%;
+  width: 200px;
+  height: 250px; /* Dáng ảnh chân dung đứng sẽ sang hơn */
   object-fit: cover;
-  border: 3px solid #16a34a;
+  border: 1px solid var(--gold);
+  padding: 8px;
+  background: white;
+  box-shadow: 10px 10px 0px rgba(184, 150, 106, 0.1);
 }
 
 .info {
@@ -28,67 +63,101 @@
 }
 
 .name {
-  font-size: 24px;
-  font-weight: 600;
-  color: #111827;
+  font-family: var(--ff-serif);
+  font-size: 42px;
+  color: var(--charcoal);
+  margin-bottom: 10px;
+  letter-spacing: -1px;
 }
 
 .branch {
-  color: #6b7280;
-  font-size: 15px;
-  margin-bottom: 6px;
+  font-family: var(--ff-display);
+  color: var(--gold-dark);
+  font-size: 16px;
+  letter-spacing: 2px;
+  margin-bottom: 15px;
+  text-transform: uppercase;
 }
 
 .contact {
-  color: #4b5563;
-  font-size: 15px;
+  color: var(--text-dim);
+  font-size: 14px;
+  margin-bottom: 20px;
+  display: flex;
+  gap: 20px;
+  
+  @media (max-width: 768px) {
+    justify-content: center;
+  }
 }
 
 .rating {
-  margin-top: 8px;
-  color: #16a34a;
-  font-weight: 500;
+  display: inline-block;
+  background: var(--charcoal);
+  color: var(--gold);
+  padding: 6px 16px;
+  font-family: var(--ff-display);
+  font-size: 14px;
+  letter-spacing: 1px;
+  margin-bottom: 25px;
 }
 
 .descBox {
-  margin-top: 16px;
-
   h3 {
-    color: #111827;
-    font-weight: 600;
-    margin-bottom: 8px;
+    font-family: var(--ff-display);
+    font-size: 14px;
+    color: var(--gold-dark);
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    display: inline-block;
+    padding-bottom: 4px;
   }
 }
 
 .desc {
-  background: #f9fafb;
-  padding: 12px;
-  border-radius: 8px;
   white-space: pre-wrap;
-  color: #374151;
+  color: var(--charcoal);
   font-size: 15px;
+  line-height: 1.8;
+  font-style: italic; /* Tạo cảm giác như trích dẫn nghệ thuật */
 }
 
+/* ===== VIDEO SECTION ===== */
 .videoSection {
-  margin-top: 32px;
+  margin-top: 60px;
+  position: relative;
+  z-index: 2;
 }
 
 .videoTitle {
-  font-size: 20px;
-  font-weight: 600;
-  margin-bottom: 16px;
-  color: #111827;
+  font-family: var(--ff-serif);
+  font-size: 28px;
+  text-align: center;
+  margin-bottom: 40px;
+  color: var(--charcoal);
+  
+  &::after {
+    content: "";
+    display: block;
+    width: 40px;
+    height: 2px;
+    background: var(--gold);
+    margin: 15px auto 0;
+  }
 }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 24px;
 }
 
-.loading,
-.empty {
+.loading, .empty {
   text-align: center;
-  color: #6b7280;
-  padding: 40px 0;
+  font-family: var(--ff-serif);
+  color: var(--text-dim);
+  padding: 100px 0;
+  font-size: 18px;
 }
