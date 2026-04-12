@@ -28,17 +28,17 @@ export default function BarberCard({ barber }) {
       <div className={styles.imageWrap}>
         <img src={barber.avatar} alt={barber.name} />
         <div className={styles.ratingBadge}>
-          <Star size={12} />
+          <Star size={12} fill="currentColor" />
           <span>{barber.rating}</span>
         </div>
       </div>
 
       <div className={styles.content}>
-        <h3 className={styles.name}>{barber.name}</h3>
         <p className={styles.branch}>{barber.branch}</p>
+        <h3 className={styles.name}>{barber.name}</h3>
 
         <button className={styles.bookBtn} onClick={handleBooking}>
-          Đặt lịch
+          Đặt lịch ngay
         </button>
 
         {hover && (
@@ -47,13 +47,23 @@ export default function BarberCard({ barber }) {
               <img src={barber.avatar} alt={barber.name} />
             </div>
             <div className={styles.panelRight}>
-              <p><strong>Tên thợ:</strong> {barber.name}</p>
-              <p><strong>Chi nhánh:</strong> {barber.branch}</p>
               <p>
-                <strong>Rating:</strong>
-                <Star size={12} className={styles.starIcon} /> {barber.rating}
+                <strong>Thợ:</strong> {barber.name}
               </p>
-              <p>{barber.description}</p>
+              <p>
+                <strong>Cơ sở:</strong> {barber.branch}
+              </p>
+              <p>
+                <strong>Đánh giá:</strong>
+                <Star size={12} fill="currentColor" className={styles.starIcon} />{" "}
+                {barber.rating}
+              </p>
+              <p style={{ fontStyle: "italic", marginTop: "5px" }}>
+                "
+                {barber.description ||
+                  "Chuyên gia tạo mẫu tóc với tư duy thẩm mỹ hiện đại và kỹ thuật tinh xảo tại Barber Lab."}
+                "
+              </p>
             </div>
           </div>
         )}

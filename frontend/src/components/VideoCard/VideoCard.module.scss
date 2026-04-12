@@ -1,29 +1,48 @@
 /* VideoCard.module.scss */
 
-/* Thay đổi .card thành .reelCard */
 .reelCard {
-  /* Loại bỏ các style card cũ */
-  background: #000;
-  border: none;
-  border-radius: 0;
+  background: var(--charcoal, #1a1a1a);
+  border: 1px solid rgba(184, 150, 106, 0.1); /* Viền vàng cực mờ */
+  border-radius: 12px; /* Bo góc đồng bộ với Grid */
   overflow: hidden;
   cursor: pointer;
   position: relative;
   display: block;
+  transition: all 0.3s ease;
 
-  /* Áp dụng hiệu ứng hover vào đây */
-  &:hover .hoverOverlay {
-    opacity: 1; /* Hiển thị overlay khi hover */
+  &:hover {
+    border-color: var(--gold, #b8966a);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.6), 0 0 15px rgba(184, 150, 106, 0.15);
+    
+    .hoverOverlay {
+      opacity: 1; /* Hiển thị overlay khi hover */
+    }
+
+    .videoThumb {
+      transform: scale(1.05); /* Zoom nhẹ ảnh tạo cảm giác sống động */
+    }
   }
 }
 
 .videoBox {
   position: relative;
   width: 100%;
-  /* Tỷ lệ 9:16 */
-  padding-top: 177.77%; 
+  padding-top: 177.77%; /* Tỷ lệ 16:9 dọc chuẩn Reels/TikTok */
   background: #000;
   overflow: hidden;
+
+  /* Lớp phủ gradient mờ ở đáy để đảm bảo số View luôn dễ đọc trên mọi nền ảnh */
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 35%;
+    background: linear-gradient(to top, rgba(10, 10, 10, 0.9), transparent);
+    z-index: 1;
+    pointer-events: none;
+  }
 }
 
 .videoThumb {
@@ -33,75 +52,73 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.5s ease;
 }
 
 /* --- 1. VIEW COUNT (Cố định, góc dưới trái) --- */
 .viewCountFixed {
-    position: absolute;
-    bottom: 8px;
-    left: 8px;
-    z-index: 5;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    color: #fff;
-    /* Hiệu ứng đổ bóng nhẹ cho chữ nổi bật trên nền tối */
-    text-shadow: 0 0 3px rgba(0, 0, 0, 0.5); 
-    font-size: 14px;
-    font-weight: 500;
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--white, #fafaf8);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: var(--ff-body, 'DM Sans', sans-serif);
 }
 
 .viewIcon {
-    width: 16px;
-    height: 16px;
-}
-
-.viewCountText {
-    // Giữ font-size nhỏ
+  color: var(--gold, #b8966a); /* Icon mắt màu Vàng đồng */
 }
 
 /* --- 2. HOVER OVERLAY (Like & Comment) --- */
 .hoverOverlay {
-    position: absolute;
-    inset: 0;
-    z-index: 10;
-    background: rgba(0, 0, 0, 0.4); /* Lớp phủ đen mờ */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 20px;
-    color: #fff;
-    opacity: 0; /* Mặc định ẩn */
-    transition: opacity 0.2s ease;
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: rgba(10, 10, 10, 0.65); /* Nền đen Than chì mờ */
+  backdrop-filter: blur(2px); /* Làm mờ nhẹ background phía sau */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .statItem {
-    display: flex;
-    flex-direction: column; /* Đặt icon và số liệu theo chiều dọc */
-    align-items: center;
-    gap: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.statIcon {
+  color: var(--gold, #b8966a); /* Icon tim & cmt màu vàng */
 }
 
 .statCount {
-    font-size: 16px;
-    font-weight: 600;
-    color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--white, #fff);
+  font-family: var(--ff-body, 'DM Sans', sans-serif);
 }
 
+/* --- 3. DURATION (Góc trên phải) --- */
 .duration {
-  /* Di chuyển duration ra khỏi khu vực hover overlay (thường nằm ở góc trên phải trên Reels) */
   position: absolute;
-  top: 8px;
-  right: 8px;
-  background: rgba(0, 0, 0, 0.7);
-  color: #fff;
-  font-size: 12px;
-  padding: 2px 6px;
-  border-radius: 4px;
+  top: 10px;
+  right: 10px;
+  background: rgba(10, 10, 10, 0.75);
+  color: var(--gold, #b8966a);
+  border: 1px solid rgba(184, 150, 106, 0.3);
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 6px;
   z-index: 11;
-}
-
-/* Đảm bảo các style cũ không cần thiết bị loại bỏ */
-.card, .videoBox, .videoThumb, .info, .title, .desc, .meta, .actions, .likeBtn, .shareBtn, .commentBtn {
-  /* Đảm bảo không còn các định nghĩa CSS xung đột */
+  font-weight: 600;
+  letter-spacing: 0.5px;
 }

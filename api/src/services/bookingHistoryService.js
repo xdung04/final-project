@@ -4,7 +4,7 @@ import { Op } from "sequelize";
 class BookingHistoryService {
   async getBookingsByCustomer(idCustomer) {
     const bookings = await db.Booking.findAll({
-      where: { idCustomer,isPaid: false  },
+      where: { idCustomer },
       include: [
         {
           model: db.Barber,
@@ -37,8 +37,9 @@ class BookingHistoryService {
       order: [["bookingDate", "DESC"]],
     });
 
-    // map ra định dạng frontend cần
-    return bookings.map(b => ({
+    const now = new Date();
+
+    const formatBooking = (b) => ({
       idBooking: b.idBooking,
       date: b.bookingDate.toISOString().split("T")[0],
       time: b.bookingTime,
@@ -52,8 +53,23 @@ class BookingHistoryService {
       },
       service: b.BookingDetails.map(d => d.service.name).join(" + "),
       total: parseFloat(b.total),
-      status: b.status,
-    }));
+      status: b.status.toUpperCase(), // fix luôn lỗi FE
+    });
+
+    const completed = bookings
+      .filter(b => b.status === "Completed")
+      .map(formatBooking);
+
+    const upcoming = bookings
+      .filter(b => 
+        b.status === "Pending" || b.status === "Confirmed"
+      )
+      .map(formatBooking);
+
+    return {
+      completed,
+      upcoming
+    };
   }
 }
 

@@ -1,101 +1,180 @@
+/* ======================= WRAPPER & HEADER ======================= */
 .serviceList {
-  padding: 20px;
-  color: #fff;
+  animation: fadeIn 0.4s ease;
+  padding-bottom: 30px;
+}
 
-  h2 {
-    font-size: 22px;
-    margin-bottom: 20px;
-    color: #110e0e;
-    font-weight: 600;
-  }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
-  .addButton {
-    margin-bottom: 20px; // để cách table đẹp hơn
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  border-bottom: 1px solid var(--border, #e0d7cc);
+  padding-bottom: 15px;
+
+  .titleBox {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    .titleIcon {
+      color: var(--gold-dark, #a37c52);
+    }
+
+    h2 {
+      font-family: var(--ff-serif, 'Playfair Display', serif);
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--charcoal, #2c2c2c);
+      margin: 0;
+    }
   }
+}
+
+.addButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--charcoal, #2c2c2c);
+  color: var(--bg-white, #ffffff);
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 14px;
+  cursor: pointer;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+
+  &:hover {
+    background: var(--gold-dark, #a37c52);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(184, 150, 106, 0.3);
+  }
+}
+
+/* ======================= TABLE STYLES ======================= */
+.tableContainer {
+  background: var(--bg-white, #ffffff);
+  border: 1px solid var(--border, #e0d7cc);
+  border-radius: 12px;
+  overflow: hidden; /* Cắt viền bo góc */
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
-  background: #1c1c1c;
-  border-radius: 10px;
-  overflow: hidden;
-  font-size: 15px;
+  font-size: 14px;
+  text-align: left;
 
   th {
-    background: #252525;
-    padding: 14px 12px;
-    text-align: left;
-    color: #bfbfbf;
+    background: var(--bg-cream, #fdfbf8);
+    padding: 16px;
+    color: var(--charcoal, #2c2c2c);
+    font-family: var(--ff-display, 'Bebas Neue', sans-serif);
     font-weight: 500;
-    border-bottom: 1px solid #333;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border, #e0d7cc);
   }
 
   td {
-    padding: 14px 12px;
-    border-bottom: 1px solid #2d2d2d;
-    color: #dedede;
+    padding: 16px;
+    border-bottom: 1px solid var(--border, #e0d7cc);
+    color: var(--charcoal, #2c2c2c);
+    vertical-align: middle;
+  }
 
-    &:nth-child(2) {
-      max-width: 350px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  tr {
+    transition: background 0.2s ease;
+    
+    &:hover td {
+      background: rgba(184, 150, 106, 0.03);
     }
   }
 
-  tr:hover {
-    background: #2a2a2a;
+  .fw-bold {
+    font-weight: 600;
+    font-size: 15px;
+  }
+
+  .desc {
+    max-width: 250px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-dim, #666);
+  }
+
+  .price {
+    font-weight: 600;
+    color: var(--gold-dark, #a37c52);
+  }
+
+  .textCenter {
+    text-align: center;
   }
 }
 
-.active {
-  padding: 5px 12px;
-  background: #0a7d28;
-  border-radius: 20px;
+/* ======================= BADGES & BUTTONS ======================= */
+.statusBadge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-family: var(--ff-display, 'Bebas Neue', sans-serif);
   font-size: 13px;
-}
+  letter-spacing: 0.5px;
+  white-space: nowrap;
 
-.inactive {
-  padding: 5px 12px;
-  background: #7d0a0a;
-  border-radius: 20px;
-  font-size: 13px;
+  &.active {
+    background: rgba(184, 150, 106, 0.1);
+    color: var(--gold-dark, #a37c52);
+    border: 1px solid rgba(184, 150, 106, 0.3);
+  }
+
+  &.inactive {
+    background: var(--bg-cream, #fdfbf8);
+    color: var(--text-dim, #888);
+    border: 1px solid #ddd;
+  }
 }
 
 .editBtn {
-  background: none;
-  border: none;
+  background: transparent;
+  border: 1px solid transparent;
   cursor: pointer;
-  color: #00aaff;
-  font-size: 18px;
-  padding: 6px;
-  transition: 0.2s;
+  color: var(--text-dim, #666);
+  padding: 8px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
 
   &:hover {
-    transform: scale(1.1);
-    color: #33c6ff;
+    color: var(--gold-dark, #a37c52);
+    background: rgba(184, 150, 106, 0.1);
+    border-color: rgba(184, 150, 106, 0.2);
+    transform: scale(1.05);
   }
 }
-.addButton {
-  padding: 10px 18px;
-  background-color: #00aaff; // màu cyan giống icon
-  color: #fff;
-  font-size: 15px;
-  font-weight: 600;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  margin-bottom: 16px;
-  transition: 0.25s ease;
-  display: inline-block;
 
-  &:hover {
-    background-color: #33c6ff; // hover giống màu icon hover
-    transform: translateY(-1px);
-  }
-
-  &:active {
-    transform: scale(0.97);
-  }
+/* ======================= LOADING ======================= */
+.loading {
+  text-align: center;
+  padding: 50px;
+  font-family: var(--ff-serif, 'Playfair Display', serif);
+  color: var(--gold-dark, #a37c52);
+  font-size: 18px;
 }

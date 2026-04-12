@@ -78,54 +78,60 @@ function BarberProfile() {
   if (loading) return <div className={styles.loading}>Đang tải dữ liệu...</div>;
   if (!barber) return <div className={styles.empty}>Không tìm thấy thợ cắt tóc này.</div>;
 
-  return (
-    <div className={styles.container}>
-      {/* ===== THÔNG TIN THỢ ===== */}
-      <div className={styles.profileSection}>
-        <img
-          src={barber.image || "/default-avatar.png"}
-          alt={barber.fullName}
-          className={styles.avatar}
-        />
-        <div className={styles.info}>
-          <h2 className={styles.name}>{barber.fullName}</h2>
-          <p className={styles.branch}>
-            {barber.branchName} • {barber.branchAddress}
-          </p>
-          <p className={styles.contact}>
-            📧 {barber.email} | ☎️ {barber.phoneNumber}
-          </p>
+return (
+  <div className={styles.container}>
+    {/* Thêm lớp phủ hiệu ứng giấy mỹ thuật */}
+    <div className={styles.grainOverlay}></div>
 
-          <div className={styles.rating}>
-            ⭐ {barber.avgRate} / 5 ({barber.totalRate} lượt đánh giá)
-          </div>
+    {/* ===== THÔNG TIN THỢ ===== */}
+    <div className={styles.profileSection}>
+      <img
+        src={barber.image || "/default-avatar.png"}
+        alt={barber.fullName}
+        className={styles.avatar}
+      />
+      <div className={styles.info}>
+        <p className={styles.branch}>
+          {barber.branchName} 
+        </p>
+        <h2 className={styles.name}>{barber.fullName}</h2>
+        
+        <div className={styles.contact}>
+          <span>📧 {barber.email}</span>
+          <span>☎️ {barber.phoneNumber}</span>
+        </div>
 
-          <div className={styles.descBox}>
-            <h3>Giới thiệu & Kinh nghiệm</h3>
-            <pre className={styles.desc}>{barber.profileDescription}</pre>
-          </div>
+        <div className={styles.rating}>
+          PREMIUM BARBER ★ {barber.avgRate} ({barber.totalRate} REVIEWS)
+        </div>
+
+        <div className={styles.descBox}>
+          <h3>STORY & EXPERTISE</h3>
+          <p className={styles.desc}>{barber.profileDescription}</p>
         </div>
       </div>
+    </div>
 
-      {/* ===== VIDEO TAY NGHỀ ===== */}
-      <div className={styles.videoSection}>
-        <h3 className={styles.videoTitle}>Video tay nghề</h3>
-        {reels.length === 0 ? (
-          <div className={styles.empty}>Thợ này chưa có video nào 😅</div>
-        ) : (
-          <div className={styles.grid}>
-            {reels.map((reel, idx) => (
-              <VideoCard
-                key={reel.idReel}
-                reel={reel}
-                idUser={null} // khách xem nên có thể để null
-                onToggleLike={() => { }} // disable like
-                onOpenDetail={() => handleOpenDetail(idx)}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+    {/* ===== VIDEO TAY NGHỀ ===== */}
+    <div className={styles.videoSection}>
+      <h3 className={styles.videoTitle}>Lookbook & Portfolio</h3>
+      {reels.length === 0 ? (
+        <div className={styles.empty}>Chưa có tác phẩm nào được cập nhật.</div>
+      ) : (
+        <div className={styles.grid}>
+          {reels.map((reel, idx) => (
+            <VideoCard
+              key={reel.idReel}
+              reel={reel}
+              onToggleLike={handleLike} 
+              onOpenDetail={() => handleOpenDetail(idx)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+
+
 
       {/* ===== DIALOG XEM VIDEO ===== */}
       {currentIndex !== null && (

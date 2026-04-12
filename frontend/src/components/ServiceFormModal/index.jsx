@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
 import classNames from "classnames/bind";
 import styles from "./ServiceFormModal.module.scss";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faXmark, faToggleOff, faToggleOn } from "@fortawesome/free-solid-svg-icons";
+import { X, ToggleLeft, ToggleRight, UploadCloud, ImageIcon } from "lucide-react";
 import ServiceAPI from "~/apis/serviceAPI";
 import Toast from "~/components/Toast";
 
@@ -58,7 +57,7 @@ export default function ServiceFormModal({ show, onClose, serviceId, branches, o
           duration: data.duration,
           status: data.status,
           imageFile: null,
-          branches: data.branches?.map(b => b.idBranch) || [],
+          branches: data.branches?.map((b) => b.idBranch) || [],
         });
         setEditMode(false); // mặc định không edit nếu đang Active
       } catch (error) {
@@ -75,7 +74,10 @@ export default function ServiceFormModal({ show, onClose, serviceId, branches, o
   if (loadingDetail)
     return (
       <div className={cx("overlay")}>
-        <div className={cx("modal")}>Đang tải...</div>
+        <div className={cx("modal", "loadingModal")}>
+          <div className={cx("spinner")}></div>
+          <p>Đang tải dữ liệu...</p>
+        </div>
       </div>
     );
 
@@ -87,10 +89,11 @@ export default function ServiceFormModal({ show, onClose, serviceId, branches, o
   };
 
   const toggleBranch = (id) => {
-    setForm(prev => ({
+    if (!editMode) return;
+    setForm((prev) => ({
       ...prev,
       branches: prev.branches.includes(id)
-        ? prev.branches.filter(x => x !== id)
+        ? prev.branches.filter((x) => x !== id)
         : [...prev.branches, id],
     }));
   };
@@ -107,11 +110,15 @@ export default function ServiceFormModal({ show, onClose, serviceId, branches, o
           return;
         }
 
-        setForm(prev => ({ ...prev, status: "Inactive" }));
+        setForm((prev) => ({ ...prev, status: "Inactive" }));
         setEditMode(true);
         setToast({ type: "success", text: res.message, duration: 3000 });
       } catch (error) {
-        setToast({ type: "error", text: error.response?.data?.message || "Lỗi khi kiểm tra dịch vụ", duration: 3000 });
+        setToast({
+          type: "error",
+          text: error.response?.data?.message || "Lỗi khi kiểm tra dịch vụ",
+          duration: 3000,
+        });
       }
     } else {
       // nếu đã Inactive thì bật edit trực tiếp
@@ -166,7 +173,11 @@ export default function ServiceFormModal({ show, onClose, serviceId, branches, o
         onClose();
       }, 900);
     } catch (error) {
-      setToast({ type: "error", text: error.response?.data?.message || "Lỗi khi lưu dữ liệu!", duration: 3000 });
+      setToast({
+        type: "error",
+        text: error.response?.data?.message || "Lỗi khi lưu dữ liệu!",
+        duration: 3000,
+      });
     }
   };
 
@@ -177,78 +188,173 @@ export default function ServiceFormModal({ show, onClose, serviceId, branches, o
           {/* HEADER */}
           <div className={cx("header")}>
             <h3>{serviceId ? "Chi tiết dịch vụ" : "Thêm dịch vụ mới"}</h3>
-            <button onClick={handleClose}><FontAwesomeIcon icon={faXmark} /></button>
+            <button className={cx("closeBtn")} onClick={handleClose}>
+              <X size={24} strokeWidth={1.5} />
+            </button>
           </div>
 
           {/* BODY */}
           <div className={cx("body")}>
             <div className={cx("leftImage")}>
               <div className={cx("imagePreview")}>
-                <img
-                  src={form.imageFile ? URL.createObjectURL(form.imageFile) : serviceDetail?.image || "https://via.placeholder.com/200?text=No+Image"}
-                  alt="service"
-                />
+                {form.imageFile || serviceDetail?.image ? (
+                  <img
+                    src={
+                      form.imageFile
+                        ? URL.createObjectURL(form.imageFile)
+                        : serviceDetail?.image
+                    }
+                    alt="service preview"
+                  />
+                ) : (
+                  <div className={cx("noImage")}>
+                    <ImageIcon size={48} strokeWidth={1} />
+                    <span>Chưa có ảnh</span>
+                  </div>
+                )}
               </div>
-              <label className={cx("fileButton")}>
-                Chọn ảnh
-                <input type="file" hidden disabled={!editMode} onChange={e => setForm({...form, imageFile: e.target.files[0]})} />
+              <label className={cx("fileButton", { disabled: !editMode })}>
+                <UploadCloud size={18} /> Chọn ảnh tải lên
+                <input
+                  type="file"
+                  hidden
+                  disabled={!editMode}
+                  accept="image/*"
+                  onChange={(e) => setForm({ ...form, imageFile: e.target.files[0] })}
+                />
               </label>
             </div>
 
             <div className={cx("rightInfo")}>
-              <label>Tên dịch vụ</label>
-              <input disabled={!editMode} name="name" value={form.name} onChange={handleChange} />
-
-              <label>Mô tả</label>
-              <textarea disabled={!editMode} name="description" value={form.description} onChange={handleChange} />
-
-              <label>Giá</label>
-              <input type="number" disabled={!editMode} name="price" value={form.price} onChange={handleChange} />
-
-              <label>Thời lượng (phút)</label>
-              <input type="number" disabled={!editMode} name="duration" value={form.duration} onChange={handleChange} />
-
-              <label>Chi nhánh</label>
-              <div className={cx("branchList")}>
-                {branches.map(b => (
-                  <label key={b.idBranch}>
-                    <input type="checkbox" disabled={!editMode} checked={form.branches.includes(b.idBranch)} onChange={() => toggleBranch(b.idBranch)} />
-                    {b.name}
-                  </label>
-                ))}
+              <div className={cx("formGroup")}>
+                <label>Tên dịch vụ</label>
+                <input
+                  disabled={!editMode}
+                  name="name"
+                  value={form.name}
+                  onChange={handleChange}
+                  placeholder="Nhập tên dịch vụ..."
+                />
               </div>
 
-              <label>Trạng thái</label>
-              <div
-                className={cx("statusToggle")}
-                onClick={() => editMode && setForm({...form, status: form.status === "Active" ? "Inactive" : "Active"})}
-              >
-                <FontAwesomeIcon icon={form.status === "Active" ? faToggleOn : faToggleOff} />
-                <span>{form.status === "Active" ? "Hoạt động" : "Ngừng"}</span>
+              <div className={cx("formGroup")}>
+                <label>Mô tả</label>
+                <textarea
+                  disabled={!editMode}
+                  name="description"
+                  value={form.description}
+                  onChange={handleChange}
+                  placeholder="Mô tả chi tiết về dịch vụ..."
+                />
+              </div>
+
+              <div className={cx("row")}>
+                <div className={cx("formGroup")}>
+                  <label>Giá (VNĐ)</label>
+                  <input
+                    type="number"
+                    disabled={!editMode}
+                    name="price"
+                    value={form.price}
+                    onChange={handleChange}
+                    placeholder="VD: 150000"
+                  />
+                </div>
+
+                <div className={cx("formGroup")}>
+                  <label>Thời lượng (phút)</label>
+                  <input
+                    type="number"
+                    disabled={!editMode}
+                    name="duration"
+                    value={form.duration}
+                    onChange={handleChange}
+                    placeholder="VD: 30"
+                  />
+                </div>
+              </div>
+
+              <div className={cx("formGroup")}>
+                <label>Chi nhánh áp dụng</label>
+                <div className={cx("branchList")}>
+                  {branches.map((b) => (
+                    <div
+                      key={b.idBranch}
+                      className={cx("branchBadge", {
+                        selected: form.branches.includes(b.idBranch),
+                        disabled: !editMode,
+                      })}
+                      onClick={() => toggleBranch(b.idBranch)}
+                    >
+                      {b.name}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className={cx("formGroup")}>
+                <label>Trạng thái</label>
+                <div
+                  className={cx("statusToggle", { disabled: !editMode })}
+                  onClick={() =>
+                    editMode &&
+                    setForm({ ...form, status: form.status === "Active" ? "Inactive" : "Active" })
+                  }
+                >
+                  {form.status === "Active" ? (
+                    <ToggleRight size={32} className={cx("iconActive")} strokeWidth={1.5} />
+                  ) : (
+                    <ToggleLeft size={32} className={cx("iconInactive")} strokeWidth={1.5} />
+                  )}
+                  <span className={cx(form.status === "Active" ? "textActive" : "textInactive")}>
+                    {form.status === "Active" ? "Đang hoạt động" : "Ngừng hoạt động"}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
 
           {/* FOOTER */}
           <div className={cx("footer")}>
-            <button className={cx("save")} onClick={editMode ? handleSubmit : handleEditClick}>
+            <button
+              className={cx(editMode ? "saveBtn" : "editBtn")}
+              onClick={editMode ? handleSubmit : handleEditClick}
+            >
               {serviceId ? (editMode ? "Lưu thay đổi" : "Chỉnh sửa") : "Tạo dịch vụ"}
             </button>
           </div>
         </div>
 
         {/* Toast */}
-        {toast && <Toast type={toast.type} text={toast.text} duration={toast.duration} onClose={() => setToast(null)} />}
+        {toast && (
+          <Toast
+            type={toast.type}
+            text={toast.text}
+            duration={toast.duration}
+            onClose={() => setToast(null)}
+          />
+        )}
       </div>
 
       {/* Xác nhận đóng */}
       {showConfirmClose && (
         <div className={cx("confirmOverlay")}>
           <div className={cx("confirmModal")}>
-            <p>Bạn có chắc muốn tắt khi chưa lưu không?</p>
+            <h4>Xác nhận thoát</h4>
+            <p>Bạn có những thay đổi chưa lưu. Bạn có chắc chắn muốn thoát không?</p>
             <div className={cx("confirmButtons")}>
-              <button onClick={() => { setShowConfirmClose(false); onClose(); }}>Có</button>
-              <button onClick={() => setShowConfirmClose(false)}>Không</button>
+              <button className={cx("btnCancel")} onClick={() => setShowConfirmClose(false)}>
+                Hủy bỏ
+              </button>
+              <button
+                className={cx("btnConfirm")}
+                onClick={() => {
+                  setShowConfirmClose(false);
+                  onClose();
+                }}
+              >
+                Đồng ý thoát
+              </button>
             </div>
           </div>
         </div>

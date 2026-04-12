@@ -50,43 +50,46 @@ export default function BarberPage() {
   // Lấy danh sách chi nhánh duy nhất
   const branches = Array.from(new Set(barbers.map((b) => b.branch)));
 
-  return (
+ return (
     <div className={styles.page}>
+      {/* Thêm Overlay hạt giấy */}
+      <div className={styles.grainOverlay}></div>
+
       {/* Sidebar */}
       <aside className={styles.sidebar}>
         <div className={styles.brand}>BARBER <span>LAB</span></div>
 
         <div className={styles.searchBox}>
-          <Search size={16} />
+          <Search size={18} />
           <input
-            placeholder="Tìm thợ, chi nhánh..."
+            placeholder="Search our artisans..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
 
         <div className={styles.filters}>
-          <h4>Bộ lọc</h4>
+          <h4>CURATED FILTERS</h4>
           <button
             className={filter === "all" ? styles.filterActive : styles.filterBtn}
             onClick={() => setFilter("all")}
           >
-            Tất cả
+            All Barbers
           </button>
           <button
             className={filter === "highRating" ? styles.filterActive : styles.filterBtn}
             onClick={() => setFilter("highRating")}
           >
-            Rating cao
+            Top Rated
           </button>
 
           <div className={styles.branchFilter}>
-            <label>Chi nhánh:</label>
+            <label>BRANCH LOCATION</label>
             <select
               value={branchFilter}
               onChange={(e) => setBranchFilter(e.target.value)}
             >
-              <option value="all">Tất cả</option>
+              <option value="all">All Locations</option>
               {branches.map((branch, idx) => (
                 <option key={idx} value={branch}>{branch}</option>
               ))}
@@ -95,22 +98,20 @@ export default function BarberPage() {
         </div>
 
         <div className={styles.quickInfo}>
-          <h5>Hỗ trợ</h5>
-          <p>
-            Hotline: <strong>090-xxx-xxxx</strong>
-          </p>
+          <h5>CONCIERGE SUPPORT</h5>
+          <p>Hotline: <strong>090-xxx-xxxx</strong></p>
         </div>
       </aside>
 
       {/* Main content */}
       <main className={styles.main}>
         <header className={styles.headerMain}>
-          <h1>Đội ngũ thợ</h1>
+          <h1>The Artisans</h1>
         </header>
 
         <section className={styles.listGrid}>
           {filtered.length === 0 ? (
-            <p>Không tìm thấy thợ phù hợp</p>
+            <p className={styles.emptyState}>No artisans found for your criteria.</p>
           ) : (
             filtered.map((b, idx) => <BarberCard key={idx} barber={b} />)
           )}

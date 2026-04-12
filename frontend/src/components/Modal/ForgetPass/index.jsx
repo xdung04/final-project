@@ -52,20 +52,19 @@ function ForgetPass({ onSwitch }) {
     }
   };
 
-  return (
+return (
     <div className={cx("wrapper")}>
       <div className={cx("inner")}>
         <h4 className={cx("heading")}>Quên mật khẩu</h4>
         <div className={cx("body")}>
           <p>
-            Nếu bạn đã có tài khoản,{" "}
-            <a href="#" onClick={() => onSwitch("Login")}>
-              đăng nhập
+            Bạn đã nhớ lại mật khẩu?
+            <a href="#" onClick={(e) => { e.preventDefault(); onSwitch("Login"); }}>
+              Đăng nhập
             </a>
           </p>
           <form onSubmit={handleSubmit}>
             <Input
-              primary
               name="email"
               required
               placeholder="Email đăng ký"
@@ -75,7 +74,6 @@ function ForgetPass({ onSwitch }) {
 
             <div className={cx("otp")}>
               <Input
-                primary
                 name="otp"
                 required
                 placeholder="OTP"
@@ -84,18 +82,17 @@ function ForgetPass({ onSwitch }) {
                 onChange={handleChange}
               />
               <Button
-                primary
-                noMargin
                 type="button"
                 onClick={handleSendOtp}
                 disabled={otpSent}
+                className={cx("otpBtn")} // Thêm class này
               >
-                {otpSent ? "OTP đã gửi" : "Gửi OTP"}
+                {otpSent ? "Gửi lại" : "Lấy mã"}
               </Button>
             </div>
 
-            <Button primary type="submit">
-              Gửi yêu cầu
+            <Button type="submit" className={cx("submitBtn")}> {/* Thêm class này */}
+              Xác nhận OTP
             </Button>
           </form>
         </div>
