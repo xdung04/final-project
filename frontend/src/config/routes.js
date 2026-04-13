@@ -6,9 +6,8 @@ const routes = {
   reels: "/reels",
   productDetails: "/products/:id",
   about: "/about",
-  
   admin: "/admin/*", 
-  
+  receptionist: "/receptionist/*",
   thoCatToc: "/tho-cat-toc/*",
   booking: "/booking",
   barberProfile: "/barber/:id",

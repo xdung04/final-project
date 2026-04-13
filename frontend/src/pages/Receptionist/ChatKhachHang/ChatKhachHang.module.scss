@@ -1,0 +1,194 @@
+.chatContainer {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  height: 650px;
+  background: var(--bg-white);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+}
+
+/* SIDEBAR BÊN TRÁI */
+.chatSidebar {
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+
+  .chatSearch {
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--bg-cream);
+    border-bottom: 1px solid var(--border);
+
+    svg { color: var(--gold); }
+    
+    input {
+      border: none;
+      background: transparent;
+      outline: none;
+      font-size: 14px;
+      width: 100%;
+      font-family: var(--ff-body);
+      &::placeholder { color: var(--text-light); }
+    }
+  }
+}
+
+.conversationList {
+  flex: 1;
+  overflow-y: auto;
+  
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+}
+
+.conversationItem {
+  display: flex;
+  padding: 18px 20px;
+  gap: 15px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  border-bottom: 1px solid rgba(0,0,0,0.03);
+  position: relative;
+
+  &:hover { background: var(--bg-cream); }
+  
+  &.active {
+    background: linear-gradient(90deg, rgba(184, 150, 106, 0.1) 0%, transparent 100%);
+    &::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: var(--gold);
+    }
+  }
+
+  .avatar {
+    width: 48px;
+    height: 48px;
+    background: var(--bg-cream);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gold);
+  }
+
+  .convInfo {
+    flex: 1;
+    overflow: hidden;
+
+    .convHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+
+      .name { font-weight: 700; color: var(--charcoal); font-size: 15px; }
+      .time { font-size: 11px; color: var(--text-light); }
+    }
+
+    .lastMsg {
+      font-size: 13px;
+      color: var(--text-dim);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+}
+
+/* KHUNG CHAT BÊN PHẢI */
+.chatWindow {
+  display: flex;
+  flex-direction: column;
+  background: #fcfcfc;
+
+  .windowHeader {
+    padding: 18px 25px;
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    strong { font-family: var(--ff-serif); font-size: 18px; color: var(--charcoal); }
+    span { font-size: 12px; color: #2ecc71; font-weight: 600; &::before { content: "● "; } }
+  }
+}
+
+.messageArea {
+  flex: 1;
+  padding: 25px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  .msgRow {
+    display: flex;
+    max-width: 80%;
+    
+    &.sent { 
+      align-self: flex-end; 
+      .msgBubble { background: var(--charcoal); color: #fff; border-radius: 18px 18px 2px 18px; } 
+    }
+    
+    &.received { 
+      align-self: flex-start; 
+      .msgBubble { background: #fff; color: var(--charcoal); border: 1px solid var(--border); border-radius: 18px 18px 18px 2px; } 
+    }
+  }
+
+  .msgBubble {
+    padding: 12px 18px;
+    font-size: 14px;
+    line-height: 1.5;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+  }
+}
+
+.inputArea {
+  padding: 20px 25px;
+  background: #fff;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 15px;
+
+  input {
+    flex: 1;
+    border: 1px solid var(--border);
+    border-radius: 30px;
+    padding: 12px 25px;
+    font-family: var(--ff-body);
+    outline: none;
+    transition: 0.3s;
+    &:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(184, 150, 106, 0.1); }
+  }
+
+  .attachBtn { color: var(--text-light); cursor: pointer; &:hover { color: var(--gold); } }
+
+  .sendBtn {
+    background: var(--gold);
+    color: #fff;
+    border: none;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: 0.3s;
+    &:hover { background: var(--gold-dark); transform: translateY(-2px); }
+  }
+}

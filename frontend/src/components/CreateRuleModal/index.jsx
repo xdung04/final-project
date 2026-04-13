@@ -1,9 +1,33 @@
-// components/CreateRuleModal.jsx
 import React, { useState, useEffect } from "react";
 import classNames from "classnames/bind";
 import styles from "./CreateRuleModal.module.scss";
 
 const cx = classNames.bind(styles);
+
+// Checkbox tự render — tránh hoàn toàn vấn đề CSS ::after với SCSS modules
+function CustomCheckbox({ checked }) {
+  return (
+    <span className={cx("cb-box", { "cb-checked": checked })}>
+      {checked && (
+        <svg
+          width="10"
+          height="10"
+          viewBox="0 0 10 10"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <polyline
+            points="1.5,5 4,7.5 8.5,2"
+            stroke="#ffffff"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      )}
+    </span>
+  );
+}
 
 function CreateRuleModal({ onClose, onCreate, initialData }) {
   const [form, setForm] = useState({
@@ -18,7 +42,6 @@ function CreateRuleModal({ onClose, onCreate, initialData }) {
 
   const [error, setError] = useState("");
 
-  // Nếu có initialData (sửa), điền sẵn form
   useEffect(() => {
     if (initialData) {
       setForm({
@@ -27,157 +50,155 @@ function CreateRuleModal({ onClose, onCreate, initialData }) {
         min_order_amount: initialData.min_order_amount || 0,
         is_default: initialData.is_default || false,
         is_active: initialData.is_active ?? true,
-        start_date: initialData.start_date
-          ? initialData.start_date.slice(0, 10)
-          : "",
-        end_date: initialData.end_date
-          ? initialData.end_date.slice(0, 10)
-          : "",
+        start_date: initialData.start_date ? initialData.start_date.slice(0, 10) : "",
+        end_date: initialData.end_date ? initialData.end_date.slice(0, 10) : "",
       });
     }
   }, [initialData]);
 
-  // Format tiền hiển thị
-  const formatMoney = (val) => {
-    if (val == null) return "";
+  const formatMoneyDisplay = (val) => {
+    if (!val) return "";
     return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-  };
-
-  // Parse từ input về số thuần
-  const parseMoney = (val) => {
-    const num = Number(val.toString().replace(/\./g, ""));
-    return isNaN(num) ? 0 : num;
   };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-
     if (name === "money_per_point" || name === "min_order_amount") {
-      // chỉ giữ số
       const raw = value.replace(/[^0-9]/g, "");
-      setForm((prev) => ({
-        ...prev,
-        [name]: parseMoney(raw),
-      }));
+      setForm((prev) => ({ ...prev, [name]: Number(raw) || 0 }));
     } else {
       setForm((prev) => ({
         ...prev,
         [name]: type === "checkbox" ? checked : value,
       }));
     }
+    if (error) setError("");
   };
 
-  const handleSubmit = () => {
+  const toggleField = (fieldName) => {
+    setForm((prev) => ({ ...prev, [fieldName]: !prev[fieldName] }));
+    if (error) setError("");
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
     if (!form.is_default && (!form.start_date || !form.end_date)) {
-      setError("Start Date và End Date là bắt buộc cho rule không mặc định");
+      setError("Vui lòng nhập thời gian áp dụng cho quy tắc thường.");
       return;
     }
-
-    const payload = {
-      ...form,
-      start_date: form.is_default ? null : form.start_date,
-      end_date: form.is_default ? null : form.end_date,
-    };
-
     setError("");
-    onCreate(payload);
+    onCreate(form);
     onClose();
   };
 
   return (
-    <div className={cx("modal-overlay")}>
-      <div className={cx("modal")}>
-        <h2>{initialData ? "Sửa Rule" : "Chính Sách Mới"}</h2>
+    <div className={cx("overlay")} onClick={onClose}>
+      <div className={cx("modal")} onClick={(e) => e.stopPropagation()}>
 
-        <div className={cx("field")}>
-          <label>Số tiền trên 1 điểm (VND)</label>
-          <input
-            type="text"
-            name="money_per_point"
-            value={formatMoney(form.money_per_point)}
-            onChange={handleChange}
-            placeholder="Nhập số tiền"
-          />
+        <div className={cx("modal-header")}>
+          <h2>{initialData ? "Cập nhật chính sách" : "Tạo quy tắc mới"}</h2>
+          <p className={cx("modal-sub")}>Cấu hình chính sách tích điểm cho đơn hàng</p>
         </div>
 
-        <div className={cx("field")}>
-          <label>Hệ số nhân điểm</label>
-          <input
-            type="number"
-            step="0.1"
-            name="point_multiplier"
-            value={form.point_multiplier}
-            onChange={handleChange}
-          />
-        </div>
+        <div className={cx("divider")} />
 
-        <div className={cx("field")}>
-          <label>Đơn tối thiểu (VND)</label>
-          <input
-            type="text"
-            name="min_order_amount"
-            value={formatMoney(form.min_order_amount)}
-            onChange={handleChange}
-            placeholder="Nhập số tiền"
-          />
-        </div>
-
-        <div className={cx("field-checkbox")}>
-          <label>
-            <input
-              type="checkbox"
-              name="is_default"
-              checked={form.is_default}
-              onChange={handleChange}
-            />
-            Rule mặc định
-          </label>
-        </div>
-
-        {/* start/end date */}
-        <div className={cx("date-fields", { hidden: form.is_default })}>
+        <div className={cx("modal-body")}>
           <div className={cx("field")}>
-            <label>Ngày bắt đầu</label>
+            <label htmlFor="money_per_point">Giá trị đổi 1 điểm (VND)</label>
             <input
-              type="date"
-              name="start_date"
-              value={form.start_date}
+              id="money_per_point"
+              type="text"
+              name="money_per_point"
+              value={formatMoneyDisplay(form.money_per_point)}
               onChange={handleChange}
+              placeholder="VD: 10.000"
             />
           </div>
-          <div className={cx("field")}>
-            <label>Ngày kết thúc</label>
-            <input
-              type="date"
-              name="end_date"
-              value={form.end_date}
-              onChange={handleChange}
-            />
+
+          <div className={cx("row-2")}>
+            <div className={cx("field")}>
+              <label htmlFor="point_multiplier">Hệ số nhân (×)</label>
+              <input
+                id="point_multiplier"
+                type="number"
+                step="0.1"
+                name="point_multiplier"
+                value={form.point_multiplier}
+                onChange={handleChange}
+              />
+            </div>
+            <div className={cx("field")}>
+              <label htmlFor="min_order_amount">Đơn tối thiểu (VND)</label>
+              <input
+                id="min_order_amount"
+                type="text"
+                name="min_order_amount"
+                value={formatMoneyDisplay(form.min_order_amount)}
+                onChange={handleChange}
+                placeholder="VD: 50.000"
+              />
+            </div>
           </div>
+
+          <div
+            className={cx("check-item", { active: form.is_default })}
+            onClick={() => toggleField("is_default")}
+          >
+            <CustomCheckbox checked={form.is_default} />
+            <div className={cx("check-texts")}>
+              <span className={cx("check-name")}>Quy tắc mặc định</span>
+              <span className={cx("check-hint")}>Không giới hạn thời gian áp dụng</span>
+            </div>
+          </div>
+
+          <div className={cx("date-wrap", { hidden: form.is_default })}>
+            <div className={cx("row-2")}>
+              <div className={cx("field")}>
+                <label htmlFor="start_date">Ngày bắt đầu</label>
+                <input
+                  id="start_date"
+                  type="date"
+                  name="start_date"
+                  value={form.start_date}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className={cx("field")}>
+                <label htmlFor="end_date">Ngày kết thúc</label>
+                <input
+                  id="end_date"
+                  type="date"
+                  name="end_date"
+                  value={form.end_date}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div
+            className={cx("check-item", { active: form.is_active })}
+            onClick={() => toggleField("is_active")}
+          >
+            <CustomCheckbox checked={form.is_active} />
+            <div className={cx("check-texts")}>
+              <span className={cx("check-name")}>Kích hoạt ngay</span>
+              <span className={cx("check-hint")}>Có hiệu lực ngay sau khi tạo</span>
+            </div>
+          </div>
+
+          {error && <p className={cx("error")}>{error}</p>}
         </div>
 
-        <div className={cx("field-checkbox")}>
-          <label>
-            <input
-              type="checkbox"
-              name="is_active"
-              checked={form.is_active}
-              onChange={handleChange}
-            />
-            Kích hoạt ngay
-          </label>
-        </div>
-
-        {error && <p className={cx("error")}>{error}</p>}
-
-        <div className={cx("actions")}>
-          <button className={cx("btn")} onClick={handleSubmit}>
-            {initialData ? "Cập nhật" : "Tạo"}
-          </button>
-          <button className={cx("btn")} onClick={onClose}>
+        <div className={cx("modal-footer")}>
+          <button type="button" className={cx("btn-ghost")} onClick={onClose}>
             Hủy
           </button>
+          <button type="button" className={cx("btn-primary")} onClick={handleSubmit}>
+            {initialData ? "Lưu thay đổi" : "Tạo quy tắc"}
+          </button>
         </div>
+
       </div>
     </div>
   );
