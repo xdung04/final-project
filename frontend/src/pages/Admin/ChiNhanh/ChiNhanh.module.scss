@@ -70,6 +70,8 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  /* Thêm padding để modal không sát mép màn hình khi thu nhỏ */
+  padding: 20px; 
 }
 
 .modal {
@@ -77,10 +79,26 @@
   padding: 32px;
   border-radius: 16px;
   width: 100%;
-  max-width: 650px;
+  
+  /* 1. TĂNG CHIỀU NGANG TỪ 650px LÊN 850px */
+  max-width: 850px; 
+  
+  /* 2. CHỐNG TRÀN DỌC: Giới hạn chiều cao 90% màn hình, nếu dài hơn sẽ tự có thanh cuộn */
+  max-height: 90vh;
+  overflow-y: auto; 
+  
   box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
   animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   border-top: 4px solid var(--gold-dark);
+
+  /* Trang trí thanh cuộn bên trong modal cho tinh tế */
+  &::-webkit-scrollbar { 
+    width: 6px; 
+  }
+  &::-webkit-scrollbar-thumb { 
+    background: var(--border); 
+    border-radius: 6px; 
+  }
 
   @keyframes modalSlideUp {
     from { opacity: 0; transform: translateY(20px) scale(0.98); }
@@ -307,4 +325,32 @@
   font-family: var(--ff-serif);
   color: var(--gold-dark);
   font-size: 18px;
+}
+/* ======================= STEP INDICATOR ======================= */
+.stepIndicator {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin-bottom: 30px;
+  border-bottom: 1px solid var(--border);
+
+  .step {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-light);
+    padding-bottom: 12px;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s;
+    position: relative;
+    margin-bottom: -1px;
+
+    &.active {
+      color: var(--gold-dark);
+      border-bottom-color: var(--gold-dark);
+    }
+    
+    &.completed {
+      color: var(--charcoal);
+    }
+  }
 }

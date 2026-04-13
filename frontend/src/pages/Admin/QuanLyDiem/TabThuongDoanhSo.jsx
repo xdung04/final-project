@@ -63,6 +63,7 @@ export default function TabThuongDoanhSo() {
   };
 
   const handleDeleteRule = async (id) => {
+    if (!window.confirm("Bạn có chắc chắn muốn xoá quy tắc này?")) return;
     try {
       await BonusRuleAPI.delete(id);
       setBonusRules((prev) => prev.filter((r) => r.id !== id));
@@ -71,15 +72,14 @@ export default function TabThuongDoanhSo() {
     }
   };
 
-const handleEditRule = (rule) => {
-  setEditingRule({
-    ...rule,
-    minRevenue: rule.minRevenue, // để nguyên số, không format ở đây
-    bonusPercent: rule.bonusPercent,
-  });
-  setShowModal(true);
-};
-
+  const handleEditRule = (rule) => {
+    setEditingRule({
+      ...rule,
+      minRevenue: rule.minRevenue, // để nguyên số, không format ở đây
+      bonusPercent: rule.bonusPercent,
+    });
+    setShowModal(true);
+  };
 
   // Format số khi nhập trong modal
   const handleInputChange = (field, value, setForm) => {
@@ -98,10 +98,14 @@ const handleEditRule = (rule) => {
   };
 
   return (
-    <div>
+    <div className={cx("bonusSection")}>
+      {/* HEADER */}
       <div className={cx("header")}>
         <h2>Chính sách thưởng doanh số</h2>
-        <div className={cx("actions")}>
+        <div style={{ display: "flex", gap: "12px" }}>
+          <button className={cx("btn")} onClick={fetchBonusRules}>
+            Làm mới
+          </button>
           <button
             className={cx("btn")}
             onClick={() => {
@@ -111,13 +115,11 @@ const handleEditRule = (rule) => {
           >
             Tạo mới
           </button>
-          <button className={cx("btn")} onClick={fetchBonusRules}>
-            Refresh
-          </button>
         </div>
       </div>
 
-      <div className={cx("rule-list")}>
+      {/* TABLE */}
+      <div>
         {bonusRules.length > 0 ? (
           <table className={cx("bonus-table")}>
             <thead>
@@ -131,20 +133,34 @@ const handleEditRule = (rule) => {
             </thead>
             <tbody>
               {bonusRules.map((rule) => (
-                <tr key={rule.id}>
-                  <td>{Number(rule.minRevenue).toLocaleString("vi-VN")}</td>
+                <tr 
+                  key={rule.id} 
+                  // Thêm hiệu ứng nền nhạt cho các mốc đang được kích hoạt
+                  className={cx({ "active-row": rule.active })}
+                >
+                  <td style={{ fontWeight: 600 }}>
+                    {Number(rule.minRevenue).toLocaleString("vi-VN")} VNĐ
+                  </td>
                   <td>{rule.bonusPercent}%</td>
-                  <td>{rule.note}</td>
-                  <td>{rule.active ? "Hoạt động" : "Không hoạt động"}</td>
+                  <td style={{ color: "#777" }}>{rule.note || "—"}</td>
                   <td>
+                    <span style={{ 
+                      color: rule.active ? "#4b382a" : "#999", 
+                      fontWeight: rule.active ? 700 : 500 
+                    }}>
+                      {rule.active ? "Đang áp dụng" : "Đã tạm dừng"}
+                    </span>
+                  </td>
+                  <td>
+                    {/* Sử dụng class btn-edit và btn-delete từ SCSS */}
                     <button
-                      className={cx("btn")}
+                      className={cx("btn-edit")}
                       onClick={() => handleEditRule(rule)}
                     >
                       Sửa
                     </button>
                     <button
-                      className={cx("btn")}
+                      className={cx("btn-delete")}
                       onClick={() => handleDeleteRule(rule.id)}
                     >
                       Xoá
@@ -155,10 +171,13 @@ const handleEditRule = (rule) => {
             </tbody>
           </table>
         ) : (
-          <p className={cx("emptyText")}>Chưa có quy tắc thưởng nào.</p>
+          <p style={{ textAlign: "center", color: "#999", padding: "40px 0" }}>
+            Chưa có quy tắc thưởng nào.
+          </p>
         )}
       </div>
 
+      {/* MODAL */}
       {showModal && (
         <BonusModal
           initialData={editingRule}

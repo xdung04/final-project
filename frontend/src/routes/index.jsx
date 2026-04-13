@@ -4,6 +4,7 @@ import Profile from "~/pages/profile";
 import About from "~/pages/about";
 import Admin from "~/pages/Admin";
 import ThoCatToc from "~/pages/ThoCatToc";
+import Receptionist from "~/pages/Receptionist"; // Giả định bạn có trang này
 import BookingPage from "~/pages/booking";
 import BookingHistory from "~/pages/bookingHistory";
 import Reel from "~/pages/reels";
@@ -14,8 +15,9 @@ import { DefaultLayout } from "~/layouts";
 import HairConsult from "~/pages/HairConsult";
 
 // ==========================================
-// 1. TẠO CÁC COMPONENT CỐ ĐỊNH Ở NGOÀI MẢNG
+// 1. TẠO CÁC COMPONENT BẢO VỆ (PROTECTED)
 // ==========================================
+
 const AdminProtected = () => (
   <ProtectedRoute requiredRole="admin">
     <Admin />
@@ -25,6 +27,13 @@ const AdminProtected = () => (
 const BarberProtected = () => (
   <ProtectedRoute requiredRole="barber">
     <ThoCatToc />
+  </ProtectedRoute>
+);
+
+// MỚI: Thêm bảo vệ cho Lễ tân
+const ReceptionistProtected = () => (
+  <ProtectedRoute requiredRole="receptionist">
+    <Receptionist />
   </ProtectedRoute>
 );
 
@@ -51,9 +60,14 @@ export const publicRouter = [
   { path: config.routes.team, component: BarberPage },
   { path: config.routes.barberProfile, component: BarberProfile },
   { path: config.routes.hairConsult, component: HairConsult },
+  {
+    path: config.routes.receptionist,
+    component: Receptionist, // Dùng trực tiếp component này, không qua bọc Protected nữa
+    layout: null,
+  },
   
   {
-    path: config.routes.admin, // Đảm bảo trong config/routes.js bạn đã sửa thành "/admin/*" nhé
+    path: config.routes.admin, 
     component: AdminProtected, 
     layout: null,
   },
@@ -62,6 +76,12 @@ export const publicRouter = [
     component: BarberProtected,
     layout: null,
   },
+  // MỚI: Thêm Route cho Lễ tân
+  // {
+  //   path: config.routes.receptionist, // Đảm bảo đã thêm trong config/routes.js
+  //   component: ReceptionistProtected,
+  //   layout: null, // Thường các trang quản lý sẽ tự có Sidebar riêng
+  // },
   {
     path: config.routes.booking,
     component: BookingProtected,
