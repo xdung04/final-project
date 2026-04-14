@@ -57,7 +57,7 @@ function UserMenu({ children }) {
       <PopperWrapper className={cx("menu-popper")}>
         <div className={cx("menu-body")}>
           <div className={cx("body")}>
-            {menuItemsByRole[user.role]?.map((item, idx) => (
+            {menuItemsByRole[user?.role]?.map((item, idx) => (
               <button
                 key={idx}
                 className={cx("menu-item")}

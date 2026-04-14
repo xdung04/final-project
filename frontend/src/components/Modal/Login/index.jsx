@@ -5,6 +5,7 @@ import { useToast } from "~/context/ToastContext";
 import { useAuth } from "~/context/AuthContext";
 import { AuthAPI } from "~/apis/AuthAPI";
 import { GoogleLogin } from "@react-oauth/google";
+import { useNavigate } from "react-router-dom";
 
 import Input from "~/components/Input";
 import Button from "~/components/Button";
@@ -16,8 +17,25 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
 
+  const navigate = useNavigate();
   const { login: authLogin } = useAuth();
   const { showToast } = useToast();
+
+  // 🔥 THÊM: function chào theo role
+  const getWelcomeMessage = (user) => {
+    const name = user.fullName || user.name || "bạn";
+
+    switch (user.role) {
+      case "admin":
+        return `Chào mừng Admin ${name}, Hệ thống đã sẵn sàng!`;
+      case "barber":
+        return `Chào Barber ${name}, hôm nay có nhiều khách đang chờ bạn đó!`;
+      case "customer":
+        return `Chào ${name} đến với Barber Shop Nam, đặt lịch thôi nào!`;
+      default:
+        return `Chào mừng ${name}`;
+    }
+  };
 
   const handleChange = (name, value) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -33,14 +51,45 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
     setLoading(true);
     try {
       const result = await AuthAPI.login(formData);
+
+      if (result.needPhone) {
+      onSwitch("add-phone", {
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
+        user: result.user,
+      });
+      return;   
+    }
+
       if (result.accessToken) {
         const userWithAvatar = {
           ...result.user,
           avatar: result.user.image || "/user.png",
         };
+
         authLogin(userWithAvatar, result.accessToken, result.refreshToken);
 
-        showToast({ text: "Đăng nhập thành công", type: "success" });
+        // 🔥 SỬA: toast theo role
+        showToast({
+          text: getWelcomeMessage(result.user),
+          type: "success",
+        });
+
+        // 🚀 redirect theo role
+        const role = result.user.role;
+
+        if (role === "admin") {
+          navigate("/admin");
+        } else if (role === "barber") {
+          navigate("/tho-cat-toc");
+        }
+        else if(role === "receptionist") {
+          navigate("/receptionist");
+        }
+        else {
+          navigate("/");
+        }
+
         if (onLoginSuccess) onLoginSuccess();
         if (onClose) onClose();
       }
@@ -68,6 +117,8 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
       if (result.needPhone) {
         onSwitch("add-phone", {
           accessToken: result.accessToken,
+          refreshToken: result.refreshToken,
+          user: result.user,
         });
         return;
       }
@@ -80,7 +131,26 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
 
         authLogin(userWithAvatar, result.accessToken, result.refreshToken);
 
-        showToast({ text: "Đăng nhập Google thành công", type: "success" });
+        // 🔥 SỬA: toast theo role
+        showToast({
+          text: getWelcomeMessage(result.user),
+          type: "success",
+        });
+
+        // 🚀 redirect theo role
+        const role = result.user.role;
+
+        if (role === "admin") {
+          navigate("/admin");
+        } else if (role === "barber") {
+          navigate("/tho-cat-toc");
+        }
+        else if(role === "receptionist") {
+          navigate("/receptionist");
+        }
+        else {
+          navigate("/");
+        }
 
         if (onLoginSuccess) onLoginSuccess();
         if (onClose) onClose();
@@ -108,7 +178,10 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
           <h4 className={cx("heading")}>Đăng nhập</h4>
           <p className={cx("subTitle")}>
             Chưa có tài khoản?{" "}
-            <span className={cx("linkText")} onClick={() => onSwitch("register")}>
+            <span
+              className={cx("linkText")}
+              onClick={() => onSwitch("register")}
+            >
               Đăng ký ngay
             </span>
           </p>
@@ -146,7 +219,12 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
               </div>
             </div>
 
-            <Button primary type="submit" disabled={loading} className={cx("submitBtn")}>
+            <Button
+              primary
+              type="submit"
+              disabled={loading}
+              className={cx("submitBtn")}
+            >
               {loading ? "Đang xử lý..." : "Đăng nhập"}
             </Button>
           </form>

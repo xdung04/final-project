@@ -1,4 +1,3 @@
-// services/authService.js
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import db from "../models/index.js";
@@ -6,6 +5,26 @@ import redisClient from "../config/redis.js";
 import { OAuth2Client } from "google-auth-library";
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+// ==================== HELPER ====================
+async function ensureCustomer(userId, transaction = null) {
+  const existingCustomer = await db.Customer.findOne({
+    where: { idCustomer: userId },
+    transaction,
+  });
+
+  if (!existingCustomer) {
+    await db.Customer.create(
+      {
+        idCustomer: userId,
+        loyaltyPoint: 0,
+        address: null,
+      },
+      { transaction }
+    );
+  }
+}
+
 
 // ==================== LOGIN ====================
 export async function login(email, password) {
@@ -21,15 +40,21 @@ export async function login(email, password) {
 
   // Kiểm tra barber bị khóa
   if (user.role === "barber") {
-    const Barber = db.Barber;
-    const barber = await Barber.findOne({ where: { idBarber: user.idUser } });
+    const barber = await db.Barber.findOne({ where: { idBarber: user.idUser } });
     if (barber && Number(barber.isLocked) === 1) {
       throw {
         status: 403,
-        message: "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản lý để mở lại.",
+        message: "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản lý.",
       };
     }
   }
+
+  // ✅ Đảm bảo customer tồn tại (fix luôn cho login thường)
+  if (user.role === "customer") {
+    await ensureCustomer(user.idUser);
+  }
+
+  const needPhone = !user.phoneNumber;
 
   const payload = { idUser: user.idUser, email: user.email, role: user.role };
 
@@ -48,7 +73,9 @@ export async function login(email, password) {
       email: user.email,
       image: user.image || null,
       role: user.role,
+      phoneNumber: user.phoneNumber,
     },
+    needPhone,
   };
 }
 
@@ -112,7 +139,7 @@ export async function googleLogin(googleToken) {
   let needPhone = false;
 
   if (!user) {
-    // CASE 1: Tạo user mới từ Google
+    // 🆕 Tạo user mới
     user = await db.User.create({
       email,
       fullName: name,
@@ -126,18 +153,20 @@ export async function googleLogin(googleToken) {
     });
     isNewUser = true;
     needPhone = true;
-  } 
-  else if (!user.googleId) {
-    // CASE 2: Liên kết Google với tài khoản local đã tồn tại
+  } else if (!user.googleId) {
+    // 🔗 Link Google với account local
     user.googleId = googleId;
     user.authProvider = user.authProvider === "local" ? "hybrid" : user.authProvider;
     await user.save();
     isLinked = true;
   }
 
-  // Nếu chưa có số điện thoại thì cần bổ sung
   if (!user.phoneNumber) {
     needPhone = true;
+  }
+
+  if (user.role === "customer") {
+    await ensureCustomer(user.idUser);
   }
 
   // Kiểm tra barber bị khóa
@@ -173,9 +202,25 @@ export async function googleLogin(googleToken) {
   };
 }
 
+// ==================== GET ME ====================
+export async function getMe(idUser) {
+  const user = await db.User.findByPk(idUser, {
+    attributes: ["idUser", "email", "role", "fullName"],
+  });
+
+  if (!user) {
+    const error = new Error("User không tồn tại");
+    error.status = 401;
+    throw error;
+  }
+
+  return user;
+}
+
 export default {
   login,
   refresh,
   logout,
+  getMe,
   googleLogin,
 };
