@@ -1,11 +1,10 @@
-// components/auth/Login.jsx
 import { useState } from "react";
 import classNames from "classnames/bind";
 import { useToast } from "~/context/ToastContext";
 import { useAuth } from "~/context/AuthContext";
 import { AuthAPI } from "~/apis/AuthAPI";
 import { GoogleLogin } from "@react-oauth/google";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom"; // 🔥 THÊM IMPORT NÀY
 
 import Input from "~/components/Input";
 import Button from "~/components/Button";
@@ -20,6 +19,7 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
   const navigate = useNavigate();
   const { login: authLogin } = useAuth();
   const { showToast } = useToast();
+  const navigate = useNavigate(); 
 
   // 🔥 THÊM: function chào theo role
   const getWelcomeMessage = (user) => {
@@ -32,6 +32,8 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
         return `Chào Barber ${name}, hôm nay có nhiều khách đang chờ bạn đó!`;
       case "customer":
         return `Chào ${name} đến với Barber Shop Nam, đặt lịch thôi nào!`;
+      case "receptionist"
+        return `Chào ${name}, lịch cắt tóc của chi nhánh đã sẵn sàng!`;
       default:
         return `Chào mừng ${name}`;
     }
@@ -39,6 +41,29 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
 
   const handleChange = (name, value) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // HÀM XỬ LÝ CHUYỂN HƯỚNG THEO ROLE
+  const handleRedirectByRole = (role) => {
+    // Luôn đóng modal login và chạy callback success trước
+    if (onLoginSuccess) onLoginSuccess();
+    if (onClose) onClose();
+
+    // Điều hướng thẳng vào trang quản lý tương ứng
+    switch (role) {
+      case "admin":
+        navigate("/admin");
+        break;
+      case "barber":
+        navigate("/tho-cat-toc");
+        break;
+      case "receptionist":
+        navigate("/receptionist");
+        break;
+      default:
+        // Nếu là customer (khách hàng), cứ để họ ở lại trang hiện tại (trang chủ)
+        break; 
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -75,27 +100,13 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
           type: "success",
         });
 
-        // 🚀 redirect theo role
-        const role = result.user.role;
-
-        if (role === "admin") {
-          navigate("/admin");
-        } else if (role === "barber") {
-          navigate("/tho-cat-toc");
-        }
-        else if(role === "receptionist") {
-          navigate("/receptionist");
-        }
-        else {
-          navigate("/");
-        }
+        handleRedirectByRole(result.user.role);
 
         if (onLoginSuccess) onLoginSuccess();
         if (onClose) onClose();
       }
     } catch (err) {
-      const message =
-        err.response?.data?.message || "Email hoặc mật khẩu không đúng";
+      const message = err.response?.data?.message || "Email hoặc mật khẩu không đúng";
       showToast({ text: message, type: "error" });
     } finally {
       setLoading(false);
@@ -129,6 +140,7 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
           avatar: result.user.image || "/user.png",
         };
 
+        // Lưu Auth
         authLogin(userWithAvatar, result.accessToken, result.refreshToken);
 
         // 🔥 SỬA: toast theo role
@@ -152,12 +164,11 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
           navigate("/");
         }
 
-        if (onLoginSuccess) onLoginSuccess();
-        if (onClose) onClose();
+        // 🔥 GỌI HÀM ĐIỀU HƯỚNG
+        handleRedirectByRole(result.user.role);
       }
     } catch (err) {
-      const message =
-        err.response?.data?.message || "Đăng nhập Google thất bại";
+      const message = err.response?.data?.message || "Đăng nhập Google thất bại";
       showToast({ text: message, type: "error" });
     } finally {
       setLoading(false);

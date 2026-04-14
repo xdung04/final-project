@@ -1,128 +1,84 @@
 import React from "react";
-import { MapPin, Edit2, Play, Pause } from "lucide-react";
+import { MapPin, Edit3, Play, Pause, Users, DollarSign, Clock } from "lucide-react";
 import classNames from "classnames/bind";
 import styles from "./BranchCard.module.scss";
 
 const cx = classNames.bind(styles);
 
-function BranchCard({
-  name,
-  address,
-  manager,
-  staff,
-  revenue,
-  status,
-  onEdit,
-  onToggle,
-  suspendInfo = {},
-}) {
-  const {
-    isSuspended = false,
-    suspendDate = null,
-    resumeDate = null,
-  } = suspendInfo;
-
+function BranchCard({ name, address, manager, staff, revenue, status, onEdit, onToggle, onViewReceptionist, suspendInfo = {} }) {
+  const { isSuspended = false, suspendDate = null, resumeDate = null } = suspendInfo;
   const today = new Date().toISOString().split("T")[0];
   const isActive = status === "Hoạt động";
 
-  // format DD/MM/YYYY
   const formatDate = (d) => {
     if (!d) return "";
     const date = new Date(d);
-    return `${String(date.getDate()).padStart(2, "0")}/${String(
-      date.getMonth() + 1
-    ).padStart(2, "0")}/${date.getFullYear()}`;
+    return `${date.getDate()}/${date.getMonth() + 1}`;
   };
 
-  // 👉 CHỈ disable khi chưa tới ngày suspend
-  const isFutureSuspend = suspendInfo.isScheduledSuspend;
+  const getToggleContent = () => {
+    if (isActive) return { text: "Tạm ngưng", icon: <Pause size={16} /> };
+    if (suspendDate && suspendDate > today) return { text: `Ngưng từ ${formatDate(suspendDate)}`, icon: <Pause size={16} /> };
+    if (resumeDate && resumeDate > today) return { text: `Mở lại ${formatDate(resumeDate)}`, icon: <Play size={16} /> };
+    return { text: "Kích hoạt", icon: <Play size={16} /> };
+  };
 
-  // Text nút
-  let toggleText = "";
-  if (isActive) {
-    toggleText = "Tạm ngưng";
-  } else if (suspendDate && suspendDate > today) {
-    toggleText = `Tạm ngưng (từ ${formatDate(suspendDate)})`;
-  } else if (resumeDate && resumeDate > today) {
-    toggleText = `Đang tạm ngưng (hoạt động lại ${formatDate(resumeDate)})`;
-  } else if (suspendDate && resumeDate) {
-    toggleText = `Đang tạm ngưng (${formatDate(suspendDate)} - ${formatDate(
-      resumeDate
-    )})`;
-  } else {
-    toggleText = "Kích hoạt";
-  }
-
-  // Tooltip
-  let tooltipText = "";
-  if (isActive) {
-    tooltipText = "Chi nhánh đang hoạt động";
-  } else if (suspendDate && suspendDate > today) {
-    tooltipText = `Chi nhánh sẽ tạm ngưng từ ${formatDate(suspendDate)}`;
-  } else if (resumeDate && resumeDate > today) {
-    tooltipText = `Chi nhánh đang tạm ngưng, sẽ hoạt động lại từ ${formatDate(
-      resumeDate
-    )}`;
-  } else if (suspendDate && resumeDate) {
-    tooltipText = `Chi nhánh tạm ngưng từ ${formatDate(
-      suspendDate
-    )} đến ${formatDate(resumeDate)}`;
-  } else {
-    tooltipText = "Chi nhánh chưa hoạt động";
-  }
+  const btnContent = getToggleContent();
 
   return (
     <div className={cx("card")}>
       <div className={cx("cardHeader")}>
-        <h3>{name}</h3>
-        <span className={cx("status", { inactive: !isActive })}>
-          {isSuspended
-            ? `Tạm ngưng (${formatDate(suspendDate)} - ${formatDate(resumeDate)})`
-            : status}
-        </span>
+        <div className={cx("titleGroup")}>
+          <h3>{name}</h3>
+          <div className={cx("statusTag", isSuspended ? "suspended" : "active")}>
+            {isSuspended ? "Đang tạm ngưng" : "Đang hoạt động"}
+          </div>
+        </div>
       </div>
 
       <p className={cx("address")}>
-        <MapPin size={14} strokeWidth={2} /> {address}
+        <MapPin size={16} /> {address}
       </p>
 
-      <div className={cx("infoBox")}>
-        <div className={cx("infoRow")}>
-          <span>Lễ Tân :</span>
-          <strong>{manager}</strong>
+      <div className={cx("statsGrid")}>
+        <div className={cx("statItem")}>
+          <label><Users size={12} /> Thợ</label>
+          <value>{staff}</value>
         </div>
-
-        <div className={cx("infoRow")}>
-          <span>Số thợ:</span>
-          <strong>{staff} người</strong>
+        <div className={cx("statItem")}>
+          <label><DollarSign size={12} /> Thu</label>
+          <value>{revenue.length > 5 ? revenue.substring(0, 5) + '..' : revenue}</value>
         </div>
+        <div className={cx("statItem")}>
+          <label><Clock size={12} /> Ca</label>
+          <value>30p</value>
+        </div>
+      </div>
 
-        <div className={cx("infoRow")}>
-          <span>Doanh thu:</span>
-          <strong>{revenue}</strong>
+      {/* Khu vực thông tin Lễ tân - Có thể click */}
+      <div className={cx("managerInfo")} onClick={() => onViewReceptionist(manager)}>
+        <div className={cx("avatarPlaceholder")}>
+          {(manager?.fullName || "B").charAt(0).toUpperCase()}
+        </div>
+        <div className={cx("managerDetails")}>
+          <span>Lễ tân (Click xem chi tiết)</span>
+          <strong>{manager?.fullName || "Chưa có quản lý"}</strong>
         </div>
       </div>
 
       <div className={cx("actions")}>
         <button className={cx("editBtn")} onClick={onEdit}>
-          <Edit2 size={14} strokeWidth={2.5} /> Sửa
+          <Edit3 size={16} />
         </button>
 
-        <div className={cx("tooltipWrapper")}>
-          <button
-            className={cx("toggleBtn", { off: !isActive })}
-            onClick={onToggle}
-            disabled={isFutureSuspend}
-          >
-            {isActive ? (
-              <Pause size={14} strokeWidth={2.5} />
-            ) : (
-              <Play size={14} strokeWidth={2.5} />
-            )}
-            {toggleText}
-          </button>
-          <span className={cx("tooltip")}>{tooltipText}</span>
-        </div>
+        <button 
+          className={cx("toggleBtn", { off: !isActive })} 
+          onClick={onToggle}
+          disabled={suspendInfo.isScheduledSuspend}
+        >
+          {btnContent.icon}
+          {btnContent.text}
+        </button>
       </div>
     </div>
   );

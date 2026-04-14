@@ -20,43 +20,42 @@ function PromoCard({ voucher, onEdit, onDelete }) {
     status,
   } = voucher;
 
+// ... (giữ nguyên phần trên)
+
   return (
     <div className={cx("card", { inactive: !status })}>
-      {/* ===== Header ===== */}
       <div className={cx("cardHeader")}>
         <div>
           <h3 className={cx("title")}>{title}</h3>
-          <p className={cx("desc")}>{description || "Không có mô tả"}</p>
+          <p className={cx("desc")}>{description || "Không có mô tả chi tiết"}</p>
         </div>
         <span className={cx("status", { inactive: !status })}>
-          {status ? "Active" : "Inactive"}
+          {status ? "Đang chạy" : "Tạm dừng"}
         </span>
       </div>
 
-      {/* ===== Info Row ===== */}
       <div className={cx("infoRow")}>
         <div>
-          <p className={cx("label")}>Giảm giá</p>
-          <strong>{discountPercent}%</strong>
+          <p className={cx("label")}>Ưu đãi</p>
+          <strong>{discountPercent}% OFF</strong>
         </div>
         <div>
-          <p className={cx("label")}>Điểm đổi</p>
-          <strong>{pointCost}</strong>
+          <p className={cx("label")}>Chi phí</p>
+          <strong>{pointCost} Pts</strong>
         </div>
         <div>
-          <p className={cx("label")}>Giới hạn</p>
-          <strong>{totalQuantity ?? "Không giới hạn"}</strong>
+          <p className={cx("label")}>Số lượng</p>
+          <strong>{totalQuantity ?? "∞"}</strong>
         </div>
         <div>
-          <p className={cx("label")}>Ngày hết hạn</p>
+          <p className={cx("label")}>Hạn dùng</p>
           <strong>{expiryDate?.split("T")[0]}</strong>
         </div>
       </div>
 
-      {/* ===== Actions ===== */}
       <div className={cx("actions")}>
         <button className={cx("editBtn")} onClick={() => onEdit(voucher)}>
-          <FontAwesomeIcon icon={faPenToSquare} /> Chỉnh sửa
+          <FontAwesomeIcon icon={faPenToSquare} /> Sửa
         </button>
 
         {onDelete && (
@@ -64,7 +63,7 @@ function PromoCard({ voucher, onEdit, onDelete }) {
             className={cx("deleteBtn")}
             onClick={() => onDelete(idVoucher)}
           >
-            <FontAwesomeIcon icon={faTrash} /> Xóa
+            <FontAwesomeIcon icon={faTrash} />
           </button>
         )}
       </div>
