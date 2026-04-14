@@ -58,4 +58,10 @@ export const AuthAPI = {
     const result = await requestService.logout({ refreshToken });
     return result;
   },
+
+  getMe: async () => {
+  const result = await requestService.getMe();
+  return result;
+  },
+
 };

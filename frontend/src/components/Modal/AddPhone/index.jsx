@@ -1,7 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import classNames from "classnames/bind";
 import { useToast } from "~/context/ToastContext";
-import {ProfileAPI} from "~/apis/profileApi";
+import { useAuth } from "~/context/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { ProfileAPI } from "~/apis/profileApi";
+import { AuthAPI } from "~/apis/AuthAPI";
 import Input from "~/components/Input";
 import Button from "~/components/Button";
 import styles from "./AddPhone.module.scss";
@@ -9,15 +12,26 @@ import styles from "./AddPhone.module.scss";
 const cx = classNames.bind(styles);
 
 function AddPhone({ onClose, onSuccess, initialData }) {
-  const  accessToken  = initialData?.accessToken;
+  const { login: authLogin } = useAuth();
+  const navigate = useNavigate();
+  const { showToast } = useToast();
+
+  const accessToken = initialData?.accessToken;
+  const refreshToken = initialData?.refreshToken;
+  const user = initialData?.user;
+
   const [phoneNumber, setPhoneNumber] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const { showToast } = useToast();
-
   const handleSubmit = async () => {
-    if (!phoneNumber || !/^[0-9]{10,15}$/.test(phoneNumber)) {
-      showToast({ text: "Số điện thoại không hợp lệ", type: "error" });
+    // Kiểm tra định dạng 10 chữ số bắt đầu bằng 0
+    const phoneRegex = /^0[0-9]{9}$/;
+
+    if (!phoneNumber || !phoneRegex.test(phoneNumber)) {
+      showToast({
+        text: "Số điện thoại phải là 10 chữ số và bắt đầu bằng số 0 (ví dụ: 0912345678)",
+        type: "error",
+      });
       return;
     }
 
@@ -25,15 +39,45 @@ function AddPhone({ onClose, onSuccess, initialData }) {
     try {
       await ProfileAPI.updatePhone(accessToken, phoneNumber);
 
-      showToast({ text: "Cập nhật thành công", type: "success" });
+      const userUpdated = {
+        ...user,
+        phoneNumber,
+        avatar: user.image || "/user.png",
+      };
+
+      authLogin(userUpdated, accessToken, refreshToken);
+
+      showToast({
+        text: "Cập nhật số điện thoại thành công!",
+        type: "success",
+      });
+
+      // Redirect theo role
+      if (user.role === "admin") {
+        navigate("/admin");
+      } else if (user.role === "barber") {
+        navigate("/tho-cat-toc");
+      } else if (user.role === "receptionist") {
+        navigate("/receptionist");
+      } else {
+        navigate("/");
+      }
 
       if (onSuccess) onSuccess();
       if (onClose) onClose();
     } catch (err) {
-      showToast({
-        text: err.message || "Cập nhật thất bại",
-        type: "error",
-      });
+      let errorMessage = "Cập nhật số điện thoại thất bại";
+
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      } else if (err.status === 409) {
+        errorMessage =
+          "Số điện thoại này đã được sử dụng bởi một tài khoản khác.";
+      }
+
+      showToast({ text: errorMessage, type: "error" });
     } finally {
       setLoading(false);
     }
@@ -46,7 +90,11 @@ function AddPhone({ onClose, onSuccess, initialData }) {
 
         <p className={cx("desc")}>
           Để đặt lịch cắt tóc, chúng tôi cần số điện thoại của bạn.
+          <br />
+          Nếu bạn đã từng cắt ở tiệm, hãy dùng số điện thoại đã đăng ký để có
+          lịch sử và điểm tích lũy!
         </p>
+        <p className={cx("desc")}></p>
 
         <Input
           primary
@@ -57,10 +105,6 @@ function AddPhone({ onClose, onSuccess, initialData }) {
 
         <Button primary onClick={handleSubmit} disabled={loading} fullWidth>
           {loading ? "Đang lưu..." : "Xác nhận"}
-        </Button>
-
-        <Button outline onClick={onClose} fullWidth>
-          Để sau
         </Button>
       </div>
     </div>

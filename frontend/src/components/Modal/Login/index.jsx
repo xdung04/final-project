@@ -16,9 +16,28 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
 
+  const navigate = useNavigate();
   const { login: authLogin } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate(); 
+
+  // 🔥 THÊM: function chào theo role
+  const getWelcomeMessage = (user) => {
+    const name = user.fullName || user.name || "bạn";
+
+    switch (user.role) {
+      case "admin":
+        return `Chào mừng Admin ${name}, Hệ thống đã sẵn sàng!`;
+      case "barber":
+        return `Chào Barber ${name}, hôm nay có nhiều khách đang chờ bạn đó!`;
+      case "customer":
+        return `Chào ${name} đến với Barber Shop Nam, đặt lịch thôi nào!`;
+      case "receptionist"
+        return `Chào ${name}, lịch cắt tóc của chi nhánh đã sẵn sàng!`;
+      default:
+        return `Chào mừng ${name}`;
+    }
+  };
 
   const handleChange = (name, value) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -57,18 +76,34 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
     setLoading(true);
     try {
       const result = await AuthAPI.login(formData);
+
+      if (result.needPhone) {
+      onSwitch("add-phone", {
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
+        user: result.user,
+      });
+      return;   
+    }
+
       if (result.accessToken) {
         const userWithAvatar = {
           ...result.user,
           avatar: result.user.image || "/user.png",
         };
-        
-        // Lưu Auth
+
         authLogin(userWithAvatar, result.accessToken, result.refreshToken);
-        showToast({ text: "Đăng nhập thành công", type: "success" });
-        
-        // GỌI HÀM ĐIỀU HƯỚNG
+
+        // 🔥 SỬA: toast theo role
+        showToast({
+          text: getWelcomeMessage(result.user),
+          type: "success",
+        });
+
         handleRedirectByRole(result.user.role);
+
+        if (onLoginSuccess) onLoginSuccess();
+        if (onClose) onClose();
       }
     } catch (err) {
       const message = err.response?.data?.message || "Email hoặc mật khẩu không đúng";
@@ -91,7 +126,11 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
       const result = await AuthAPI.googleLogin(googleIdToken);
 
       if (result.needPhone) {
-        onSwitch("add-phone", { accessToken: result.accessToken });
+        onSwitch("add-phone", {
+          accessToken: result.accessToken,
+          refreshToken: result.refreshToken,
+          user: result.user,
+        });
         return;
       }
 
@@ -103,7 +142,27 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
 
         // Lưu Auth
         authLogin(userWithAvatar, result.accessToken, result.refreshToken);
-        showToast({ text: "Đăng nhập Google thành công", type: "success" });
+
+        // 🔥 SỬA: toast theo role
+        showToast({
+          text: getWelcomeMessage(result.user),
+          type: "success",
+        });
+
+        // 🚀 redirect theo role
+        const role = result.user.role;
+
+        if (role === "admin") {
+          navigate("/admin");
+        } else if (role === "barber") {
+          navigate("/tho-cat-toc");
+        }
+        else if(role === "receptionist") {
+          navigate("/receptionist");
+        }
+        else {
+          navigate("/");
+        }
 
         // 🔥 GỌI HÀM ĐIỀU HƯỚNG
         handleRedirectByRole(result.user.role);
@@ -130,7 +189,10 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
           <h4 className={cx("heading")}>Đăng nhập</h4>
           <p className={cx("subTitle")}>
             Chưa có tài khoản?{" "}
-            <span className={cx("linkText")} onClick={() => onSwitch("register")}>
+            <span
+              className={cx("linkText")}
+              onClick={() => onSwitch("register")}
+            >
               Đăng ký ngay
             </span>
           </p>
@@ -168,7 +230,12 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
               </div>
             </div>
 
-            <Button primary type="submit" disabled={loading} className={cx("submitBtn")}>
+            <Button
+              primary
+              type="submit"
+              disabled={loading}
+              className={cx("submitBtn")}
+            >
               {loading ? "Đang xử lý..." : "Đăng nhập"}
             </Button>
           </form>

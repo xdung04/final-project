@@ -1,12 +1,9 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { AuthAPI } from "~/apis/AuthAPI";
 
-
-
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
-  
   const [user, setUser] = useState(null);
   const [accessToken, setAccessToken] = useState(null);
   const [refreshToken, setRefreshToken] = useState(null);
@@ -19,12 +16,23 @@ export function AuthProvider({ children }) {
     const storedRefreshToken = localStorage.getItem("refreshToken");
 
     if (storedUser && storedAccessToken && storedRefreshToken) {
-      setUser(JSON.parse(storedUser));
-      setAccessToken(storedAccessToken);
-      setRefreshToken(storedRefreshToken);
+      // 👉 gọi API để verify token còn sống không
+      AuthAPI.getMe()
+        .then((res) => {
+          setUser(JSON.parse(storedUser));
+          setAccessToken(storedAccessToken);
+          setRefreshToken(storedRefreshToken);
+        })
+        .catch(() => {
+          // ❌ token chết → logout luôn
+          localStorage.clear();
+          setUser(null);
+          setAccessToken(null);
+          setRefreshToken(null);
+        });
     }
 
-    setLoading(false); // load xong
+    setLoading(false);
   }, []);
 
   // LOGIN

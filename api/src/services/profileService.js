@@ -37,37 +37,166 @@ const uploadToCloudinary = (buffer) => {
 
 // ====== Cập nhật profile ======
 const updateUserProfile = async (idUser, { fullName, email, phoneNumber, avatarFile }) => {
-  const user = await db.User.findByPk(idUser);
-  if (!user) return null;
+  const t = await db.sequelize.transaction();
 
-  let imageUrl = user.image;
+  try {
+    const user = await db.User.findByPk(idUser, { transaction: t });
+    if (!user) {
+      throw { status: 404, message: "User không tồn tại" };
+    }
 
-  // Nếu có file ảnh mới thì upload
-  if (avatarFile) {
-    const uploadResult = await uploadToCloudinary(avatarFile.buffer);
-    imageUrl = uploadResult.secure_url;
+    // Kiểm tra phoneNumber nếu có truyền vào
+    if (phoneNumber) {
+      const phoneRegex = /^0[0-9]{9}$/;
+      if (!phoneRegex.test(phoneNumber)) {
+        throw { 
+          status: 400, 
+          message: "Số điện thoại phải là 10 chữ số và bắt đầu bằng số 0" 
+        };
+      }
+
+      const existingUser = await db.User.findOne({
+        where: { phoneNumber },
+        transaction: t,
+      });
+
+      if (existingUser && existingUser.idUser !== idUser) {
+        throw { 
+          status: 409, 
+          message: "Số điện thoại này đã được sử dụng bởi một tài khoản khác." 
+        };
+      }
+    }
+
+    // Upload ảnh nếu có
+    let imageUrl = user.image;
+    if (avatarFile) {
+      const uploadResult = await uploadToCloudinary(avatarFile.buffer);
+      imageUrl = uploadResult.secure_url;
+    }
+
+    // Update dữ liệu
+    const updateData = {
+      ...(fullName && { fullName }),
+      ...(email && { email }),           // cho phép update email nếu cần
+      ...(phoneNumber && { phoneNumber }),
+      image: imageUrl,
+    };
+
+    await user.update(updateData, { transaction: t });
+
+    await t.commit();
+    return user;
+  } catch (error) {
+    if (t && !t.finished) {
+      await t.rollback().catch(() => {});
+    }
+    console.error("Lỗi updateUserProfile:", error);
+    throw error;
   }
-
-  // Chỉ update các trường được truyền vào
-  const updateData = {
-    ...(fullName && { fullName }),
-    ...(email && { email }),
-    ...(phoneNumber && { phoneNumber }),
-    image: imageUrl,
-  };
-
-  await user.update(updateData);
-  return user;
 };
 
 const updatePhone = async (idUser, phoneNumber) => {
-  const user = await db.User.findByPk(idUser);
-  if (!user) return null;
+  if (!phoneNumber) {
+    throw { status: 400, message: "Số điện thoại không được để trống" };
+  }
 
-  user.phoneNumber = phoneNumber;
-  await user.save();
+  // Kiểm tra định dạng số điện thoại
+  const phoneRegex = /^0[0-9]{9}$/;
+  if (!phoneRegex.test(phoneNumber)) {
+    throw { 
+      status: 400, 
+      message: "Số điện thoại phải là 10 chữ số và bắt đầu bằng số 0" 
+    };
+  }
 
-  return user;
+  const t = await db.sequelize.transaction();
+
+  try {
+    const user = await db.User.findByPk(idUser, { transaction: t });
+    if (!user) {
+      throw { status: 404, message: "User không tồn tại" };
+    }
+
+    // Nếu user đã có phoneNumber thì chỉ update
+    if (user.phoneNumber) {
+      user.phoneNumber = phoneNumber;
+      await user.save({ transaction: t });
+      await t.commit();
+      return user;
+    }
+
+    // Kiểm tra số điện thoại có tồn tại không
+    const existingUser = await db.User.findOne({
+      where: { phoneNumber },
+      transaction: t,
+    });
+
+    if (existingUser) {
+      if (existingUser.idUser === user.idUser) {
+        // Trùng chính mình
+        user.phoneNumber = phoneNumber;
+        await user.save({ transaction: t });
+        await t.commit();
+        return user;
+      }
+
+      // Kiểm tra có phải tài khoản admin-created chưa active không
+      const isAdminCreatedInactive =
+        existingUser.isStatus === false &&
+        !existingUser.email &&
+        !existingUser.password &&
+        !existingUser.googleId;
+
+      if (isAdminCreatedInactive) {
+        // === MERGE ===
+        await db.Customer.destroy({ 
+          where: { idCustomer: user.idUser }, 
+          transaction: t 
+        });
+        await db.User.destroy({ 
+          where: { idUser: user.idUser }, 
+          transaction: t 
+        });
+
+        existingUser.email = user.email;
+        existingUser.googleId = user.googleId;
+        existingUser.fullName = user.fullName || existingUser.fullName;
+        existingUser.image = user.image || existingUser.image;
+        existingUser.authProvider = "google";
+        existingUser.isStatus = true;
+        existingUser.phoneNumber = phoneNumber;
+
+        await existingUser.save({ transaction: t });
+
+        console.log(`✅ Merged Google account vào admin-created account ${existingUser.idUser}`);
+        await t.commit();
+        return existingUser;
+      } else {
+        // Trùng với tài khoản đã active → KHÔNG CHO PHÉP
+        await t.rollback();
+        throw { 
+          status: 409, 
+          message: "Số điện thoại này đã được sử dụng bởi một tài khoản khác." 
+        };
+      }
+    } 
+    else {
+      // Không trùng → thêm phone bình thường
+      user.phoneNumber = phoneNumber;
+      await user.save({ transaction: t });
+    }
+
+    await t.commit();
+    return user;
+  } catch (error) {
+    // Chỉ rollback nếu transaction chưa kết thúc
+    if (t && !t.finished) {
+      await t.rollback();
+    }
+    console.error("Lỗi updatePhone:", error);
+    throw error;
+  }
 };
 // ====== Export ======
 export default {

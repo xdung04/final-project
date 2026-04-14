@@ -50,12 +50,8 @@ export const register = async ({
     const res = await request.post("/auth/register", payload);
     return res;
   } catch (error) {
-    console.error(
-      "Lỗi khi gọi API register:",
-      error.response?.data || error.message,
-    );
-    const message = error.response?.data?.error || error.message;
-    throw message;
+    console.error("Lỗi khi gọi API register:", error);
+    throw error; // ✅ giữ nguyên axios error
   }
 };
 
@@ -112,6 +108,16 @@ export const refreshToken = async ({ refreshToken }) => {
 export const logout = async ({ refreshToken }) => {
   try {
     const res = await request.post("/auth/logout", { refreshToken });
+    return res;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+};
+
+// Lấy thông tin user (verify token)
+export const getMe = async () => {
+  try {
+    const res = await request.get("/auth/me");
     return res;
   } catch (error) {
     throw error.response?.data || error;
