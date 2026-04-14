@@ -77,16 +77,21 @@ function VideoTayNghe() {
       </div>
 
       <div className={styles.grid}>
-        {reels.map((reel, idx) => (
-          <VideoCard
-            key={reel.idReel}
-            reel={reel}
-            onToggleLike={toggleLike}
-            onOpenDetail={() => openDetail(idx)}
-          />
-        ))}
+        {loading ? (
+          <p>Đang tải video...</p>
+        ) : reels.length === 0 ? (
+          <p className={styles.emptyText}>Không có video nào.</p>
+        ) : (
+          reels.map((reel, idx) => (
+            <VideoCard
+              key={reel.idReel}
+              reel={reel}
+              onToggleLike={toggleLike}
+              onOpenDetail={() => openDetail(idx)}
+            />
+          ))
+        )}
       </div>
-
       {currentIndex !== null && (
         <VideoDetailDialog
           reels={reels}
@@ -98,7 +103,7 @@ function VideoTayNghe() {
           globalMuted={globalMuted}
           onToggleGlobalMuted={() => setGlobalMuted((prev) => !prev)}
           fromReelPlayer={false}
-          onHashtagClick={handleHashtagClick} 
+          onHashtagClick={handleHashtagClick}
         />
       )}
 

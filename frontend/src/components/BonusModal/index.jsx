@@ -7,17 +7,19 @@ const cx = classNames.bind(styles);
 function BonusModal({ initialData, onClose, onCreate }) {
   const [form, setForm] = useState({
     minRevenue: "",
-    maxRevenue: "",
     bonusPercent: "",
     note: "",
     active: true,
   });
 
+  const [error, setError] = useState("");
+
   useEffect(() => {
     if (initialData) {
       setForm({
-        minRevenue: initialData.minRevenue || "",
-        maxRevenue: initialData.maxRevenue || "",
+        minRevenue: initialData.minRevenue
+          ? Number(initialData.minRevenue).toLocaleString("vi-VN")
+          : "",
         bonusPercent: initialData.bonusPercent || "",
         note: initialData.note || "",
         active: initialData.active ?? true,
@@ -25,45 +27,43 @@ function BonusModal({ initialData, onClose, onCreate }) {
     }
   }, [initialData]);
 
-  // Format số thành tiền VNĐ khi nhập
   const formatCurrency = (value) => {
     if (!value) return "";
-    const numeric = value.toString().replace(/\D/g, ""); // chỉ giữ số
+    const numeric = value.toString().replace(/\D/g, "");
     return numeric ? Number(numeric).toLocaleString("vi-VN") : "";
   };
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
 
-    if (name === "minRevenue" || name === "maxRevenue") {
-      setForm((prev) => ({
-        ...prev,
-        [name]: formatCurrency(value),
-      }));
+    if (name === "minRevenue") {
+      setForm((prev) => ({ ...prev, [name]: formatCurrency(value) }));
     } else if (name === "bonusPercent") {
-      const numeric = value.replace(/\D/g, "");
+      const numeric = value.replace(/[^0-9.]/g, "");
       setForm((prev) => ({ ...prev, [name]: numeric }));
-    } else if (type === "checkbox") {
-      setForm((prev) => ({ ...prev, [name]: checked }));
     } else {
       setForm((prev) => ({ ...prev, [name]: value }));
     }
+
+    if (error) setError("");
+  };
+
+  const toggleActive = () => {
+    setForm((prev) => ({ ...prev, active: !prev.active }));
+    if (error) setError("");
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
     if (!form.minRevenue || !form.bonusPercent) {
-      alert("Vui lòng nhập doanh số tối thiểu và phần trăm thưởng!");
+      setError("Vui lòng nhập đầy đủ doanh số và tỷ lệ thưởng.");
       return;
     }
 
-    // Chuyển số tiền về dạng number trước khi gửi API
     const payload = {
       ...form,
       minRevenue: Number(form.minRevenue.toString().replace(/\./g, "")),
-      maxRevenue: form.maxRevenue
-        ? Number(form.maxRevenue.toString().replace(/\./g, ""))
-        : null,
       bonusPercent: Number(form.bonusPercent),
     };
 
@@ -71,78 +71,94 @@ function BonusModal({ initialData, onClose, onCreate }) {
   };
 
   return (
-    <div className={cx("modal-overlay")}>
-      <div className={cx("modal")}>
-        <h2>{initialData ? "Chỉnh sửa thưởng doanh số" : "Tạo thưởng doanh số"}</h2>
-
-        <form onSubmit={handleSubmit} className={cx("form")}>
-          <div className={cx("form-group")}>
-            <label>Doanh số tối thiểu (VNĐ)</label>
-            <input
-              type="text"
-              name="minRevenue"
-              value={form.minRevenue}
-              onChange={handleChange}
-              placeholder="Ví dụ: 10.000.000"
-            />
+    <div className={cx("overlay")} onClick={onClose}>
+      <div className={cx("modal")} onClick={(e) => e.stopPropagation()}>
+        <form onSubmit={handleSubmit}>
+          
+          {/* Header */}
+          <div className={cx("modal-header")}>
+            <h2>{initialData ? "Cập nhật mức thưởng" : "Tạo mức thưởng mới"}</h2>
+            <p className={cx("modal-sub")}>
+              Thiết lập tỷ lệ hoa hồng dựa trên mốc doanh số đạt được.
+            </p>
           </div>
+          
+          <div className={cx("divider")} />
 
-          <div className={cx("form-group")}>
-            <label>Doanh số tối đa (VNĐ)</label>
-            <input
-              type="text"
-              name="maxRevenue"
-              value={form.maxRevenue}
-              onChange={handleChange}
-              placeholder="Bỏ trống nếu không giới hạn"
-            />
-          </div>
+          {/* Body */}
+          <div className={cx("modal-body")}>
+            <div className={cx("row-2")}>
+              <div className={cx("field")}>
+                <label>Doanh số (VNĐ)</label>
+                <input
+                  type="text"
+                  name="minRevenue"
+                  value={form.minRevenue}
+                  onChange={handleChange}
+                  placeholder="VD: 10.000.000"
+                  autoComplete="off"
+                />
+              </div>
+              <div className={cx("field")}>
+                <label>Tỷ lệ (%)</label>
+                <input
+                  type="text"
+                  name="bonusPercent"
+                  value={form.bonusPercent}
+                  onChange={handleChange}
+                  placeholder="VD: 5"
+                  autoComplete="off"
+                />
+              </div>
+            </div>
 
-          <div className={cx("form-group")}>
-            <label>Phần trăm thưởng (%)</label>
-            <input
-              type="text"
-              name="bonusPercent"
-              value={form.bonusPercent}
-              onChange={handleChange}
-              placeholder="Ví dụ: 5"
-            />
-          </div>
-
-          <div className={cx("form-group")}>
-            <label>Ghi chú</label>
-            <textarea
-              name="note"
-              value={form.note}
-              onChange={handleChange}
-              placeholder="Mô tả thêm (không bắt buộc)"
-            ></textarea>
-          </div>
-
-          <div className={cx("form-group", "checkbox-group")}>
-            <label>
-              <input
-                type="checkbox"
-                name="active"
-                checked={form.active}
+            <div className={cx("field")}>
+              <label>Ghi chú</label>
+              <textarea
+                name="note"
+                value={form.note}
                 onChange={handleChange}
+                placeholder="Điều kiện áp dụng (nếu có)..."
               />
-              Kích hoạt
-            </label>
+            </div>
+
+            {/* Custom Checkbox Luxury */}
+            <div
+              className={cx("check-item", { active: form.active })}
+              onClick={toggleActive}
+            >
+              <div className={cx("cb-box", { "cb-checked": form.active })}>
+                {form.active && (
+                  <svg width="10" height="8" viewBox="0 0 10 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                )}
+              </div>
+              <div className={cx("check-texts")}>
+                <span className={cx("check-name")}>Kích hoạt mức thưởng</span>
+                <span className={cx("check-hint")}>
+                  Áp dụng ngay cho nhân sự đạt mốc doanh số này.
+                </span>
+              </div>
+            </div>
+
+            {error && <div className={cx("error")}>{error}</div>}
           </div>
 
-          <div className={cx("buttons")}>
-            <button type="submit" className={cx("btn", "btn-save")}>
-              {initialData ? "Cập nhật" : "Tạo mới"}
-            </button>
+          {/* Footer */}
+          <div className={cx("modal-footer")}>
             <button
               type="button"
-              className={cx("btn", "btn-cancel")}
+              className={cx("btn-ghost")}
               onClick={onClose}
             >
-              Huỷ
+              Hủy bỏ
+            </button>
+            <button type="submit" className={cx("btn-primary")}>
+              {initialData ? "Lưu thay đổi" : "Khởi tạo"}
             </button>
           </div>
+
         </form>
       </div>
     </div>

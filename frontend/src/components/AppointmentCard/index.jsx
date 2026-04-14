@@ -5,28 +5,46 @@ import CompleteAppointmentDialog from "~/components/CompleteAppointmentDialog";
 function AppointmentCard({ appt, view }) {
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  // ✅ Lấy danh sách tên dịch vụ
+  // Dịch vụ
   const serviceNames =
     appt.BookingDetails?.map((d) => d.service?.name).join(", ") || "—";
 
-  // ✅ Thông tin khách hàng
+  // Khách
   const customerName = appt.Customer?.user.fullName || "Khách vãng lai";
   const customerPhone = appt.Customer?.user.phoneNumber || "Không có số";
 
-  // ✅ Kiểm tra trạng thái
-  const status = appt.status;
-  const statusText =
-    status === "Pending"
-      ? "Đang chờ"
-      : status === "Completed"
-      ? "Đã hoàn thành"
-      : "Đã hủy";
+  // Trạng thái logic
+  const status = appt.status; // Pending, InProgress, Completed, Cancelled
+  let statusText = "";
+  let canComplete = false;
+
+  switch (status) {
+    case "Pending":
+      statusText = "Đang chờ (chưa check-in)";
+      canComplete = false;
+      break;
+    case "InProgress":
+      statusText = "Đang thực hiện";
+      canComplete = true; // khách đã check-in, thợ được bấm hoàn tất
+      break;
+    case "Completed":
+      statusText = "Đã hoàn thành";
+      canComplete = false;
+      break;
+    case "Cancelled":
+      statusText = "Đã hủy";
+      canComplete = false;
+      break;
+    default:
+      statusText = status;
+      canComplete = false;
+  }
 
   return (
     <div
       className={`${styles.card} ${view === "week" ? styles.weekCard : ""}`}
     >
-      {/* Cột thời gian */}
+      {/* Thời gian */}
       <div className={styles.timeBox}>
         <div className={styles.time}>{appt.bookingTime}</div>
         {view === "day" && (
@@ -36,7 +54,7 @@ function AppointmentCard({ appt, view }) {
         )}
       </div>
 
-      {/* Cột thông tin */}
+      {/* Thông tin */}
       <div className={styles.info}>
         {view === "day" ? (
           <>
@@ -59,15 +77,13 @@ function AppointmentCard({ appt, view }) {
             )}
           </>
         ) : (
-          <>
-            <p className={styles.service}>{serviceNames}</p>
-          </>
+          <p className={styles.service}>{serviceNames}</p>
         )}
       </div>
 
-      {/* Cột trạng thái / hành động */}
+      {/* Hành động / trạng thái */}
       <div className={styles.actions}>
-        {status === "Pending" ? (
+        {canComplete ? (
           <button
             className={styles.completeBtn}
             onClick={() => setDialogOpen(true)}
@@ -81,6 +97,8 @@ function AppointmentCard({ appt, view }) {
                 ? styles.cancelled
                 : status === "Completed"
                 ? styles.completed
+                : status === "InProgress"
+                ? styles.inprogress
                 : ""
             }`}
           >
@@ -97,11 +115,10 @@ function AppointmentCard({ appt, view }) {
           idBooking: appt.idBooking,
           idBarber: appt.idBarber,
           idCustomer: appt.idCustomer,
-          customerName: customerName,
+          customerName,
           services: serviceNames,
         }}
       />
-
     </div>
   );
 }

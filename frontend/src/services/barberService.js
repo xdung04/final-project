@@ -3,7 +3,7 @@ import * as request from "~/apis/configs/httpRequest";
 // 📋 Lấy tất cả barber
 export const getAllBarbers = async () => {
   try {
-    const res = await request.get("/api/barbers");
+    const res = await request.get("/barbers");
     console.log("API getAllBarbers trả về:", res);
     return res;
   } catch (error) {
@@ -21,7 +21,7 @@ export const assignUserAsBarber = async ({
   profileDescription,
 }) => {
   try {
-    const res = await request.post("/api/barbers/assign-user", {
+    const res = await request.post("/barbers/assign-user", {
       idUser,
       idBranch,
       profileDescription,
@@ -39,7 +39,7 @@ export const assignUserAsBarber = async ({
 
 export const assignBarberToBranch = async (payload) => {
   try {
-    const res = await request.post("/api/barbers/assign-branch", payload);
+    const res = await request.post("/barbers/assign-branch", payload);
     console.log("API assignBarberToBranch trả về:", res);
     return res;
   } catch (error) {
@@ -52,18 +52,18 @@ export const assignBarberToBranch = async (payload) => {
 };
 
 export const lockBarber = async (data) => {
-  const res = await request.post("/api/barbers/lock", data);
+  const res = await request.post("/barbers/lock", data);
   return res.data; // 👈 thêm dòng này để return data về frontend
 };
 
 export const unlockBarber = async (data) => {
-  const res = await request.post("/api/barbers/unlock", data);
+  const res = await request.post("/barbers/unlock", data);
   return res.data;
 };
 
 export const getBarberReward = async (idBarber) => {
   try {
-    const res = await request.get(`/api/barbers/reward/${idBarber}`);
+    const res = await request.get(`/barbers/reward/${idBarber}`);
     console.log("API getBarberReward trả về:", res);
     return res;
   } catch (error) {
@@ -75,7 +75,7 @@ export const getBarberReward = async (idBarber) => {
 };
 export const createBarberWithUser = async (payload) => {
   try {
-    const res = await request.post("/api/barbers/create", payload);
+    const res = await request.post("/barbers/create", payload);
     console.log("API createBarberWithUser trả về:", res);
     return res;
   } catch (error) {
@@ -89,7 +89,7 @@ export const createBarberWithUser = async (payload) => {
 
 export const updateBarber = async (idBarber, payload) => {
   try {
-    const res = await request.put(`/api/barbers/update/${idBarber}`, payload);
+    const res = await request.put(`/barbers/update/${idBarber}`, payload);
     console.log("API updateBarber trả về:", res);
     return res;
   } catch (error) {
@@ -102,7 +102,7 @@ export const updateBarber = async (idBarber, payload) => {
 };
 export const deleteBarber = async (idBarber) => {
   try {
-    const res = await request.del(`/api/barbers/delete/${idBarber}`);
+    const res = await request.del(`/barbers/delete/${idBarber}`);
     console.log("API deleteBarber trả về:", res);
     return res;
   } catch (error) {
@@ -116,7 +116,7 @@ export const deleteBarber = async (idBarber) => {
 
 export const addUnavailability = async (payload) => {
   try {
-    const res = await request.post("/api/barbers/unavailability", payload);
+    const res = await request.post("/barbers/unavailability", payload);
     console.log("API addUnavailability trả về:", res);
     return res;
   } catch (error) {
@@ -130,7 +130,7 @@ export const addUnavailability = async (payload) => {
 
 export const getUnavailabilitiesByBarber = async (idBarber) => {
   try {
-    const res = await request.get(`/api/barbers/unavailability/${idBarber}`);
+    const res = await request.get(`/barbers/unavailability/${idBarber}`);
     console.log("API getUnavailabilitiesByBarber trả về:", res);
     return res;
   } catch (error) {
@@ -144,7 +144,7 @@ export const getUnavailabilitiesByBarber = async (idBarber) => {
 
 export const getProfile = async (idBarber) => {
   try {
-    const res = await request.get(`/api/barbers/profile/${idBarber}`);
+    const res = await request.get(`/barbers/profile/${idBarber}`);
     console.log("API getProfile trả về:", res);
     return res;
   } catch (error) {
@@ -161,7 +161,7 @@ export const updateProfile = async (idBarber, payload, token) => {
   try {
     const isFormData = payload instanceof FormData;
 
-    const res = await request.put(`/api/barbers/profile/${idBarber}`, payload, {
+    const res = await request.put(`/barbers/profile/${idBarber}`, payload, {
       headers: {
         Authorization: `Bearer ${token}`,
         
@@ -188,7 +188,7 @@ export const fetchBarberDashboardStats = async (idBarber, token) => {
   }
 
   try {
-    const res = await request.get(`/api/barbers/stats/${idBarber}`, {
+    const res = await request.get(`/barbers/stats/${idBarber}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -206,7 +206,7 @@ export const fetchBarberDashboardStats = async (idBarber, token) => {
 };
 export const getBarbersForHome = async () => {
   try {
-    const res = await request.get("/api/barbers/home");
+    const res = await request.get("/barbers/home");
     console.log("API getBarbersForHome trả về:", res);
     return res;
   } catch (error) {

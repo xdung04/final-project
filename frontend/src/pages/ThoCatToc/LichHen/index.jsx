@@ -13,27 +13,49 @@ function LichHen() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const normalizeDate = (dateStr) => dateStr.split("T")[0];
+  const formatDate = (d) => d.toISOString().split("T")[0];
+
+
+  const getDatesForApi = (date, view) => {
+    let start = new Date(date);
+    let end = new Date(date);
+
+    if (view === "week") {
+      // Logic tính Thứ Hai đầu tuần:
+      const dayOfWeek = start.getDay(); // 0 (CN) -> 6 (T7)
+      // Số ngày cần lùi để về Thứ Hai. Nếu là CN (0) thì lùi 6 ngày.
+      const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+
+      start.setDate(start.getDate() - daysToSubtract); // Bắt đầu từ Thứ Hai
+
+      end = new Date(start);
+      end.setDate(start.getDate() + 6); // Kết thúc vào Chủ Nhật
+    }
+    // Nếu view là 'day', start và end giữ nguyên là ngày hiện tại.
+
+    // Định dạng sang "YYYY-MM-DD"
+    const startStr = start.toISOString().split("T")[0];
+    const endStr = end.toISOString().split("T")[0];
+
+    return { startStr, endStr };
+  };
 
   useEffect(() => {
     // 🟢 DỪNG NẾU AUTH CHƯA XONG HOẶC CHƯA CÓ ID THỢ/TOKEN
     if (isAuthLoading || !BARBER_ID || !accessToken) {
-        if (!isAuthLoading) setLoading(false);
-        return;
+      if (!isAuthLoading) setLoading(false);
+      return;
     }
 
     const loadBookings = async () => {
       setLoading(true);
 
-      const start = new Date(currentDate);
-      start.setDate(currentDate.getDate() - currentDate.getDay() + (currentDate.getDay() === 0 ? -6 : 1));
-      
-      const end = new Date(start);
-      end.setDate(start.getDate() + 6);
+      // SỬ DỤNG HÀM MỚI ĐỂ XÁC ĐỊNH PHẠM VI NGÀY CẦN TẢI
+      const { startStr, endStr } = getDatesForApi(currentDate, calendarView);
 
-      const startStr = start.toISOString().split("T")[0];
-      const endStr = end.toISOString().split("T")[0];
-      
       try {
+        // Gọi API với phạm vi ngày đã xác định
         const data = await fetchBookingsForBarber(BARBER_ID, startStr, endStr, accessToken);
         setAppointments(data);
       } catch (err) {
@@ -43,8 +65,19 @@ function LichHen() {
       }
     };
 
+    // Thêm calendarView vào dependency array:
+    // API sẽ được gọi lại khi currentDate hoặc calendarView thay đổi.
     loadBookings();
-  }, [currentDate, BARBER_ID, accessToken, isAuthLoading]);
+  }, [currentDate, calendarView, BARBER_ID, accessToken, isAuthLoading]);
+
+  // Điều hướng ngày/tuần
+  const handleViewChange = (e) => {
+    const newView = e.target.value;
+    // Khi chuyển view, nếu muốn hiển thị tuần/ngày hiện tại, có thể reset currentDate
+    // setCalendarView(newView);
+    // setCurrentDate(new Date()); // Có thể bỏ nếu muốn giữ nguyên ngày đang xem
+    setCalendarView(newView);
+  };
 
   // Điều hướng ngày/tuần
   const navigateDate = (direction) => {
@@ -57,23 +90,26 @@ function LichHen() {
     setCurrentDate(newDate);
   };
 
-  // Text hiển thị theo view
+  // Text hiển thị theo view - Dùng lại logic tính ngày tuần (đã sửa)
   const getDateRangeText = () => {
     if (calendarView === "day") {
       return currentDate.toLocaleDateString("vi-VN", { day: "numeric", month: "long", year: "numeric" });
     } else {
-      const start = new Date(currentDate);
-      start.setDate(currentDate.getDate() - currentDate.getDay() + 1);
-      const end = new Date(start);
-      end.setDate(start.getDate() + 6);
+      const { startStr, endStr } = getDatesForApi(currentDate, calendarView);
+
+      const start = new Date(startStr);
+      const end = new Date(endStr);
+
       return `${start.toLocaleDateString("vi-VN", { day: "numeric", month: "short" })} - ${end.toLocaleDateString("vi-VN", { day: "numeric", month: "short", year: "numeric" })}`;
     }
   };
 
-  // Lọc lịch hẹn cho tuần
+  // Lọc lịch hẹn cho tuần (logic này lọc dữ liệu đã có trong state appointments)
   const getWeekAppointments = () => {
-    const start = new Date(currentDate);
-    start.setDate(currentDate.getDate() - currentDate.getDay() + 1);
+    // Tính toán lại Thứ Hai đầu tuần (để đồng bộ với logic API call)
+    const { startStr } = getDatesForApi(currentDate, "week");
+    const start = new Date(startStr);
+
     const days = Array.from({ length: 7 }, (_, i) => {
       const d = new Date(start);
       d.setDate(start.getDate() + i);
@@ -81,19 +117,23 @@ function LichHen() {
     });
 
     return days.map((day) => {
+      // Lọc các lịch hẹn có trong appointments state (đã được tải về)
       const appts = appointments.filter(
-        (appt) => new Date(appt.bookingDate).toDateString() === day.toDateString()
+        (appt) => normalizeDate(appt.bookingDate) === formatDate(day)
       );
       return { day, appts };
     });
   };
 
+  // Lọc lịch hẹn cho chế độ xem ngày
   const filteredAppointments =
     calendarView === "day"
       ? appointments.filter(
-          (appt) => new Date(appt.bookingDate).toDateString() === currentDate.toDateString()
-        )
+        (appt) => normalizeDate(appt.bookingDate) === formatDate(currentDate)
+      )
       : [];
+
+
   if (isAuthLoading || loading) return <div className={styles.loading}>Đang tải lịch hẹn...</div>;
   if (!BARBER_ID || !accessToken) return <div className={styles.empty}>Vui lòng đăng nhập để xem lịch hẹn.</div>;
 

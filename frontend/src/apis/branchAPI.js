@@ -20,25 +20,31 @@ export const BranchAPI = {
     const result = await branchService.deleteBranch(id);
     return result;
   },
+
   toggleStatus: async (id) => {
     const result = await branchService.toggleBranchStatus(id);
     return result;
   },
 
   assignService: async (idBranch, idService) => {
-    const result = await branchService.assignServiceToBranch(
-      idBranch,
-      idService
-    );
+    const result = await branchService.assignServiceToBranch(idBranch, idService);
     return result;
   },
 
-  // 🔹 Bỏ gán dịch vụ khỏi chi nhánh
   unassignService: async (idBranch, idService) => {
-    const result = await branchService.unassignServiceFromBranch(
-      idBranch,
-      idService
-    );
+    const result = await branchService.unassignServiceFromBranch(idBranch, idService);
+    return result;
+  },
+
+
+  setSuspend: async (idBranch, suspendDate) => {
+    const result = await branchService.setSuspendDate(idBranch,
+      suspendDate);
+    return result;
+  },
+   setResume: async (idBranch,resumeDate) => {
+    const result = await branchService.setResumeDate(idBranch,
+     resumeDate);
     return result;
   },
 };

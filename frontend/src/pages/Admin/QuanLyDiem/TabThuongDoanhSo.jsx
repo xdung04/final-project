@@ -25,17 +25,12 @@ export default function TabThuongDoanhSo() {
   };
 
   const handleSaveRule = async (ruleData) => {
-    // Validate dữ liệu trước khi gửi
+    // Validate dữ liệu
     const min = Number(ruleData.minRevenue.toString().replace(/\./g, ""));
-    const max = Number(ruleData.maxRevenue.toString().replace(/\./g, ""));
     const bonus = Number(ruleData.bonusPercent);
 
-    if (isNaN(min) || isNaN(max) || isNaN(bonus)) {
+    if (isNaN(min) || isNaN(bonus)) {
       alert("Các trường phải là số hợp lệ");
-      return;
-    }
-    if (min > max) {
-      alert("Doanh thu tối đa phải lớn hơn hoặc bằng tối thiểu");
       return;
     }
     if (bonus < 0 || bonus > 100) {
@@ -47,7 +42,6 @@ export default function TabThuongDoanhSo() {
       const payload = {
         ...ruleData,
         minRevenue: min,
-        maxRevenue: max,
         bonusPercent: bonus,
       };
 
@@ -69,6 +63,7 @@ export default function TabThuongDoanhSo() {
   };
 
   const handleDeleteRule = async (id) => {
+    if (!window.confirm("Bạn có chắc chắn muốn xoá quy tắc này?")) return;
     try {
       await BonusRuleAPI.delete(id);
       setBonusRules((prev) => prev.filter((r) => r.id !== id));
@@ -80,16 +75,15 @@ export default function TabThuongDoanhSo() {
   const handleEditRule = (rule) => {
     setEditingRule({
       ...rule,
-      minRevenue: Number(rule.minRevenue).toLocaleString("vi-VN"),
-      maxRevenue: Number(rule.maxRevenue).toLocaleString("vi-VN"),
-      bonusPercent: rule.bonusPercent.toString(),
+      minRevenue: rule.minRevenue, // để nguyên số, không format ở đây
+      bonusPercent: rule.bonusPercent,
     });
     setShowModal(true);
   };
 
   // Format số khi nhập trong modal
   const handleInputChange = (field, value, setForm) => {
-    if (["minRevenue", "maxRevenue"].includes(field)) {
+    if (field === "minRevenue") {
       const numStr = value.replace(/\D/g, ""); // chỉ giữ số
       setForm((prev) => ({
         ...prev,
@@ -104,10 +98,14 @@ export default function TabThuongDoanhSo() {
   };
 
   return (
-    <div>
+    <div className={cx("bonusSection")}>
+      {/* HEADER */}
       <div className={cx("header")}>
         <h2>Chính sách thưởng doanh số</h2>
-        <div className={cx("actions")}>
+        <div style={{ display: "flex", gap: "12px" }}>
+          <button className={cx("btn")} onClick={fetchBonusRules}>
+            Làm mới
+          </button>
           <button
             className={cx("btn")}
             onClick={() => {
@@ -117,19 +115,16 @@ export default function TabThuongDoanhSo() {
           >
             Tạo mới
           </button>
-          <button className={cx("btn")} onClick={fetchBonusRules}>
-            Refresh
-          </button>
         </div>
       </div>
 
-      <div className={cx("rule-list")}>
+      {/* TABLE */}
+      <div>
         {bonusRules.length > 0 ? (
           <table className={cx("bonus-table")}>
             <thead>
               <tr>
                 <th>Doanh thu tối thiểu</th>
-                <th>Doanh thu tối đa</th>
                 <th>% Thưởng</th>
                 <th>Ghi chú</th>
                 <th>Trạng thái</th>
@@ -138,21 +133,34 @@ export default function TabThuongDoanhSo() {
             </thead>
             <tbody>
               {bonusRules.map((rule) => (
-                <tr key={rule.id}>
-                  <td>{Number(rule.minRevenue).toLocaleString("vi-VN")}</td>
-                  <td>{Number(rule.maxRevenue).toLocaleString("vi-VN")}</td>
+                <tr 
+                  key={rule.id} 
+                  // Thêm hiệu ứng nền nhạt cho các mốc đang được kích hoạt
+                  className={cx({ "active-row": rule.active })}
+                >
+                  <td style={{ fontWeight: 600 }}>
+                    {Number(rule.minRevenue).toLocaleString("vi-VN")} VNĐ
+                  </td>
                   <td>{rule.bonusPercent}%</td>
-                  <td>{rule.note}</td>
-                  <td>{rule.active ? "Hoạt động" : "Không hoạt động"}</td>
+                  <td style={{ color: "#777" }}>{rule.note || "—"}</td>
                   <td>
+                    <span style={{ 
+                      color: rule.active ? "#4b382a" : "#999", 
+                      fontWeight: rule.active ? 700 : 500 
+                    }}>
+                      {rule.active ? "Đang áp dụng" : "Đã tạm dừng"}
+                    </span>
+                  </td>
+                  <td>
+                    {/* Sử dụng class btn-edit và btn-delete từ SCSS */}
                     <button
-                      className={cx("btn")}
+                      className={cx("btn-edit")}
                       onClick={() => handleEditRule(rule)}
                     >
                       Sửa
                     </button>
                     <button
-                      className={cx("btn")}
+                      className={cx("btn-delete")}
                       onClick={() => handleDeleteRule(rule.id)}
                     >
                       Xoá
@@ -163,16 +171,19 @@ export default function TabThuongDoanhSo() {
             </tbody>
           </table>
         ) : (
-          <p className={cx("emptyText")}>Chưa có quy tắc thưởng nào.</p>
+          <p style={{ textAlign: "center", color: "#999", padding: "40px 0" }}>
+            Chưa có quy tắc thưởng nào.
+          </p>
         )}
       </div>
 
+      {/* MODAL */}
       {showModal && (
         <BonusModal
           initialData={editingRule}
           onClose={() => setShowModal(false)}
           onCreate={handleSaveRule}
-          onInputChange={handleInputChange} // truyền vào modal
+          onInputChange={handleInputChange}
         />
       )}
     </div>

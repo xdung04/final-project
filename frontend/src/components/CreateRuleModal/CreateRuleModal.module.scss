@@ -1,93 +1,275 @@
-/* components/CreateRuleModal.module.scss */
-.modal-overlay {
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:ital,wght@0,400;0,500;1,400&display=swap');
+
+// ─── Token màu nâu đen luxury ─────────────────────────────
+$ink:          #1a1008;   // chữ chính — đen nâu sâu
+$ink-soft:     #4a3728;   // label, hint
+$ink-muted:    #8a7060;   // placeholder, sub
+$gold:         #6366f1;   // accent (giữ indigo cho button)
+$divider:      #ede5dc;
+$surface:      #faf7f4;   // nền check-item hover
+
+.overlay {
   position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: rgba(0,0,0,0.5);
-  display: flex; justify-content: center; align-items: center;
+  inset: 0;
+  background: rgba(15, 8, 2, 0.55);
+  display: flex;
+  justify-content: center;
+  align-items: center;
   z-index: 1000;
+  animation: fadeIn 0.2s ease;
 }
 
 .modal {
   background: #fff;
-  padding: 24px;
   border-radius: 12px;
-  width: 400px; max-width: 90%;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-  transition: all 0.3s ease;
+  width: 400px;
+  max-width: 90%;
+  box-shadow: 0 8px 40px rgba(26, 16, 8, 0.18);
+  overflow: hidden;
+  animation: slideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+
+  // Font mặc định toàn modal
+  font-family: 'DM Sans', sans-serif;
+  color: $ink;
 }
 
+// ─── Header ───────────────────────────────────────────────
+.modal-header {
+  padding: 22px 24px 16px;
+
+  h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: $ink;
+    margin: 0 0 5px;
+    letter-spacing: -0.3px;
+    line-height: 1.15;
+  }
+}
+
+.modal-sub {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px;
+  font-weight: 400;
+  color: $ink-muted;
+  margin: 0;
+  letter-spacing: 0.1px;
+}
+
+.divider {
+  height: 1px;
+  background: $divider;
+}
+
+// ─── Body ─────────────────────────────────────────────────
+.modal-body {
+  padding: 18px 24px;
+}
+
+// ─── Fields ───────────────────────────────────────────────
 .field {
-  margin-bottom: 12px;
-  label {
+  margin-bottom: 14px;
+
+  > label {
     display: block;
-    margin-bottom: 4px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    color: $ink-soft;
+    margin-bottom: 5px;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
   }
-  input {
+
+  input[type="text"],
+  input[type="number"],
+  input[type="date"] {
     width: 100%;
-    padding: 6px 8px;
+    height: 38px;
+    padding: 0 12px;
+    border: 1px solid $divider;
     border-radius: 6px;
-    border: 1px solid #ccc;
-    transition: all 0.3s ease;
-  }
-}
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    color: $ink;
+    background: #fff;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.15s, box-shadow 0.15s;
 
-.field-checkbox {
-  margin-bottom: 12px;
+    &::placeholder {
+      color: $ink-muted;
+      font-size: 13px;
+    }
 
-  label {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-
-    input {
-      margin-right: 8px;
-      width: 16px; height: 16px;
-      transition: all 0.4s ease;
-
-      // Nếu là checkbox "Rule mặc định"
-      &.default {
-        &:checked {
-          transition-duration: 0.15s; // bật nhanh
-        }
-        &:not(:checked) {
-          transition-duration: 0.7s; // tắt chậm
-        }
-      }
+    &:focus {
+      border-color: darken($divider, 20%);
+      box-shadow: 0 0 0 3px rgba(74, 55, 40, 0.08);
     }
   }
 }
 
-.date-fields {
+.row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+// ─── Checkbox row ─────────────────────────────────────────
+.check-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 13px;
+  border-radius: 8px;
+  border: 1px solid $divider;
+  cursor: pointer;
+  margin-bottom: 8px;
+  user-select: none;
+  transition: background 0.15s, border-color 0.15s;
+
+  &:hover {
+    background: $surface;
+    border-color: darken($divider, 8%);
+  }
+
+  &.active {
+    background: #f8f4ee;
+    border-color: #c8a882;
+  }
+}
+
+// Ô checkbox tự vẽ
+.cb-box {
+  width: 17px;
+  height: 17px;
+  min-width: 17px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  border: 1.5px solid #c0ad98;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  transition: background 0.15s, border-color 0.15s;
+
+  &.cb-checked {
+    background: $ink;
+    border-color: $ink;
+  }
+}
+
+.check-texts {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.check-name {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: $ink;
+  line-height: 1.3;
+}
+
+.check-hint {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11.5px;
+  font-weight: 400;
+  color: $ink-muted;
+  line-height: 1.3;
+}
+
+// ─── Date wrap ────────────────────────────────────────────
+.date-wrap {
   overflow: hidden;
-  max-height: 200px; /* chiều cao tối đa khi hiển thị */
-  transition: max-height 0.5s ease, opacity 0.5s ease;
+  max-height: 120px;
   opacity: 1;
+  margin-bottom: 8px;
+  transition: max-height 0.35s ease, opacity 0.25s ease, margin 0.3s ease;
 
   &.hidden {
     max-height: 0;
     opacity: 0;
+    margin-bottom: 0;
+    pointer-events: none;
   }
 }
 
-.actions {
+// ─── Error ────────────────────────────────────────────────
+.error {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  color: #8b2020;
+  background: #fff5f5;
+  border: 1px solid #f5c0c0;
+  border-radius: 6px;
+  padding: 8px 11px;
+  margin-bottom: 4px;
+}
+
+// ─── Footer ───────────────────────────────────────────────
+.modal-footer {
+  padding: 14px 24px;
+  border-top: 1px solid $divider;
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
+  gap: 8px;
 }
 
-.btn {
-  padding: 6px 12px;
-  border: none;
-  background: #4caf50;
-  color: #fff;
-  border-radius: 6px;
+.btn-ghost {
+  height: 37px;
+  padding: 0 18px;
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
-  &:hover { background: #43a047; }
+  background: transparent;
+  color: $ink-soft;
+  border: 1px solid $divider;
+  transition: all 0.15s;
+  letter-spacing: 0.2px;
+
+  &:hover {
+    background: $surface;
+    border-color: darken($divider, 10%);
+  }
 }
 
-.error {
-  color: red;
-  font-size: 0.9rem;
-  margin-bottom: 8px;
+.btn-primary {
+  height: 37px;
+  padding: 0 20px;
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  background: $ink;
+  color: #faf7f4;
+  border: none;
+  letter-spacing: 0.3px;
+  transition: all 0.15s;
+
+  &:hover { background: $ink-soft; }
+  &:active { transform: scale(0.98); }
+}
+
+// ─── Animations ───────────────────────────────────────────
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(14px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
 }

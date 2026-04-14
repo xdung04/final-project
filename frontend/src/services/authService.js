@@ -1,4 +1,4 @@
-import * as request from "~/apis/configs/httpRequest";
+import * as request from "~/apis/configs/httpRequest"; // file này export các hàm post
 
 // Đăng nhập
 export const login = async ({ email, password }) => {
@@ -11,21 +11,51 @@ export const login = async ({ email, password }) => {
   }
 };
 
-// Gửi OTP khi đăng ký
-export const register = async ({ fullName, email, password, phoneNumber }) => {
+// Google Login
+export const googleLogin = async ({ token }) => {
   try {
-    const payload = { fullName, email, password, phoneNumber };
+    const res = await request.post("/auth/google", { token });
+    return res;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Gửi OTP khi đăng ký
+export const register = async ({
+  fullName,
+  email,
+  phoneNumber,
+  password,
+  confirmPassword,
+}) => {
+  try {
+    if (!fullName || !email || !phoneNumber || !password || !confirmPassword) {
+      throw new Error("Vui lòng điền đầy đủ thông tin");
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) throw new Error("Email không hợp lệ");
+
+    const phoneRegex = /^[0-9]{10,15}$/;
+    if (!phoneRegex.test(phoneNumber))
+      throw new Error("Số điện thoại không hợp lệ");
+
+    if (password !== confirmPassword)
+      throw new Error("Mật khẩu và xác nhận mật khẩu không khớp");
+
+    const payload = { fullName, email, phoneNumber, password };
     console.log("Register payload gửi xuống backend:", payload);
 
     const res = await request.post("/auth/register", payload);
     return res;
   } catch (error) {
-    console.error("Lỗi khi gọi API register:", error.response?.data || error);
-    throw error.response?.data || error;
+    console.error("Lỗi khi gọi API register:", error);
+    throw error; // ✅ giữ nguyên axios error
   }
 };
 
-// Xác thực OTP và tạo user
+// Xác thực OTP
 export const verifyOtp = async ({ email, otp }) => {
   try {
     const res = await request.post("/auth/verify-otp", { email, otp });
@@ -35,7 +65,7 @@ export const verifyOtp = async ({ email, otp }) => {
   }
 };
 
-// Quên mật khẩu → gửi OTP
+// Quên mật khẩu
 export const forgotPassword = async ({ email }) => {
   try {
     const res = await request.post("/auth/forgot-password", { email });
@@ -45,7 +75,6 @@ export const forgotPassword = async ({ email }) => {
   }
 };
 
-// Xác thực OTP quên mật khẩu
 export const verifyForgotOtp = async ({ email, otp }) => {
   try {
     const res = await request.post("/auth/verify-forgot-otp", { email, otp });
@@ -55,7 +84,6 @@ export const verifyForgotOtp = async ({ email, otp }) => {
   }
 };
 
-// Đặt lại mật khẩu mới
 export const resetPassword = async ({ email, newPassword }) => {
   try {
     const res = await request.post("/auth/reset-password", {
@@ -68,7 +96,6 @@ export const resetPassword = async ({ email, newPassword }) => {
   }
 };
 
-// Refresh token
 export const refreshToken = async ({ refreshToken }) => {
   try {
     const res = await request.post("/auth/refresh", { refreshToken });
@@ -78,10 +105,19 @@ export const refreshToken = async ({ refreshToken }) => {
   }
 };
 
-// Logout
 export const logout = async ({ refreshToken }) => {
   try {
     const res = await request.post("/auth/logout", { refreshToken });
+    return res;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+};
+
+// Lấy thông tin user (verify token)
+export const getMe = async () => {
+  try {
+    const res = await request.get("/auth/me");
     return res;
   } catch (error) {
     throw error.response?.data || error;

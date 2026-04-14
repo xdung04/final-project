@@ -1,0 +1,175 @@
+{
+  "startQuestion": {
+    "id": "start",
+    "question": "Bạn đã có mẫu tóc cụ thể muốn cắt chưa?",
+    "type": "single_choice",
+    "options": [
+      {
+        "label": "Rồi, tôi đã có ảnh mẫu/kiểu muốn cắt",
+        "nextFlow": "flowA"
+      },
+      {
+        "label": "Chưa, tôi cần Barber tư vấn kiểu phù hợp",
+        "nextFlow": "flowB"
+      }
+    ]
+  },
+  "flows": {
+    "flowA": {
+      "title": "Luồng A – Khách đã có mẫu (Kiểm tra độ khả thi)",
+      "intro": "Chào người anh em! Để đảm bảo kiểu tóc bạn chọn lên form chuẩn nhất và không bị 'vỡ mộng', hãy cho Barber biết chút thông tin về chất tóc hiện tại của bạn nhé.",
+      "questions": [
+        {
+          "id": "A1",
+          "question": "Tên kiểu tóc bạn muốn cắt (hoặc mô tả ngắn gọn):",
+          "type": "text",
+          "options": []
+        },
+        {
+          "id": "A2",
+          "question": "Chất tóc hiện tại của bạn thuộc dạng nào?",
+          "type": "single_choice",
+          "options": [
+            "Tóc rễ tre/Cứng: Sợi to, thô, cắt ngắn là dựng đứng",
+            "Tóc tơ/Mềm: Sợi mảnh, dễ bị xẹp, khó tạo độ phồng",
+            "Tóc xoăn/Bông xù: Tóc xoăn tự nhiên hoặc xù bông",
+            "Tóc trung bình: Không quá cứng, dễ vào nếp"
+          ]
+        },
+        {
+          "id": "A3",
+          "question": "Phần tóc 2 bên mai (side) của bạn thường bị sao?",
+          "type": "single_choice",
+          "options": [
+            "Bung chỉa mạnh: Mọc dài chút là chĩa thẳng ra ngoài",
+            "Ôm form: Mọc dài vẫn ôm vào da đầu",
+            "Thưa/Mỏng: Nhìn rõ da đầu nếu cắt quá sát"
+          ]
+        },
+        {
+          "id": "A4",
+          "question": "Bạn đánh giá thế nào về vùng trán của mình?",
+          "type": "single_choice",
+          "options": [
+            "Trán cân đối, đường chân tóc bình thường",
+            "Trán cao / Trán sân bay",
+            "Bò liếm hoặc Hói chữ M (bị lẹm 2 bên góc trán)"
+          ]
+        },
+        {
+          "id": "A5",
+          "question": "Thói quen vuốt sáp/tạo kiểu của bạn?",
+          "type": "single_choice",
+          "options": [
+            "Không bao giờ: Chỉ thích gội xong để khô tự nhiên",
+            "Thỉnh thoảng: Chỉ vuốt khi đi chơi/tiệc quan trọng",
+            "Thường xuyên: Ngày nào cũng vuốt sáp chỉnh chu"
+          ]
+        },
+        {
+          "id": "A6",
+          "question": "Với phần gáy và 2 bên, bạn thích cắt độ sát thế nào?",
+          "type": "single_choice",
+          "options": [
+            "Skin Fade/Trắng chân: Cạo sát trắng da đầu, hiệu ứng mờ dần",
+            "Xanh chân/Tỉa đuổi: Cắt ngắn gọn gàng, không hở da đầu",
+            "Nuôi dài/Tỉa nhẹ: Giữ độ dài chờm tai hoặc gáy (Mullet/Wolfcut)"
+          ]
+        },
+        {
+          "id": "A7",
+          "question": "Để giống mẫu nhất, bạn có sẵn sàng làm hóa chất không?",
+          "type": "single_choice",
+          "options": [
+            "Không: Chỉ cắt thôi, xấu đẹp tùy chất tóc",
+            "Ép Side (Down Perm): Chỉ ép 2 bên cho đỡ bung",
+            "Uốn phồng/Xoăn: Sẵn sàng uốn để có độ phồng đẹp",
+            "Combo: Làm tất cả (Uốn + Nhuộm) để giống mẫu 100%"
+          ]
+        }
+      ],
+      "faceRecognition": {
+        "id": "face_recog_A",
+        "question": "Cho phép AI nhận diện khuôn mặt để xem form đầu bạn có hợp kiểu này không.",
+        "type": "camera_upload"
+      },
+      "outro": "Đã nhận thông tin! Hệ thống đang phân tích form đầu và chất tóc của bạn để xem kiểu này có khả thi không. Chờ chút nhé!"
+    },
+    "flowB": {
+      "title": "Luồng B – Khách cần tư vấn từ A-Z (Makeover)",
+      "intro": "Chào bạn! Chưa biết cắt gì cũng không sao. Trả lời vài câu hỏi dưới đây để Barber tìm ra kiểu tóc 'chân ái' giúp bạn tút lại vẻ đẹp trai nhé.",
+      "questions": [
+        {
+          "id": "B1",
+          "question": "Điều gì ở mái tóc hiện tại làm bạn khó chịu nhất?",
+          "type": "single_choice",
+          "options": [
+            "Bị bung, chĩa: Hai bên mai cứ dựng ngược lên",
+            "Bị xẹp, ẹp: Tóc dính sát da đầu, nhìn thiếu sức sống",
+            "Khó vuốt: Tóc không chịu nghe lời, vuốt không ăn sáp",
+            "Vướng víu: Tóc dài nóng bức, muốn cắt cho mát"
+          ]
+        },
+        {
+          "id": "B2",
+          "question": "Tình trạng tóc và trán của bạn?",
+          "type": "single_choice",
+          "options": [
+            "Tóc dày, trán bình thường",
+            "Tóc mỏng / Thưa đỉnh đầu",
+            "Trán chữ M / Hói nhẹ / Trán quá cao"
+          ]
+        },
+        {
+          "id": "B3",
+          "question": "Môi trường làm việc/học tập chính của bạn?",
+          "type": "single_choice",
+          "options": [
+            "Công sở/Văn phòng: Cần lịch sự, gọn gàng (Classic)",
+            "Học sinh/Sinh viên: Trẻ trung, đúng quy định",
+            "Tự do/Nghệ thuật: Thích bụi bặm, cá tính, khác biệt",
+            "Thể thao/Vận động: Cần siêu ngắn, mát mẻ, dễ gội"
+          ]
+        },
+        {
+          "id": "B4",
+          "question": "Bạn thích hướng tới phong cách nào?",
+          "type": "single_choice",
+          "options": [
+            "Quý ông (Gentleman): Vuốt ngược, bóng bẩy (Side Part, Pompadour)",
+            "Hiện đại & Hàn Quốc: Mái rủ, thư sinh (Layer, Two-block)",
+            "Ngầu & Bụi: Ngắn, chất, sắc nét (Mohican, Buzz cut, Mullet)",
+            "Đơn giản: Cắt ngắn cho mát, không cần cầu kỳ"
+          ]
+        },
+        {
+          "id": "B5",
+          "question": "Buổi sáng bạn có bao nhiêu thời gian cho tóc tai?",
+          "type": "single_choice",
+          "options": [
+            "0 phút: Dậy là đi, không sấy không vuốt",
+            "2-3 phút: Sấy khô qua loa là được",
+            "5-10 phút: Sẵn sàng sấy tạo phồng và vuốt sáp chuẩn form"
+          ]
+        },
+        {
+          "id": "B6",
+          "question": "Bạn có hứng thú với các dịch vụ hóa chất không?",
+          "type": "single_choice",
+          "options": [
+            "Không: Tôi thích để tóc mộc tự nhiên",
+            "Ép Side (Down Perm): Chỉ cần ép 2 bên cho đỡ dựng",
+            "Uốn tóc: Thích xoăn nhẹ hoặc uốn phồng chân tóc",
+            "Nhuộm màu: Muốn đổi màu tóc cho sáng mặt/thời trang"
+          ]
+        }
+      ],
+      "faceRecognition": {
+        "id": "face_recog_B",
+        "question": "Cho phép AI nhận diện khuôn mặt để chọn kiểu tóc che khuyết điểm tốt nhất cho bạn.",
+        "type": "camera_upload"
+      },
+      "outro": "Cảm ơn người anh em! Dựa trên phong cách và chất tóc của bạn, Barber sẽ đề xuất 3 kiểu tóc phù hợp nhất ngay sau đây."
+    }
+  }
+}

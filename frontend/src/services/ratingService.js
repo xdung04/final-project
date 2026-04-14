@@ -3,7 +3,7 @@ import * as request from "~/apis/configs/httpRequest";
 // 📋 Lấy bảng đánh giá thợ theo idBarber
 export const getRatingSummaryByBarber = async (idBarber) => {
   try {
-    const res = await request.get(`/api/ratings/barber/${idBarber}`);
+    const res = await request.get(`/ratings/barber/${idBarber}`);
     console.log(`API getRatingSummaryByBarber trả về:`, res);
     return res;
   } catch (error) {
@@ -15,7 +15,7 @@ export const getRatingSummaryByBarber = async (idBarber) => {
 // ✏️ Cập nhật đánh giá thợ
 export const updateRating = async (idBarber, newRate) => {
   try {
-    const res = await request.post(`/api/ratings/barber/${idBarber}`, { rate: newRate });
+    const res = await request.post(`/ratings/barber/${idBarber}`, { rate: newRate });
     console.log(`API updateRating trả về:`, res);
     return res;
   } catch (error) {
@@ -27,7 +27,7 @@ export const updateRating = async (idBarber, newRate) => {
 // 📊 Lấy tất cả đánh giá thợ theo chi nhánh
 export const getAllRatingsByBranch = async (idBranch) => {
   try {
-    const res = await request.get(`/api/ratings/branch/${idBranch}`);
+    const res = await request.get(`/ratings/branch/${idBranch}`);
     console.log(`API getAllRatingsByBranch trả về:`, res);
     return res;
   } catch (error) {

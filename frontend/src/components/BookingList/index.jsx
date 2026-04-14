@@ -5,49 +5,56 @@ export default function BookingList({ onSelect, date }) {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // ===========================
+  // 🔄 FETCH BOOKING LIST
+  // ===========================
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const fetchBookings = useCallback(async () => {
     try {
-      const res = await fetch("http://localhost:8088/api/bookings/details");
+      const res = await fetch(`${API_BASE_URL}/bookings/details`);
       const data = await res.json();
 
-      if (data?.data) {
-        const mapped = data.data
-          .filter((booking) => booking.bookingDate?.startsWith(date))
-          .map((booking) => {
-            const serviceTotal =
-              booking.services?.reduce((sum, s) => sum + (parseFloat(s.price) || 0) * (s.quantity || 1), 0) || 0;
+      if (!data?.data) return;
 
-            const tipAmount = Number(booking.tip) || 0;
-            const discountPercent = Number(booking.voucher?.discountPercent) || 0;
-            const discountAmount = (serviceTotal * discountPercent) / 100;
+      const list = data.data
+        .filter((b) => b.bookingDate?.startsWith(date))
+        .map((b) => {
+          const serviceTotal =
+            b.services?.reduce(
+              (sum, s) => sum + (parseFloat(s.price) || 0) * (s.quantity || 1),
+              0
+            ) || 0;
 
-            const subTotal = serviceTotal + tipAmount;
-            const finalTotal = subTotal - discountAmount;
+          const tip = Number(b.tip) || 0;
+          const discountPercent = Number(b.voucher?.discountPercent) || 0;
+          const discountAmount = (serviceTotal * discountPercent) / 100;
 
-            return {
-              id: booking.idBooking,
-              time: booking.bookingTime || "—",
-              customer: booking.customer?.name || "Khách lẻ",
-              barber: booking.barber?.name || "Chưa chỉ định",
-              services: booking.services?.map((s) => s.name) || [],
-              branch: booking.branch?.name || "",
-              serviceTotal,
-              tip: tipAmount,
-              discountPercent,
-              discountAmount,
-              subTotal,
-              finalTotal,
-              isPaid: booking.isPaid || false,
-              status: booking.status || "Pending",
-              raw: booking,
-            };
-          })
-          .sort((a, b) => b.time.localeCompare(a.time));
+          const subTotal = serviceTotal + tip;
+          const finalTotal = subTotal - discountAmount;
 
-        setBookings(mapped);
-      }
+          return {
+            id: b.idBooking,
+            time: b.bookingTime || "—",
+            customer: b.customer?.name || "Khách lẻ",
+            barber: b.barber?.name || "Chưa chỉ định",
+            services: b.services?.map((s) => s.name) || [],
+            branch: b.branch?.name || "",
+            serviceTotal,
+            tip,
+            discountPercent,
+            discountAmount,
+            subTotal,
+            finalTotal,
+            isPaid: b.isPaid || false,
+            status: b.status || "Pending",
+            raw: b,
+          };
+        })
+        .sort((a, b) => b.time.localeCompare(a.time));
+
+      setBookings(list);
     } catch (err) {
-      console.error("❌ Lỗi khi tải booking:", err);
+      console.error("❌ Fetch booking error:", err);
     } finally {
       setLoading(false);
     }
@@ -63,22 +70,51 @@ export default function BookingList({ onSelect, date }) {
     }
   }, [fetchBookings, onSelect]);
 
+  // ===========================
+  // ❌ HỦY BOOKING
+  // ===========================
   const handleCancel = async (id) => {
     if (!window.confirm("Bạn có chắc muốn hủy lịch hẹn này không?")) return;
+
     try {
-      const res = await fetch(`http://localhost:8088/api/bookings/${id}/cancel`, {
+      const res = await fetch(`${API_BASE_URL}/bookings/${id}/cancel`, {
         method: "PUT",
       });
       const data = await res.json();
-      if (res.ok) {
-        alert("Đã hủy lịch hẹn thành công!");
-        fetchBookings();
-      } else {
+
+      if (!res.ok) {
         alert(data.message || "Hủy lịch thất bại!");
+        return;
       }
+
+      alert("Đã hủy lịch hẹn thành công!");
+      fetchBookings();
     } catch (err) {
-      console.error("❌ Lỗi khi hủy booking:", err);
+      console.error("❌ Cancel booking error:", err);
       alert("Có lỗi xảy ra khi hủy lịch!");
+    }
+  };
+
+  // ===========================
+  // ✅ CHECK-IN BOOKING
+  // ===========================
+  const handleCheckIn = async (id) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/bookings/${id}/checkin`, {
+        method: "PUT",
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.message || "Check-in thất bại!");
+        return;
+      }
+
+      alert("Khách đã check-in!");
+      fetchBookings();
+    } catch (err) {
+      console.error("❌ Check-in error:", err);
+      alert("Có lỗi xảy ra khi check-in!");
     }
   };
 
@@ -113,39 +149,39 @@ export default function BookingList({ onSelect, date }) {
               </tr>
             ) : (
               bookings.map((booking) => {
+                const { id, services } = booking;
+
                 const displayedServices =
-                  booking.services.length > 2
-                    ? `${booking.services.slice(0, 2).join(", ")} (+${booking.services.length - 2})`
-                    : booking.services.join(", ");
+                  services.length > 2
+                    ? `${services.slice(0, 2).join(", ")} (+${services.length - 2})`
+                    : services.join(", ");
 
                 return (
-                  <tr key={booking.id}>
+                  <tr key={id}>
                     <td>{booking.time}</td>
                     <td>{booking.customer}</td>
                     <td>{booking.barber}</td>
-                    <td title={booking.services.join(", ")}>{displayedServices || "—"}</td>
+                    <td title={services.join(", ")}>{displayedServices || "—"}</td>
                     <td>{booking.branch}</td>
 
-                    {/* ✅ Hiển thị chi tiết tạm tính / giảm / tổng */}
                     <td>
                       <div>
                         <div>
-                          <strong>Tạm tính:</strong> {Number(booking.subTotal).toLocaleString("vi-VN")}đ
+                          <strong>Tạm tính:</strong> {booking.subTotal.toLocaleString("vi-VN")}đ
                         </div>
 
                         {booking.discountPercent > 0 && (
                           <div style={{ color: "#e67e22" }}>
-                            Giảm {booking.discountPercent}% ( -{Number(booking.discountAmount).toLocaleString("vi-VN")}
-                            đ)
+                            Giảm {booking.discountPercent}% (-{booking.discountAmount.toLocaleString("vi-VN")}đ)
                           </div>
                         )}
 
                         <div>
-                          <strong>Tip:</strong> {Number(booking.tip).toLocaleString("vi-VN")}đ
+                          <strong>Tip:</strong> {booking.tip.toLocaleString("vi-VN")}đ
                         </div>
 
                         <div style={{ color: "#0a7f25", fontWeight: 600 }}>
-                          Tổng cộng: {Number(booking.finalTotal).toLocaleString("vi-VN")}đ
+                          Tổng cộng: {booking.finalTotal.toLocaleString("vi-VN")}đ
                         </div>
                       </div>
                     </td>
@@ -156,6 +192,8 @@ export default function BookingList({ onSelect, date }) {
                           ? styles.completed
                           : booking.status === "Cancelled"
                           ? styles.cancelled
+                          : booking.status === "InProgress"
+                          ? styles.inprogress
                           : styles.pending
                       }
                     >
@@ -163,19 +201,37 @@ export default function BookingList({ onSelect, date }) {
                         ? "Đã cắt xong"
                         : booking.status === "Cancelled"
                         ? "Đã hủy"
+                        : booking.status === "InProgress"
+                        ? "Đang thực hiện"
                         : "Đang chờ"}
                     </td>
 
                     <td className={booking.isPaid ? styles.paid : styles.unpaid}>
-                      {booking.isPaid ? "Đã thanh toán" : "Chưa thanh toán"}
+                      {booking.status === "Completed"
+                        ? booking.isPaid
+                          ? "Đã thanh toán"
+                          : "Chưa thanh toán"
+                        : "—"}
                     </td>
 
                     <td style={{ display: "flex", gap: "6px" }}>
-                      {!booking.isPaid && booking.status !== "Cancelled" && (
-                        <button onClick={() => onSelect(booking.raw, fetchBookings)}>Thanh toán</button>
+                      {/* Thanh toán chỉ hiển thị khi Completed */}
+                      {booking.status === "Completed" && !booking.isPaid && (
+                        <button onClick={() => onSelect(booking.raw, fetchBookings)}>
+                          Thanh toán
+                        </button>
                       )}
+
+                      {/* Check-in */}
                       {booking.status === "Pending" && (
-                        <button className={styles.cancelBtn} onClick={() => handleCancel(booking.id)}>
+                        <button className={styles.checkinBtn} onClick={() => handleCheckIn(id)}>
+                          Check-in
+                        </button>
+                      )}
+
+                      {/* Hủy lịch (Chỉ Pending) */}
+                      {booking.status === "Pending" && (
+                        <button className={styles.cancelBtn} onClick={() => handleCancel(id)}>
                           Hủy
                         </button>
                       )}

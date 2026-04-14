@@ -5,7 +5,7 @@ import * as request from "~/apis/configs/httpRequest";
 // filter = { month, year, branchId }
 export const getBarberRevenue = async (filter = {}) => {
   try {
-    const res = await request.get("/api/statistics/barbers", { params: filter });
+    const res = await request.get("/statistics/barbers", { params: filter });
     console.log("API getBarberRevenue trả về:", res);
     return res;
   } catch (error) {
@@ -17,7 +17,7 @@ export const getBarberRevenue = async (filter = {}) => {
 // Lấy tổng doanh thu từng tháng của các chi nhánh trong năm
 export const getMonthlyBranchRevenue = async (year) => {
   try {
-    const res = await request.get("/api/statistics/branches", { params: { year } });
+    const res = await request.get("/statistics/branches", { params: { year } });
     console.log("API getMonthlyBranchRevenue trả về:", res);
     return res;
   } catch (error) {
@@ -30,7 +30,7 @@ export const getMonthlyBranchRevenue = async (year) => {
 // params = { month, year }
 export const getDashboardOverview = async (params = {}) => {
   try {
-    const res = await request.get("/api/statistics/overview", { params });
+    const res = await request.get("/statistics/overview", { params });
     console.log("API getDashboardOverview trả về:", res);
     return res;
   } catch (error) {

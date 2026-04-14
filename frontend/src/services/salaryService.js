@@ -8,7 +8,7 @@ import * as request from "~/apis/configs/httpRequest";
  */
 export const fetchBarberSalaries = async (month, year) => {
   try {
-    const res = await request.get(`/api/salary?month=${month}&year=${year}`);
+    const res = await request.get(`/salary?month=${month}&year=${year}`);
     console.log("fetchBarberSalaries trả về:", res);
     return res; // trả về dữ liệu lương từ backend
   } catch (error) {
@@ -25,7 +25,7 @@ export const fetchBarberSalaries = async (month, year) => {
  */
 export const calculateBarberSalaries = async (month, year) => {
   try {
-    const res = await request.post(`/api/salary/confirm`, { month, year });
+    const res = await request.post(`/salary/confirm`, { month, year });
     console.log("calculateBarberSalaries trả về:", res);
     return res;
   } catch (error) {
@@ -40,7 +40,7 @@ export const calculateBarberSalaries = async (month, year) => {
  */
 export const fetchSalaryOverview = async () => {
   try {
-    const res = await request.get(`/api/salary/overview`);
+    const res = await request.get(`/salary/overview`);
     console.log("fetchSalaryOverview trả về:", res);
     return res;
   } catch (error) {

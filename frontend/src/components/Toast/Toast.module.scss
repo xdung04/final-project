@@ -1,119 +1,122 @@
-@keyframes slideOutLeft {
-  from {
-    transform: translateX(0%);
-  }
-  to {
-    transform: translateX(-100%);
-  }
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500&family=Bebas+Neue&display=swap');
+
+:root {
+  --gold: #b8966a;
+  --gold-dark: #967a54;
+  --charcoal: #2c2c2c;
+  --bg-white: #ffffff;
+  --bg-cream: #fdfbf8;
+  --border: #e0d7cc;
+  --ff-body: 'DM Sans', sans-serif;
+  --ff-display: 'Bebas Neue', sans-serif;
 }
-@keyframes fadeIn {
-  0% {
-    transform: translateX(400px);
-  }
-  70% {
-    transform: translateX(-20px);
-  }
-  90% {
-    transform: translateX(10px);
-  }
-  100% {
-    transform: translateX(0);
-  }
+
+@keyframes toastSlideIn {
+  0% { transform: translateX(120%); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
 }
-@keyframes fadeOut {
-  0% {
-    transform: translateX(0);
-  }
-  30% {
-    transform: translateX(-20px);
-  }
-  100% {
-    transform: translateX(400px);
-  }
+
+@keyframes toastSlideOut {
+  0% { transform: translateX(0); opacity: 1; }
+  100% { transform: translateX(120%); opacity: 0; }
 }
+
+@keyframes progressShrink {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
 .wrapper {
   position: fixed;
-  bottom: 16px;
-  right: 16px;
-  z-index: 9999;
-  padding: 4px;
-  width: 320px;
-  color: #fff;
-  animation: fadeIn 0.2s linear forwards;
+  top: 24px;
+  right: 24px;
+  z-index: 10000;
+  width: 380px;
+  max-width: 90%;
+  animation: toastSlideIn 0.4s cubic-bezier(0.23, 1, 0.32, 1) forwards;
 }
+
 .fade-out {
-  animation: fadeOut 0.2s linear forwards;
+  animation: toastSlideOut 0.4s cubic-bezier(0.23, 1, 0.32, 1) forwards;
 }
+
 .inner {
   display: flex;
-  justify-content: center;
-  background: #ffffff0f;
-  backdrop-filter: blur(15px);
-  border-radius: 0.6rem;
-  cursor: pointer;
-  min-height: 64px;
-  margin-bottom: 1rem;
-  padding: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  flex-direction: column;
+  background: var(--bg-white);
+  border: 1px solid var(--gold); /* Viền vàng mảnh sang trọng */
+  padding: 16px 20px;
+  box-shadow: 0 10px 30px rgba(184, 150, 106, 0.15);
+  position: relative;
   overflow: hidden;
 }
 
 .body {
-  position: relative;
-  flex: 1 1 auto;
-  padding: 6px;
   display: flex;
   align-items: center;
+  gap: 15px;
 }
 
 .icon {
-  margin-right: 10px;
-  width: 20px;
-  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  
+  // Tùy chỉnh màu icon để hợp với tone Gold
+  svg {
+    width: 24px;
+    height: 24px;
+  }
 }
 
+.success .icon { color: #2ecc71; } // Giữ xanh lá nhẹ nhưng thanh mảnh
+.error .icon { color: #e74c3c; }
+
 .text {
-  width: 240px;
-  color: #000; 
+  flex: 1;
+  font-size: 14px;
+  font-family: var(--ff-body);
+  font-weight: 500;
+  color: var(--charcoal);
+  line-height: 1.4;
+  letter-spacing: 0.3px;
 }
 
 .close {
-  color: var(--white);
-  position: absolute;
-  top: 4px;
-  right: 0;
-  opacity: 0.7;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
   cursor: pointer;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  opacity: 0.6;
+
   &:hover {
     opacity: 1;
+    color: var(--gold);
+    transform: rotate(90deg);
   }
 }
+
 .progress-bar {
   position: absolute;
   bottom: 0;
+  left: 0;
   height: 3px;
   width: 100%;
-}
-
-.background {
-  opacity: 0.2;
-  width: 100%;
-  height: 100%;
+  background: rgba(184, 150, 106, 0.1);
 }
 
 .fill {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
   height: 100%;
-  animation: slideOutLeft 4.8s linear forwards;
+  background: var(--gold); /* Thanh tiến trình màu vàng kim */
+  animation: progressShrink linear forwards;
 }
 
-.success {
-  background: #07bc0c;
-}
-
-.error {
-  background: #e74c3c;
-}
+// Màu sắc nhấn cho icon/text tùy loại
+.success-text { border-left: 3px solid #2ecc71; }
+.error-text { border-left: 3px solid #e74c3c; }

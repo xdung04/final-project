@@ -9,7 +9,7 @@ export const createBonusRule = async (ruleData) => {
       throw { message: "Missing required bonus rule fields" };
     }
 
-    const res = await request.post("/api/bonus", ruleData);
+    const res = await request.post("/bonus", ruleData);
     console.log("API createBonusRule trả về:", res);
     return res;
   } catch (error) {
@@ -21,7 +21,7 @@ export const createBonusRule = async (ruleData) => {
 // Lấy tất cả rule
 export const getAllBonusRules = async () => {
   try {
-    const res = await request.get("/api/bonus");
+    const res = await request.get("/bonus");
     return res;
   } catch (error) {
     throw error.response?.data || error;
@@ -31,7 +31,7 @@ export const getAllBonusRules = async () => {
 // Lấy các rule đang active
 export const getActiveBonusRules = async () => {
   try {
-    const res = await request.get("/api/bonus/active");
+    const res = await request.get("/bonus/active");
     return res;
   } catch (error) {
     throw error.response?.data || error;
@@ -41,7 +41,7 @@ export const getActiveBonusRules = async () => {
 // Lấy rule theo id
 export const getBonusRuleById = async (id) => {
   try {
-    const res = await request.get(`/api/bonus/${id}`);
+    const res = await request.get(`/bonus/${id}`);
     return res;
   } catch (error) {
     throw error.response?.data || error;
@@ -51,7 +51,7 @@ export const getBonusRuleById = async (id) => {
 // Cập nhật rule
 export const updateBonusRule = async (id, updateData) => {
   try {
-    const res = await request.put(`/api/bonus/${id}`, updateData);
+    const res = await request.put(`/bonus/${id}`, updateData);
     console.log("API updateBonusRule trả về:", res);
     return res;
   } catch (error) {
@@ -63,7 +63,7 @@ export const updateBonusRule = async (id, updateData) => {
 // Xoá rule (soft delete)
 export const deleteBonusRule = async (id) => {
   try {
-    const res = await request.del(`/api/bonus/${id}`);
+    const res = await request.del(`/bonus/${id}`);
     console.log("API deleteBonusRule trả về:", res);
     return res;
   } catch (error) {
@@ -75,7 +75,7 @@ export const deleteBonusRule = async (id) => {
 // Lấy rule áp dụng theo doanh thu
 export const getApplicableBonusRule = async (revenue) => {
   try {
-    const res = await request.get(`/api/bonus/applicable?revenue=${revenue}`);
+    const res = await request.get(`/bonus/applicable?revenue=${revenue}`);
     return res;
   } catch (error) {
     throw error.response?.data || error;

@@ -1,7 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:8088/api/customer-gallery";
-
+const API_URL = process.env.REACT_APP_API_BASE_URL + "/customer-galleries";
 const customerGalleryApi = {
   getByBarber: (barberId) => axios.get(`${API_URL}/barber/${barberId}`),
   getByCustomer: (token) =>

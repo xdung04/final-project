@@ -7,16 +7,17 @@ export default function DirectBooking({ onClose, onSuccess }) {
   const [customerId, setCustomerId] = useState(0);
   const [checking, setChecking] = useState(false);
 
+  const [showCreateCustomer, setShowCreateCustomer] = useState(false);
+  const [newCustomer, setNewCustomer] = useState({ name: "", phone: "" });
+
   const [branches, setBranches] = useState([]);
   const [barbers, setBarbers] = useState([]);
   const [services, setServices] = useState([]);
-
   const [times, setTimes] = useState([]);
   const [bookedTimesByDate, setBookedTimesByDate] = useState({});
   const [unavailableDates, setUnavailableDates] = useState([]);
 
   const [form, setForm] = useState({
-    customerType: "existing",
     name: "",
     branchId: "",
     barberId: "",
@@ -26,16 +27,81 @@ export default function DirectBooking({ onClose, onSuccess }) {
   });
 
   const today = new Date();
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
-  // ====== LOAD CHI NHÁNH ======
+  // ===== LOAD CHI NHÁNH =====
   useEffect(() => {
-    fetch("http://localhost:8088/api/bookings/branches")
+    fetch(`${API_BASE_URL}/bookings/branches`)
       .then((res) => res.json())
       .then((data) => setBranches(data || []))
       .catch((err) => console.error("Error fetch branches:", err));
   }, []);
 
-  // ====== CHỌN CHI NHÁNH ======
+  // ===== KIỂM TRA KHÁCH HÀNG =====
+  const handleCheck = async () => {
+    if (!phone.trim()) {
+      alert("Vui lòng nhập số điện thoại!");
+      return;
+    }
+
+    setChecking(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/booking-direct/find?phone=${phone}`);
+      const data = await res.json();
+
+      if (data.exists) {
+        setCustomerExists(true);
+        setForm((prev) => ({ ...prev, name: data.name }));
+        setCustomerId(data.idCustomer || 0);
+      } else {
+        setCustomerExists(false);
+        setCustomerId(0);
+        setForm((prev) => ({ ...prev, name: "" }));
+        alert("Không tìm thấy tài khoản này. Vui lòng tạo tài khoản mới.");
+      }
+    } catch (err) {
+      console.error("Lỗi khi kiểm tra khách hàng:", err);
+      alert("Không thể kiểm tra thông tin khách hàng!");
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  // ===== TẠO KHÁCH HÀNG MỚI =====
+  const handleCreateCustomer = async () => {
+  if (!newCustomer.name.trim() || !newCustomer.phone.trim()) {
+    alert("Vui lòng nhập đủ họ tên và số điện thoại!");
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/create-customer`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fullName: newCustomer.name,
+        phoneNumber: newCustomer.phone
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      alert(`Tạo khách hàng thất bại: ${data.message || "Lỗi server"}`);
+      return;
+    }
+
+    // ✅ Chỉ cần thông báo thành công
+    alert("✅ Tạo khách hàng thành công!");
+    setShowCreateCustomer(false); // đóng popup
+    setNewCustomer({ name: "", phone: "" }); // reset form
+  } catch (err) {
+    console.error("Network error:", err);
+    alert("Không thể kết nối server!");
+  }
+};
+
+  // ===== CHỌN CHI NHÁNH =====
   const handleBranchChange = async (e) => {
     const branchId = Number(e.target.value);
     setForm((prev) => ({
@@ -55,12 +121,11 @@ export default function DirectBooking({ onClose, onSuccess }) {
     }
 
     try {
-      const res = await fetch(`http://localhost:8088/api/bookings/branches/${branchId}`);
+      const res = await fetch(`${API_BASE_URL}/bookings/branches/${branchId}`);
       const data = await res.json();
       setBarbers(data.barbers || []);
       setServices(data.services || []);
 
-      // Tạo khung giờ làm việc
       if (data.openTime && data.closeTime && data.slotDuration) {
         const start = new Date(`2000-01-01T${data.openTime}`);
         const end = new Date(`2000-01-01T${data.closeTime}`);
@@ -70,15 +135,13 @@ export default function DirectBooking({ onClose, onSuccess }) {
           slots.push(t.toTimeString().slice(0, 5));
         }
         setTimes(slots);
-      } else {
-        setTimes([]);
-      }
+      } else setTimes([]);
     } catch (err) {
       console.error("Error fetch branch details:", err);
     }
   };
 
-  // ====== CHỌN BARBER ======
+  // ===== CHỌN BARBER =====
   const handleBarberChange = async (e) => {
     const barberId = Number(e.target.value);
     setForm((prev) => ({ ...prev, barberId }));
@@ -86,10 +149,9 @@ export default function DirectBooking({ onClose, onSuccess }) {
     if (!barberId) return;
 
     try {
-      const res = await fetch(`http://localhost:8088/api/bookings/barbers/${barberId}`);
+      const res = await fetch(`${API_BASE_URL}/bookings/barbers/${barberId}`);
       const data = await res.json();
 
-      // Gom các giờ đã đặt theo ngày
       const grouped = {};
       data.bookings?.forEach((b) => {
         const dateStr = new Date(b.bookingDate).toISOString().split("T")[0];
@@ -98,7 +160,6 @@ export default function DirectBooking({ onClose, onSuccess }) {
       });
       setBookedTimesByDate(grouped);
 
-      // Lưu ngày nghỉ
       const unava = [];
       data.unavailabilities?.forEach((u) => {
         const start = new Date(u.startDate);
@@ -113,7 +174,7 @@ export default function DirectBooking({ onClose, onSuccess }) {
     }
   };
 
-  // ====== CHỌN NGÀY ======
+  // ===== CHỌN NGÀY =====
   const handleDateChange = async (e) => {
     const date = e.target.value;
     setForm((prev) => ({ ...prev, date, time: "" }));
@@ -121,7 +182,7 @@ export default function DirectBooking({ onClose, onSuccess }) {
     if (!form.barberId) return;
 
     try {
-      const res = await fetch(`http://localhost:8088/api/bookings/barbers/${form.barberId}?date=${date}`);
+      const res = await fetch(`${API_BASE_URL}/bookings/barbers/${form.barberId}?date=${date}`);
       const data = await res.json();
 
       const grouped = {};
@@ -132,7 +193,6 @@ export default function DirectBooking({ onClose, onSuccess }) {
 
       setBookedTimesByDate((prev) => ({ ...prev, ...grouped }));
 
-      // Ngày nghỉ
       const unava = [];
       data.unavailabilities?.forEach((u) => {
         const start = new Date(u.startDate);
@@ -147,13 +207,13 @@ export default function DirectBooking({ onClose, onSuccess }) {
     }
   };
 
-  // ====== CHỌN GIỜ ======
+  // ===== CHỌN GIỜ =====
   const handleTimeSelect = (time) => {
     const bookedTimes = form.date ? bookedTimesByDate[form.date] || [] : [];
     if (!bookedTimes.includes(time)) setForm((prev) => ({ ...prev, time }));
   };
 
-  // ====== DỊCH VỤ ======
+  // ===== Dịch vụ =====
   const handleServiceAdd = (e) => {
     const selectedId = Number(e.target.value);
     const selected = services.find((s) => s.idService === selectedId);
@@ -161,7 +221,6 @@ export default function DirectBooking({ onClose, onSuccess }) {
       setForm((prev) => ({ ...prev, services: [...prev.services, selected] }));
     }
   };
-
   const handleRemoveService = (idService) => {
     setForm((prev) => ({
       ...prev,
@@ -169,45 +228,20 @@ export default function DirectBooking({ onClose, onSuccess }) {
     }));
   };
 
-  // ====== KIỂM TRA KHÁCH HÀNG ======
-  const handleCheck = async () => {
-    if (!phone.trim()) {
-      alert("Vui lòng nhập số điện thoại!");
+  // ===== GỬI BOOKING =====
+  const handleSubmit = async () => {
+    if (!customerExists) {
+      alert("Vui lòng kiểm tra hoặc tạo tài khoản khách hàng trước!");
       return;
     }
 
-    setChecking(true);
-    try {
-      const res = await fetch(`http://localhost:8088/api/booking-direct/find?phone=${phone}`);
-      const data = await res.json();
-
-      if (data.exists) {
-        setCustomerExists(true);
-        setForm((prev) => ({ ...prev, name: data.name }));
-        setCustomerId(data.idCustomer || 0);
-      } else {
-        setCustomerExists(false);
-        setForm((prev) => ({ ...prev, name: "Khách vãng lai" }));
-        setCustomerId(0);
-        alert("Không tìm thấy tài khoản này (sẽ lưu là khách vãng lai).");
-      }
-    } catch (err) {
-      console.error("Lỗi khi kiểm tra khách hàng:", err);
-      alert("Không thể kiểm tra thông tin khách hàng!");
-    } finally {
-      setChecking(false);
-    }
-  };
-
-  // ====== GỬI BOOKING ======
-  const handleSubmit = async () => {
     if (!form.branchId || !form.barberId || !form.date || !form.time || !form.services.length) {
       alert("Vui lòng nhập đầy đủ thông tin!");
       return;
     }
 
     const payload = {
-      idCustomer: customerId || 6, // ✅ nếu không có id thì gán 0
+      idCustomer: customerId,
       idBranch: form.branchId,
       idBarber: form.barberId,
       bookingDate: form.date,
@@ -218,12 +252,12 @@ export default function DirectBooking({ onClose, onSuccess }) {
         price: s.price,
         quantity: 1,
       })),
-      customerName: form.name || "Khách vãng lai",
-      phoneNumber: phone || "",
+      customerName: form.name,
+      phoneNumber: phone,
     };
 
     try {
-      const res = await fetch("http://localhost:8088/api/booking-direct/create", {
+      const res = await fetch(`${API_BASE_URL}/booking-direct/create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -249,91 +283,71 @@ export default function DirectBooking({ onClose, onSuccess }) {
   const totalPrice = form.services.reduce((sum, s) => sum + Number(s.price), 0);
   const bookedTimes = form.date ? bookedTimesByDate[form.date] || [] : [];
 
-  // ====== UI ======
   return (
     <div className={styles.overlay}>
       <div className={styles.form}>
-        <button className={styles.closeBtn} onClick={onClose}>
-          ✕
-        </button>
-        <h2>Đặt lịch trực tiếp</h2>
+        <button className={styles.closeBtn} onClick={onClose}>✕</button>
+<h2>
+  Đặt lịch trực tiếp
+  <button
+    className={styles.createCustomerBtn}
+    onClick={() => setShowCreateCustomer(true)}
+  >
+    Tạo tài khoản
+  </button>
+</h2>
+
+{showCreateCustomer && (
+  <div className={styles.popupOverlay}>
+    <div className={styles.popupContent}>
+      <button className={styles.closeBtn} onClick={() => setShowCreateCustomer(false)}>✕</button>
+      <h3>Tạo khách hàng mới</h3>
+      <label>Họ và tên:</label>
+      <input
+        type="text"
+        value={newCustomer.name}
+        onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
+      />
+      <label>Số điện thoại:</label>
+      <input
+        type="text"
+        value={newCustomer.phone}
+        onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
+      />
+      <div className={styles.popupBtnRow}>
+        <button className={styles.createBtn} onClick={handleCreateCustomer}>Tạo</button>
+        <button className={styles.cancelBtn} onClick={() => setShowCreateCustomer(false)}>Hủy</button>
+      </div>
+    </div>
+  </div>
+)}
+
+
+
 
         <div className={styles.scrollable}>
           <div className={styles.formContent}>
-            {/* Loại khách hàng */}
+            {/* Số điện thoại */}
             <div className={styles.section}>
-              <label>Loại khách hàng:</label>
-              <div className={styles.radioGroup}>
-                <label>
-                  <input
-                    type="radio"
-                    name="customerType"
-                    value="existing"
-                    checked={form.customerType === "existing"}
-                    onChange={() =>
-                      setForm((prev) => ({
-                        ...prev,
-                        customerType: "existing",
-                        name: "",
-                        branchId: "",
-                        barberId: "",
-                        date: "",
-                        time: "",
-                        services: [],
-                      }))
-                    }
-                  />
-                  Đã có tài khoản
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    name="customerType"
-                    value="new"
-                    checked={form.customerType === "new"}
-                    onChange={() =>
-                      setForm((prev) => ({
-                        ...prev,
-                        customerType: "new",
-                        name: "Khách vãng lai",
-                        branchId: "",
-                        barberId: "",
-                        date: "",
-                        time: "",
-                        services: [],
-                      }))
-                    }
-                  />
-                  Chưa có tài khoản
-                </label>
+              <label>Số điện thoại khách hàng:</label>
+              <div className={styles.phoneRow}>
+                <input
+                  type="text"
+                  placeholder="Nhập SĐT..."
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+                <button onClick={handleCheck} disabled={checking}>
+                  {checking ? "Đang kiểm tra..." : "Kiểm tra"}
+                </button>
               </div>
             </div>
 
-            {/* Số điện thoại */}
-            {form.customerType === "existing" && (
-              <>
-                <div className={styles.section}>
-                  <label>Số điện thoại khách hàng:</label>
-                  <div className={styles.phoneRow}>
-                    <input
-                      type="text"
-                      placeholder="Nhập SĐT..."
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                    />
-                    <button onClick={handleCheck} disabled={checking}>
-                      {checking ? "Đang kiểm tra..." : "Kiểm tra"}
-                    </button>
-                  </div>
-                </div>
-
-                {customerExists && (
-                  <div className={styles.section}>
-                    <label>Họ và tên:</label>
-                    <input type="text" value={form.name} readOnly />
-                  </div>
-                )}
-              </>
+            {customerExists && (
+              <div className={styles.section}>
+                <label>Họ và tên:</label>
+                <input type="text" value={form.name} readOnly />
+              </div>
             )}
 
             {/* Chi nhánh */}
@@ -342,9 +356,7 @@ export default function DirectBooking({ onClose, onSuccess }) {
               <select value={form.branchId} onChange={handleBranchChange}>
                 <option value="">-- Chọn chi nhánh --</option>
                 {branches.map((b) => (
-                  <option key={b.idBranch} value={b.idBranch}>
-                    {b.name}
-                  </option>
+                  <option key={b.idBranch} value={b.idBranch}>{b.name}</option>
                 ))}
               </select>
             </div>
@@ -355,9 +367,7 @@ export default function DirectBooking({ onClose, onSuccess }) {
               <select value={form.barberId} onChange={handleBarberChange} disabled={!barbers.length}>
                 <option value="">-- Chọn thợ cắt --</option>
                 {barbers.map((b) => (
-                  <option key={b.idBarber} value={b.idBarber}>
-                    {b.user?.fullName}
-                  </option>
+                  <option key={b.idBarber} value={b.idBarber}>{b.user?.fullName}</option>
                 ))}
               </select>
             </div>
@@ -371,12 +381,7 @@ export default function DirectBooking({ onClose, onSuccess }) {
                   const d = new Date();
                   d.setDate(today.getDate() + i);
                   const value = d.toISOString().split("T")[0];
-                  const label = d.toLocaleDateString("vi-VN", {
-                    weekday: "short",
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                  });
+                  const label = d.toLocaleDateString("vi-VN", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" });
                   const isUnavailable = unavailableDates.includes(value);
                   return (
                     <option key={i} value={value} disabled={isUnavailable}>
@@ -402,7 +407,6 @@ export default function DirectBooking({ onClose, onSuccess }) {
                       if (slotDate < today) isPast = true;
                     }
                   }
-
                   const isBooked = bookedTimes.includes(time);
                   const disabled = isBooked || isPast || !form.date;
 
@@ -410,9 +414,7 @@ export default function DirectBooking({ onClose, onSuccess }) {
                     <button
                       key={i}
                       type="button"
-                      className={`${styles.timeSlot} ${isBooked || isPast ? styles.booked : ""} ${
-                        form.time === time ? styles.selected : ""
-                      }`}
+                      className={`${styles.timeSlot} ${isBooked || isPast ? styles.booked : ""} ${form.time === time ? styles.selected : ""}`}
                       onClick={() => handleTimeSelect(time)}
                       disabled={disabled}
                     >
@@ -429,35 +431,27 @@ export default function DirectBooking({ onClose, onSuccess }) {
               <select onChange={handleServiceAdd} value="">
                 <option value="">-- Chọn dịch vụ --</option>
                 {services.map((s) => (
-                  <option key={s.idService} value={s.idService}>
-                    {s.name} - {Number(s.price).toLocaleString()}đ
-                  </option>
+                  <option key={s.idService} value={s.idService}>{s.name} - {Number(s.price).toLocaleString()}đ</option>
                 ))}
               </select>
               <ul className={styles.serviceList}>
                 {form.services.map((s) => (
                   <li key={s.idService}>
                     {s.name} - {Number(s.price).toLocaleString()}đ
-                    <button type="button" onClick={() => handleRemoveService(s.idService)}>
-                      ×
-                    </button>
+                    <button type="button" onClick={() => handleRemoveService(s.idService)}>×</button>
                   </li>
                 ))}
               </ul>
             </div>
 
             <div className={styles.section}>
-              <p>
-                <strong>Tổng tiền:</strong> {totalPrice.toLocaleString("vi-VN")}đ
-              </p>
+              <p><strong>Tổng tiền:</strong> {totalPrice.toLocaleString("vi-VN")}đ</p>
             </div>
           </div>
         </div>
 
         <div className={styles.submitContainer}>
-          <button className={styles.submitBtn} onClick={handleSubmit}>
-            Xác nhận booking
-          </button>
+          <button className={styles.submitBtn} onClick={handleSubmit}>Xác nhận booking</button>
         </div>
       </div>
     </div>

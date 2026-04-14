@@ -182,3 +182,26 @@
     background: #b0b0b0;
   }
 }
+.appliedTag {
+  background: #4caf50;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 14px;
+  text-align: center;
+}
+
+.removeBtn {
+  background: #e53935;
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+
+  &:hover {
+    background: #c62828;
+  }
+}

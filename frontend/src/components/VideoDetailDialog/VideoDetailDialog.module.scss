@@ -223,7 +223,11 @@
 .avatarSmall {
     width: 24px;
     height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--ig-stroke, #DBDBDB); /* viền nhẹ */
 }
+
 
 .replyText {
     // Dùng cho container của tên và nội dung reply

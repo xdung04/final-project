@@ -13,13 +13,13 @@ export default function Step4_Invoice({ data, onBack, onClose, onPaidSuccess }) 
   const total = totalServicePrice - discount + tip;
 
   const formatVND = (num) => num.toLocaleString("vi-VN", { style: "currency", currency: "VND" });
-
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const handleConfirm = async () => {
     if (loading) return;
     setLoading(true);
 
     try {
-      const payRes = await fetch(`http://localhost:8088/api/bookings/${booking.idBooking || booking.id}/pay`, {
+      const payRes = await fetch(`${API_BASE_URL}/bookings/${booking.idBooking || booking.id}/pay`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -34,7 +34,7 @@ export default function Step4_Invoice({ data, onBack, onClose, onPaidSuccess }) 
       await payRes.json();
 
       if (booking?.barberId && serviceRating > 0) {
-        await fetch(`http://localhost:8088/api/ratings/barber/${booking.barberId}`, {
+        await fetch(`${API_BASE_URL}/ratings/barber/${booking.barberId}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ rate: serviceRating }),

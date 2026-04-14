@@ -2,9 +2,10 @@ import React, { useState, useEffect } from "react";
 import styles from "./VoucherPopup.module.scss";
 import * as voucherService from "~/services/voucherService";
 
-function VoucherPopup({ idCustomer, onClose, onSelect }) {
+function VoucherPopup({ idCustomer, onClose, onSelect, defaultVoucher }) {
   const [vouchers, setVouchers] = useState([]);
-  const [selectedVoucher, setSelectedVoucher] = useState(null);
+  const [selectedVoucher, setSelectedVoucher] = useState(null); 
+  const [appliedVoucher, setAppliedVoucher] = useState(defaultVoucher || null); 
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -12,16 +13,13 @@ function VoucherPopup({ idCustomer, onClose, onSelect }) {
       try {
         setLoading(true);
 
-        // Truyền idCustomer vào API
-        const customerVouchers = await voucherService.getCustomerVouchers(idCustomer); 
+        const customerVouchers = await voucherService.getCustomerVouchers(idCustomer);
         const availableVouchers = await voucherService.getAvailableVouchersByPoint();
 
         const allVouchers = [
-          // Voucher đã đổi
           ...customerVouchers.map((v) => ({
             id: v.voucher.idVoucher,
             idCustomerVoucher: v.id,
-            code: v.voucherCode,
             title: v.voucher.title,
             description: v.voucher.description || "-",
             discount: parseFloat(v.voucher.discountPercent).toFixed(2),
@@ -31,11 +29,8 @@ function VoucherPopup({ idCustomer, onClose, onSelect }) {
             status: v.voucher.status ?? false,
             exchanged: true,
           })),
-
-          // Voucher chưa đổi
           ...availableVouchers.map((v) => ({
             id: v.idVoucher,
-            code: null,
             title: v.title,
             description: v.description || "-",
             discount: parseFloat(v.discountPercent).toFixed(2),
@@ -44,7 +39,7 @@ function VoucherPopup({ idCustomer, onClose, onSelect }) {
             totalQuantity: v.totalQuantity ?? "Không giới hạn",
             status: v.status ?? false,
             exchanged: false,
-            idCustomerVoucher: null, // thêm dòng này
+            idCustomerVoucher: null,
           })),
         ];
 
@@ -59,40 +54,43 @@ function VoucherPopup({ idCustomer, onClose, onSelect }) {
     fetchVouchers();
   }, [idCustomer]);
 
+  // Áp dụng voucher mới
   const handleApplyVoucher = (voucher) => {
+    setAppliedVoucher(voucher);
     onSelect(voucher);
     onClose();
   };
 
-const handleConfirmExchange = async () => {
-  if (!selectedVoucher) return;
-  try {
-    // Giả sử API trả về object { idCustomerVoucher, ...voucher }
-    const exchangedVoucher = await voucherService.exchangeVoucher(selectedVoucher.id);
+  // Bỏ áp dụng
+  const handleRemoveApplied = () => {
+    setAppliedVoucher(null);
+    onSelect(null);
+    onClose();
+  };
 
-    alert(`Đổi voucher ${selectedVoucher.title} thành công!`);
+  // Xác nhận đổi voucher
+  const handleConfirmExchange = async () => {
+    if (!selectedVoucher) return;
 
-    setVouchers((prev) =>
-      prev.map((v) =>
-        v.id === selectedVoucher.id
-          ? { ...v, exchanged: true, idCustomerVoucher: exchangedVoucher.idCustomerVoucher }
-          : v
-      )
-    );
+    try {
+      const exchangedVoucher = await voucherService.exchangeVoucher(selectedVoucher.id);
 
-    // Gọi onSelect luôn nếu muốn áp dụng ngay
-    onSelect({
-      ...selectedVoucher,
-      exchanged: true,
-      idCustomerVoucher: exchangedVoucher.idCustomerVoucher
-    });
+      alert(`Đổi voucher ${selectedVoucher.title} thành công!`);
 
-    setSelectedVoucher(null);
-  } catch (error) {
-    alert(error.message || "Đổi voucher thất bại!");
-    console.error(error);
-  }
-};
+      setVouchers((prev) =>
+        prev.map((v) =>
+          v.id === selectedVoucher.id
+            ? { ...v, exchanged: true, idCustomerVoucher: exchangedVoucher.idCustomerVoucher }
+            : v
+        )
+      );
+
+      setSelectedVoucher(null);
+    } catch (error) {
+      alert(error.message || "Đổi voucher thất bại!");
+      console.error(error);
+    }
+  };
 
   if (loading) return <div className={styles.overlay}>Đang tải...</div>;
 
@@ -100,53 +98,88 @@ const handleConfirmExchange = async () => {
     <div className={styles.overlay}>
       <div className={styles.popup}>
         <h3>Chọn Voucher</h3>
+
+        {/* Box đang áp dụng */}
+        {appliedVoucher && (
+          <div className={styles.appliedBox}>
+            <p><strong>Đang áp dụng:</strong> {appliedVoucher.title}</p>
+            <button className={styles.removeBtn} onClick={handleRemoveApplied}>
+              Bỏ áp dụng
+            </button>
+          </div>
+        )}
+
         <ul className={styles.voucherList}>
-          {vouchers.map((voucher) => (
-            <li key={voucher.id} className={styles.voucherItem}>
-              <div className={styles.info}>
-                <p className={styles.title}><strong>{voucher.title}</strong></p>
-                <p className={styles.description}>{voucher.description}</p>
-                <p className={styles.discount}>Giảm {voucher.discount}%</p>
-                <p className={styles.pointCost}>Giá điểm: {voucher.pointCost}</p>
-                <p className={styles.totalQuantity}>Số lượng còn: {voucher.totalQuantity}</p>
-                <p className={styles.status}>Trạng thái: {voucher.status ? "Còn hiệu lực" : "Hết hiệu lực"}</p>
-                <p className={styles.expire}>Hết hạn: {new Date(voucher.expireDate).toLocaleDateString("vi-VN")}</p>
-              </div>
-              <div className={styles.actions}>
-                {voucher.exchanged ? (
-                  <button
-                    className={styles.useBtn}
-                    onClick={() => handleApplyVoucher(voucher)}
-                  >
-                    Áp dụng
-                  </button>
-                ) : (
-                  <button
-                    className={styles.exchangeBtn}
-                    onClick={() => setSelectedVoucher(voucher)}
-                  >
-                    Đổi ngay ({voucher.pointCost} điểm)
-                  </button>
-                )}
-              </div>
-            </li>
-          ))}
+          {vouchers.map((voucher) => {
+            const isApplied = appliedVoucher?.id === voucher.id;
+
+            return (
+              <li key={voucher.id} className={styles.voucherItem}>
+                <div className={styles.info}>
+                  <p className={styles.title}><strong>{voucher.title}</strong></p>
+                  <p className={styles.description}>{voucher.description}</p>
+                  <p className={styles.discount}>Giảm {voucher.discount}%</p>
+                  {!voucher.exchanged && (
+                    <>
+                      <p className={styles.pointCost}>Giá điểm: {voucher.pointCost}</p>
+                      <p className={styles.totalQuantity}>Số lượng còn: {voucher.totalQuantity}</p>
+                    </>
+                  )}
+                  <p className={styles.status}>
+                    Trạng thái: {voucher.status ? "Còn hiệu lực" : "Hết hiệu lực"}
+                  </p>
+                  <p className={styles.expire}>
+                    Hết hạn: {new Date(voucher.expireDate).toLocaleDateString("vi-VN")}
+                  </p>
+                </div>
+
+                <div className={styles.actions}>
+                  {voucher.exchanged ? (
+                    isApplied ? (
+                      <span className={styles.appliedTag}>Đang áp dụng</span>
+                    ) : (
+                      <button
+                        className={styles.useBtn}
+                        onClick={() => handleApplyVoucher(voucher)}
+                      >
+                        Áp dụng
+                      </button>
+                    )
+                  ) : (
+                    <button
+                      className={styles.exchangeBtn}
+                      onClick={() => setSelectedVoucher(voucher)}
+                    >
+                      Đổi ngay ({voucher.pointCost} điểm)
+                    </button>
+                  )}
+                </div>
+              </li>
+            );
+          })}
         </ul>
+
         <div className={styles.footer}>
           <button className={styles.closeBtn} onClick={onClose}>Đóng</button>
         </div>
       </div>
 
+      {/* Pop-up xác nhận đổi */}
       {selectedVoucher && (
         <div className={styles.fullOverlay}>
           <div className={styles.confirmBox}>
             <h4>Xác nhận đổi</h4>
             <p>
-              Bạn có chắc chắn muốn đổi voucher <strong>{selectedVoucher.title}</strong> với <strong>{selectedVoucher.pointCost} điểm</strong>?
+              Bạn có chắc muốn đổi <strong>{selectedVoucher.title}</strong> với{" "}
+              <strong>{selectedVoucher.pointCost} điểm</strong>?
             </p>
             <div className={styles.confirmActions}>
-              <button className={styles.confirmBtn} onClick={handleConfirmExchange}>Đồng ý</button>
-              <button className={styles.cancelBtn} onClick={() => setSelectedVoucher(null)}>Hủy</button>
+              <button className={styles.confirmBtn} onClick={handleConfirmExchange}>
+                Đồng ý
+              </button>
+              <button className={styles.cancelBtn} onClick={() => setSelectedVoucher(null)}>
+                Hủy
+              </button>
             </div>
           </div>
         </div>

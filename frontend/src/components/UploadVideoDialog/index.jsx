@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from "react";
 import styles from "./UploadVideoDialog.module.scss";
 import { uploadReel } from "~/services/reelService";
-import { getHashtags } from "~/services/hashtagService"; 
+import { getHashtags } from "~/services/hashtagService";
 import { useAuth } from "~/context/AuthContext";
 
 function UploadVideoDialog({ open, onClose, onUpload }) {
-  const { accessToken, isLogin } = useAuth();
+  const { accessToken,user, isLogin } = useAuth();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [videoFile, setVideoFile] = useState(null);
   const [thumbnailFile, setThumbnailFile] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [suggestions, setSuggestions] = useState([]); // ✅ thêm
+  const [suggestions, setSuggestions] = useState([]);
+  const idBarber = user.idUser;
 
   useEffect(() => {
     const match = title.match(/#(\w+)$/);
@@ -39,38 +40,56 @@ function UploadVideoDialog({ open, onClose, onUpload }) {
       return;
     }
 
-    if (!accessToken) {
-      alert("Vui lòng đăng nhập để tải video lên!");
-      return;
-    }
+    // ✅ Kiểm tra thời lượng video
+    const videoUrl = URL.createObjectURL(videoFile);
+    const tempVideo = document.createElement("video");
+    tempVideo.src = videoUrl;
 
-    setLoading(true);
+    tempVideo.onloadedmetadata = async () => {
+      if (tempVideo.duration > 90) {
+        alert("Video quá dài! Vui lòng chọn video dưới 1 phút 30 giây.");
+        URL.revokeObjectURL(videoUrl); // giải phóng bộ nhớ
+        return;
+      }
 
-    // ✅ Tự động trích xuất các hashtag trong tiêu đề
-    const extractedTags = Array.from(
-      new Set(title.match(/#(\w+)/g)?.map((t) => t.slice(1)) || [])
-    );
+      if (!accessToken) {
+        alert("Vui lòng đăng nhập để tải video lên!");
+        return;
+      }
 
-    const formData = new FormData();
-    formData.append("video", videoFile);
-    if (thumbnailFile) formData.append("thumbnail", thumbnailFile);
-    formData.append("title", title);
-    formData.append("description", description);
-    formData.append("idBarber", 8); // Giữ nguyên, có lẽ là id cứng tạm thời
-    formData.append("hashtags", JSON.stringify(extractedTags));
+      setLoading(true);
 
-    try {
-      // 🟢 TRUYỀN formData VÀ accessToken VÀO HÀM uploadReel
-      const newReel = await uploadReel(formData, accessToken); 
-      onUpload(newReel);
-      onClose();
-    } catch (err) {
-      console.error(err);
-      alert("Lỗi khi upload video. Vui lòng kiểm tra lại thông tin và đăng nhập.");
-    } finally {
-      setLoading(false);
-    }
+      const extractedTags = Array.from(
+        new Set(title.match(/#(\w+)/g)?.map((t) => t.slice(1)) || [])
+      );
+
+      const formData = new FormData();
+      formData.append("video", videoFile);
+      if (thumbnailFile) formData.append("thumbnail", thumbnailFile);
+      formData.append("title", title);
+      formData.append("description", description);
+      formData.append("idBarber", idBarber); 
+      formData.append("hashtags", JSON.stringify(extractedTags));
+
+      try {
+        const newReel = await uploadReel(formData, accessToken);
+        onUpload(newReel);
+        onClose();
+      } catch (err) {
+        console.error(err);
+        alert("Lỗi khi upload video. Vui lòng kiểm tra lại thông tin và đăng nhập.");
+      } finally {
+        setLoading(false);
+        URL.revokeObjectURL(videoUrl); // giải phóng bộ nhớ
+      }
+    };
+
+    tempVideo.onerror = () => {
+      alert("Không thể đọc video. Vui lòng thử lại với file khác.");
+      URL.revokeObjectURL(videoUrl);
+    };
   };
+
 
   return (
     <div className={styles.overlay}>

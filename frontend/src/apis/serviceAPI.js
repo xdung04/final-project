@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:8088/api/services";
+const API_URL = process.env.REACT_APP_API_BASE_URL + "/services";
 
 const serviceApi = {
   getHotPaged: (page = 1, limit = 4) =>
@@ -21,8 +21,6 @@ const serviceApi = {
     axios.post(`${API_URL}`, data, {
       headers: { "Content-Type": "multipart/form-data" },
     }),
-
-  // 🔹 Cập nhật dịch vụ
   update: (id, data) =>
     axios.put(`${API_URL}/${id}`, data, {
       headers: { "Content-Type": "multipart/form-data" },
@@ -46,6 +44,10 @@ const serviceApi = {
     axios.delete(`${API_URL}/unassign-branch`, {
       data: { idService, idBranch },
     }),
+  checkAndHide: async (idService) => {
+    const res = await axios.post(`${API_URL}/${idService}/check-hide`);
+    return res.data;
+  },
 };
 
 export default serviceApi;

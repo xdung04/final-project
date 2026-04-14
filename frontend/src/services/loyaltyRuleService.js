@@ -7,7 +7,7 @@ export const createLoyaltyRule = async (ruleData) => {
     if (!ruleData.money_per_point || !ruleData.point_multiplier || (!ruleData.is_default && (!ruleData.start_date || !ruleData.end_date))) {
       throw { message: "Missing required loyalty rule fields" };
     }
-    const res = await request.post("/api/loyalty-rules", ruleData);
+    const res = await request.post("/loyalty-rules", ruleData);
     console.log("API createLoyaltyRule trả về:", res);
     return res;
   } catch (error) {
@@ -19,7 +19,7 @@ export const createLoyaltyRule = async (ruleData) => {
 // Lấy tất cả rule
 export const getAllLoyaltyRules = async () => {
   try {
-    const res = await request.get("/api/loyalty-rules");
+    const res = await request.get("/loyalty-rules");
     return res;
   } catch (error) {
     throw error.response?.data || error;
@@ -29,7 +29,7 @@ export const getAllLoyaltyRules = async () => {
 // Lấy các rule đang active
 export const getActiveLoyaltyRules = async () => {
   try {
-    const res = await request.get("/api/loyalty-rules/active");
+    const res = await request.get("/loyalty-rules/active");
     return res;
   } catch (error) {
     throw error.response?.data || error;
@@ -39,7 +39,7 @@ export const getActiveLoyaltyRules = async () => {
 // Lấy rule mặc định
 export const getDefaultLoyaltyRule = async () => {
   try {
-    const res = await request.get("/api/loyalty-rules/default");
+    const res = await request.get("/loyalty-rules/default");
     return res;
   } catch (error) {
     throw error.response?.data || error;
@@ -49,7 +49,7 @@ export const getDefaultLoyaltyRule = async () => {
 // Lấy rule áp dụng hiện tại
 export const getApplicableLoyaltyRule = async () => {
   try {
-    const res = await request.get("/api/loyalty-rules/applicable");
+    const res = await request.get("/loyalty-rules/applicable");
     return res;
   } catch (error) {
     throw error.response?.data || error;
@@ -59,7 +59,7 @@ export const getApplicableLoyaltyRule = async () => {
 // Lấy rule theo id
 export const getLoyaltyRuleById = async (id) => {
   try {
-    const res = await request.get(`/api/loyalty-rules/${id}`);
+    const res = await request.get(`/loyalty-rules/${id}`);
     return res;
   } catch (error) {
     throw error.response?.data || error;
@@ -69,7 +69,7 @@ export const getLoyaltyRuleById = async (id) => {
 // Cập nhật rule
 export const updateLoyaltyRule = async (id, updateData) => {
   try {
-    const res = await request.put(`/api/loyalty-rules/${id}`, updateData);
+    const res = await request.put(`/loyalty-rules/${id}`, updateData);
     console.log("API updateLoyaltyRule trả về:", res);
     return res;
   } catch (error) {
@@ -81,7 +81,7 @@ export const updateLoyaltyRule = async (id, updateData) => {
 // Xoá rule
 export const deleteLoyaltyRule = async (id) => {
   try {
-    const res = await request.del(`/api/loyalty-rules/${id}`);
+    const res = await request.del(`/loyalty-rules/${id}`);
     console.log("API deleteLoyaltyRule trả về:", res);
     return res;
   } catch (error) {

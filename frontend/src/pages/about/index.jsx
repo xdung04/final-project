@@ -1,51 +1,61 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import "./About.scss"; // SCSS vẫn dùng cho các phần còn lại
+import "./About.scss";
 
 function About() {
   const navigate = useNavigate();
 
   return (
     <div className="about-page">
-      {/* Banner / tiêu đề */}
+      <div className="grainOverlay"></div>
+
+      {/* Banner / The Heritage */}
       <section
         className="about-banner"
         style={{
-          backgroundImage: `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('/reel.png')`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          textAlign: "center",
-          padding: "150px 20px",
-          color: "#fff",
-          textShadow: "0 2px 10px rgba(0,0,0,0.6)",
+          backgroundImage: `url('/banner.png')`, // Đảm bảo ảnh của bạn có tông màu trung tính
         }}
       >
-        <h1>Về Chúng Tôi</h1>
-        <p>Chúng tôi mang đến trải nghiệm cắt tóc chuyên nghiệp và phong cách riêng cho mỗi khách hàng.</p>
+        <h1>Our Heritage</h1>
+        <p>Kiến tạo phong cách - Khẳng định bản sắc</p>
       </section>
 
       {/* Giới thiệu */}
       <section className="about-intro">
-        <h2>Giới Thiệu</h2>
-        <p>
-          BarberShop được thành lập năm 2015, chuyên cung cấp dịch vụ cắt tóc, tạo kiểu và chăm sóc tóc cho mọi đối tượng. Chúng tôi tự hào về sự chuyên nghiệp và tận tâm với khách hàng.
-        </p>
+        <div className="intro-text">
+          <h2>Câu Chuyện</h2>
+          <p>
+            Được thành lập từ năm 2015, Barber Lab không chỉ là một tiệm cắt tóc, mà là nơi nghệ thuật tạo mẫu tóc được tôn vinh. Chúng tôi tin rằng mỗi quý ông đều xứng đáng có một diện mạo phản ánh đúng vị thế và cá tính riêng biệt.
+          </p>
+        </div>
+        <div className="intro-image">
+           {/* Bạn có thể thêm một ảnh decor ở đây nếu muốn */}
+           <div style={{width: '100%', height: '400px', background: '#f5f5f5', border: '1px solid #e0d7cc'}}></div>
+        </div>
       </section>
 
       {/* Sứ mệnh & tầm nhìn */}
       <section className="about-mission">
-        <h2>Sứ Mệnh & Tầm Nhìn</h2>
-        <ul>
-          <li>Sứ mệnh: Mang đến trải nghiệm cắt tóc tuyệt vời, phong cách và chất lượng.</li>
-          <li>Tầm nhìn: Trở thành tiệm barber hàng đầu trong khu vực, được khách hàng tin tưởng và yêu thích.</li>
-        </ul>
+        <div className="mission-content">
+          <h2>Tầm Nhìn & Sứ Mệnh</h2>
+          <ul>
+            <li>
+              <strong>Sứ Mệnh</strong>
+              <span>Mang đến trải nghiệm grooming thượng lưu, kết hợp giữa kỹ thuật cổ điển và xu hướng hiện đại.</span>
+            </li>
+            <li>
+              <strong>Tầm Nhìn</strong>
+              <span>Trở thành biểu tượng của phong cách sống quý ông, dẫn đầu trong việc định hình tiêu chuẩn cái đẹp nam giới.</span>
+            </li>
+          </ul>
+        </div>
       </section>
 
       {/* Kêu gọi hành động */}
       <section className="about-cta">
-        <h2>Hãy Trải Nghiệm Dịch Vụ Của Chúng Tôi!</h2>
-        <p>Đặt lịch hẹn ngay hôm nay để nhận sự phục vụ chuyên nghiệp từ đội ngũ barber của chúng tôi.</p>
-        <button onClick={() => navigate("/booking")}>Đặt Lịch</button>
+        <h2>Trải nghiệm đẳng cấp</h2>
+        <p>Hãy để các nghệ nhân của chúng tôi chăm sóc diện mạo của bạn</p>
+        <button onClick={() => navigate("/booking")}>Đặt Lịch Ngay</button>
       </section>
     </div>
   );

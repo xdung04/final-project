@@ -12,7 +12,7 @@ import * as request from "~/apis/configs/httpRequest";
  */
 export const getSummary = async (params = {}) => {
   try {
-    const res = await request.get("/api/statistics/summary", { params });
+    const res = await request.get("/statistics/summary", { params });
 
     // Nếu backend trả về success
     if (res?.success) {

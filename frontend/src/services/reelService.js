@@ -40,6 +40,7 @@ export const addReply = async (idComment, content, token) => {
   return res.data;
 };
 
+
 export const updateComment = async (idComment, content, token) => {
   const res = await reelApi.updateComment(idComment, content, token);
   return res.data;

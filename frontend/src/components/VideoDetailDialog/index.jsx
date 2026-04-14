@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom"; // nhớ thêm dòng này đầu file
 import React, { useState, useEffect, useRef } from "react";
 import styles from "./VideoDetailDialog.module.scss";
+import { useToast } from "~/context/ToastContext";
 import {
   likeReel,
   getComments,
@@ -41,6 +42,7 @@ function VideoDetailDialog({
   const videoRef = useRef(null);
   const dialogRef = useRef(null);
   const isViewTrackedRef = useRef(false);
+  const { showToast } = useToast();
 
   const handleAction = async (apiCall) => {
     try {
@@ -135,8 +137,19 @@ function VideoDetailDialog({
   };
 
   const handleAddComment = async () => {
-    if (!newComment.trim() || !token) return;
-    const cmt = await handleAction(() => addComment(reel.idReel, newComment, token));
+    if (!token) {
+      showToast("Bạn cần đăng nhập để bình luận!", "warning");
+      return;
+    }
+    if (!newComment.trim()) {
+      showToast("Nội dung bình luận không được để trống!", "warning");
+      return;
+    }
+
+    const cmt = await handleAction(() =>
+      addComment(reel.idReel, newComment, token)
+    );
+
     if (cmt) {
       setComments([...comments, { ...cmt, replies: [] }]);
       setNewComment("");
@@ -144,18 +157,33 @@ function VideoDetailDialog({
   };
 
   const handleAddReply = async (commentId) => {
-    if (!newReply.trim()) return;
-    const rep = await handleAction(() => addReply(commentId, newReply, token));
-    setComments(
-      comments.map((c) =>
-        c.idComment === commentId
-          ? { ...c, replies: [...(c.replies || []), rep] }
-          : c
-      )
+    if (!token) {
+      showToast("Bạn cần đăng nhập để trả lời bình luận!", "warning");
+      return;
+    }
+    if (!newReply.trim()) {
+      showToast("Nội dung trả lời không được để trống!", "warning");
+      return;
+    }
+
+    const rep = await handleAction(() =>
+      addReply(commentId, newReply, token)
     );
-    setNewReply("");
-    setActiveReply(null);
+
+    if (rep) {
+      // rep.User đã có fullName + image
+      setComments(
+        comments.map((c) =>
+          c.idComment === commentId
+            ? { ...c, replies: [...(c.replies || []), rep] }
+            : c
+        )
+      );
+      setNewReply("");
+      setActiveReply(null);
+    }
   };
+
 
   const handleEnded = () => {
     if (currentIndex < reels.length - 1) {

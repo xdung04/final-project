@@ -1,191 +1,261 @@
-/* Home.module.scss */
+/* --- FONTS --- */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap');
 
-/* Import font Old Standard TT */
-@import url('https://fonts.googleapis.com/css2?family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&display=swap');
+.homeWrapper {
+  --black:    #0a0a0a;
+  --charcoal: #1a1a1a;
+  --graphite: #2c2c2c;
+  --brown:    #6b4c35;
+  --brown-lt: #9b6f52;
+  --brown-xlt:#c9a882;
+  --cream:    #f5f0e8;
+  --white:    #fafaf8;
+  --gold:     #b8966a;
+  --text-dim: #8a8580;
 
-.home {
-  font-family: 'Old Standard TT', serif;
-}
+  --ff-serif:  'Playfair Display', Georgia, serif;
+  --ff-elegant:'Cormorant Garamond', Georgia, serif;
+  --ff-display:'Bebas Neue', sans-serif;
+  --ff-body:   'DM Sans', sans-serif;
 
-/* Hero Section */
-.heroSection {
-  position: relative;
-  width: 100%;
-  height: 80vh;
-  background-size: cover;
-  background-position: center;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.3);
-  z-index: 1;
-}
-
-.heroContent {
-  position: relative;
-  z-index: 2;
-  text-align: center;
-  color: #fff;
-
-  h1 {
-    font-size: 3rem;
-    font-weight: 700;
-    margin-bottom: 1rem;
-  }
-
-  p {
-    font-size: 1.5rem;
-    font-weight: 400;
-    font-style: italic;
-    margin-bottom: 2rem;
-  }
-}
-
-.heroButtons {
-  display: flex;
-  gap: 16px;
-  justify-content: center;
-
-  .btnPrimary {
-    padding: 12px 24px;
-    background-color: #ff8c00;
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    font-weight: 700;
-    font-family: 'Old Standard TT', serif;
-    cursor: pointer;
-    transition: background-color 0.2s;
-
-    &:hover {
-      background-color: #ffa500;
-    }
-  }
-
-  .btnSecondary {
-    padding: 12px 24px;
-    background-color: transparent;
-    border: 2px solid #fff;
-    color: #fff;
-    border-radius: 6px;
-    font-weight: 700;
-    font-family: 'Old Standard TT', serif;
-    cursor: pointer;
-    transition: background-color 0.2s, color 0.2s;
-
-    &:hover {
-      background-color: #fff;
-      color: #000;
-    }
-  }
-}
-
-/* Section chung */
-.section {
-  padding: 60px 0;
-  background: #fafafa;
-}
-
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 16px;
-}
-
-/* Dịch vụ hot nhất */
-.textCenter {
-  text-align: center;
-  margin-bottom: 2.5rem;
-
-  .title {
-    font-size: 2.2rem;
-    font-weight: 700;
-    color: #1a1a1a;
-    margin-bottom: 0.75rem;
-    letter-spacing: 0.02em;
-  }
-
-  .subtitle {
-    color: #555;
-    font-size: 1.1rem;
-    font-style: italic;
-    opacity: 0.9;
-  }
-}
-
-.sliderWrapper {
+  background: var(--black);
+  color: var(--cream);
+  font-family: var(--ff-body);
+  font-weight: 300;
   overflow-x: hidden;
-  position: relative;
-  padding: 1rem 0;
-
-  &:hover .slider {
-    animation-play-state: paused; /* Dừng animation khi hover */
-  }
+  cursor: none; /* Custom cursor */
+  
+  *, *::before, *::after { box-sizing: border-box; }
 }
 
-.slider {
-  display: flex;
-  gap: 1.5rem;
-  width: max-content;
-  animation: slide 30s linear infinite; /* Trượt chậm hơn (30s) */
+/* ── GRAIN OVERLAY ── */
+.grainOverlay {
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 9990; opacity: 0.35;
 }
 
-.slideItem {
-  flex: 0 0 calc(25% - 1rem); /* Hiển thị khoảng 3 thẻ */
-  min-width: calc(25% - 1rem);
-  max-width: 200px; /* Giới hạn chiều rộng thẻ */
-  background: #fff;
-  border-radius: 12px;
-  overflow: hidden;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-
-  &:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
-  }
+/* ── CUSTOM CURSOR ── */
+.cursor {
+  width: 10px; height: 10px; background: var(--gold); border-radius: 50%;
+  position: fixed; top: 0; left: 0; 
+  pointer-events: none; /* Đảm bảo click xuyên qua con trỏ */
+  z-index: 9999;
+  transform: translate(-50%, -50%); transition: width 0.3s, height 0.3s;
+}
+.cursorRing {
+  width: 36px; height: 36px; border: 1px solid rgba(184,150,106,0.5); border-radius: 50%;
+  position: fixed; top: 0; left: 0; 
+  pointer-events: none; /* Đảm bảo click xuyên qua con trỏ */
+  z-index: 9998;
+  transform: translate(-50%, -50%); transition: width 0.3s, height 0.3s;
 }
 
-/* Animation cho trượt liên tục */
-@keyframes slide {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(-50%); /* Trượt nửa danh sách (do nhân đôi) */
-  }
+/* ── HERO ── */
+.hero {
+  height: 100vh; min-height: 700px; position: relative; display: flex; flex-direction: column;
+  justify-content: flex-end; padding: 0 60px 80px; overflow: hidden;
+}
+.heroBg {
+  position: absolute; inset: 0;
+  background-position: center; background-size: cover;
+  &::before { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgba(10,10,10,1) 0%, rgba(10,10,10,0.4) 60%, rgba(10,10,10,0.7) 100%); }
+}
+.heroLines {
+  position: absolute; top: 0; right: 120px; bottom: 0; width: 1px; background: linear-gradient(to bottom, transparent, rgba(184,150,106,0.3), transparent);
+  &::before { content: ''; position: absolute; top: 0; right: -40px; bottom: 0; width: 1px; background: linear-gradient(to bottom, transparent, rgba(184,150,106,0.1), transparent); }
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .slideItem {
-    flex: 0 0 calc(50% - 1rem); /* 2 thẻ */
-    min-width: calc(50% - 1rem);
-    max-width: 280px;
-  }
+/* ĐÃ THÊM POSITION: RELATIVE VÀO 3 CLASS DƯỚI ĐÂY ĐỂ NỔI LÊN TRÊN NỀN */
+.heroTag { 
+  font-family: var(--ff-elegant); font-size: 13px; letter-spacing: 5px; color: var(--gold); margin-bottom: 24px; display: flex; align-items: center; gap: 14px; 
+  position: relative; z-index: 10; /* Quan trọng */
+  &::before { content: ''; width: 40px; height: 1px; background: var(--gold); } 
+}
+.heroTitle { 
+  font-family: var(--ff-serif); font-size: clamp(64px, 8vw, 120px); font-weight: 900; line-height: 0.9; color: var(--white); 
+  position: relative; z-index: 10; /* Quan trọng */
+  em { font-style: italic; color: var(--brown-xlt); display: block; } 
+}
+.heroBottom { 
+  display: flex; align-items: flex-end; justify-content: space-between; gap: 40px; margin-top: 48px; 
+  position: relative; z-index: 10; /* Ép khu vực chứa nút lên trên cùng */
 }
 
-@media (max-width: 480px) {
-  .slideItem {
-    flex: 0 0 calc(100% - 1rem); /* 1 thẻ */
-    min-width: calc(100% - 1rem);
-    max-width: 100%;
-  }
+.heroDesc { font-family: var(--ff-elegant); font-size: 17px; line-height: 1.75; color: rgba(245,240,232,0.65); max-width: 360px; font-style: italic; }
+.heroActions { display: flex; align-items: center; gap: 20px; }
 
-  .textCenter {
-    .title {
-      font-size: 1.7rem;
-    }
+/* CHỈNH SỬA BUTTON */
+.btnPrimary { 
+  display: inline-flex; align-items: center; background: var(--brown); color: var(--cream); border: none; padding: 18px 36px; font-family: var(--ff-body); font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; 
+  cursor: pointer; position: relative; overflow: hidden; 
+  z-index: 1; 
+  
+  &::before { 
+    content: ''; position: absolute; inset: 0; background: var(--brown-lt); transform: translateX(-100%); transition: transform 0.4s; 
+    z-index: -1; 
+  } 
+  span { 
+    position: relative; z-index: 2; 
+    pointer-events: none; 
+  } 
+  &:hover::before { transform: translateX(0); } 
+}
 
-    .subtitle {
-      font-size: 0.95rem;
-    }
+.btnOutline { 
+  display: inline-flex; align-items: center; border: 1px solid rgba(245,240,232,0.3); color: var(--cream); background: transparent; padding: 18px 32px; font-family: var(--ff-body); font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; 
+  cursor: pointer; position: relative; overflow: hidden; transition: all 0.3s;
+  z-index: 1; 
+  
+  span {
+    position: relative; z-index: 2;
+    pointer-events: none;
   }
+  &:hover { border-color: var(--gold); color: var(--gold); } 
+}
+
+.heroScroll { 
+  position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 10px; 
+  z-index: 10; /* Cho chữ scroll nổi lên */
+  span { font-size: 9px; letter-spacing: 3px; color: rgba(245,240,232,0.4); text-transform: uppercase; } 
+}
+.scrollLine { width: 1px; height: 50px; background: linear-gradient(to bottom, var(--gold), transparent); animation: scrollDown 1.5s ease infinite; }
+@keyframes scrollDown { 0% { transform: translateY(-10px); opacity: 0;} 50% { opacity: 1; } 100% { transform: translateY(10px); opacity: 0; } }
+
+/* CHỈNH SỬA BUTTON */
+.btnPrimary { 
+  display: inline-flex; align-items: center; background: var(--brown); color: var(--cream); border: none; padding: 18px 36px; font-family: var(--ff-body); font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; 
+  cursor: pointer; position: relative; overflow: hidden; 
+  z-index: 1; /* Nâng nút lên */
+  
+  &::before { 
+    content: ''; position: absolute; inset: 0; background: var(--brown-lt); transform: translateX(-100%); transition: transform 0.4s; 
+    z-index: -1; /* Ép animation chìm xuống dưới */
+  } 
+  span { 
+    position: relative; z-index: 2; /* Ép chữ nổi lên trên cùng */
+    pointer-events: none; /* Click xuyên qua chữ trúng nút */
+  } 
+  &:hover::before { transform: translateX(0); } 
+}
+
+.btnOutline { 
+  display: inline-flex; align-items: center; border: 1px solid rgba(245,240,232,0.3); color: var(--cream); background: transparent; padding: 18px 32px; font-family: var(--ff-body); font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; 
+  cursor: pointer; position: relative; overflow: hidden; transition: all 0.3s;
+  z-index: 1; /* Nâng nút lên */
+  
+  span {
+    position: relative; z-index: 2;
+    pointer-events: none;
+  }
+  &:hover { border-color: var(--gold); color: var(--gold); } 
+}
+
+.heroScroll { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 10px; span { font-size: 9px; letter-spacing: 3px; color: rgba(245,240,232,0.4); text-transform: uppercase; } }
+.scrollLine { width: 1px; height: 50px; background: linear-gradient(to bottom, var(--gold), transparent); animation: scrollDown 1.5s ease infinite; }
+@keyframes scrollDown { 0% { transform: translateY(-10px); opacity: 0;} 50% { opacity: 1; } 100% { transform: translateY(10px); opacity: 0; } }
+
+/* ── MARQUEE ── */
+.marqueeBar { overflow: hidden; border-top: 1px solid rgba(107,76,53,0.3); border-bottom: 1px solid rgba(107,76,53,0.3); background: var(--charcoal); padding: 14px 0; }
+.marqueeTrack { display: flex; animation: marquee 28s linear infinite; width: max-content; }
+.marqueeItem { display: flex; align-items: center; gap: 32px; padding: 0 32px; font-family: var(--ff-display); font-size: 13px; letter-spacing: 4px; color: rgba(245,240,232,0.5); white-space: nowrap; }
+.marqueeDot { width: 4px; height: 4px; border-radius: 50%; background: var(--gold); }
+@keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+/* ── SECTIONS ── */
+.sectionLabel { font-family: var(--ff-elegant); font-size: 11px; letter-spacing: 5px; color: var(--gold); display: flex; align-items: center; gap: 14px; margin-bottom: 20px; &::before { content: ''; width: 30px; height: 1px; background: var(--gold); } }
+.sectionTitle { font-family: var(--ff-serif); font-size: clamp(36px, 4vw, 58px); font-weight: 700; color: var(--white); em { font-style: italic; color: var(--brown-xlt); } }
+
+/* ── SERVICES ── */
+.services { padding: 120px 60px; background: var(--black); }
+.servicesHeader { margin-bottom: 70px; }
+.servicesGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
+.serviceCard { background: var(--charcoal); padding: 44px 36px; position: relative; overflow: hidden; cursor: pointer; transition: all 0.4s; border: 1px solid transparent; &:hover { background: var(--graphite); border-color: rgba(107,76,53,0.3); transform: translateY(-5px); } }
+.serviceCard.featured { grid-row: span 2; background: var(--brown); display: flex; flex-direction: column; justify-content: flex-end; min-height: 400px; background-image: linear-gradient(to top, rgba(53,30,15,0.9) 0%, rgba(107,76,53,0.5) 100%); }
+.serviceNum { font-family: var(--ff-display); font-size: 11px; letter-spacing: 3px; color: var(--gold); margin-bottom: 20px; opacity: 0.7; }
+.serviceIcon { width: 48px; height: 48px; margin-bottom: 24px; border: 1px solid rgba(184,150,106,0.3); display: flex; align-items: center; justify-content: center; svg { width: 22px; height: 22px; stroke: var(--gold); fill: none; stroke-width: 1.5; } }
+.serviceName { font-family: var(--ff-serif); font-size: 22px; font-weight: 600; color: var(--white); margin-bottom: 12px; }
+.serviceDesc { font-size: 13px; line-height: 1.7; color: var(--text-dim); margin-bottom: 24px; }
+.servicePrice { font-family: var(--ff-elegant); font-size: 26px; color: var(--brown-xlt); span { font-size: 14px; } }
+
+/* ── AI SCAN ── */
+.aiScanSection { padding: 100px 60px; background: var(--charcoal); display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; position: relative; overflow: hidden; }
+.aiBadge { display: inline-flex; align-items: center; gap: 8px; background: rgba(107,76,53,0.15); border: 1px solid rgba(184,150,106,0.25); padding: 6px 14px; margin-bottom: 28px; font-size: 10px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--gold); }
+.aiBadgeDot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); animation: pulse 1.8s ease infinite; }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(184,150,106, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(184,150,106, 0); } 100% { box-shadow: 0 0 0 0 rgba(184,150,106, 0); } }
+.aiTitle { font-family: var(--ff-serif); font-size: clamp(32px, 3.5vw, 52px); color: var(--white); margin-bottom: 20px; em { color: var(--brown-xlt); } }
+.aiDesc { font-family: var(--ff-elegant); font-size: 16px; line-height: 1.8; color: rgba(245,240,232,0.6); margin-bottom: 40px; font-style: italic; }
+.aiScanBtn { display: inline-flex; background: transparent; padding: 0; cursor: pointer; border: none; position: relative; }
+.aiBtnInner { display: flex; align-items: center; background: var(--black); border: 1px solid rgba(184,150,106,0.35); transition: border-color 0.4s; }
+.aiBtnIcon { width: 72px; height: 72px; background: var(--brown); display: flex; align-items: center; justify-content: center; position: relative; transition: background 0.4s; svg { width: 30px; height: 30px; stroke: var(--cream); fill: none; z-index: 1; } }
+.scanRing { position: absolute; inset: 8px; border: 1px solid rgba(255,255,255,0.25); border-radius: 50%; animation: scanSpin 3s linear infinite; &::before { content: ''; position: absolute; width: 6px; height: 6px; border-radius: 50%; background: var(--gold); top: -3px; left: 50%; transform: translateX(-50%); } }
+@keyframes scanSpin { 100% { transform: rotate(360deg); } }
+.aiBtnText { padding: 0 28px; text-align: left; }
+.aiBtnLabel { font-size: 9px; letter-spacing: 3px; color: var(--gold); display: block; margin-bottom: 4px; }
+.aiBtnTitle { font-family: var(--ff-serif); font-size: 17px; font-weight: 600; color: var(--white); display: block; }
+.aiBtnArrow { width: 72px; height: 72px; border-left: 1px solid rgba(184,150,106,0.2); display: flex; align-items: center; justify-content: center; transition: all 0.4s; svg { width: 18px; height: 18px; stroke: var(--gold); fill: none; } }
+.aiScanBtn:hover .aiBtnInner { border-color: var(--gold); }
+.aiScanBtn:hover .aiBtnArrow { background: var(--gold); svg { stroke: var(--black); } }
+.aiVisual { position: relative; aspect-ratio: 3/4; max-height: 520px; }
+.aiVisualImg { width: 100%; height: 100%; background: var(--graphite); overflow: hidden; img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(30%); } }
+.aiScanOverlay { position: absolute; inset: 0; border: 1px solid rgba(184,150,106,0.2); pointer-events: none; }
+.scanLine { position: absolute; left: 0; right: 0; height: 1px; background: linear-gradient(to right, transparent, var(--gold), transparent); animation: scanLine 2.5s ease-in-out infinite; box-shadow: 0 0 8px rgba(184,150,106,0.4); }
+@keyframes scanLine { 0% { top: 0; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+
+/* ── BARBERS ── */
+.barbers { padding: 120px 60px; background: var(--black); }
+.barbersHeader { margin-bottom: 60px; }
+.barbersGrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; }
+.barberCard { position: relative; aspect-ratio: 3/4; overflow: hidden; cursor: pointer; &:hover .barberPhoto { transform: scale(1.05); } }
+.barberPhoto { width: 100%; height: 100%; background: var(--graphite); transition: transform 0.6s ease; img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(20%); } }
+.barberOverlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(10,10,10,0.92) 0%, transparent 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 28px 24px; }
+.barberRole { font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); margin-bottom: 6px; }
+.barberName { font-family: var(--ff-serif); font-size: 20px; color: var(--white); margin-bottom: 4px; }
+.barberExp { font-size: 12px; color: var(--text-dim); }
+
+/* ── STATS ── */
+.stats { padding: 80px 60px; background: var(--brown); display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; }
+.statItem { padding: 50px 40px; background: rgba(0,0,0,0.2); text-align: center; }
+.statNum { font-family: var(--ff-display); font-size: 64px; color: var(--white); line-height: 1; margin-bottom: 8px; }
+.statUnit { font-size: 28px; color: var(--brown-xlt); }
+.statLabel { font-family: var(--ff-elegant); font-size: 14px; font-style: italic; color: rgba(255,255,255,0.6); }
+
+/* ── REELS & BRANCHES ── */
+.reels { padding: 120px 60px; background: var(--charcoal); }
+.reelsHeader { margin-bottom: 50px; }
+.reelsGrid { display: grid; grid-template-columns: 2fr 1fr 1fr; grid-template-rows: auto auto; gap: 3px; }
+.reelItem { background: var(--graphite); aspect-ratio: 9/16; overflow: hidden; cursor: pointer; img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(25%); transition: transform 0.6s; } &:hover img { transform: scale(1.05); } &.main { aspect-ratio: 9/14; grid-row: span 2; } }
+
+.branches { padding: 100px 60px; background: var(--graphite); display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+.branchesMap { background: var(--charcoal); border: 1px solid rgba(107,76,53,0.2); height: 380px; display: flex; align-items: center; justify-content: center; }
+.branchesMapPlaceholder { color: var(--text-dim); font-size: 12px; letter-spacing: 2px; text-transform: uppercase; }
+.branchList { display: flex; flex-direction: column; gap: 1px; }
+.branchItem { background: rgba(0,0,0,0.3); padding: 24px 28px; cursor: pointer; transition: all 0.3s; border: 1px solid transparent; &:hover, &.active { background: rgba(107,76,53,0.15); border-color: rgba(107,76,53,0.3); } }
+.branchName { font-family: var(--ff-serif); font-size: 16px; color: var(--white); margin-bottom: 4px; }
+.branchAddr { font-size: 12px; color: var(--text-dim); }
+
+/* ── CHATBOT ── */
+.chatbotBubble { 
+  position: fixed; bottom: 30px; right: 30px; z-index: 2000; 
+  display: flex; flex-direction: column; align-items: flex-end; gap: 16px; 
+  pointer-events: none; /* THÊM DÒNG NÀY: Click xuyên qua phần khung vô hình */
+}
+
+.chatbotPopup { 
+  background: var(--charcoal); width: 350px; height: 450px; border: 1px solid var(--gold); 
+  border-radius: 12px; transform: scale(0.8); opacity: 0; pointer-events: none; 
+  transition: all 0.4s; transform-origin: bottom right; overflow: hidden; 
+}
+
+.chatbotPopup.open { 
+  transform: scale(1); opacity: 1; 
+  pointer-events: auto; /* Khi cửa sổ chat mở ra thì nhận click bình thường */
+}
+
+.chatbotBtn { 
+  width: 60px; height: 60px; background: var(--gold); border: none; border-radius: 50%; 
+  color: var(--black); font-size: 24px; cursor: pointer; display: flex; align-items: center; 
+  justify-content: center; box-shadow: 0 10px 20px rgba(0,0,0,0.3); 
+  pointer-events: auto; /* THÊM DÒNG NÀY: Để cục nút tròn vẫn bấm được */
+  svg { width: 28px; height: 28px; fill: var(--black); } 
 }

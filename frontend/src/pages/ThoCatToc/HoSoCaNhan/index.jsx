@@ -4,7 +4,7 @@ import { BarberAPI } from "~/apis/barberAPI";
 import { useAuth } from "~/context/AuthContext";
 
 function HoSoCaNhan() {
-  const { user, accessToken, loading: isAuthLoading } = useAuth(); 
+  const { user, accessToken, loading: isAuthLoading } = useAuth();
   const idBarber = user?.idUser;
   const [barber, setBarber] = useState(null);
   const [formData, setFormData] = useState({});
@@ -13,6 +13,8 @@ function HoSoCaNhan() {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [phoneError, setPhoneError] = useState("");
+
 
   useEffect(() => {
     if (isAuthLoading || !idBarber) {
@@ -21,7 +23,7 @@ function HoSoCaNhan() {
     }
 
     const fetchProfile = async () => {
-      setLoading(true); 
+      setLoading(true);
       try {
         const data = await BarberAPI.getProfile(idBarber);
         setBarber(data);
@@ -39,6 +41,10 @@ function HoSoCaNhan() {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
+  const isValidPhone = (phone) => {
+    const regex = /^0\d{9}$/; // phải có 10 số và bắt đầu bằng 0
+    return regex.test(phone);
+  };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -50,6 +56,15 @@ function HoSoCaNhan() {
 
   const handleSave = async () => {
     if (!idBarber || !accessToken) return;
+
+    // 🚨 Validate số điện thoại trước khi gửi API
+    if (!isValidPhone(formData.phoneNumber)) {
+      setPhoneError("Số điện thoại không hợp lệ! Vui lòng nhập 10 số và bắt đầu bằng 0.");
+      return;
+    } else {
+      setPhoneError("");
+    }
+
     setSaving(true);
     try {
       const form = new FormData();
@@ -59,10 +74,12 @@ function HoSoCaNhan() {
       if (selectedImage) form.append("image", selectedImage);
 
       await BarberAPI.updateProfile(idBarber, form, accessToken);
+
       setBarber({
         ...formData,
         image: previewImage || formData.image,
       });
+
       setIsEditing(false);
     } catch (err) {
       console.error("Lỗi khi lưu:", err);
@@ -70,6 +87,7 @@ function HoSoCaNhan() {
       setSaving(false);
     }
   };
+
 
   const handleCancel = () => {
     setFormData(barber);
@@ -125,6 +143,11 @@ function HoSoCaNhan() {
                 className={styles.input}
                 placeholder="Số điện thoại"
               />
+
+              {phoneError && (
+                <p className={styles.errorText}>{phoneError}</p>
+              )}
+
               <input
                 name="email"
                 value={formData.email}
@@ -184,7 +207,7 @@ function HoSoCaNhan() {
               onClick={handleCancel}
               disabled={saving}
             >
-               Hủy
+              Hủy
             </button>
           </>
         ) : (
@@ -193,7 +216,7 @@ function HoSoCaNhan() {
             onClick={() => setIsEditing(true)}
             disabled={saving}
           >
-             Chỉnh sửa hồ sơ
+            Chỉnh sửa hồ sơ
           </button>
         )}
       </div>

@@ -4,44 +4,34 @@ import { useNavigate } from "react-router-dom";
 import Modal from "~/components/Modal";
 
 export function ProtectedRoute({ children, requiredRole }) {
-  const { isLogin, user } = useAuth();
+  const { isLogin, user, loading } = useAuth();
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
 
+  console.log("ProtectedRoute", { isLogin, user, loading });
+
   useEffect(() => {
-    // Nếu chưa đăng nhập → mở modal
+    console.log("useEffect ProtectedRoute", { isLogin, user });
+    if (loading) return;
+
     if (!isLogin) {
+      console.log("Chưa login → show modal");
       setShowModal(true);
+      return;
     }
-    // Nếu đăng nhập mà không đủ quyền → chuyển hướng về Home
-    else if (requiredRole && user?.role !== requiredRole) {
+
+    if (requiredRole && user?.role !== requiredRole) {
+      console.log("Không đủ quyền → redirect /");
       navigate("/");
     }
-  }, [isLogin, user, requiredRole, navigate]);
+  }, [isLogin, user, requiredRole, loading, navigate]);
 
-  const handleClose = () => {
-    setShowModal(false);
-    if (!isLogin) {
-      navigate("/"); // Nếu tắt modal mà chưa login → về Home
-    }
-  };
+  if (loading) return null;
 
-  const handleLoginSuccess = () => {
-    setShowModal(false);
-    // Vào lại trang hiện tại sau khi login thành công
-  };
-
-  // Nếu đã đăng nhập và có quyền hợp lệ → render nội dung
   if (isLogin && (!requiredRole || user?.role === requiredRole)) {
     return children;
   }
 
-  // Nếu chưa login → hiển thị modal
-  return (
-    <Modal
-      isOpen={showModal}
-      onClose={handleClose}
-      onLoginSuccess={handleLoginSuccess}
-    />
-  );
+  console.log("Chưa login → render modal");
+  return <Modal isOpen={showModal} />;
 }

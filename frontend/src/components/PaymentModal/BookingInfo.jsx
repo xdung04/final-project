@@ -6,7 +6,7 @@ export default function BookingInfo({ data, setData, onNext }) {
   const { booking, services, voucher } = data;
   const [branchServices, setBranchServices] = useState([]);
   const [showBranchServices, setShowBranchServices] = useState(false);
-
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
   // ✅ Lấy danh sách dịch vụ của chi nhánh
   useEffect(() => {
     if (!booking?.branch) return;
@@ -14,7 +14,7 @@ export default function BookingInfo({ data, setData, onNext }) {
     const fetchBranchServices = async () => {
       try {
         const branchId = booking.branchId || booking.raw?.branch?.idBranch || 1;
-        const res = await fetch(`http://localhost:8088/api/bookings/branches/${branchId}`);
+        const res = await fetch(`${API_BASE_URL}/bookings/branches/${branchId}`);
         const result = await res.json();
 
         if (result?.services) {
@@ -41,7 +41,7 @@ export default function BookingInfo({ data, setData, onNext }) {
 
     const fetchVoucher = async () => {
       try {
-        const res = await fetch(`http://localhost:8088/api/vouchers/${booking.idVoucher}`);
+        const res = await fetch(`${API_BASE_URL}/vouchers/${booking.idVoucher}`);
         const result = await res.json();
 
         if (result?.success && result.data) {

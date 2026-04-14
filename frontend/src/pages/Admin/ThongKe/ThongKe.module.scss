@@ -1,89 +1,152 @@
-.thongke {
+// Variables cho tone màu Luxury
+$color-gold: #D4AF37;
+$color-gold-dark: #B8962D;
+$color-charcoal: #121212; // Đen sâu hơn
+$color-border: #EBEBEB;
+$color-bg: #FDFDFD; // Trắng ngà cực nhẹ
+$font-main: 'Inter', sans-serif;
+
+.container {
   display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  padding: 20px;
-  background: #f9fafb;
-  min-height: 100vh;
+  height: 100vh;
+  background-color: $color-bg;
+  font-family: $font-main;
+  overflow: hidden;
 }
 
-.chartBox {
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+// --- SIDEBAR: Tinh chỉnh sang phong cách Minimalist Dark ---
+.sidebar {
+  width: 280px;
+  background: $color-charcoal;
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  color: white;
+  z-index: 100;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
 
-  .chartTitle {
-    font-size: 18px;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
+  .logoBox {
+    padding: 45px 32px;
+    display: flex;
+    flex-direction: column; // Logo trên chữ dưới cho lạ mắt
+    align-items: flex-start;
+    gap: 15px;
+
+    .logoIcon {
+      background: linear-gradient(135deg, $color-gold, $color-gold-dark);
+      width: 42px;
+      height: 42px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: $color-charcoal;
+      box-shadow: 0 8px 20px rgba(212, 175, 55, 0.2);
+    }
+
+    .logoText {
+      font-size: 1.2rem;
+      font-weight: 300; // Font mỏng tạo cảm giác sang trọng
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      span { color: $color-gold; font-weight: 700; }
+    }
   }
 
-  .filterBox {
+  .navigation {
+    flex: 1;
+    padding: 0 20px;
     display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    align-items: center;
+    flex-direction: column;
+    gap: 12px;
 
-    select, button {
-      padding: 8px 14px;
-      border-radius: 8px;
-      border: 1px solid #d1d5db;
-      font-size: 14px;
+    .navItem {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 14px 20px;
+      border-radius: 4px; // Bo góc ít hơn tạo sự cứng cáp
+      background: transparent;
+      color: #717171;
       cursor: pointer;
-      transition: all 0.2s;
+      font-size: 0.85rem;
+      font-weight: 400;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 
       &:hover {
-        border-color: #3b82f6;
+        color: white;
+        padding-left: 25px; // Hiệu ứng trượt nhẹ
       }
-    }
 
-    button.update {
-      background: #3b82f6;
-      color: #fff;
-      font-weight: 500;
-      &:hover { background: #2563eb; }
-    }
-
-    button.excel {
-      background: #10b981;
-      color: #fff;
-      font-weight: 500;
-      &:hover { background: #059669; }
+      &.active {
+        color: $color-gold;
+        background: rgba(212, 175, 55, 0.05); // Không dùng nền đậm, dùng viền
+        border-left: 2px solid $color-gold;
+        font-weight: 600;
+      }
     }
   }
 
-  .chartContent {
-    display: flex;
-    gap: 5px;
-    align-items: stretch;
-
-    .chartWrapper { flex: 2; }
-    .aiAnalysis {
-      flex: 1;
-      background: white;
-      padding: 20px;
-      border-radius: 8px;
-      border: 1px solid #ddd;
-      height: 400px; 
+  .sidebarFooter {
+    padding: 30px;
+    p { 
+      font-size: 0.7rem; 
+      color: #444; 
+      letter-spacing: 1px;
+      text-transform: uppercase;
     }
   }
 }
 
-/* Responsive */
-@media(max-width:768px) {
-  .chartContent {
-    flex-direction: column;
+// --- MAIN AREA: Trải nghiệm thoáng đãng ---
+.mainArea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+
+  .topBar {
+    position: sticky;
+    top: 0;
+    z-index: 90;
+    background: rgba($color-bg, 0.9);
+    backdrop-filter: blur(15px);
+    padding: 30px 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid $color-border;
+
+    .pageInfo {
+      h2 { 
+        margin: 0; 
+        font-size: 1.8rem; 
+        font-weight: 200; // Nhấn mạnh vào độ mỏng
+        color: $color-charcoal; 
+        letter-spacing: -0.5px;
+      }
+      p { 
+        margin: 8px 0 0; 
+        font-size: 0.8rem; 
+        color: #888; 
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+    }
   }
 
-  .filterBox {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-
-    select, button { width: 100%; }
+  .contentBody {
+    padding: 40px 60px;
+    max-width: 1600px; // Giới hạn chiều rộng để biểu đồ không bị quá loãng
+    margin: 0 auto;
+    width: 100%;
+    animation: reveal 0.8s cubic-bezier(0.16, 1, 0.3, 1);
   }
+}
+
+@keyframes reveal {
+  from { opacity: 0; clip-path: inset(10% 0 0 0); }
+  to { opacity: 1; clip-path: inset(0 0 0 0); }
 }

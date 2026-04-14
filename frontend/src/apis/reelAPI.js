@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:8088/api/reels";
+const API_URL = process.env.REACT_APP_API_BASE_URL + "/reels";
 
 const reelApi = {
   getPaged: (page = 1, limit = 10, token) =>
