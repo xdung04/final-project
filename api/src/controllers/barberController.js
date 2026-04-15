@@ -39,25 +39,23 @@ const assignBarberToBranch = async (req, res) => {
     const result = await BarberService.assignBarberToBranch(idBarber, idBranch);
 
     if (result.success) {
-  return res.json({
-    success: true,          // thêm dòng này
-    message: result.message,
-    barber: result.barber,
-  });
-} else {
-  return res.status(400).json({
-    success: false,         // thêm dòng này
-    message: result.message,
-    bookingId: result.bookingId,
-  });
-}
-
+      return res.json({
+        success: true, // thêm dòng này
+        message: result.message,
+        barber: result.barber,
+      });
+    } else {
+      return res.status(400).json({
+        success: false, // thêm dòng này
+        message: result.message,
+        bookingId: result.bookingId,
+      });
+    }
   } catch (error) {
     console.error("Lỗi assignBarberToBranch:", error);
     res.status(500).json({ error: error.message });
   }
 };
-
 
 const approveBarber = async (req, res) => {
   try {
@@ -131,12 +129,11 @@ const createBarberWithUser = async (req, res) => {
       user: result.user,
       barber: result.barber,
     });
-    } catch (error) {
-      await t.rollback();
-      console.error("❌ Lỗi khi tạo barber mới (chi tiết):", error.errors || error);
-      throw new Error("Lỗi khi tạo barber mới: " + (error.message || "Không rõ"));
-    }
-
+  } catch (error) {
+    await t.rollback();
+    console.error("❌ Lỗi khi tạo barber mới (chi tiết):", error.errors || error);
+    throw new Error("Lỗi khi tạo barber mới: " + (error.message || "Không rõ"));
+  }
 };
 
 // 🔹 Cập nhật barber (cho phép đổi pass, tên, sđt, branch, mô tả)
@@ -151,8 +148,6 @@ const updateBarber = async (req, res) => {
     return res.status(500).json({ message: "Lỗi khi cập nhật barber: " + error.message });
   }
 };
-
-
 
 export const addBarberUnavailability = async (req, res) => {
   try {
@@ -221,13 +216,13 @@ const updateBarberProfile = async (req, res) => {
 const getDashboardStats = async (req, res) => {
   try {
     const { idBarber } = req.params;
-    const idUser = req.user.idUser; 
+    const idUser = req.user.idUser;
 
     if (idBarber != idUser) {
-        return res.status(403).json({ error: "Không có quyền truy cập số liệu này." });
+      return res.status(403).json({ error: "Không có quyền truy cập số liệu này." });
     }
 
-    const stats = await BarberService.getDashboardStats(idBarber); 
+    const stats = await BarberService.getDashboardStats(idBarber);
 
     res.json(stats);
   } catch (err) {
@@ -241,13 +236,25 @@ export const getBarbersForHome = async (req, res) => {
     const barbers = await BarberService.getBarbersForDisplay();
     return res.status(200).json({
       total: barbers.length,
-      data: barbers
+      data: barbers,
     });
   } catch (error) {
     console.error("Lỗi getBarbersForHome:", error);
     return res.status(500).json({ message: "Lỗi server" });
   }
 };
+
+export const getHotBarbers = async (req, res) => {
+  try {
+    const { page = 1, limit = 4 } = req.query;
+    const result = await BarberService.getHotBarbers(parseInt(page), parseInt(limit));
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error("Lỗi getHotBarbers:", error);
+    return res.status(500).json({ message: "Lỗi server" });
+  }
+};
+
 export default {
   getAllBarbers,
   syncBarbers,
@@ -265,5 +272,6 @@ export default {
   updateBarberProfile,
   uploadAvatar,
   getDashboardStats,
-   getBarbersForHome,
+  getBarbersForHome,
+  getHotBarbers,
 };

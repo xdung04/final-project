@@ -5,6 +5,7 @@ import ServiceCard from "~/components/ServiceCard";
 import AIChat from "../../components/AIChat/AIChat";
 import Modal from "~/components/Modal";
 import { fetchHotServicesPaged } from "~/services/serviceService";
+import { fetchHotBarbersPaged } from "~/services/barberService";
 import AddBannerModal from "~/components/AddBannerModal";
 import { fetchActiveBanners, uploadBanner } from "~/services/bannerService";
 import { useToast } from "~/context/ToastContext";
@@ -17,6 +18,7 @@ const DEFAULT_BANNER = "https://images.unsplash.com/photo-1503951914875-452162b0
 const Home = () => {
   const { isLogin, user, accessToken } = useAuth();
   const [hot, setHot] = useState([]);
+  const [hotBarbers, setHotBarbers] = useState([]);
   const [page, setPage] = useState(1);
   const limit = 5;
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -95,6 +97,19 @@ const Home = () => {
       cancelAnimationFrame(animId);
     };
   }, []);
+
+  useEffect(() => {
+    const loadHotBarbers = async () => {
+      try {
+        const data = await fetchHotBarbersPaged(page, limit);
+        setHotBarbers(data.data);
+      } catch (err) {
+        console.error("Lỗi load barber hot:", err);
+      }
+    };
+
+    loadHotBarbers();
+  }, [page]);
 
   /* ===== ACTIONS ===== */
   const handleBookingClick = () => {
@@ -258,7 +273,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* BARBERS (Tĩnh) */}
+      {/* BARBERS (API) */}
       <section id="barbers" className={styles.barbers}>
         <div className={styles.barbersHeader}>
           <div className={styles.sectionLabel}>MASTER BARBERS</div>
@@ -266,16 +281,25 @@ const Home = () => {
             Đội ngũ <em>Thợ Cạo</em>
           </h2>
         </div>
+
         <div className={styles.barbersGrid}>
-          {[1, 2, 3, 4].map((num) => (
-            <div key={num} className={styles.barberCard}>
+          {hotBarbers.map((barber, index) => (
+            <div key={barber.idBarber} className={styles.barberCard}>
               <div className={styles.barberPhoto}>
-                <img src={`https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=400&q=80`} alt="Barber" />
+                <img src={barber.avatar} alt={barber.name} />
               </div>
+
+              <span className={styles.barberRole}>TOP #{index + 1}</span>
+
               <div className={styles.barberOverlay}>
-                <span className={styles.barberRole}>Master Barber</span>
-                <h4 className={styles.barberName}>John Doe {num}</h4>
-                <span className={styles.barberExp}>Kinh nghiệm 5 năm</span>
+                <h4 className={styles.barberName}>{barber.name}</h4>
+
+                <span className={styles.barberExp}>{barber.branch}</span>
+
+                <div className={styles.barberStats}>
+                  <span className={styles.barberBadge}>⭐ {barber.rating}</span>
+                  <span className={styles.barberBadge}>{barber.totalBookings} lượt đặt</span>
+                </div>
               </div>
             </div>
           ))}
