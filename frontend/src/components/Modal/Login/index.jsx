@@ -15,11 +15,9 @@ const cx = classNames.bind(styles);
 function Login({ onSwitch, onClose, onLoginSuccess }) {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
-
-  const navigate = useNavigate();
   const { login: authLogin } = useAuth();
   const { showToast } = useToast();
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
 
   // 🔥 THÊM: function chào theo role
   const getWelcomeMessage = (user) => {
@@ -32,7 +30,7 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
         return `Chào Barber ${name}, hôm nay có nhiều khách đang chờ bạn đó!`;
       case "customer":
         return `Chào ${name} đến với Barber Shop Nam, đặt lịch thôi nào!`;
-      case "receptionist"
+      case "receptionist":
         return `Chào ${name}, lịch cắt tóc của chi nhánh đã sẵn sàng!`;
       default:
         return `Chào mừng ${name}`;
@@ -62,7 +60,7 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
         break;
       default:
         // Nếu là customer (khách hàng), cứ để họ ở lại trang hiện tại (trang chủ)
-        break; 
+        break;
     }
   };
 
@@ -78,13 +76,13 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
       const result = await AuthAPI.login(formData);
 
       if (result.needPhone) {
-      onSwitch("add-phone", {
-        accessToken: result.accessToken,
-        refreshToken: result.refreshToken,
-        user: result.user,
-      });
-      return;   
-    }
+        onSwitch("add-phone", {
+          accessToken: result.accessToken,
+          refreshToken: result.refreshToken,
+          user: result.user,
+        });
+        return;
+      }
 
       if (result.accessToken) {
         const userWithAvatar = {
@@ -156,11 +154,9 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
           navigate("/admin");
         } else if (role === "barber") {
           navigate("/tho-cat-toc");
-        }
-        else if(role === "receptionist") {
+        } else if (role === "receptionist") {
           navigate("/receptionist");
-        }
-        else {
+        } else {
           navigate("/");
         }
 
@@ -189,10 +185,7 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
           <h4 className={cx("heading")}>Đăng nhập</h4>
           <p className={cx("subTitle")}>
             Chưa có tài khoản?{" "}
-            <span
-              className={cx("linkText")}
-              onClick={() => onSwitch("register")}
-            >
+            <span className={cx("linkText")} onClick={() => onSwitch("register")}>
               Đăng ký ngay
             </span>
           </p>
@@ -222,20 +215,12 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
             </div>
 
             <div className={cx("actionRow")}>
-              <div
-                className={cx("forgetpass")}
-                onClick={() => onSwitch("forgetpass")}
-              >
+              <div className={cx("forgetpass")} onClick={() => onSwitch("forgetpass")}>
                 Quên mật khẩu?
               </div>
             </div>
 
-            <Button
-              primary
-              type="submit"
-              disabled={loading}
-              className={cx("submitBtn")}
-            >
+            <Button primary type="submit" disabled={loading} className={cx("submitBtn")}>
               {loading ? "Đang xử lý..." : "Đăng nhập"}
             </Button>
           </form>
