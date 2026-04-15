@@ -35,9 +35,7 @@ const authRoutes = (app) => {
 
   // ========== TEST AUTH & ROLE ==========
   // Ai đã login cũng gọi được
-  router.get("/me", authenticate, (req, res) => {
-    res.json({ message: "Bạn đã đăng nhập", user: req.user });
-  });
+  router.get("/me", authenticate, authController.getMe);
 
   // Customer
   router.get("/customer", authenticate, authorize(["customer"]), (req, res) => {
@@ -50,12 +48,18 @@ const authRoutes = (app) => {
   });
 
   // Thợ cắt tóc (barber)
-  router.get("/tho-cat-toc", authenticate, authorize(["barber"]), (req, res) => {
-    res.json({ message: "Xin chào Barber", user: req.user });
-  });
+  router.get(
+    "/tho-cat-toc",
+    authenticate,
+    authorize(["barber"]),
+    (req, res) => {
+      res.json({ message: "Xin chào Barber", user: req.user });
+    },
+  );
 
   router.post("/google", authController.googleLogin);
 
+ 
   return app.use("/api/auth", router);
 };
 

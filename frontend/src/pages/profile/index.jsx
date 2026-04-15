@@ -27,6 +27,8 @@ function Profile() {
   const [galleryWorks, setGalleryWorks] = useState([]);
   const [galleryLoading, setGalleryLoading] = useState(true);
 
+  const [isEditing, setIsEditing] = useState(false);
+
   useEffect(() => {
     if (!accessToken) return;
 
@@ -100,9 +102,9 @@ function Profile() {
   };
 
   const handleEditProfile = async () => {
-    if (!/^(0|\+84)[0-9]{9,10}$/.test(phoneNumber)) {
+    if (!/^(0|\+84)[0-9]{9}$/.test(phoneNumber)) {
       showToast({
-        text: "Số điện thoại không hợp lệ!",
+        text: "Số điện thoại phải là 10 chữ số và bắt đầu bằng số 0 (ví dụ: 0912345678)",
         type: "error",
         duration: 3000,
       });
@@ -133,15 +135,15 @@ function Profile() {
         duration: 3000,
       });
     } catch (err) {
-      console.error("Lỗi cập nhật profile:", err);
+      const message =
+        err.response?.data?.message || err.message || "Có lỗi khi cập nhật!";
       showToast({
-        text: "Có lỗi khi cập nhật!",
+        text: message,
         type: "error",
         duration: 3000,
       });
     }
   };
-
   const handleChangePassword = () => {
     showToast({
       text: "Đổi mật khẩu thành công!",
@@ -162,7 +164,9 @@ function Profile() {
 
       <div className={cx("innerContainer")}>
         <div className={cx("sectionLabel")}>THÔNG TIN CÁ NHÂN</div>
-        <h1 className={cx("title")}>Tài khoản <em>Của tôi</em></h1>
+        <h1 className={cx("title")}>
+          Tài khoản <em>Của tôi</em>
+        </h1>
 
         <div className={cx("account-layout")}>
           {/* Sidebar */}
@@ -189,16 +193,23 @@ function Profile() {
                   <div className={cx("avatar-frame")}>
                     <img src={preview} alt="avatar" />
                   </div>
-                  <input
-                    type="file"
-                    id="avatarUpload"
-                    accept="image/*"
-                    hidden
-                    onChange={handleFileChange}
-                  />
-                  <label htmlFor="avatarUpload" className={cx("upload-btn")}>
-                    Thay đổi ảnh
-                  </label>
+                  {isEditing && (
+                    <>
+                      <input
+                        type="file"
+                        id="avatarUpload"
+                        accept="image/*"
+                        hidden
+                        onChange={handleFileChange}
+                      />
+                      <label
+                        htmlFor="avatarUpload"
+                        className={cx("upload-btn")}
+                      >
+                        Thay đổi ảnh
+                      </label>
+                    </>
+                  )}
                 </div>
 
                 <div className={cx("info")}>
@@ -207,6 +218,7 @@ function Profile() {
                     <input
                       type="text"
                       value={fullName}
+                      disabled={!isEditing}
                       onChange={(e) => setFullName(e.target.value)}
                     />
                   </div>
@@ -216,6 +228,7 @@ function Profile() {
                     <input
                       type="text"
                       value={phoneNumber}
+                      disabled={!isEditing}
                       onChange={(e) => setPhoneNumber(e.target.value)}
                     />
                   </div>
@@ -230,8 +243,21 @@ function Profile() {
                     <span className={cx("points-value")}>{points}</span>
                   </div>
 
-                  <button className={cx("save-btn")} onClick={handleEditProfile}>
-                    <span>Cập nhật hồ sơ</span>
+                  <button
+                    className={cx("save-btn")}
+                    onClick={async () => {
+                      if (!isEditing) {
+                        setIsEditing(true);
+                        return;
+                      }
+
+                      await handleEditProfile();
+                      setIsEditing(false);
+                    }}
+                  >
+                    <span>
+                      {isEditing ? "Lưu thay đổi" : "Chỉnh sửa hồ sơ"}
+                    </span>
                   </button>
                 </div>
               </div>
@@ -239,7 +265,9 @@ function Profile() {
 
             {activeTab === "password" && (
               <div className={cx("password-card")}>
-                <h2>Thay đổi <em>Mật khẩu</em></h2>
+                <h2>
+                  Thay đổi <em>Mật khẩu</em>
+                </h2>
                 <div className={cx("form-group")}>
                   <label>Mật khẩu mới</label>
                   <input type="password" placeholder="Nhập mật khẩu mới..." />
@@ -248,7 +276,10 @@ function Profile() {
                   <label>Xác nhận mật khẩu</label>
                   <input type="password" placeholder="Nhập lại mật khẩu..." />
                 </div>
-                <button className={cx("save-btn")} onClick={handleChangePassword}>
+                <button
+                  className={cx("save-btn")}
+                  onClick={handleChangePassword}
+                >
                   <span>Đổi mật khẩu</span>
                 </button>
               </div>
@@ -259,8 +290,10 @@ function Profile() {
         {/* Gallery */}
         <div className={cx("gallery-section")}>
           <div className={cx("sectionLabel")}>BỘ SƯU TẬP</div>
-          <h2 className={cx("gallery-title")}>Ảnh sau khi <em>Cắt tóc</em></h2>
-          
+          <h2 className={cx("gallery-title")}>
+            Ảnh sau khi <em>Cắt tóc</em>
+          </h2>
+
           {galleryLoading ? (
             <p className={cx("loading-text")}>Đang tải hình ảnh...</p>
           ) : galleryWorks.length > 0 ? (

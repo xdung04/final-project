@@ -50,10 +50,28 @@ const googleLogin = async (req, res) => {
   }
 };
 
+const getMe = async (req, res) => {
+  try {
+    const idUser = req.user.idUser;
+
+    const user = await AuthService.getMe(idUser);
+
+    return res.status(200).json({
+      message: "Lấy thông tin user thành công",
+      user,
+    });
+  } catch (err) {
+    return res.status(err.status || 500).json({
+      message: err.message || "Lỗi server",
+    });
+  }
+};
+
 // Export tất cả thành 1 object
 export default {
   login,
   refresh,
   logout,
   googleLogin,
+  getMe,
 };

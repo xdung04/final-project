@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import Tippy from "@tippyjs/react/headless";
 import classNames from "classnames/bind";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -9,19 +9,20 @@ import styles from "./UserMenu.module.scss";
 import { Wrapper as PopperWrapper } from "~/components/Popper";
 import {
   faCalendar,
-  faGift,
   faRightFromBracket,
   faUserCircle,
-  faBoxOpen,
   faDashboard,
+  faTicket,
+  faCalendarCheck,
+  faUserTie,
 } from "@fortawesome/free-solid-svg-icons";
+import { faGoogle } from "@fortawesome/free-brands-svg-icons";
 
 const cx = classNames.bind(styles);
 
 function UserMenu({ children }) {
-  const { logout, user } = useAuth(); // Lấy user có role
+  const { logout, user } = useAuth();
   const [visible, setVisible] = useState(false);
-  const triggerRef = useRef();
   const navigate = useNavigate();
 
   const hideMenu = () => setVisible(false);
@@ -33,22 +34,27 @@ function UserMenu({ children }) {
     hideMenu();
   };
 
-  const handleProfileClick = () => {
-    navigate("/profile");
-    hideMenu();
-  };
-
-  // Map role → menu items
+  // Cấu hình Menu theo Role
   const menuItemsByRole = {
     customer: [
-      { icon: faUserCircle, label: "Hồ sơ cá nhân", onClick: handleProfileClick },
+      { icon: faUserCircle, label: "Hồ sơ cá nhân", onClick: () => navigate("/profile") },
       { icon: faCalendar, label: "Lịch hẹn của tôi", onClick: () => navigate("/booking-history") },
+      { icon: faTicket, label: "Kho Voucher ", onClick: () => navigate("/my-vouchers") },
+      { 
+        icon: faGoogle, 
+        label: "Đồng bộ Google Calendar", 
+        onClick: () => window.open("https://calendar.google.com", "_blank"),
+        className: cx('google-sync')
+      },
     ],
     barber: [
-      { icon: faBoxOpen, label: "Quản lý dịch vụ", onClick: () => navigate("/tho-cat-toc") },
+      { icon: faDashboard, label: "Không gian làm việc", onClick: () => navigate("/tho-cat-toc") },
+    ],
+    receptionist: [
+      { icon: faDashboard, label: "Quầy lễ tân", onClick: () => navigate("/receptionist") },
     ],
     admin: [
-      { icon: faDashboard, label: "Quản lý cửa hàng", onClick: () => navigate("/admin") },
+      { icon: faDashboard, label: "Quản trị hệ thống", onClick: () => navigate("/admin") },
     ],
   };
 
@@ -57,22 +63,22 @@ function UserMenu({ children }) {
       <PopperWrapper className={cx("menu-popper")}>
         <div className={cx("menu-body")}>
           <div className={cx("body")}>
-            {menuItemsByRole[user.role]?.map((item, idx) => (
+            {menuItemsByRole[user?.role]?.map((item, idx) => (
               <button
                 key={idx}
-                className={cx("menu-item")}
+                className={cx("menu-item", item.className)}
                 onClick={() => { item.onClick(); hideMenu(); }}
               >
-                <FontAwesomeIcon icon={item.icon} />
-                <div>{item.label}</div>
+                <FontAwesomeIcon icon={item.icon} className={cx('icon')} />
+                <div className={cx('label')}>{item.label}</div>
               </button>
             ))}
           </div>
 
           <div className={cx("footer")}>
-            <button className={cx("menu-item")} onClick={handleLogout}>
+            <button className={cx("menu-item", "logout")} onClick={handleLogout}>
               <FontAwesomeIcon icon={faRightFromBracket} />
-              <div>Đăng xuất</div>
+              <div className={cx('label')}>Đăng xuất</div>
             </button>
           </div>
         </div>
@@ -81,17 +87,17 @@ function UserMenu({ children }) {
   );
 
   return (
-    <div ref={triggerRef}>
-      <Tippy
-        interactive
-        visible={visible}
-        placement="bottom-end"
-        onClickOutside={hideMenu}
-        render={renderResult}
-      >
-        <div onClick={toggleMenu}>{children}</div>
-      </Tippy>
-    </div>
+    <Tippy
+      interactive
+      visible={visible}
+      placement="bottom-end"
+      onClickOutside={hideMenu}
+      render={renderResult}
+    >
+      <div onClick={toggleMenu} style={{ cursor: 'pointer' }}>
+        {children}
+      </div>
+    </Tippy>
   );
 }
 

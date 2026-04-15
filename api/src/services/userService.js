@@ -20,42 +20,86 @@ async function createCustomerIfNotExists(userId, transaction = null) {
 
   if (!existingCustomer) {
     await db.Customer.create(
-      { 
+      {
         idCustomer: userId,
         loyaltyPoint: 0,
-        address: null 
+        address: null,
       },
-      { transaction }
+      { transaction },
     );
   }
 }
 
+// Kiểm tra tài khoản do admin tạo theo phoneNumber
+async function getAdminCreatedAccount(phoneNumber, transaction = null) {
+  if (!phoneNumber) return null;
+
+  return await db.User.findOne({
+    where: {
+      phoneNumber,
+      isStatus: false, // Tài khoản admin tạo
+      email: null, // Chưa có email
+      password: null, // Chưa có password
+      googleId: null, // Chưa có Google
+    },
+    transaction,
+  });
+}
+
+// ==================== REGISTER OTP ====================
 // ==================== REGISTER OTP ====================
 export async function sendOtpForRegister(data) {
   const { email, password, fullName, phoneNumber } = data;
 
-  let errorMessage = null;
-
+  // Kiểm tra thông tin bắt buộc
   if (!email || !password || !fullName || !phoneNumber) {
-    errorMessage = "Thiếu thông tin bắt buộc (email, password, fullName, phoneNumber)";
+    throw {
+      status: 400,
+      message:
+        "Vui lòng nhập đầy đủ thông tin (họ tên, email, số điện thoại, mật khẩu)",
+    };
   }
 
-  const existingUser = await db.User.findOne({ where: { email } });
+  // Kiểm tra định dạng số điện thoại
+  if (!/^0[0-9]{9}$/.test(phoneNumber)) {
+    throw {
+      status: 400,
+      message:
+        "Số điện thoại phải là 10 chữ số và bắt đầu bằng số 0 (ví dụ: 0912345678)",
+    };
+  }
 
-  if (existingUser) {
-    if (existingUser.googleId && !existingUser.password) {
-      // Trả về response bình thường thay vì throw lỗi
+  // Kiểm tra email đã tồn tại
+  const existingUserByEmail = await db.User.findOne({ where: { email } });
+
+  if (existingUserByEmail) {
+    if (existingUserByEmail.googleId && !existingUserByEmail.password) {
       return {
         success: false,
         isGoogleAccount: true,
-        message: "Email này đã đăng nhập bằng Google. Bạn có muốn thiết lập mật khẩu không?"
+        message:
+          "Email này đã đăng nhập bằng Google. Bạn có muốn thiết lập mật khẩu không?",
       };
     }
-
-    // Email đã tồn tại bình thường
-    throw new Error("Email đã tồn tại trong hệ thống");
+    throw { status: 409, message: "Email đã tồn tại trong hệ thống" };
   }
 
+  // Kiểm tra số điện thoại đã được sử dụng bởi tài khoản active
+  const existingPhoneUser = await db.User.findOne({
+    where: {
+      phoneNumber,
+      isStatus: true,
+    },
+  });
+
+  if (existingPhoneUser) {
+    throw {
+      status: 409,
+      message: "Số điện thoại này đã được sử dụng bởi một tài khoản khác.",
+    };
+  }
+
+  // Tạo OTP và lưu tạm
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
   otpStore[email] = {
@@ -68,45 +112,44 @@ export async function sendOtpForRegister(data) {
   try {
     await sendOtpEmail(email, otp);
   } catch (err) {
-    throw new Error("Không thể gửi OTP, vui lòng thử lại");
+    throw { status: 500, message: "Không thể gửi OTP, vui lòng thử lại sau" };
   }
 
-  return { message: "OTP đã được gửi tới email của bạn" };
+  return { message: "Mã OTP đã được gửi tới email của bạn" };
 }
-
 // Xác thực OTP và tạo User + Customer
 export async function verifyOtpAndCreateUser(email, otp) {
   const record = otpStore[email];
   if (!record || record.purpose !== "register") {
-    throw new Error("OTP hết hạn hoặc không tồn tại");
+    throw { status: 400, message: "OTP hết hạn hoặc không tồn tại" };
   }
   if (Date.now() > record.expiresAt) {
     delete otpStore[email];
-    throw new Error("OTP đã hết hạn");
+    throw { status: 400, message: "OTP đã hết hạn" };
   }
   if (otp !== record.otp) {
-    throw new Error("OTP không chính xác");
+    throw { status: 400, message: "OTP không chính xác" };
   }
 
   const t = await db.sequelize.transaction();
 
   try {
-    let user = await db.User.findOne({
-      where: { email: record.user.email },
-      transaction: t,
-    });
+    let user;
 
-    if (user) {
-      // Case: Email Google đã tồn tại → thiết lập password
-      if (user.googleId && !user.password) {
-        user.password = await hashUserPassword(record.user.password);
-        user.fullName = record.user.fullName || user.fullName;
-        user.phoneNumber = record.user.phoneNumber || user.phoneNumber;
-        user.isStatus = true;
-        await user.save({ transaction: t });
-      }
+    const adminAccount = await getAdminCreatedAccount(record.user.phoneNumber, t);
+
+    if (adminAccount) {
+      user = adminAccount;
+      user.email = record.user.email;
+      user.password = await hashUserPassword(record.user.password);
+      user.fullName = record.user.fullName || user.fullName;
+      user.phoneNumber = record.user.phoneNumber;
+      user.isStatus = true;
+      user.authProvider = "local";
+
+      await user.save({ transaction: t });
+      console.log(`✅ Kích hoạt tài khoản admin-created ${user.idUser} với email ${email}`);
     } else {
-      // Tạo user mới
       user = await db.User.create(
         {
           ...record.user,
@@ -118,26 +161,32 @@ export async function verifyOtpAndCreateUser(email, otp) {
       );
     }
 
-    // Tạo Customer nếu chưa có
     await createCustomerIfNotExists(user.idUser, t);
 
     await t.commit();
     delete otpStore[email];
     return user;
   } catch (error) {
-    await t.rollback();
-    console.error("Lỗi verifyOtpAndCreateUser:", error);
-    if (error.name === "SequelizeUniqueConstraintError") {
-      throw new Error("Email hoặc số điện thoại đã tồn tại");
+    if (t && !t.finished) {
+      await t.rollback();
     }
-    throw new Error("Không thể tạo tài khoản, vui lòng thử lại");
+    console.error("Lỗi verifyOtpAndCreateUser:", error);
+
+    if (error.name === "SequelizeUniqueConstraintError") {
+      throw { status: 409, message: "Email hoặc số điện thoại đã tồn tại" };
+    }
+
+    throw { status: 500, message: "Không thể tạo tài khoản, vui lòng thử lại" };
   }
 }
 
-// ==================== CREATE USER NHANH (không OTP) ====================
 export async function createUserService(fullName, phoneNumber) {
   if (!fullName || !phoneNumber) {
     throw new Error("Vui lòng cung cấp họ tên và số điện thoại");
+  }
+
+  if (!/^0[0-9]{9}$/.test(phoneNumber)) {
+    throw new Error("Số điện thoại không hợp lệ");
   }
 
   const existingUser = await db.User.findOne({ where: { phoneNumber } });
@@ -148,15 +197,18 @@ export async function createUserService(fullName, phoneNumber) {
   const t = await db.sequelize.transaction();
 
   try {
-    const newUser = await db.User.create({
-      fullName,
-      phoneNumber,
-      password: null,
-      role: "customer",
-      isStatus: false,
-      email: null,
-      authProvider: "local",
-    }, { transaction: t });
+    const newUser = await db.User.create(
+      {
+        fullName,
+        phoneNumber,
+        password: null,
+        role: "customer",
+        isStatus: false,
+        email: null,
+        authProvider: "local",
+      },
+      { transaction: t },
+    );
 
     await createCustomerIfNotExists(newUser.idUser, t);
 
@@ -168,13 +220,11 @@ export async function createUserService(fullName, phoneNumber) {
   }
 }
 
-// ==================== FORGOT PASSWORD ====================
 export async function sendOtpForForgotPassword(email) {
   const user = await db.User.findOne({ where: { email } });
 
   if (!user) throw new Error("Email không tồn tại");
 
-  // 🔥 CASE GOOGLE
   if (user.googleId && !user.password) {
     console.log("User Google đang thiết lập password lần đầu");
   }
@@ -196,9 +246,10 @@ export async function sendOtpForForgotPassword(email) {
   await sendOtpEmail(email, otp);
 
   return {
-    message: user.googleId && !user.password
-      ? "OTP để thiết lập mật khẩu đã gửi"
-      : "OTP đã gửi để đặt lại mật khẩu",
+    message:
+      user.googleId && !user.password
+        ? "OTP để thiết lập mật khẩu đã gửi"
+        : "OTP đã gửi để đặt lại mật khẩu",
   };
 }
 

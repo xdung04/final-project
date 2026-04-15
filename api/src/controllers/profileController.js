@@ -7,7 +7,9 @@ const getProfile = async (req, res) => {
 
     const { idUser, role } = req.user || {};
     if (!idUser) {
-      return res.status(401).json({ message: "Token không hợp lệ hoặc thiếu idUser" });
+      return res
+        .status(401)
+        .json({ message: "Token không hợp lệ hoặc thiếu idUser" });
     }
 
     const user = await profileService.getUserProfileWithRole(idUser);
@@ -19,11 +21,15 @@ const getProfile = async (req, res) => {
 
     // Nếu role là customer mà chưa có bản ghi customer
     if (role === "customer" && !plain.customer) {
-      return res.status(404).json({ message: "Thông tin customer chưa được tạo" });
+      return res
+        .status(404)
+        .json({ message: "Thông tin customer chưa được tạo" });
     }
     // Nếu role là barber mà chưa có bản ghi barber
     if (role === "barber" && !plain.barber) {
-      return res.status(404).json({ message: "Thông tin barber chưa được tạo" });
+      return res
+        .status(404)
+        .json({ message: "Thông tin barber chưa được tạo" });
     }
 
     const profile = {
@@ -36,16 +42,26 @@ const getProfile = async (req, res) => {
       createdAt: plain.createdAt,
       updatedAt: plain.updatedAt,
       profileDetail:
-        role === "customer" ? plain.customer : role === "barber" ? plain.barber : null,
+        role === "customer"
+          ? plain.customer
+          : role === "barber"
+            ? plain.barber
+            : null,
     };
 
     return res.json({ profile });
   } catch (err) {
     console.error("Lỗi getProfile:", err);
-    res.status(500).json({ message: "Lỗi server", error: err.message });
+    
+    const status = err.status || 500;
+    const message = err.message || "Lỗi server";
+
+    res.status(status).json({
+      message: message,
+      error: err.message,
+    });
   }
 };
-
 const updateProfile = async (req, res) => {
   try {
     console.log("req.user:", req.user);
@@ -54,7 +70,9 @@ const updateProfile = async (req, res) => {
 
     const { idUser } = req.user || {};
     if (!idUser) {
-      return res.status(401).json({ message: "Token không hợp lệ hoặc thiếu idUser" });
+      return res
+        .status(401)
+        .json({ message: "Token không hợp lệ hoặc thiếu idUser" });
     }
 
     const user = await profileService.updateUserProfile(idUser, {
@@ -71,7 +89,14 @@ const updateProfile = async (req, res) => {
     res.json({ user: userData });
   } catch (err) {
     console.error("Lỗi updateProfile:", err);
-    res.status(500).json({ message: "Lỗi server", error: err.message });
+
+    const status = err.status || 500;
+    const message = err.message || "Lỗi server";
+
+    res.status(status).json({
+      message: message,
+      error: err.message,
+    });
   }
 };
 
@@ -108,8 +133,11 @@ const updatePhone = async (req, res) => {
     });
   } catch (err) {
     console.error("Lỗi updatePhone:", err);
-    res.status(500).json({
-      message: "Lỗi server",
+    const status = err.status || 500;
+    const message = err.message || "Lỗi server";
+
+    res.status(status).json({
+      message: message, // Trả về message thật từ service
       error: err.message,
     });
   }

@@ -80,53 +80,49 @@ function VoucherForm({ voucher, onClose, onVoucherCreated, onVoucherUpdated }) {
   return (
     <div className={cx("voucherFormOverlay")}>
       <form className={cx("voucherForm")} onSubmit={handleSubmit}>
-        <h3>{voucher?.idVoucher ? "Cập nhật voucher" : "Tạo voucher mới"}</h3>
+  <h3>{voucher?.idVoucher ? "Cập nhật voucher" : "Tạo voucher mới"}</h3>
 
-        <label>Tên voucher</label>
-        <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} required />
+  <div className={cx("fieldGroup")}>
+    <label>Tên voucher</label>
+    <input type="text" placeholder="Ví dụ: Giảm giá mùa hè" value={title} onChange={(e) => setTitle(e.target.value)} required />
+  </div>
 
-        <label>Giảm giá (%)</label>
-        <input
-          type="number"
-          value={discountPercent}
-          onChange={(e) => setDiscountPercent(e.target.value)}
-          min="0"
-          max="100"
-          required
-        />
+  <div className={cx("inputGrid")}>
+    <div className={cx("fieldGroup")}>
+      <label>Giảm giá (%)</label>
+      <input type="number" placeholder="0" value={discountPercent} onChange={(e) => setDiscountPercent(e.target.value)} min="0" max="100" required />
+    </div>
+    <div className={cx("fieldGroup")}>
+      <label>Điểm đổi</label>
+      <input type="number" placeholder="0" value={pointCost} onChange={(e) => setPointCost(e.target.value)} min="0" required />
+    </div>
+  </div>
 
-        <label>Điểm đổi</label>
-        <input
-          type="number"
-          value={pointCost}
-          onChange={(e) => setPointCost(e.target.value)}
-          min="0"
-          required
-        />
+  <div className={cx("inputGrid")}>
+    <div className={cx("fieldGroup")}>
+      <label>Giới hạn số lượng</label>
+      <input type="number" placeholder="∞" value={totalQuantity} onChange={(e) => setTotalQuantity(e.target.value)} min="0" />
+    </div>
+    <div className={cx("fieldGroup")}>
+      <label>Ngày hết hạn</label>
+      <input type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} required />
+    </div>
+  </div>
 
-        <label>Giới hạn số lượng</label>
-        <input
-          type="number"
-          value={totalQuantity}
-          onChange={(e) => setTotalQuantity(e.target.value)}
-          min="0"
-        />
+  <div className={cx("fieldGroup")}>
+    <label>Mô tả chi tiết</label>
+    <input type="text" placeholder="Nhập mô tả ngắn cho voucher..." value={description} onChange={(e) => setDescription(e.target.value)} />
+  </div>
 
-        <label>Ngày hết hạn</label>
-        <input type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} required />
-
-        <label>Mô tả</label>
-        <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} />
-
-        <div className={cx("formButtons")}>
-          <button type="submit" disabled={loading}>
-            {loading ? (voucher?.idVoucher ? "Đang cập nhật..." : "Đang tạo...") : voucher?.idVoucher ? "Cập nhật" : "Tạo"}
-          </button>
-          <button type="button" onClick={onClose} disabled={loading}>
-            Hủy
-          </button>
-        </div>
-      </form>
+  <div className={cx("formButtons")}>
+    <button type="button" onClick={onClose} disabled={loading}>
+      Hủy
+    </button>
+    <button type="submit" disabled={loading}>
+      {loading ? "Đang xử lý..." : voucher?.idVoucher ? "Cập nhật" : "Tạo ngay"}
+    </button>
+  </div>
+</form>
     </div>
   );
 }

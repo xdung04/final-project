@@ -51,19 +51,23 @@ function Voucher() {
       <div className={cx("header")}>
         <h2>Quản lý Voucher</h2>
         <button className={cx("addBtn")} onClick={handleCreateClick}>
-          <FontAwesomeIcon icon={faPlus} /> Tạo voucher
+          <FontAwesomeIcon icon={faPlus} /> Tạo voucher mới
         </button>
       </div>
 
       <div className={cx("voucherList")}>
-        {vouchers.map((v) => (
-          <PromoCard
-            key={v.idVoucher}
-            voucher={v}
-            onEdit={() => handleEditVoucher(v)}
-            onDelete={handleDeleteVoucher}
-          />
-        ))}
+        {vouchers.length > 0 ? (
+          vouchers.map((v) => (
+            <PromoCard
+              key={v.idVoucher}
+              voucher={v}
+              onEdit={() => handleEditVoucher(v)}
+              onDelete={handleDeleteVoucher}
+            />
+          ))
+        ) : (
+          <div className={cx("emptyState")}>Chưa có voucher nào được tạo.</div>
+        )}
       </div>
 
       {showForm && (

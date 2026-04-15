@@ -1,38 +1,92 @@
-.promoList {
-  h2 {
-    font-size: 20px;
-    font-weight: 600;
-    color: #064e3b;
-    margin-bottom: 16px;
-  }
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap');
+
+.voucherPage {
+  padding: 40px;
+  background-color: #ffffff;
+  min-height: 100vh;
+  font-family: 'DM Sans', sans-serif;
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
-}
+  margin-bottom: 40px;
+  border-bottom: 1.5px solid #000000; // Đường kẻ ngang phân cách tiêu đề sắc nét
+  padding-bottom: 20px;
 
-.addBtn {
-  background: #059669;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 8px 16px;
-  cursor: pointer;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-
-  &:hover {
-    background: #047857;
+  h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 32px;
+    font-weight: 800;
+    color: #000000;
+    margin: 0;
+    letter-spacing: -0.5px;
   }
 }
 
-.cards {
+.addBtn {
+  background: #000000; // Nút đen tuyền
+  color: #ffffff;
+  border: none;
+  border-radius: 4px; // Bo góc nhẹ cho nam tính
+  padding: 12px 24px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 13px;
+  text-transform: uppercase; // Viết hoa toàn bộ cho chuyên nghiệp
+  letter-spacing: 1.5px;
   display: flex;
-  flex-direction: column;
-  gap: 16px;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+
+  svg {
+    font-size: 14px;
+  }
+
+  &:hover {
+    background: #4b382a; // Chuyển sang Nâu đồng khi hover
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(75, 56, 42, 0.2);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+/* 🏆 LAYOUT DANH SÁCH VOUCHER */
+.voucherList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); // Tự động chia cột
+  gap: 30px;
+  padding-top: 10px;
+}
+
+/* Responsive cho màn hình điện thoại */
+@media (max-width: 768px) {
+  .voucherPage {
+    padding: 20px;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+    
+    h2 {
+      font-size: 26px;
+    }
+  }
+
+  .addBtn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .voucherList {
+    grid-template-columns: 1fr;
+  }
 }

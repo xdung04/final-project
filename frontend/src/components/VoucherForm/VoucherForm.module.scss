@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap');
 
 .voucherFormOverlay {
   position: fixed;
@@ -6,81 +6,144 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0,0,0,0.7);
+  background-color: rgba(0, 0, 0, 0.6); // Làm tối nền mượt mà
+  backdrop-filter: blur(4px); // Hiệu ứng làm mờ nền sau cực sang
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
-  font-family: 'Old Standard TT', serif;
+  z-index: 9999;
+  font-family: 'DM Sans', sans-serif;
+  animation: fadeIn 0.3s ease;
 }
 
 .voucherForm {
-  background: #fff;
-  padding: 36px;
-  border-radius: 14px;
-  width: 450px;
+  background: #ffffff;
+  padding: 40px;
+  border-radius: 8px;
+  width: 500px;
   max-width: 95%;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+  border: 1px solid #000000;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 
   h3 {
-    font-size: 24px;
-    font-weight: 700;
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    font-weight: 800;
     text-align: center;
-    color: #111;
-    margin-bottom: 20px;
+    color: #000000;
+    margin-bottom: 30px;
+    letter-spacing: -0.5px;
+    text-transform: capitalize;
   }
 
-  label {
-    display: block;
-    margin-bottom: 6px;
-    font-weight: 600;
-    color: #111;
-    font-size: 16px;
-  }
-
-  input {
-    width: 100%;
-    padding: 10px 14px;
+  // Group cho các input nhỏ nằm cùng hàng
+  .inputGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
     margin-bottom: 16px;
-    border-radius: 8px;
-    border: 1px solid #aaa;
-    font-size: 16px;
-    color: #111;
-    outline: none;
+  }
+
+  .fieldGroup {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;
+
+    label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #999999;
+      margin-bottom: 8px;
+    }
+
+    input {
+      width: 100%;
+      height: 48px;
+      padding: 0 16px;
+      background-color: #ffffff !important;
+      border: 1px solid #eeeeee !important;
+      border-radius: 4px;
+      font-size: 15px;
+      color: #000000 !important;
+      transition: all 0.2s ease;
+
+      &::placeholder {
+        color: #cccccc !important;
+      }
+
+      &:focus {
+        border-color: #000000 !important;
+        outline: none;
+        background-color: #fafafa !important;
+      }
+    }
   }
 
   .formButtons {
     display: flex;
     justify-content: flex-end;
-    gap: 16px;
+    gap: 12px;
+    margin-top: 32px;
+    padding-top: 20px;
+    border-top: 1px solid #f0f0f0;
 
     button {
-      padding: 10px 20px;
-      border-radius: 8px;
-      border: none;
+      height: 48px;
+      padding: 0 24px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
       cursor: pointer;
-      font-size: 16px;
-      font-weight: 600;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
 
-      &:first-child {
-        background-color: #000;
-        color: #fff;
+      // Nút Submit (Xác nhận/Tạo)
+      &[type="submit"] {
+        background-color: #000000 !important;
+        color: #ffffff !important;
+        border: none;
+        flex: 2;
 
-        &:hover {
-          background-color: #333;
+        &:hover:not(:disabled) {
+          background-color: #4b382a !important; // Chuyển nâu đồng
+        }
+
+        &:disabled {
+          background-color: #cccccc !important;
+          cursor: not-allowed;
         }
       }
 
-      &:last-child {
-        background-color: #fff;
-        color: #000;
-        border: 2px solid #000;
+      // Nút Cancel (Hủy)
+      &[type="button"] {
+        background-color: transparent !important;
+        color: #999999 !important;
+        border: 1px solid #eeeeee !important;
+        flex: 1;
 
         &:hover {
-          background-color: #111;
-          color: #fff;
+          color: #000000 !important;
+          border-color: #000000 !important;
         }
       }
     }
   }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
