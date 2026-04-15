@@ -259,3 +259,112 @@
   pointer-events: auto; /* THÊM DÒNG NÀY: Để cục nút tròn vẫn bấm được */
   svg { width: 28px; height: 28px; fill: var(--black); } 
 }
+
+//An---
+/* ===== NEW HOT SERVICES DESIGN ===== */
+
+.servicesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+}
+
+.serviceCard {
+  background: linear-gradient(145deg, #1b1b1b, #111);
+  border: 1px solid rgba(184,150,106,0.15);
+  border-radius: 22px;
+  padding: 22px;
+  overflow: hidden;
+  transition: 0.35s ease;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.25);
+}
+
+.serviceCard:hover {
+  transform: translateY(-8px);
+  border-color: rgba(184,150,106,0.45);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.45);
+}
+
+.serviceCard.featured {
+  background: linear-gradient(135deg, #6b4c35, #2b1d14);
+  min-height: 420px;
+}
+
+.serviceNum {
+  font-size: 12px;
+  letter-spacing: 3px;
+  color: var(--gold);
+  margin-bottom: 12px;
+}
+
+.serviceName {
+  font-size: 26px;
+  line-height: 1.3;
+  margin-bottom: 10px;
+}
+
+.serviceDesc {
+  font-size: 14px;
+  line-height: 1.7;
+  color: rgba(245,240,232,0.7);
+  min-height: 48px;
+  margin-bottom: 18px;
+}
+
+/* ẢNH NẰM DƯỚI CHỮ */
+.serviceImageWrap {
+  width: 100%;
+  height: 220px;
+  overflow: hidden;
+  border-radius: 18px;
+  margin-bottom: 18px;
+  background: #222;
+}
+
+.serviceImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+
+.serviceCard:hover .serviceImage {
+  transform: scale(1.08);
+}
+
+/* META */
+.serviceMeta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-bottom: 14px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.servicePrice {
+  font-size: 30px;
+  font-family: var(--ff-serif);
+  color: var(--brown-xlt);
+}
+
+.servicePrice span {
+  font-size: 14px;
+  color: #ddd;
+}
+
+/* MOBILE */
+@media (max-width: 768px) {
+  .services {
+    padding: 80px 20px;
+  }
+
+  .serviceImageWrap {
+    height: 190px;
+  }
+
+  .serviceName {
+    font-size: 22px;
+  }
+}
