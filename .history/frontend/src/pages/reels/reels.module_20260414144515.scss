@@ -1,0 +1,298 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap');
+
+:root {
+  --black:    #0a0a0a;
+  --charcoal: #1a1a1a;
+  --graphite: #2c2c2c;
+  --brown:    #6b4c35;
+  --brown-lt: #9b6f52;
+  --brown-xlt:#c9a882;
+  --cream:    #f5f0e8;
+  --white:    #fafaf8;
+  --gold:     #b8966a;
+  --text-dim: #8a8580;
+
+  --ff-serif:  'Playfair Display', Georgia, serif;
+  --ff-elegant:'Cormorant Garamond', Georgia, serif;
+  --ff-display:'Bebas Neue', sans-serif;
+  --ff-body:   'DM Sans', sans-serif;
+}
+
+.pageWrapper {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  height: 100vh;
+  padding: 100px 40px 40px; 
+  background: var(--black);
+  color: var(--cream);
+  font-family: var(--ff-body);
+  overflow: hidden;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    padding: 80px 10px 20px;
+  }
+}
+
+.grainOverlay {
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 0; opacity: 0.35;
+}
+
+.centerContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: var(--black);
+  color: var(--gold);
+  font-family: var(--ff-body);
+  font-size: 14px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* --- LEFT COLUMN (Search) --- */
+.leftColumn {
+  position: relative;
+  z-index: 2;
+  width: 320px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--charcoal);
+  border-radius: 12px;
+  border: 1px solid rgba(184, 150, 106, 0.2);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  margin-right: 24px;
+  height: calc(100vh - 140px);
+  overflow-y: auto;
+
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: rgba(184, 150, 106, 0.3); border-radius: 10px; }
+
+  @media (max-width: 800px) {
+    width: 100%;
+    margin-right: 0;
+    margin-bottom: 24px;
+    height: auto;
+    max-height: 250px;
+  }
+}
+
+.searchBar {
+  display: flex;
+  align-items: center;
+  padding: 6px;
+  border-radius: 30px;
+  background-color: var(--graphite);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 24px;
+  transition: border-color 0.3s;
+
+  &:focus-within { border-color: var(--gold); }
+
+  input {
+    flex: 1;
+    padding: 10px 16px;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--white);
+    font-family: var(--ff-body);
+    font-size: 13px;
+    &::placeholder { color: var(--text-dim); }
+  }
+
+  button {
+    height: 38px;
+    padding: 0 20px;
+    border-radius: 20px;
+    border: none;
+    background: var(--gold);
+    color: var(--black);
+    font-family: var(--ff-body);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.3s;
+    &:hover { background: var(--white); transform: scale(1.05); }
+  }
+}
+
+.clearBtn {
+  margin-top: 16px;
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 12px;
+  border-radius: 8px;
+  font-family: var(--ff-body);
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.3s;
+  &:hover { color: var(--white); border-color: var(--white); background: rgba(255, 255, 255, 0.05); }
+}
+
+.suggestionBox, .topHashtagBox {
+  margin-top: 16px;
+  padding: 20px;
+  background: var(--graphite);
+  border-radius: 12px;
+  border: 1px solid rgba(184, 150, 106, 0.1);
+}
+
+.suggestionTitle, .topHashtagTitle {
+  font-family: var(--ff-serif);
+  font-size: 16px;
+  color: var(--gold);
+  margin-bottom: 16px;
+  letter-spacing: 1px;
+}
+
+.hashtagList { display: flex; flex-wrap: wrap; gap: 10px; }
+
+.hashtagItem {
+  background: rgba(184, 150, 106, 0.1);
+  color: var(--cream);
+  border: 1px solid rgba(184, 150, 106, 0.3);
+  border-radius: 20px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-family: var(--ff-body);
+  cursor: pointer;
+  transition: all 0.3s;
+  &:hover { background: var(--gold); color: var(--black); transform: translateY(-2px); }
+}
+
+/* --- RIGHT COLUMN (Reel Area) --- */
+/* --- RIGHT COLUMN (Reel Area) --- */
+.rightColumn {
+  flex: 1;
+  position: relative;
+  /* Giữ nguyên chiều cao trừ đi header/padding để không bị tràn */
+  height: calc(100vh - 140px); 
+  
+  /* ĐÃ XÓA background, border và box-shadow để bỏ cái khung vuông to */
+  background: transparent; 
+  border: none;
+  box-shadow: none;
+  overflow: hidden;
+
+  /* Khi tìm kiếm thì cuộn tự do */
+  &.searchingMode {
+    overflow-y: auto;
+  }
+
+  &::-webkit-scrollbar { width: 8px; }
+  &::-webkit-scrollbar-track { background: transparent; border-radius: 8px; }
+  &::-webkit-scrollbar-thumb { background: rgba(184, 150, 106, 0.5); border-radius: 8px; }
+  &::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+}
+
+.rightContentInner {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+/* Wrapper ngoài cùng của Reel */
+.reelWrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent; 
+  padding: 10px 0; /* Thêm padding an toàn để viền phát sáng không bị cắt */
+}
+
+/* KHUNG VIỀN SÁNG TRỰC TIẾP BAO QUANH VIDEO */
+.videoHighlightContainer {
+  /* Ép chiều cao tối đa ngắn lại để không lố khỏi màn hình */
+  height: 100%;
+  max-height: calc(100vh - 240px); /* Trừ hao 240px cho Header và khoảng trống an toàn */
+  aspect-ratio: 9 / 16; /* Chuẩn dọc Tiktok/Reels */
+  
+  border-radius: 20px;
+  border: 2px solid var(--gold);
+  box-shadow: 0 0 25px rgba(184, 150, 106, 0.4);
+  overflow: hidden;
+  background: #000;
+  position: relative;
+  
+  /* Căn giữa content bên trong */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  /* Ép ReelPlayer ôm sát vào khung này */
+  > * {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  /* Ép thẻ <video> bên trong lấp đầy toàn bộ khung, cắt bỏ viền đen thừa */
+
+}
+
+/* --- CHẾ ĐỘ TÌM KIẾM: TIKTOK GRID --- */
+.gridContainer {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  padding: 10px;
+  width: 100%;
+
+  @media (max-width: 500px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+}
+
+.gridItem {
+  cursor: pointer;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  background: var(--graphite);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  aspect-ratio: 9/16;
+  transition: all 0.3s;
+
+  &:hover {
+    border-color: var(--gold);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(184, 150, 106, 0.2);
+  }
+
+  .videoThumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.loadingText {
+  text-align: center;
+  color: var(--gold);
+  padding: 40px 0;
+  font-family: var(--ff-body);
+  font-size: 14px;
+}
+
+.noResult {
+  text-align: center;
+  color: var(--text-dim);
+  margin-top: 60px;
+  font-size: 14px;
+  font-style: italic;
+  font-family: var(--ff-body);
+}

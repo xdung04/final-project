@@ -1,0 +1,18 @@
+/* src/pages/CustomerKiosk.module.scss */
+.fullPage {
+  width: 100vw;
+  height: 100vh;
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  box-sizing: border-box;
+
+  /* Tùy chỉnh thêm để font chữ to ra, dễ bấm trên iPad */
+  h1 {
+    font-size: 2rem;
+    color: #333;
+  }
+}

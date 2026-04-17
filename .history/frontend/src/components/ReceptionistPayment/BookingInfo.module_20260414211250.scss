@@ -1,0 +1,324 @@
+// Bảng màu chuẩn Luxury Salon
+$gold-primary: #D4AF37; 
+$gold-light: rgba(212, 175, 55, 0.1);
+$charcoal-dark: #121212; 
+$charcoal-light: #2A2A2A;
+$bg-white: #FFFFFF;
+$bg-cream: #FAF9F6; 
+$border-color: #EBEBEB;
+$text-main: #333333;
+$text-muted: #888888;
+$danger-color: #E67E22;
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  font-family: 'Inter', sans-serif;
+}
+
+.header {
+  text-align: center;
+  padding-bottom: 10px;
+
+  .iconGold {
+    color: $gold-primary;
+    margin-bottom: 12px;
+  }
+
+  h2 {
+    font-size: 1.4rem;
+    color: $charcoal-dark;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  p {
+    font-size: 0.9rem;
+    color: $text-muted;
+  }
+}
+
+// Thẻ thông tin khách hàng
+.card {
+  background: $bg-cream;
+  border-radius: 12px;
+  padding: 16px 20px;
+  border: 1px solid $border-color;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  .infoRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+
+    .label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: $text-muted;
+      font-weight: 500;
+    }
+
+    .value {
+      font-weight: 600;
+      color: $charcoal-dark;
+      text-align: right;
+    }
+  }
+}
+
+// Phân vùng danh sách
+.section {
+  .sectionHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid $border-color;
+
+    h3 {
+      font-size: 1.05rem;
+      color: $charcoal-dark;
+      font-weight: 600;
+    }
+  }
+}
+
+// Dịch vụ đã chọn
+.serviceList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  .serviceItem {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    font-size: 14px;
+
+    .serviceName {
+      color: $text-main;
+      font-weight: 500;
+    }
+
+    .servicePrice {
+      font-weight: 600;
+      color: $charcoal-dark;
+    }
+  }
+}
+
+.emptyState {
+  text-align: center;
+  padding: 20px;
+  color: $text-muted;
+  font-style: italic;
+  font-size: 14px;
+  background: $bg-cream;
+  border-radius: 8px;
+}
+
+// Thêm dịch vụ (Toggle Button)
+.toggleBtn {
+  background: transparent;
+  border: 1px solid $border-color;
+  color: $charcoal-dark;
+  border-radius: 50px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: $bg-cream;
+    border-color: $gold-primary;
+    color: $gold-primary;
+  }
+}
+
+// List dịch vụ mở rộng (Có checkbox)
+.serviceListExpand {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 180px;
+  overflow-y: auto;
+  padding-right: 4px;
+
+  // Tùy chỉnh thanh cuộn
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: #DDD; border-radius: 4px; }
+
+  .serviceOption {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    border: 1px solid $border-color;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: #CCC;
+    }
+
+    &.selected {
+      background: $gold-light;
+      border-color: $gold-primary;
+    }
+
+    .checkboxWrapper {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      color: $text-main;
+
+      input[type="checkbox"] {
+        accent-color: $gold-primary;
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+      }
+    }
+
+    .price {
+      font-weight: 600;
+      color: $charcoal-dark;
+      font-size: 13px;
+    }
+  }
+}
+
+// Khối Tổng tiền (Summary)
+.summaryCard {
+  background: $bg-white;
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid $border-color;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+  margin-top: 10px;
+
+  .summaryRow {
+    display: flex;
+    justify-content: space-between;
+    color: $text-muted;
+    font-size: 14px;
+    margin-bottom: 12px;
+
+    span:last-child {
+      color: $text-main;
+      font-weight: 600;
+    }
+  }
+
+  .voucherBox {
+    background: #FFF8EB; // Vàng nhạt
+    border: 1px dashed rgba(212, 175, 55, 0.5);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 16px;
+
+    .voucherTop {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+
+      .voucherTitle {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: $gold-dark;
+        font-weight: 600;
+        font-size: 13px;
+      }
+
+      .discountValue {
+        color: $danger-color;
+        font-weight: 600;
+        font-size: 14px;
+      }
+    }
+
+    .voucherBottom {
+      font-size: 12px;
+      color: #997A2E;
+    }
+  }
+
+  .voucherEmpty {
+    font-size: 13px;
+    color: #AAA;
+    text-align: center;
+    padding: 10px;
+    background: #FAFAFA;
+    border-radius: 8px;
+    margin-bottom: 16px;
+  }
+
+  .totalRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 16px;
+    border-top: 1px solid $border-color;
+    
+    span:first-child {
+      font-size: 15px;
+      font-weight: 600;
+      color: $charcoal-dark;
+    }
+
+    .totalPrice {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: $gold-primary;
+    }
+  }
+}
+
+// Nút bấm chính
+.btnPrimary {
+  background: linear-gradient(135deg, $charcoal-dark, $charcoal-light);
+  color: #FFF;
+  border: none;
+  width: 100%;
+  padding: 14px;
+  border-radius: 50px;
+  font-size: 15px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+
+  &:hover {
+    background: $gold-primary;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.3);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
