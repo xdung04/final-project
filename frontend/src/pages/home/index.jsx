@@ -34,6 +34,9 @@ const Home = () => {
   /* ===== BANNER API ===== */
   const [currentBanner, setCurrentBanner] = useState(0);
   const { showToast } = useToast();
+  const formatPrice = (price) => {
+    return Number(price).toLocaleString("vi-VN");
+  };
 
   useEffect(() => {
     const fetchBranches = async () => {
@@ -196,28 +199,42 @@ const Home = () => {
             </h2>
           </div>
         </div>
+
         <div className={styles.servicesGrid}>
-          {hot.map((service, index) => (
-            <div key={service.idService} className={styles.serviceCard}>
-              <div className={styles.serviceNum}>0{index + 1}</div>
+          {/* CARD ĐẦU TIÊN - LỚN, ẢNH TRÀN VIỀN */}
+          {hot[0] && (
+            <div
+              className={`${styles.serviceCard} ${styles.featured}`}
+              style={{
+                backgroundImage: `url(${hot[0].image})`,
+              }}
+            >
+              <div className={styles.serviceNum}>01</div>
+              <h3 className={styles.serviceName}>{hot[0].name}</h3>
+              <p className={styles.serviceDesc}>{hot[0].description}</p>
+              <div className={styles.servicePrice}>
+                {formatPrice(hot[0].price)} <span>VNĐ</span>
+              </div>
+            </div>
+          )}
+
+          {/* 4 CARD CÒN LẠI - CŨNG ẢNH TRÀN VIỀN */}
+          {hot.slice(1, 5).map((service, index) => (
+            <div
+              key={service.idService}
+              className={styles.serviceCard}
+              style={{
+                backgroundImage: `url(${service.image})`,
+              }}
+            >
+              <div className={styles.serviceNum}>{String(index + 2).padStart(2, "0")}</div>
+
+              {/* KHÔNG CÒN serviceIcon nữa */}
 
               <h3 className={styles.serviceName}>{service.name}</h3>
-
               <p className={styles.serviceDesc}>{service.description || "Dịch vụ đẳng cấp."}</p>
-
-              {/* ẢNH NẰM DƯỚI CHỮ */}
-              <div className={styles.serviceImageWrap}>
-                <img src={service.image} alt={service.name} className={styles.serviceImage} />
-              </div>
-
-              <div className={styles.serviceMeta}>
-                <span>{service.duration} phút</span>
-                <span>{service.totalBookings} lượt</span>
-              </div>
-
               <div className={styles.servicePrice}>
-                {Number(service.price).toLocaleString("vi-VN")}
-                <span> VNĐ</span>
+                {formatPrice(service.price)} <span>VNĐ</span>
               </div>
             </div>
           ))}
