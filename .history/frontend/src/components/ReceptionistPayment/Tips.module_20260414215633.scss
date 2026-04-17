@@ -1,0 +1,192 @@
+/* ================================
+   Tips.module.scss - Kiosk Mode (iPad & Mobile)
+   Luxury Dark - Touch Friendly
+   ================================ */
+
+$gold: #d4af77;
+$charcoal: #111111;
+$charcoal-light: #1f1f1f;
+$cream: #f8f1e3;
+$muted: #b8a68f;
+
+.container {
+  background: linear-gradient(180deg, $charcoal 0%, #181818 100%);
+  color: $cream;
+  min-height: 100vh;
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 48px;
+
+  .title {
+    font-size: 2.4rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: $gold;
+    margin-bottom: 16px;
+  }
+
+  .subtitle {
+    font-size: 1.25rem;
+    line-height: 1.5;
+    color: $muted;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+}
+
+.infoBox {
+  background: $charcoal-light;
+  border-radius: 28px;
+  padding: 40px 28px;
+  border: 1px solid rgba(212, 175, 119, 0.18);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+// Tip Grid - 2 cột trên iPad, vẫn đẹp trên mobile
+.tipGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+  margin-bottom: 40px;
+}
+
+.tipButton {
+  height: 110px;
+  background: #181818;
+  border: 3px solid #3a2f25;
+  color: $cream;
+  font-size: 1.65rem;
+  font-weight: 700;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.4);
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  &:hover {
+    border-color: $gold;
+  }
+}
+
+.activeTip {
+  background: linear-gradient(135deg, $gold, #e8c99a);
+  border-color: $gold;
+  color: #111111;
+  box-shadow: 0 12px 25px -4px rgba(212, 175, 119, 0.5);
+}
+
+// Custom input
+.customTipBox {
+  margin-top: auto;
+
+  .tipInput {
+    width: 100%;
+    height: 78px;
+    background: #181818;
+    border: 3px solid #3a2f25;
+    color: $cream;
+    font-size: 1.8rem;
+    font-weight: 600;
+    padding: 0 24px;
+    border-radius: 20px;
+    outline: none;
+    text-align: center;
+
+    &::placeholder {
+      color: #6b5d47;
+      font-size: 1.4rem;
+    }
+
+    &:focus {
+      border-color: $gold;
+    }
+  }
+
+  .messageWrapper {
+    margin-top: 20px;
+    min-height: 36px;
+    text-align: center;
+  }
+
+  .tipMessage {
+    color: $gold;
+    font-size: 1.45rem;
+    font-weight: 700;
+  }
+}
+
+// Buttons
+.btnGroup {
+  display: flex;
+  gap: 16px;
+  margin-top: 48px;
+
+  button {
+    flex: 1;
+    height: 76px;
+    border-radius: 9999px;
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+  }
+}
+
+.backBtn {
+  background: transparent;
+  color: $cream;
+  border: 3px solid #3a2f25;
+  font-size: 1.2rem;
+
+  &:active {
+    background: #2a2a2a;
+  }
+}
+
+.nextBtn {
+  background: linear-gradient(135deg, $gold, #e8c99a);
+  color: #111111;
+  border: none;
+  font-size: 1.3rem;
+
+  &:active {
+    transform: scale(0.96);
+  }
+}
+
+/* Responsive - iPad & Mobile */
+@media (max-width: 768px) {
+  .container {
+    padding: 32px 20px;
+  }
+  .header .title { font-size: 2.1rem; }
+  .tipButton { height: 98px; font-size: 1.5rem; }
+}
+
+@media (max-width: 480px) {
+  .tipGrid {
+    grid-template-columns: 1fr; /* 1 cột trên điện thoại nhỏ */
+  }
+  .tipButton { height: 92px; font-size: 1.45rem; }
+}
