@@ -1,0 +1,215 @@
+// ===== New Modern Blue Theme =====
+$primary: #4F46E5;        // Indigo (main)
+$primary-light: rgba(79, 70, 229, 0.12);
+$primary-dark: #3730A3;
+
+$accent: #22C55E;         // Green accent (success feeling)
+
+$bg-main: #F9FAFB;
+$bg-card: #FFFFFF;
+
+$text-main: #111827;
+$text-muted: #6B7280;
+
+$border-color: #E5E7EB;
+
+$shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.06);
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  font-family: 'Inter', sans-serif;
+  width: 100%;
+  min-width: 550px; 
+  margin: 0 auto;
+  background-color: $bg-white;
+  padding: 32px 28px;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05); // Bóng đổ nhẹ và thanh thoát hơn
+}
+
+.header {
+  text-align: center;
+  padding-bottom: 10px;
+
+  .title {
+    font-size: 1.6rem;
+    color: $text-main;
+    margin-bottom: 8px;
+    font-weight: 800;
+    letter-spacing: -0.5px; // Kéo chữ sát lại chút cho giống phong cách Tech/Modern
+  }
+
+  .subtitle {
+    font-size: 1rem;
+    color: $text-muted;
+  }
+}
+
+.ratingBox {
+  background: $bg-sub;
+  border-radius: 16px;
+  padding: 30px 20px;
+  border: 1px solid $border-color;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+// Hàng chứa các khuôn mặt
+.faceRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 480px;
+  gap: 12px;
+}
+
+// Từng icon khuôn mặt
+.faceItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  padding: 16px 12px;
+  border-radius: 16px;
+  border: 2px solid transparent;
+  background: transparent;
+
+  .emoji {
+    font-size: 3.2rem; 
+    opacity: 0.4;
+    filter: grayscale(100%);
+    transition: all 0.3s ease;
+  }
+
+  .label {
+    font-size: 0.95rem;
+    color: $text-muted;
+    font-weight: 500;
+    transition: all 0.3s ease;
+  }
+
+  // Hover nhẹ 
+  &:hover {
+    background: $bg-white;
+    border-color: $border-color;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    
+    .emoji {
+      opacity: 0.8;
+      filter: grayscale(30%);
+      transform: translateY(-2px);
+    }
+  }
+}
+
+// Khi được chọn (Active)
+.activeFace {
+  background: $primary-light;
+  border-color: $primary;
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px $active-shadow;
+
+  .emoji {
+    opacity: 1;
+    filter: grayscale(0%);
+    transform: scale(1.15) translateY(-2px);
+  }
+
+  .label {
+    color: $primary;
+    font-weight: 700;
+  }
+
+  // Bỏ hiệu ứng hover khi đã active để tránh giật hình
+  &:hover {
+    background: $primary-light;
+    border-color: $primary;
+    box-shadow: 0 8px 20px $active-shadow;
+    .emoji { transform: scale(1.15) translateY(-2px); opacity: 1; }
+  }
+}
+
+// Trạng thái text phía dưới
+.statusText {
+  font-size: 1.05rem;
+  color: $text-muted;
+  min-height: 24px;
+  background: $bg-white;
+  padding: 8px 20px;
+  border-radius: 50px;
+  border: 1px solid $border-color;
+
+  strong {
+    color: $primary;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-left: 6px;
+  }
+
+  .hint {
+    color: #94A3B8;
+    font-size: 0.95rem;
+  }
+}
+
+// Cụm nút bấm
+.btnGroup {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 10px;
+
+  button {
+    flex: 1;
+    padding: 16px;
+    border-radius: 12px; // Nút hơi bo vuông hiện đại thay vì bo tròn xoe
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s ease;
+  }
+}
+
+.backBtn {
+  background: $bg-white;
+  color: $text-main;
+  border: 1px solid $border-color;
+
+  &:hover {
+    background: $bg-sub;
+    border-color: #CBD5E1;
+  }
+}
+
+.nextBtn {
+  background: $primary;
+  color: $bg-white;
+  border: none;
+  box-shadow: 0 4px 12px $active-shadow;
+
+  &:hover {
+    background: $primary-dark;
+    box-shadow: 0 6px 16px rgba(17, 94, 89, 0.25);
+    transform: translateY(-2px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+// Trạng thái disable nếu khách chưa chọn mặt nào
+.disabled {
+  background: #E2E8F0 !important;
+  color: #94A3B8 !important;
+  box-shadow: none !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+}

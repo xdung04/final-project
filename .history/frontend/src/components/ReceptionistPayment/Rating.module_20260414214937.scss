@@ -1,0 +1,199 @@
+// Bảng màu chuẩn Luxury Salon
+$gold-primary: #D4AF37; 
+$gold-dark: #997A2E;     
+$gold-light: rgba(212, 175, 55, 0.12);
+$charcoal-dark: #111111; 
+$charcoal-light: #2A2A2A;
+$bg-white: #FFFFFF;
+$bg-cream: #F8F6F0;      
+$border-color: #E0E0E0;  
+$text-main: #222222;
+$text-muted: #666666;    
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  font-family: 'Inter', sans-serif;
+  width: 100%;
+  min-width: 550px; // Đủ rộng cho iPad
+  margin: 0 auto;
+  background-color: $bg-white;
+  padding: 32px 28px;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+}
+
+.header {
+  text-align: center;
+  padding-bottom: 10px;
+
+  .title {
+    font-size: 1.6rem;
+    color: $charcoal-dark;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 700;
+  }
+
+  .subtitle {
+    font-size: 1rem;
+    color: $text-muted;
+  }
+}
+
+.ratingBox {
+  background: $bg-cream;
+  border-radius: 16px;
+  padding: 30px 20px;
+  border: 1px solid $border-color;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+// Hàng chứa các khuôn mặt
+.faceRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 480px;
+  gap: 12px;
+}
+
+// Từng icon khuôn mặt
+.faceItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  padding: 12px 8px;
+  border-radius: 12px;
+  border: 2px solid transparent;
+
+  .emoji {
+    font-size: 3rem; // To dễ bấm trên iPad
+    opacity: 0.5;
+    filter: grayscale(80%);
+    transition: all 0.3s ease;
+  }
+
+  .label {
+    font-size: 0.9rem;
+    color: $text-muted;
+    font-weight: 500;
+    opacity: 0.5;
+    transition: all 0.3s ease;
+  }
+
+  // Hover nhẹ cho mượt
+  &:hover {
+    .emoji {
+      opacity: 0.8;
+      transform: scale(1.1);
+    }
+  }
+}
+
+// Khi được chọn (Active)
+.activeFace {
+  background: $gold-light;
+  border-color: $gold-primary;
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(212, 175, 55, 0.2);
+
+  .emoji {
+    opacity: 1;
+    filter: grayscale(0%);
+    transform: scale(1.2);
+    text-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
+  }
+
+  .label {
+    opacity: 1;
+    color: $gold-dark;
+    font-weight: 700;
+  }
+}
+
+// Trạng thái text phía dưới
+.statusText {
+  font-size: 1.1rem;
+  color: $charcoal-dark;
+  min-height: 24px;
+
+  strong {
+    color: $gold-dark;
+    font-size: 1.2rem;
+    text-transform: uppercase;
+    margin-left: 6px;
+  }
+
+  .hint {
+    color: #A0A0A0;
+    font-style: italic;
+    font-size: 0.95rem;
+  }
+}
+
+// Cụm nút bấm
+.btnGroup {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 10px;
+
+  button {
+    flex: 1;
+    padding: 16px;
+    border-radius: 50px;
+    font-size: 15px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+}
+
+.backBtn {
+  background: transparent;
+  color: $charcoal-dark;
+  border: 2px solid $border-color;
+
+  &:hover {
+    background: $bg-cream;
+    border-color: $charcoal-dark;
+  }
+}
+
+.nextBtn {
+  background: linear-gradient(135deg, $charcoal-dark, $charcoal-light);
+  color: $bg-white;
+  border: none;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+
+  &:hover {
+    background: $gold-primary;
+    box-shadow: 0 8px 20px rgba(212, 175, 55, 0.4);
+    transform: translateY(-2px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+// Trạng thái disable nếu khách chưa chọn mặt nào
+.disabled {
+  background: #E0E0E0 !important;
+  color: #A0A0A0 !important;
+  box-shadow: none !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+}

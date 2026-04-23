@@ -1,0 +1,202 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap');
+
+/* ================================
+   Rating.module.scss - Light Luxury Kiosk
+   Sáng hơn, trắng kem nhẹ nhàng, ít nâu đen
+   ================================ */
+
+$gold: #d4af77;           // Gold giữ nguyên nhưng dịu dàng
+$gold-light: #e8d9c2;
+$cream: #f8f4eb;          // Nền trắng kem chính
+$white: #ffffff;          // Box trắng tinh
+$text-dark: #2c2c2c;      // Chữ chính đậm
+$muted: #8c7a5f;          // Chữ phụ ấm nhẹ
+
+.container {
+  background: linear-gradient(180deg, $cream 0%, #f5f0e6 100%);
+  color: $text-dark;
+  min-height: 100vh;
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 40px;
+
+  .title {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.55rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: $gold;
+    margin-bottom: 14px;
+    letter-spacing: -1.1px;
+  }
+
+  .subtitle {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.28rem;
+    line-height: 1.5;
+    color: $muted;
+    max-width: 460px;
+    margin: 0 auto;
+    font-weight: 400;
+  }
+}
+
+.ratingBox {
+  background: $white;
+  border-radius: 28px;
+  padding: 44px 32px;
+  border: 1px solid rgba(212, 175, 119, 0.25);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 36px;
+  box-shadow: 
+    0 20px 40px -15px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255,255,255,0.9);
+}
+
+.faceRow {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 580px;
+  gap: 16px;
+}
+
+.faceItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  padding: 16px 12px;
+  border-radius: 22px;
+  border: 3px solid transparent;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  flex: 1;
+
+  .emoji {
+    font-size: 4.4rem;
+    transition: all 0.4s ease;
+    filter: grayscale(60%);
+    opacity: 0.85;
+  }
+
+  .label {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: $muted;
+    transition: all 0.3s ease;
+  }
+
+  &:active {
+    transform: scale(0.93);
+  }
+}
+
+.activeFace {
+  background: rgba(212, 175, 119, 0.12);
+  border-color: $gold;
+  box-shadow: 0 0 0 8px rgba(212, 175, 119, 0.22);
+
+  .emoji {
+    filter: grayscale(0%);
+    opacity: 1;
+    transform: scale(1.18);
+  }
+
+  .label {
+    color: $gold;
+    font-weight: 700;
+  }
+}
+
+.statusText {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 1.35rem;
+  color: $text-dark;
+  min-height: 38px;
+  text-align: center;
+  font-weight: 500;
+
+  strong {
+    color: $gold;
+  }
+
+  .hint {
+    font-size: 1.05rem;
+    color: $muted;
+    font-style: italic;
+    margin-top: 8px;
+  }
+}
+
+.btnGroup {
+  display: flex;
+  gap: 18px;
+  margin-top: 40px;
+
+  button {
+    flex: 1;
+    height: 80px;
+    border-radius: 9999px;
+    font-size: 1.28rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+  }
+}
+
+.backBtn {
+  background: transparent;
+  color: $text-dark;
+  border: 3px solid #d4d0c7;
+
+  &:active {
+    background: #f0ede6;
+  }
+}
+
+.nextBtn {
+  background: linear-gradient(135deg, $gold, #e8d9c2);
+  color: #2c2c2c;
+  border: none;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.45rem;
+  letter-spacing: 1.5px;
+  box-shadow: 0 12px 25px -5px rgba(212, 175, 119, 0.35);
+
+  &:disabled {
+    background: #e5e0d5;
+    color: #a38a6f;
+    cursor: not-allowed;
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.96);
+  }
+}
+
+/* Responsive kiosk */
+@media (max-width: 768px) {
+  .container { padding: 32px 20px; }
+  .title { font-size: 2.25rem; }
+}
+
+@media (max-width: 480px) {
+  .faceItem .emoji { font-size: 3.7rem; }
+  .faceRow { gap: 12px; }
+}

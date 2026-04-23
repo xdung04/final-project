@@ -1,0 +1,388 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+/* ============================================
+   Invoice.module.scss — Luxury Light Theme
+   Barber Shop Kiosk
+   ============================================ */
+
+// ── Palette ──────────────────────────────────
+$ivory:       #FFFDF8;
+$ivory-mid:   #FDF6E8;
+$ivory-deep:  #FAF0D8;
+$white:       #FFFFFF;
+$gold:        #C9973A;
+$gold-light:  #F0D99A;
+$ink:         #1C1712;
+$brown:       #7A6A52;
+$brown-light: #AFA08A;
+$border:      rgba(201, 151, 58, 0.22);
+$face-bg:     #FDFAF5;
+$face-border: #EDE8DF;
+
+// ── Animations ───────────────────────────────
+@keyframes fadeSlideDown {
+  from { opacity: 0; transform: translateY(-18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.82); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+// ── Root Container ────────────────────────────
+.container {
+  min-height: 100vh;
+  max-width: 640px; /* Cố định chiều rộng bằng form */
+  margin: 0 auto;   /* Căn giữa màn hình */
+  background: linear-gradient(160deg, $ivory 0%, $ivory-mid 55%, $ivory-deep 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px 48px;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+// ── Decorative blobs ──────────────────────────
+.blobTop {
+  position: absolute;
+  top: -90px; right: -90px;
+  width: 340px; height: 340px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(201,151,58,0.14) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.blobBottom {
+  position: absolute;
+  bottom: -70px; left: -70px;
+  width: 280px; height: 280px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(201,151,58,0.09) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+// ── Header ────────────────────────────────────
+.header {
+  text-align: center;
+  margin-bottom: 32px;
+  animation: fadeSlideDown 0.6s ease both;
+}
+
+.ornament {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.ornLine {
+  display: block;
+  width: 56px; height: 1px;
+  background: linear-gradient(90deg, transparent, $gold, transparent);
+}
+.ornDiamond {
+  display: block;
+  width: 8px; height: 8px;
+  background: $gold;
+  transform: rotate(45deg);
+}
+
+.eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 3.5px;
+  text-transform: uppercase;
+  color: $gold;
+  margin: 0 0 10px;
+}
+
+.title {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.6rem;
+  font-weight: 900;
+  color: $ink;
+  line-height: 1.1;
+  letter-spacing: -1px;
+  margin: 0 0 12px;
+}
+
+.subtitle {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.2rem;
+  font-style: italic;
+  color: #8A7355;
+  margin: 0;
+  line-height: 1.5;
+}
+
+// ── Main Card (Cố định chiều cao) ─────────────
+.card {
+  background: $white;
+  border-radius: 28px;
+  padding: 40px 36px 36px;
+  border: 1px solid $border;
+  box-shadow:
+    0 20px 60px rgba(28, 23, 18, 0.08),
+    0 4px 16px rgba(201, 151, 58, 0.10);
+  width: 100%;
+  
+  /* Flexbox để đẩy nút bấm xuống đáy */
+  min-height: 520px;
+  display: flex;
+  flex-direction: column;
+
+  animation: fadeSlideUp 0.65s 0.1s ease both;
+}
+
+// ── Invoice Typography & Layout ───────────────
+.invoiceContent {
+  width: 100%;
+}
+
+.sectionTitle {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: $brown-light;
+  margin: 0 0 16px;
+}
+
+.section {
+  margin-bottom: 20px;
+}
+
+.divider {
+  height: 1px;
+  background: dashed 1px rgba(201,151,58,0.25);
+  margin-bottom: 20px;
+}
+
+// ── Info Grid (2 Cột) ─────────────────────────
+.infoGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.infoItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.infoLabel {
+  font-size: 0.85rem;
+  color: $brown;
+  font-weight: 500;
+}
+
+.infoValue {
+  font-size: 1rem;
+  font-weight: 600;
+  color: $ink;
+}
+
+// ── Service List ──────────────────────────────
+.serviceList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.serviceItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.serviceName {
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: $ink;
+}
+
+.servicePrice {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: $ink;
+}
+
+.empty {
+  font-size: 0.95rem;
+  color: $brown-light;
+  font-style: italic;
+}
+
+// ── Summary / Voucher / Tip ───────────────────
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 1rem;
+}
+
+.summaryLabel {
+  color: $brown;
+  font-weight: 500;
+}
+
+.summaryValue {
+  font-weight: 600;
+  color: $ink;
+}
+
+.discountValue {
+  font-weight: 700;
+  color: #D34141; // Màu đỏ nhẹ cho phần giảm giá
+}
+
+// ── Bottom Area (Nút & Tổng Tiền) ─────────────
+.bottomArea {
+  margin-top: auto; /* Đẩy xuống sát đáy card */
+  padding-top: 24px;
+}
+
+.totalBox {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, #FFFBF0, #FFF4D6);
+  border: 1px solid rgba(201,151,58,0.32);
+  border-radius: 16px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+
+  span {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #5C4A2A;
+  }
+
+  strong {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: $gold;
+  }
+}
+
+// ── Buttons ───────────────────────────────────
+.btnGroup {
+  display: flex;
+  gap: 14px;
+  width: 100%;
+}
+
+.backBtn {
+  flex: 0 0 auto;
+  width: 130px;
+  height: 64px;
+  border-radius: 14px;
+  border: 1.5px solid $face-border;
+  background: $white;
+  color: $brown;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover:not(:disabled) {
+    background: $face-bg;
+    border-color: $gold;
+    color: $ink;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.nextBtn {
+  flex: 1;
+  height: 64px;
+  border-radius: 14px;
+  border: none;
+  background: linear-gradient(135deg, #D4A044 0%, #C9973A 50%, #B8882E 100%);
+  color: #FFFBF0;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow:
+    0 8px 24px rgba(201, 151, 58, 0.38),
+    0 2px 6px rgba(201, 151, 58, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(201, 151, 58, 0.48);
+  }
+
+  &:disabled {
+    background: $face-border;
+    color: $brown-light;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+}
+
+// ── Success State ─────────────────────────────
+.successBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 64px;
+  background: #EAF7E8;
+  border: 1.5px solid #A1D69C;
+  border-radius: 14px;
+  color: #2F7A29;
+  font-weight: 700;
+  font-size: 1.1rem;
+  animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.successDot {
+  width: 10px; height: 10px;
+  background: #42A93A;
+  border-radius: 50%;
+}
+
+// ── Responsive ────────────────────────────────
+@media (max-width: 768px) {
+  .container { padding: 28px 16px 36px; }
+  .title { font-size: 2.1rem; }
+  .card { padding: 32px 24px 28px; }
+  .backBtn { width: 110px; }
+  .totalBox strong { font-size: 1.6rem; }
+}
+
+@media (max-width: 480px) {
+  .infoGrid { grid-template-columns: 1fr; gap: 12px; }
+  .title { font-size: 1.9rem; }
+}

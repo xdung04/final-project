@@ -1,0 +1,834 @@
+// 🎨 Màu chủ đạo
+// 🎨 Màu chủ đạo (phiên bản dễ đọc)
+$accent: #ffffff;
+$bg-dark: #181818;
+$bg-box: #262626;
+$text: #f5f5f5;
+$highlight: #ffb84d;
+
+
+// 🩵 Lớp phủ modal (đè toàn trang)
+.overlay {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  backdrop-filter: blur(6px);
+  animation: fadeIn 0.3s ease;
+}
+
+// 💬 Hộp modal chính
+.modal {
+  position: relative;
+  background-color: $bg-dark; // hoặc màu gì tùy ông đang set
+  border-radius: 20px;
+  
+  /* 👉 SỬA DÒNG NÀY (Cũ là 440px) */
+  width: 600px; 
+  max-width: 95vw; /* Để không bị tràn màn hình điện thoại */
+  
+  max-height: 90vh;
+  overflow-y: auto;
+  // ... các CSS khác giữ nguyên
+}
+
+// ❌ Nút đóng
+.closeBtn {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  background: transparent;
+  border: none;
+  font-size: 22px;
+  color: $text;
+  cursor: pointer;
+  transition: 0.25s;
+
+  &:hover {
+    color: $highlight;
+    transform: scale(1.1);
+  }
+}
+
+// =============================
+//   STEP 1 - Booking Info
+// =============================
+
+.step1Container {
+  color: $text;
+  text-align: left;
+}
+
+.title {
+  text-align: center;
+  font-size: 22px;
+  color: $accent;
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+
+.infoBox {
+  background-color: $bg-box;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 18px;
+  box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.05);
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+  label {
+    color: $highlight;
+    font-weight: 600;
+  }
+
+  span {
+    color: $text;
+    font-weight: 500;
+  }
+}
+
+.section {
+  margin-top: 16px;
+
+  label {
+    color: $highlight;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 8px;
+  }
+}
+
+// =============================
+//   Service List
+// =============================
+
+.serviceList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.serviceItem {
+  background: $bg-box;
+  margin-bottom: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: 0.25s;
+  cursor: pointer;
+  border: 1px solid transparent;
+
+  &:hover {
+    border-color: $highlight;
+    background: darken($bg-box, 5%);
+  }
+
+  input {
+    accent-color: $highlight;
+    margin-right: 8px;
+  }
+
+  .price {
+    color: $highlight;
+    font-weight: 600;
+  }
+}
+
+.activeService {
+  border-color: $highlight;
+  background-color: lighten($bg-box, 3%);
+}
+.voucherBox {
+  background: rgba(212, 163, 115, 0.08); /* ánh highlight nhẹ */
+  border: 1px dashed $highlight;
+  padding: 14px 16px;
+  border-radius: 10px;
+  margin-top: 1.2rem;
+  color: $text;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: 0 0 12px rgba(212, 163, 115, 0.15);
+  transition: 0.3s ease;
+
+  &:hover {
+    background: rgba(212, 163, 115, 0.12);
+    transform: translateY(-2px);
+    box-shadow: 0 0 18px rgba(212, 163, 115, 0.25);
+  }
+
+  .voucherHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: 600;
+    color: $highlight;
+
+    .code {
+      background: rgba(255, 255, 255, 0.08);
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-family: monospace;
+    }
+  }
+
+  .voucherDetail {
+    font-size: 15px;
+    color: lighten($text, 5%);
+    margin-top: 4px;
+  }
+}
+
+.voucherBoxEmpty {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  padding: 14px 16px;
+  border-radius: 10px;
+  margin-top: 1.2rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-style: italic;
+  text-align: center;
+  transition: 0.25s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+}
+
+// =============================
+//   Tổng tiền
+// =============================
+
+.totalBox {
+  margin-top: 20px;
+  font-size: 18px;
+  text-align: right;
+
+  span {
+    color: $text;
+    margin-right: 8px;
+  }
+
+  strong {
+    color: $highlight;
+    font-size: 20px;
+  }
+}
+
+// =============================
+//   Nút tiếp tục
+// =============================
+
+.nextBtn {
+  background-color: $accent;
+  color: $bg-dark;
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  font-weight: bold;
+  margin-top: 24px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: 0.3s;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 25px rgba(255, 255, 255, 0.5);
+  }
+}
+
+// =============================
+//   Đánh giá bằng khuôn mặt 😍
+// =============================
+
+.faceRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.face {
+  font-size: 36px;
+  cursor: pointer;
+  transition: transform 0.2s ease, filter 0.2s ease;
+  opacity: 0.6;
+
+  &:hover {
+    transform: scale(1.2);
+    opacity: 1;
+    filter: drop-shadow(0 0 6px $highlight);
+  }
+}
+
+.activeFace {
+  opacity: 1;
+  transform: scale(1.3);
+  filter: drop-shadow(0 0 12px $highlight);
+}
+// =============================
+//   Step 3 - Tipping 💰
+// =============================
+
+.tipGrid {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 16px;
+
+  button {
+    flex: 1;
+    padding: 10px 0;
+    border-radius: 10px;
+    background-color: $bg-box;
+    color: $text;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    font-weight: 600;
+    transition: 0.25s;
+
+    &:hover {
+      border-color: $highlight;
+      background-color: darken($bg-box, 4%);
+      transform: translateY(-2px);
+    }
+  }
+}
+
+.activeTip {
+  border-color: $highlight !important;
+  background-color: lighten($bg-box, 5%) !important;
+  color: $highlight !important;
+  box-shadow: 0 0 10px rgba(212, 163, 115, 0.4);
+}
+
+.customTipBox {
+  text-align: center;
+  margin-top: 8px;
+
+  .tipInput {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background-color: $bg-box;
+    color: $text;
+    font-size: 16px;
+    text-align: center;
+    transition: 0.25s;
+
+    &:focus {
+      outline: none;
+      border-color: $highlight;
+      box-shadow: 0 0 10px rgba(212, 163, 115, 0.3);
+    }
+  }
+}
+
+// =============================
+//   Step 4 - Invoice 🧾
+// =============================
+
+.invoiceContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1.5rem;
+}
+
+.invoiceCard {
+  background-color: $bg-box;
+  border-radius: 18px;
+  padding: 2rem;
+  width: 420px;
+  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.4);
+  animation: fadeIn 0.4s ease;
+  color: $text;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.invoiceTitle {
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: $highlight;
+  margin-bottom: 1.4rem;
+}
+
+.section {
+  margin-bottom: 1.4rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 1rem;
+
+  h3 {
+    font-size: 1rem;
+    color: lighten($highlight, 10%);
+    margin-bottom: 0.6rem;
+  }
+
+  p {
+    font-size: 0.95rem;
+    margin: 4px 0;
+    color: $text;
+
+    strong {
+      color: $highlight;
+    }
+  }
+}
+
+.serviceList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+
+  li {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+
+    span:first-child {
+      color: $text;
+    }
+
+    span:last-child {
+      color: $highlight;
+      font-weight: 600;
+    }
+  }
+}
+
+.empty {
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.tipRow,
+.totalRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1rem;
+  margin-top: 8px;
+}
+
+.tipRow span:first-child {
+  color: $highlight;
+}
+
+.totalRow {
+  margin-top: 12px;
+
+  span {
+    font-weight: 600;
+  }
+
+  strong {
+    font-size: 1.2rem;
+    color: $accent;
+    text-shadow: 0 0 6px rgba(255, 255, 255, 0.4);
+  }
+}
+
+.btnGroup {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1.5rem;
+  gap: 12px;
+
+  button {
+    flex: 1;
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: 0.25s;
+  }
+}
+
+.backBtn {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: $text;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+  }
+}
+
+.confirmBtn {
+  background-color: $highlight;
+  color: $bg-dark;
+  box-shadow: 0 0 10px rgba($highlight, 0.4);
+
+  &:hover {
+    background-color: lighten($highlight, 8%);
+    box-shadow: 0 0 15px rgba($highlight, 0.6);
+    transform: translateY(-1px);
+  }
+}
+
+.successBox {
+  background-color: rgba(76, 175, 80, 0.15);
+  color: #7df57b;
+  font-weight: 600;
+  text-align: center;
+  padding: 1rem;
+  border-radius: 12px;
+  animation: popIn 0.3s ease;
+  border: 1px solid rgba(124, 252, 0, 0.3);
+}
+.voucherRow,
+.discountRow,
+.tipRow,
+.totalRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 10px;
+  margin: 8px 0;
+  font-size: 15px;
+  transition: all 0.3s ease;
+  background: #1e1e1e; /* nền đen nhẹ */
+  color: #eaeaea; /* chữ sáng */
+}
+
+/* Voucher áp dụng */
+.voucherRow {
+  border: 1px dashed #b8860b; /* viền nâu đồng */
+  background: #2b2b2b;
+  color: #d2b48c; /* chữ nâu vàng nhẹ */
+  span:first-child {
+    font-weight: 600;
+  }
+}
+
+/* Giảm giá */
+.discountRow {
+  border: 1px dashed #a0522d;
+  background: #2a1f1a;
+  color: #f2c5a0; /* nâu sáng pha vàng */
+  span:first-child {
+    font-weight: 600;
+  }
+}
+
+/* Tiền tip */
+.tipRow {
+  border: 1px solid #3b3b3b;
+  background: #262626;
+  color: #ddd;
+  span:first-child {
+    font-weight: 600;
+  }
+}
+
+/* Tổng cộng */
+.totalRow {
+  background: linear-gradient(90deg, #3b2f2f, #c49a6c);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  border: none;
+  box-shadow: 0 2px 6px rgba(196, 154, 108, 0.3);
+
+  span:first-child {
+    text-transform: uppercase;
+  }
+
+  strong {
+    font-size: 17px;
+    color: #ffe8c2;
+  }
+}
+
+/* Hover hiệu ứng nhẹ */
+.voucherRow:hover,
+.discountRow:hover,
+.tipRow:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(255, 228, 196, 0.08);
+}
+
+// =============================
+//   Hiệu ứng animation
+// =============================
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+//
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.toggleBtn {
+  background: #f3f4f6;
+  border: none;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toggleBtn:hover {
+  background: #e5e7eb;
+}
+
+.activeService {
+  background-color: #e6f7e9;
+}
+
+.emptyText {
+  color: #777;
+  font-style: italic;
+  margin-left: 8px;
+}
+
+.paymentSummary {
+  margin-top: 1.2rem;
+  background: #fdfdfd;
+  border-radius: 10px;
+  padding: 14px 16px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+
+  .row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    font-size: 15px;
+
+    .label {
+      font-weight: 500;
+      color: #444;
+    }
+    .value {
+      font-weight: 500;
+      color: #111;
+    }
+  }
+
+  .finalPrice {
+    margin-top: 6px;
+    border-top: 1px dashed #ccc;
+    padding-top: 8px;
+    font-size: 17px;
+    color: #0a7f25;
+
+    .totalValue {
+      color: #0a7f25;
+      font-weight: 700;
+    }
+  }
+
+  .voucherBox {
+    margin: 10px 0;
+    background: #fff6e5;
+    border: 1px dashed #f1b441;
+    border-radius: 8px;
+    padding: 10px 12px;
+
+    .voucherHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+    }
+
+    .discountText {
+      color: #e67e22;
+      font-weight: 600;
+    }
+
+    .voucherExpiry {
+      font-size: 13px;
+      color: #777;
+      margin-top: 4px;
+      text-align: right;
+    }
+  }
+
+  .voucherBoxEmpty {
+    margin: 10px 0;
+    font-size: 14px;
+    color: #888;
+    text-align: center;
+    background: #f5f5f5;
+    border-radius: 8px;
+    padding: 8px;
+  }
+}
+/* =========================================
+   GIAO DIỆN MONITORING (GIÁM SÁT KHÁCH HÀNG)
+   ========================================= */
+
+.monitoringContent {
+  padding: 40px;
+  text-align: center;
+  animation: fadeIn 0.4s ease-out;
+
+  .statusBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: #fff4e5;
+    color: #ff9800;
+    padding: 12px 24px;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 35px;
+    box-shadow: 0 4px 15px rgba(255, 152, 0, 0.15);
+    border: 1px solid rgba(255, 152, 0, 0.2);
+  }
+
+  /* Hiệu ứng chấm tròn nhấp nháy như đèn tín hiệu */
+  .pulseDot {
+    width: 12px;
+    height: 12px;
+    background: #ff9800;
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+  }
+
+  .liveStats {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 35px;
+    text-align: left;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+    
+    .statItem {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 0;
+      font-size: 1.2rem;
+      
+      /* Gạch dưới nét đứt giữa các dòng */
+      &:not(:last-child) {
+        border-bottom: 1px dashed #dee2e6;
+      }
+      
+      label { 
+        color: #6c757d; 
+        font-weight: 500;
+      }
+      
+      .value { 
+        font-weight: 700; 
+        color: #2ecc71; 
+        font-size: 1.4rem;
+      }
+      
+      .stars { 
+        color: #f1c40f; 
+        letter-spacing: 2px;
+        font-size: 1.3rem;
+      }
+    }
+  }
+
+  .actionGroup {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+
+    button {
+      padding: 14px 24px;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+
+      &:hover {
+        transform: translateY(-2px);
+      }
+      
+      &:active {
+        transform: translateY(0);
+      }
+    }
+
+    .btnCancel {
+      background: #ffffff;
+      color: #e74c3c;
+      border: 1px solid #e74c3c;
+
+      &:hover {
+        background: #fdf0ef;
+        box-shadow: 0 4px 12px rgba(231, 76, 60, 0.15);
+      }
+    }
+
+    .btnCash {
+      background: #2ecc71;
+      color: #ffffff;
+      border: 1px solid #2ecc71;
+
+      &:hover {
+        background: #27ae60;
+        box-shadow: 0 4px 12px rgba(46, 204, 113, 0.3);
+      }
+    }
+  }
+}
+
+/* --- Animations --- */
+@keyframes pulse {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 152, 0, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(255, 152, 0, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 152, 0, 0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
