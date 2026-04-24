@@ -60,10 +60,10 @@ export const createBooking = async (req, res) => {
     const userRole = req.user.role;
 
     // 1. Chặn ngay nếu không phải khách hàng
-    if (userRole !== 'customer') {
+    if (userRole !== "customer") {
       return res.status(403).json({
         success: false,
-        message: "Tài khoản nhân viên không được phép đặt lịch tại đây."
+        message: "Tài khoản nhân viên không được phép đặt lịch tại đây.",
       });
     }
 
@@ -74,7 +74,7 @@ export const createBooking = async (req, res) => {
     if (!customer) {
       return res.status(404).json({
         success: false,
-        message: "Không tìm thấy thông tin khách hàng tương ứng với tài khoản này."
+        message: "Không tìm thấy thông tin khách hàng tương ứng với tài khoản này.",
       });
     }
 
@@ -91,10 +91,10 @@ export const createBooking = async (req, res) => {
     });
   } catch (error) {
     // Xử lý lỗi khóa ngoại MySQL để trả về message đẹp hơn
-    if (error.code === 'ER_NO_REFERENCED_ROW_2') {
+    if (error.code === "ER_NO_REFERENCED_ROW_2") {
       return res.status(400).json({
         success: false,
-        message: "Lỗi hệ thống: Tài khoản của bạn chưa được kích hoạt quyền Khách hàng."
+        message: "Lỗi hệ thống: Tài khoản của bạn chưa được kích hoạt quyền Khách hàng.",
       });
     }
 
@@ -214,7 +214,6 @@ export const cancelBooking = async (req, res) => {
     await booking.save();
 
     return res.status(200).json({ message: "Đã hủy lịch hẹn thành công" });
-
   } catch (error) {
     console.error("❌ Lỗi khi hủy lịch:", error);
     res.status(500).json({ message: "Lỗi khi hủy lịch", error: error.message });
@@ -430,6 +429,158 @@ export const getBookedSlotsByBarber = async (req, res) => {
     // ⚙️ Các lỗi khác (ngoài dự kiến)
     return res.status(500).json({
       message: "Lỗi khi lấy khung giờ booking của barber",
+      error: error.message,
+    });
+  }
+};
+
+export const getBookingsByBranch = async (req, res) => {
+  try {
+    const { idBranch } = req.params;
+    const { date } = req.query;
+
+    if (!idBranch) {
+      return res.status(400).json({ message: "Thiếu idBranch" });
+    }
+
+    const whereClause = {};
+    if (date) {
+      const { Op } = await import("sequelize");
+      whereClause[Op.and] = [
+        db.Sequelize.where(db.Sequelize.fn("DATE", db.Sequelize.col("Booking.bookingDate")), date),
+      ];
+    }
+
+    const bookings = await db.Booking.findAll({
+      where: whereClause,
+      include: [
+        {
+          model: db.Barber,
+          as: "barber",
+          required: true,
+          where: { idBranch: parseInt(idBranch) },
+          include: [
+            {
+              model: db.User,
+              as: "user",
+              attributes: ["idUser", "fullName", "phoneNumber"],
+            },
+            {
+              model: db.Branch,
+              as: "branch",
+              attributes: ["idBranch", "name", "address"],
+            },
+          ],
+          attributes: ["idBarber"],
+        },
+        {
+          model: db.Customer,
+          include: [
+            {
+              model: db.User,
+              as: "user",
+              attributes: ["idUser", "fullName", "phoneNumber"],
+            },
+          ],
+          attributes: ["idCustomer"],
+        },
+        {
+          model: db.BookingDetail,
+          as: "BookingDetails",
+          include: [
+            {
+              model: db.Service,
+              as: "service",
+              attributes: ["idService", "name", "price", "duration"],
+            },
+          ],
+          attributes: ["idBookingDetail", "quantity", "price"],
+        },
+        {
+          model: db.BookingTip,
+          as: "BookingTip",
+          attributes: ["tipAmount"],
+        },
+        {
+          model: db.CustomerVoucher,
+          include: [
+            {
+              model: db.Voucher,
+              as: "voucher",
+              attributes: ["idVoucher", "title", "discountPercent"],
+            },
+          ],
+          attributes: ["id", "voucherCode", "status"],
+        },
+      ],
+      order: [
+        ["bookingDate", "ASC"],
+        ["bookingTime", "ASC"],
+      ],
+    });
+
+    const result = bookings.map((booking) => {
+      const details = booking.BookingDetails || [];
+      const serviceTotal = details.reduce((sum, item) => sum + parseFloat(item.price) * (item.quantity || 1), 0);
+      const tip = parseFloat(booking.BookingTip?.tipAmount || 0);
+      const voucher = booking.CustomerVoucher?.voucher;
+      const discountPercent = parseFloat(voucher?.discountPercent || 0);
+      const discountAmount = (serviceTotal * discountPercent) / 100;
+      const total = serviceTotal + tip - discountAmount;
+
+      return {
+        idBooking: booking.idBooking,
+        bookingDate: booking.bookingDate,
+        bookingTime: booking.bookingTime,
+        status: booking.status || "Pending",
+        isPaid: Boolean(booking.isPaid),
+        description: booking.description || "",
+        customer: booking.Customer
+          ? {
+              id: booking.Customer.idCustomer,
+              name: booking.Customer.user?.fullName || "Khách lẻ",
+              phone: booking.Customer.user?.phoneNumber || "",
+            }
+          : { id: 0, name: "Khách lẻ", phone: "" },
+        barber: booking.barber
+          ? {
+              id: booking.barber.idBarber,
+              name: booking.barber.user?.fullName || "",
+            }
+          : null,
+        branch: booking.barber?.branch
+          ? {
+              id: booking.barber.branch.idBranch,
+              name: booking.barber.branch.name,
+              address: booking.barber.branch.address,
+            }
+          : null,
+        services: details.map((d) => ({
+          id: d.service?.idService,
+          name: d.service?.name,
+          price: parseFloat(d.service?.price || d.price),
+          quantity: d.quantity,
+        })),
+        voucher: voucher
+          ? {
+              title: voucher.title,
+              discountPercent,
+            }
+          : null,
+        serviceTotal: serviceTotal.toFixed(0),
+        tip: tip.toFixed(0),
+        discountPercent,
+        discountAmount: discountAmount.toFixed(0),
+        subTotal: (serviceTotal + tip).toFixed(0),
+        total: total.toFixed(0),
+      };
+    });
+
+    return res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    console.error("Lỗi getBookingsByBranch:", error);
+    return res.status(500).json({
+      message: "Lỗi khi lấy danh sách booking theo chi nhánh",
       error: error.message,
     });
   }

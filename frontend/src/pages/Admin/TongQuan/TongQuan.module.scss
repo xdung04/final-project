@@ -264,3 +264,33 @@
     }
   }
 }
+
+/* Bộ lọc tháng/năm */
+.filterSelect {
+  border: 1px solid #e0d7cc;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 13px;
+  color: #2c2c2c;
+  background: #fff;
+  cursor: pointer;
+  outline: none;
+
+  &:focus { border-color: #b8966a; }
+}
+
+/* No data */
+.noData {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #aaa;
+  font-size: 14px;
+}
+
+/* Shimmer animation */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}

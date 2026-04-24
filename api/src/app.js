@@ -29,6 +29,7 @@ import hairConsultRoutes from "./routes/hairConsult.js";
 import { authenticate, authorize } from "./middlewares/authMiddleware.js";
 import notificationRoute from "./routes/notification.js";
 import bannerRoute from "./routes/banner.js";
+import receptionistRouter from "./routes/receptionist.js";
 
 dotenv.config();
 
@@ -63,6 +64,8 @@ app.use("/api/hashtags", hashtagRoutes);
 app.use("/api/hair-consult", hairConsultRoutes);
 app.use("/api/notifications", notificationRoute);
 app.use("/api/banners", bannerRoute);
+
+app.use("/api/receptionist", receptionistRouter);
 
 // Auth + view
 viewEngine(app);

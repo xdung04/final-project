@@ -10,7 +10,8 @@ import {
   cancelBooking,
   getBookingsForBarber,
   getBookedSlotsByBarber,
-    checkInBooking,
+  checkInBooking,
+  getBookingsByBranch,
 } from "../controllers/bookingController.js";
 import { authenticate } from "../middlewares/authMiddleware.js";
 
@@ -28,6 +29,9 @@ router.get("/barbers/:idBarber", getBookingsByBarber);
 // 📋 Danh sách booking admin
 router.get("/details", getAllBookingDetails);
 
+// 📋 Danh sách booking receptionist
+router.get("/branch/:idBranch", getBookingsByBranch);
+
 // ❌ Hủy booking
 router.put("/:idBooking/cancel", cancelBooking);
 router.put("/:idBooking/checkin", checkInBooking);
@@ -44,10 +48,10 @@ router.post(
     { name: "right", maxCount: 1 },
     { name: "back", maxCount: 1 },
   ]),
-  completeBooking
+  completeBooking,
 );
 
 // ✍️ Tạo booking mới
-router.post("/create",authenticate, createBooking);
+router.post("/create", authenticate, createBooking);
 
 export default router;
