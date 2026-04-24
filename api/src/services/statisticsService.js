@@ -38,7 +38,10 @@ export const getBarberRevenue = async (filter = {}) => {
       },
     ],
     attributes: ["idSalary", "baseSalary", "commission", "tips", "bonus", "totalSalary"],
-    order: [["year", "ASC"], ["month", "ASC"]],
+    order: [
+      ["year", "ASC"],
+      ["month", "ASC"],
+    ],
   });
 
   return salaries.map((s) => ({
@@ -66,10 +69,7 @@ export const getBranchMonthlyBookingRevenue = async (year) => {
     ],
     where: {
       isPaid: true,
-      [Sequelize.Op.and]: Sequelize.where(
-        Sequelize.fn("YEAR", Sequelize.col("bookingDate")),
-        year
-      ),
+      [Sequelize.Op.and]: Sequelize.where(Sequelize.fn("YEAR", Sequelize.col("bookingDate")), year),
     },
     include: [
       {
@@ -85,11 +85,7 @@ export const getBranchMonthlyBookingRevenue = async (year) => {
         ],
       },
     ],
-    group: [
-      "barber->branch.idBranch",
-      "barber->branch.name",
-      Sequelize.literal("MONTH(`bookingDate`)"),
-    ],
+    group: ["barber->branch.idBranch", "barber->branch.name", Sequelize.literal("MONTH(`bookingDate`)")],
     order: [
       ["barber", "branch", "idBranch", "ASC"],
       [Sequelize.literal("MONTH(`bookingDate`)"), "ASC"],
@@ -133,30 +129,56 @@ export const getMonthlyRevenue = async (month, year) => {
 /**
  * Tổng số khách hàng đã từng phục vụ (1 khách nhiều lần vẫn tính 1)
  */
-export const getServedCustomerCount = async () => {
-  const count = await db.Booking.count({
+// Sửa getServedCustomerCount
+// Logic: đếm distinct customer có tài khoản + đếm riêng booking vãng lai (idCustomer=0)
+export const getServedCustomerCount = async (month, year) => {
+  const now = new Date();
+  const m = month ?? now.getMonth() + 1;
+  const y = year ?? now.getFullYear();
+
+  const whereTime = {
+    [Sequelize.Op.and]: [
+      Sequelize.where(Sequelize.fn("MONTH", Sequelize.col("bookingDate")), m),
+      Sequelize.where(Sequelize.fn("YEAR", Sequelize.col("bookingDate")), y),
+    ],
+    status: { [Sequelize.Op.notIn]: ["Cancelled"] },
+  };
+
+  // Đếm khách có tài khoản (idCustomer khác 0 và khác null)
+  const registeredCount = await db.Booking.count({
     distinct: true,
     col: "idCustomer",
     where: {
-      idCustomer: { [Sequelize.Op.ne]: null },
+      ...whereTime,
+      idCustomer: {
+        [Sequelize.Op.and]: [{ [Sequelize.Op.ne]: null }, { [Sequelize.Op.ne]: 0 }],
+      },
     },
   });
-  return Number(count || 0);
+
+  // Đếm từng lượt khách vãng lai (idCustomer = 0), mỗi booking = 1 khách
+  const guestCount = await db.Booking.count({
+    where: {
+      ...whereTime,
+      idCustomer: 0,
+    },
+  });
+
+  return registeredCount + guestCount;
 };
 
-/**
- * Tổng số lượng booking từ trước đến giờ
- */
-export const getTotalBookings = async () => {
+// Sửa getTotalBookings — chỉ đếm booking không bị hủy
+export const getTotalBookings = async (month, year) => {
   const now = new Date();
-  const month = now.getMonth() + 1; // JS: 0 = January
-  const year = now.getFullYear();
+  const m = month ?? now.getMonth() + 1;
+  const y = year ?? now.getFullYear();
 
   const count = await db.Booking.count({
     where: {
+      status: { [Sequelize.Op.notIn]: ["Cancelled"] },
       [Sequelize.Op.and]: [
-        Sequelize.where(Sequelize.fn("MONTH", Sequelize.col("bookingDate")), month),
-        Sequelize.where(Sequelize.fn("YEAR", Sequelize.col("bookingDate")), year),
+        Sequelize.where(Sequelize.fn("MONTH", Sequelize.col("bookingDate")), m),
+        Sequelize.where(Sequelize.fn("YEAR", Sequelize.col("bookingDate")), y),
       ],
     },
   });
@@ -164,17 +186,42 @@ export const getTotalBookings = async () => {
   return Number(count || 0);
 };
 
-/**
- * Trung bình rating của tất cả thợ (từ bảng BarberRatingSummary)
- */
-export const getAvgRating = async () => {
+// Sửa getAvgRating — tính từ booking trong tháng
+export const getAvgRating = async (month, year) => {
+  const now = new Date();
+  const m = month ?? now.getMonth() + 1;
+  const y = year ?? now.getFullYear();
+
+  // Lấy avgRate của các barber có booking trong tháng
   const result = await db.BarberRatingSummary.findAll({
-    attributes: [[Sequelize.fn("AVG", Sequelize.col("avgRate")), "overallAvg"]],
+    attributes: [[Sequelize.fn("AVG", Sequelize.col("BarberRatingSummary.avgRate")), "overallAvg"]],
+    include: [
+      {
+        model: db.Barber,
+        as: "barber",
+        attributes: [],
+        required: true,
+        include: [
+          {
+            model: db.Booking,
+            as: "Bookings",
+            attributes: [],
+            required: true,
+            where: {
+              [Sequelize.Op.and]: [
+                Sequelize.where(Sequelize.fn("MONTH", Sequelize.col("barber->Bookings.bookingDate")), m),
+                Sequelize.where(Sequelize.fn("YEAR", Sequelize.col("barber->Bookings.bookingDate")), y),
+              ],
+            },
+          },
+        ],
+      },
+    ],
     raw: true,
   });
 
   const avg = result?.[0]?.overallAvg ?? 0;
-  return Number(parseFloat(avg));
+  return Number(parseFloat(avg).toFixed(2));
 };
 
 /**
@@ -202,11 +249,7 @@ export const getTopCustomers = async (limit = 10) => {
         ],
       },
     ],
-    group: [
-      "Booking.idCustomer",
-      "customer.idCustomer",
-      "customer.user.idUser",
-    ],
+    group: ["Booking.idCustomer", "customer.idCustomer", "customer.user.idUser"],
     order: [
       [Sequelize.literal("totalSpent"), "DESC"],
       [Sequelize.literal("visitCount"), "DESC"],
@@ -223,6 +266,174 @@ export const getTopCustomers = async (limit = 10) => {
   }));
 };
 
+/**
+ * Doanh thu theo tuần trong tháng, tách theo chi nhánh
+ * Trả về mảng 4 tuần, mỗi tuần có doanh thu từng chi nhánh
+ */
+export const getMonthlyRevenueChart = async (month, year) => {
+  const now = new Date();
+  const m = month ?? now.getMonth() + 1;
+  const y = year ?? now.getFullYear();
+
+  // Lấy tất cả chi nhánh
+  const branches = await db.Branch.findAll({
+    attributes: ["idBranch", "name"],
+    order: [["idBranch", "ASC"]],
+  });
+
+  // Xác định số ngày trong tháng
+  const daysInMonth = new Date(y, m, 0).getDate();
+
+  // Chia 4 tuần
+  const weeks = [
+    { label: "Tuần 1", start: 1, end: 7 },
+    { label: "Tuần 2", start: 8, end: 14 },
+    { label: "Tuần 3", start: 15, end: 21 },
+    { label: "Tuần 4", start: 22, end: daysInMonth },
+  ];
+
+  // Lấy booking đã thanh toán trong tháng, join barber -> branch
+  const bookings = await db.Booking.findAll({
+    attributes: [
+      "bookingDate",
+      "total",
+      [Sequelize.col("barber->branch.idBranch"), "branchId"],
+      [Sequelize.col("barber->branch.name"), "branchName"],
+    ],
+    where: {
+      isPaid: true,
+      [Sequelize.Op.and]: [
+        Sequelize.where(Sequelize.fn("MONTH", Sequelize.col("bookingDate")), m),
+        Sequelize.where(Sequelize.fn("YEAR", Sequelize.col("bookingDate")), y),
+      ],
+    },
+    include: [
+      {
+        model: db.Barber,
+        as: "barber",
+        attributes: [],
+        include: [{ model: db.Branch, as: "branch", attributes: [] }],
+      },
+    ],
+    raw: true,
+  });
+
+  // Tổng hợp theo tuần x chi nhánh
+  const result = weeks.map((w) => {
+    const row = { name: w.label };
+
+    branches.forEach((br) => {
+      const total = bookings
+        .filter((b) => {
+          const day = new Date(b.bookingDate).getDate();
+          return b.branchId === br.idBranch && day >= w.start && day <= w.end;
+        })
+        .reduce((sum, b) => sum + parseFloat(b.total || 0), 0);
+
+      row[br.name] = Math.round(total);
+    });
+
+    return row;
+  });
+
+  return { weeks: result, branches: branches.map((b) => ({ idBranch: b.idBranch, name: b.name })) };
+};
+
+/**
+ * Tỉ trọng dịch vụ theo số lượng booking detail trong tháng
+ */
+export const getServiceDistribution = async (month, year) => {
+  const now = new Date();
+  const m = month ?? now.getMonth() + 1;
+  const y = year ?? now.getFullYear();
+
+  const result = await db.BookingDetail.findAll({
+    attributes: [
+      [Sequelize.col("service.name"), "name"],
+      [Sequelize.fn("COUNT", Sequelize.col("BookingDetail.idBookingDetail")), "value"],
+    ],
+    include: [
+      {
+        model: db.Service,
+        as: "service",
+        attributes: [],
+      },
+      {
+        model: db.Booking,
+        as: "booking",
+        attributes: [],
+        where: {
+          [Sequelize.Op.and]: [
+            Sequelize.where(Sequelize.fn("MONTH", Sequelize.col("booking.bookingDate")), m),
+            Sequelize.where(Sequelize.fn("YEAR", Sequelize.col("booking.bookingDate")), y),
+          ],
+        },
+      },
+    ],
+    group: ["service.idService", "service.name"],
+    order: [[Sequelize.literal("value"), "DESC"]],
+    limit: 6,
+    raw: true,
+  });
+
+  return result.map((r) => ({ name: r.name, value: parseInt(r.value) }));
+};
+
+/**
+ * Top thợ xuất sắc theo doanh thu tháng
+ */
+export const getTopBarbers = async (month, year, limit = 5) => {
+  const now = new Date();
+  const m = month ?? now.getMonth() + 1;
+  const y = year ?? now.getFullYear();
+
+  const startDate = new Date(y, m - 1, 1);
+  const endDate = new Date(y, m, 1);
+
+  const barbers = await db.Barber.findAll({
+    attributes: [
+      "idBarber",
+      [Sequelize.fn("COALESCE", Sequelize.fn("SUM", Sequelize.col("Bookings.total")), 0), "revenue"],
+    ],
+    include: [
+      {
+        model: db.User,
+        as: "user",
+        attributes: ["fullName", "image"],
+        required: true,
+      },
+      {
+        model: db.BarberRatingSummary,
+        as: "ratingSummary",
+        attributes: ["avgRate"],
+        required: false,
+      },
+      {
+        model: db.Booking,
+        as: "Bookings",
+        attributes: [],
+        required: false,
+        where: {
+          isPaid: true,
+          bookingDate: { [Sequelize.Op.gte]: startDate, [Sequelize.Op.lt]: endDate },
+        },
+      },
+    ],
+    group: ["Barber.idBarber", "user.idUser", "ratingSummary.idBarber"],
+    order: [[Sequelize.literal("revenue"), "DESC"]],
+    limit,
+    subQuery: false,
+  });
+
+  return barbers.map((b, index) => ({
+    rank: index + 1,
+    idBarber: b.idBarber,
+    name: b.user?.fullName || "—",
+    avatar: b.user?.image || "",
+    revenue: parseFloat(b.get("revenue") || 0),
+    rating: parseFloat(b.ratingSummary?.avgRate || 0),
+  }));
+};
 
 /**
  * Tổng hợp tất cả số liệu dashboard trong 1 call
@@ -234,12 +445,18 @@ export const getStatisticsOverview = async (month, year) => {
     totalBookings,
     avgRating,
     topCustomers,
+    revenueChart,
+    serviceDistribution,
+    topBarbers,
   ] = await Promise.all([
     getMonthlyRevenue(month, year),
-    getServedCustomerCount(),
-    getTotalBookings(),
-    getAvgRating(),
+    getServedCustomerCount(month, year), // ← truyền month/year
+    getTotalBookings(month, year), // ← truyền month/year
+    getAvgRating(month, year), // ← truyền month/year
     getTopCustomers(),
+    getMonthlyRevenueChart(month, year),
+    getServiceDistribution(month, year),
+    getTopBarbers(month, year),
   ]);
 
   return {
@@ -248,5 +465,8 @@ export const getStatisticsOverview = async (month, year) => {
     totalBookings,
     avgRating,
     topCustomers,
+    revenueChart,
+    serviceDistribution,
+    topBarbers,
   };
 };

@@ -18,7 +18,7 @@ import {
   Mail,
   FileText,
   Users,
-  Loader2 // Thêm icon loading
+  Loader2, // Thêm icon loading
 } from "lucide-react";
 
 import { BarberAPI } from "~/apis/barberAPI";
@@ -47,17 +47,26 @@ function ThoCatToc() {
   const [selectedBarber, setSelectedBarber] = useState(null);
   const [barberDetail, setBarberDetail] = useState(null); // Lưu chi tiết hồ sơ gọi từ API
   const [isLoadingDetail, setIsLoadingDetail] = useState(false); // Trạng thái đang tải chi tiết
-  
+
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showChangeBranch, setShowChangeBranch] = useState(false);
 
   // Dữ liệu form
   const [formData, setFormData] = useState({
-    email: "", password: "", fullName: "", phoneNumber: "", idBranch: "", profileDescription: "",
+    email: "",
+    password: "",
+    fullName: "",
+    phoneNumber: "",
+    idBranch: "",
+    profileDescription: "",
   });
   const [editData, setEditData] = useState({
-    fullName: "", phoneNumber: "", email: "", idBranch: "", profileDescription: "",
+    fullName: "",
+    phoneNumber: "",
+    email: "",
+    idBranch: "",
+    profileDescription: "",
   });
   const [newBranchId, setNewBranchId] = useState("");
 
@@ -66,11 +75,11 @@ function ThoCatToc() {
     try {
       const data = await BarberAPI.getAll();
       setBarbers(data || []);
-      
+
       if (data?.length > 0 && !selectedBarber) {
         setSelectedBarber(data[0]);
       } else if (selectedBarber) {
-        const updatedSelected = data.find(b => b.idBarber === selectedBarber.idBarber);
+        const updatedSelected = data.find((b) => b.idBarber === selectedBarber.idBarber);
         if (updatedSelected) setSelectedBarber(updatedSelected);
       }
     } catch (error) {
@@ -98,7 +107,7 @@ function ThoCatToc() {
   useEffect(() => {
     const fetchBarberDetail = async () => {
       if (!selectedBarber?.idBarber) return;
-      
+
       setIsLoadingDetail(true);
       try {
         const detail = await BarberAPI.getProfile(selectedBarber.idBarber);
@@ -115,9 +124,7 @@ function ThoCatToc() {
   }, [selectedBarber?.idBarber]); // Chỉ chạy lại khi đổi thợ khác
 
   // Kết hợp dữ liệu từ danh sách (đánh giá, khách, trạng thái) và chi tiết (email, sđt, mô tả)
-  const currentProfile = selectedBarber 
-    ? { ...selectedBarber, ...barberDetail } 
-    : null;
+  const currentProfile = selectedBarber ? { ...selectedBarber, ...barberDetail } : null;
 
   // Lọc danh sách thợ theo Search và Chi nhánh
   const filteredBarbers = useMemo(() => {
@@ -184,7 +191,7 @@ function ThoCatToc() {
       await BarberAPI.updateBarber(selectedBarber.idBarber, editData);
       showToast("success", "Cập nhật thông tin thợ thành công!");
       setShowEditModal(false);
-      
+
       // Gọi lại cả danh sách & chi tiết để làm mới giao diện
       await fetchBarbers();
       const updatedDetail = await BarberAPI.getProfile(selectedBarber.idBarber);
@@ -250,7 +257,9 @@ function ThoCatToc() {
               <select value={filterBranch} onChange={(e) => setFilterBranch(e.target.value)}>
                 <option value="">Tất cả chi nhánh</option>
                 {branches.map((br) => (
-                  <option key={br.idBranch} value={br.idBranch}>{br.name}</option>
+                  <option key={br.idBranch} value={br.idBranch}>
+                    {br.name}
+                  </option>
                 ))}
               </select>
             </div>
@@ -265,20 +274,22 @@ function ThoCatToc() {
                   key={b.idBarber}
                   className={cx("barberCard", {
                     active: selectedBarber?.idBarber === b.idBarber,
-                    locked: b.status === "locked" || b.status === "LOCKED"
+                    locked: b.status === "locked" || b.status === "LOCKED",
                   })}
                   onClick={() => setSelectedBarber(b)}
                 >
                   <div className={cx("avatarSmall")}>
-                    {b.fullName?.charAt(0) || <User size={14} />}
+                    {b.image ? (
+                      <img src={b.image} alt={b.fullName} className={cx("avatarImg")} />
+                    ) : (
+                      b.fullName?.charAt(0) || <User size={14} />
+                    )}
                   </div>
                   <div className={cx("cardInfo")}>
                     <h4>{b.fullName || "Chưa có tên"}</h4>
                     <span>{b.branchName || "Chưa phân bổ"}</span>
                   </div>
-                  {(b.status === "locked" || b.status === "LOCKED") && (
-                    <Lock size={14} className={cx("lockIcon")} />
-                  )}
+                  {(b.status === "locked" || b.status === "LOCKED") && <Lock size={14} className={cx("lockIcon")} />}
                 </div>
               ))
             )}
@@ -302,18 +313,29 @@ function ThoCatToc() {
               {/* Header Hồ Sơ */}
               <div className={cx("profileHeader")}>
                 <div className={cx("avatarLarge")}>
-                  {currentProfile.fullName?.charAt(0) || <User size={40} />}
+                  {currentProfile.image ? (
+                    <img src={currentProfile.image} alt={currentProfile.fullName} className={cx("avatarImg")} />
+                  ) : (
+                    currentProfile.fullName?.charAt(0) || <User size={40} />
+                  )}
                 </div>
                 <div className={cx("headerInfo")}>
                   <div className={cx("nameRow")}>
                     <h3>{currentProfile.fullName || "Chưa có tên"}</h3>
-                    <span className={cx("statusBadge", { locked: currentProfile.status === "locked" || currentProfile.status === "LOCKED" })}>
-                      {currentProfile.status === "locked" || currentProfile.status === "LOCKED" ? "Đã khóa" : "Đang làm việc"}
+                    <span
+                      className={cx("statusBadge", {
+                        locked: currentProfile.status === "locked" || currentProfile.status === "LOCKED",
+                      })}
+                    >
+                      {currentProfile.status === "locked" || currentProfile.status === "LOCKED"
+                        ? "Đã khóa"
+                        : "Đang làm việc"}
                     </span>
                   </div>
                   <div className={cx("statsRow")}>
                     <span className={cx("stat")}>
-                      <Star size={16} className={cx("star")} fill="currentColor" /> {currentProfile.rating || "0.0"} Đánh giá
+                      <Star size={16} className={cx("star")} fill="currentColor" /> {currentProfile.rating || "0.0"}{" "}
+                      Đánh giá
                     </span>
                     <span className={cx("divider")}>•</span>
                     <span className={cx("stat")}>
@@ -362,20 +384,30 @@ function ThoCatToc() {
                 <button className={cx("actionBtn", "edit")} onClick={openEditModal}>
                   <Edit2 size={16} /> Chỉnh sửa thông tin
                 </button>
-                <button className={cx("actionBtn", "branch")} onClick={() => {
-                  setNewBranchId(currentProfile.idBranch || "");
-                  setShowChangeBranch(true);
-                }}>
+                <button
+                  className={cx("actionBtn", "branch")}
+                  onClick={() => {
+                    setNewBranchId(currentProfile.idBranch || "");
+                    setShowChangeBranch(true);
+                  }}
+                >
                   <ArrowRightLeft size={16} /> Đổi chi nhánh
                 </button>
-                <button 
-                  className={cx("actionBtn", currentProfile.status === "locked" || currentProfile.status === "LOCKED" ? "unlock" : "lock")}
+                <button
+                  className={cx(
+                    "actionBtn",
+                    currentProfile.status === "locked" || currentProfile.status === "LOCKED" ? "unlock" : "lock",
+                  )}
                   onClick={() => handleToggleAccount(currentProfile)}
                 >
                   {currentProfile.status === "locked" || currentProfile.status === "LOCKED" ? (
-                    <><Unlock size={16} /> Mở khóa tài khoản</>
+                    <>
+                      <Unlock size={16} /> Mở khóa tài khoản
+                    </>
                   ) : (
-                    <><Lock size={16} /> Khóa tài khoản</>
+                    <>
+                      <Lock size={16} /> Khóa tài khoản
+                    </>
                   )}
                 </button>
               </div>
@@ -397,7 +429,13 @@ function ThoCatToc() {
                 </div>
                 <div className={cx("formGroup")}>
                   <label>Số điện thoại</label>
-                  <input type="text" name="phoneNumber" value={formData.phoneNumber} onChange={handleAddChange} required />
+                  <input
+                    type="text"
+                    name="phoneNumber"
+                    value={formData.phoneNumber}
+                    onChange={handleAddChange}
+                    required
+                  />
                 </div>
                 <div className={cx("formGroup")}>
                   <label>Email</label>
@@ -405,23 +443,42 @@ function ThoCatToc() {
                 </div>
                 <div className={cx("formGroup")}>
                   <label>Mật khẩu</label>
-                  <input type="password" name="password" value={formData.password} onChange={handleAddChange} required />
+                  <input
+                    type="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleAddChange}
+                    required
+                  />
                 </div>
               </div>
               <div className={cx("formGroup")}>
                 <label>Chi nhánh làm việc</label>
                 <select name="idBranch" value={formData.idBranch} onChange={handleAddChange}>
                   <option value="">-- Không chọn --</option>
-                  {branches.map((br) => (<option key={br.idBranch} value={br.idBranch}>{br.name}</option>))}
+                  {branches.map((br) => (
+                    <option key={br.idBranch} value={br.idBranch}>
+                      {br.name}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className={cx("formGroup")}>
                 <label>Mô tả hồ sơ</label>
-                <textarea name="profileDescription" value={formData.profileDescription} onChange={handleAddChange} rows="3" />
+                <textarea
+                  name="profileDescription"
+                  value={formData.profileDescription}
+                  onChange={handleAddChange}
+                  rows="3"
+                />
               </div>
               <div className={cx("modalActions")}>
-                <button type="button" className={cx("cancelBtn")} onClick={() => setShowAddModal(false)}>Hủy</button>
-                <button type="submit" className={cx("saveBtn")}>Thêm thợ</button>
+                <button type="button" className={cx("cancelBtn")} onClick={() => setShowAddModal(false)}>
+                  Hủy
+                </button>
+                <button type="submit" className={cx("saveBtn")}>
+                  Thêm thợ
+                </button>
               </div>
             </form>
           </div>
@@ -436,23 +493,50 @@ function ThoCatToc() {
             <form onSubmit={handleEditSubmit}>
               <div className={cx("formGroup")}>
                 <label>Họ và tên</label>
-                <input type="text" name="fullName" value={editData.fullName} onChange={(e) => setEditData({ ...editData, fullName: e.target.value })} required />
+                <input
+                  type="text"
+                  name="fullName"
+                  value={editData.fullName}
+                  onChange={(e) => setEditData({ ...editData, fullName: e.target.value })}
+                  required
+                />
               </div>
               <div className={cx("formGroup")}>
                 <label>Email</label>
-                <input type="email" name="email" value={editData.email} onChange={(e) => setEditData({ ...editData, email: e.target.value })} required />
+                <input
+                  type="email"
+                  name="email"
+                  value={editData.email}
+                  onChange={(e) => setEditData({ ...editData, email: e.target.value })}
+                  required
+                />
               </div>
               <div className={cx("formGroup")}>
                 <label>Số điện thoại</label>
-                <input type="text" name="phoneNumber" value={editData.phoneNumber} onChange={(e) => setEditData({ ...editData, phoneNumber: e.target.value })} required />
+                <input
+                  type="text"
+                  name="phoneNumber"
+                  value={editData.phoneNumber}
+                  onChange={(e) => setEditData({ ...editData, phoneNumber: e.target.value })}
+                  required
+                />
               </div>
               <div className={cx("formGroup")}>
                 <label>Mô tả hồ sơ</label>
-                <textarea name="profileDescription" value={editData.profileDescription} onChange={(e) => setEditData({ ...editData, profileDescription: e.target.value })} rows="3" />
+                <textarea
+                  name="profileDescription"
+                  value={editData.profileDescription}
+                  onChange={(e) => setEditData({ ...editData, profileDescription: e.target.value })}
+                  rows="3"
+                />
               </div>
               <div className={cx("modalActions")}>
-                <button type="button" className={cx("cancelBtn")} onClick={() => setShowEditModal(false)}>Hủy</button>
-                <button type="submit" className={cx("saveBtn")}>Lưu thay đổi</button>
+                <button type="button" className={cx("cancelBtn")} onClick={() => setShowEditModal(false)}>
+                  Hủy
+                </button>
+                <button type="submit" className={cx("saveBtn")}>
+                  Lưu thay đổi
+                </button>
               </div>
             </form>
           </div>
@@ -464,17 +548,27 @@ function ThoCatToc() {
         <div className={cx("modalOverlay")}>
           <div className={cx("modal", "smallModal")}>
             <h3>Đổi chi nhánh</h3>
-            <p className={cx("subTitle")}>Chọn chi nhánh mới cho <strong>{currentProfile?.fullName}</strong></p>
+            <p className={cx("subTitle")}>
+              Chọn chi nhánh mới cho <strong>{currentProfile?.fullName}</strong>
+            </p>
             <form onSubmit={handleChangeBranch}>
               <div className={cx("formGroup")}>
                 <select value={newBranchId} onChange={(e) => setNewBranchId(e.target.value)} required>
                   <option value="">-- Chọn chi nhánh --</option>
-                  {branches.map((br) => (<option key={br.idBranch} value={br.idBranch}>{br.name}</option>))}
+                  {branches.map((br) => (
+                    <option key={br.idBranch} value={br.idBranch}>
+                      {br.name}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className={cx("modalActions")}>
-                <button type="button" className={cx("cancelBtn")} onClick={() => setShowChangeBranch(false)}>Hủy</button>
-                <button type="submit" className={cx("saveBtn")}>Cập nhật</button>
+                <button type="button" className={cx("cancelBtn")} onClick={() => setShowChangeBranch(false)}>
+                  Hủy
+                </button>
+                <button type="submit" className={cx("saveBtn")}>
+                  Cập nhật
+                </button>
               </div>
             </form>
           </div>
@@ -484,7 +578,13 @@ function ThoCatToc() {
       {/* Toasts */}
       <div className={cx("toastContainer")}>
         {toastList.map((t) => (
-          <Toast key={t.id} type={t.type} text={t.text} duration={t.duration} onClose={() => setToastList((prev) => prev.filter((toast) => toast.id !== t.id))} />
+          <Toast
+            key={t.id}
+            type={t.type}
+            text={t.text}
+            duration={t.duration}
+            onClose={() => setToastList((prev) => prev.filter((toast) => toast.id !== t.id))}
+          />
         ))}
       </div>
     </div>
