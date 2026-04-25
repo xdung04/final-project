@@ -1,4 +1,3 @@
-// api/src/migrations/20250101000010-create-conversations.js
 "use strict";
 
 export async function up(queryInterface, Sequelize) {
@@ -15,7 +14,7 @@ export async function up(queryInterface, Sequelize) {
         model: "customers",
         key: "idCustomer",
       },
-      unique: true, // 1 customer chỉ có 1 conversation
+      unique: true,
       onUpdate: "CASCADE",
       onDelete: "CASCADE",
     },
@@ -39,6 +38,18 @@ export async function up(queryInterface, Sequelize) {
       onUpdate: "CASCADE",
       onDelete: "SET NULL",
     },
+
+    // ✅ NEW
+    last_message: {
+      type: Sequelize.TEXT,
+      allowNull: true,
+    },
+    unread_count: {
+      type: Sequelize.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+    },
+
     created_at: {
       type: Sequelize.DATE,
       allowNull: false,
@@ -53,11 +64,12 @@ export async function up(queryInterface, Sequelize) {
     },
   });
 
-  // Thêm index để tối ưu query
+  // index
   await queryInterface.addIndex("conversations", [
     "status",
     "assigned_receptionist_id",
   ]);
+
   await queryInterface.addIndex("conversations", ["updated_at"]);
 }
 

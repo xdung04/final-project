@@ -85,6 +85,14 @@ const chatLiveAPI = {
     axios.get(`${API_URL}/receptionists`, {
       headers: { Authorization: `Bearer ${token}` },
     }),
+
+  searchConversations: (token, keyword = "", status = null) =>
+    axios.get(
+      `${API_URL}/search?keyword=${encodeURIComponent(keyword)}${status ? `&status=${status}` : ""}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    ),
 };
 
 export default chatLiveAPI;

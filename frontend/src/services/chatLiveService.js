@@ -103,3 +103,8 @@ export const getAllReceptionists = async (token) => {
   }
 };
 
+export const searchConversations = async (token, keyword, status = null) => {
+  const res = await chatLiveAPI.searchConversations(token, keyword, status);
+  return res.data;
+};
+

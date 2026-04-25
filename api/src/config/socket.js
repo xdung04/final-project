@@ -1,6 +1,9 @@
 // file: config/socket.js
 import { Server } from "socket.io";
 import * as chatLiveService from "../services/chatLiveService.js";
+
+let ioInstance;
+
 const initSocket = (server) => {
   const io = new Server(server, {
     cors: {
@@ -8,6 +11,7 @@ const initSocket = (server) => {
       methods: ["GET", "POST"],
     },
   });
+  ioInstance = io;
 
   io.on("connection", (socket) => {
     console.log("🟢 Thiết bị mới kết nối socket:", socket.id);
@@ -72,7 +76,13 @@ const initSocket = (server) => {
       try {
         if (!msg?.conversationId) return;
 
-        // ✅ 1. Lưu DB
+        // Lấy conversation trước khi lưu để biết trạng thái cũ
+        const convBefore = await chatLiveService.getConversationById(
+          msg.conversationId,
+        );
+        const wasClosed = convBefore?.status === "closed";
+
+        // Lưu tin nhắn (hàm saveMessage tự động reopen nếu cần)
         const savedMessage = await chatLiveService.saveMessage({
           conversationId: msg.conversationId,
           senderType: msg.senderType,
@@ -87,14 +97,24 @@ const initSocket = (server) => {
           ...msg,
           id: savedMessage.id,
           createdAt: savedMessage.createdAt,
-          clientId: msg.clientId, // 🔥 QUAN TRỌNG
+          clientId: msg.clientId,
         };
 
-        // ✅ 2. Emit cho tất cả (kể cả sender cũng OK)
+        // Emit tin nhắn realtime
         io.to(msg.conversationId).emit("receive_message", payload);
+
+        // Nếu conversation vừa được reopen (từ closed) và sender là customer
+        if (wasClosed && msg.senderType === "customer") {
+          // Thông báo cập nhật danh sách cho tất cả receptionist
+          io.emit("conversation_updated");
+        }
       } catch (error) {
         socket.emit("message_error", { error: error.message });
       }
+    });
+
+    socket.on("reset_unread", async ({ conversationId, receptionistId }) => {
+      await chatLiveService.resetUnreadCount(conversationId, receptionistId);
     });
 
     // =====================================================
@@ -105,5 +125,6 @@ const initSocket = (server) => {
 
   return io;
 };
+export const getIO = () => ioInstance;
 
 export default initSocket;

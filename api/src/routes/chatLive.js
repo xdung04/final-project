@@ -29,8 +29,7 @@ router.get(
   chatController.getWaitingConversations
 );
 
-// Admin routes
-router.get("/all-conversations", authenticate, chatController.getAllConversations);
+router.get("/search", authenticate, chatController.searchConversations);
 
 router.get("/receptionists", authenticate, chatController.handleGetAllReceptionists);
 

@@ -1,37 +1,48 @@
-// api/src/services/chatLiveService.js
 import db from "../models/index.js";
 
 const { Conversation, Message, Customer, Receptionist, User, Sequelize } = db;
 const { Op } = Sequelize;
+
+// Helper: cập nhật last_message và unread_count cho conversation
+export const updateConversationStats = async (
+  conversationId,
+  newMessage,
+  increaseUnread = false,
+) => {
+  const updateData = {
+    lastMessage:
+      newMessage.content ||
+      (newMessage.eventType
+        ? `📢 ${newMessage.eventType.toUpperCase()}`
+        : "Tin nhắn mới"),
+    updatedAt: new Date(),
+  };
+  if (increaseUnread) {
+    updateData.unreadCount = Sequelize.literal("unread_count + 1");
+  }
+  await Conversation.update(updateData, { where: { id: conversationId } });
+};
 
 /**
  * Lấy conversation của customer (1-1)
  * Nếu đã closed thì reopen
  */
 export const getOrCreateConversation = async (customerId) => {
-  // Tìm conversation của customer (kể cả closed)
-  let conversation = await Conversation.findOne({
-    where: { customerId },
-  });
-
-  // Chưa có → tạo mới
+  let conversation = await Conversation.findOne({ where: { customerId } });
   if (!conversation) {
     conversation = await Conversation.create({
       customerId,
       mode: "ai",
       status: "waiting",
     });
-  }
-  // Đã closed → reopen
-  else if (conversation.status === "closed") {
+  } else if (conversation.status === "closed") {
     await conversation.update({
       status: "waiting",
       mode: "ai",
       assignedReceptionistId: null,
+      unreadCount: 0, // reset unread khi reopen
     });
     await conversation.reload();
-
-    // Tạo system message thông báo reopen
     await saveMessage({
       conversationId: conversation.id,
       senderType: "system",
@@ -43,7 +54,6 @@ export const getOrCreateConversation = async (customerId) => {
       },
     });
   }
-
   return conversation;
 };
 
@@ -53,7 +63,7 @@ export const getOrCreateConversation = async (customerId) => {
 export const getConversationHistory = async (
   conversationId,
   limit = 50,
-  offset = 0
+  offset = 0,
 ) => {
   const messages = await Message.findAll({
     where: { conversationId },
@@ -89,14 +99,11 @@ export const getConversationHistory = async (
     ],
   });
 
-  return {
-    conversation,
-    messages: messages.reverse(),
-  };
+  return { conversation, messages: messages.reverse() };
 };
 
 /**
- * Lưu message
+ * Lưu message và cập nhật stats
  */
 export const saveMessage = async ({
   conversationId,
@@ -107,17 +114,32 @@ export const saveMessage = async ({
   eventType = null,
   metadata = null,
 }) => {
-  // Validation
-  if (senderType !== "system" && !senderId) {
-    throw new Error(`senderId is required for senderType: ${senderType}`);
-  }
+  if (senderType !== "system" && !senderId)
+    throw new Error(`senderId required for ${senderType}`);
+  if (messageType === "text" && !content) throw new Error("content required");
+  if (messageType === "system" && !eventType)
+    throw new Error("eventType required");
 
-  if (messageType === "text" && !content) {
-    throw new Error("content is required for text message");
-  }
-
-  if (messageType === "system" && !eventType) {
-    throw new Error("eventType is required for system message");
+  // 🔥 Nếu conversation đang closed và sender là customer → tự động reopen
+  const conv = await Conversation.findByPk(conversationId);
+  if (conv && conv.status === "closed" && senderType === "customer") {
+    await conv.update({
+      status: "waiting",
+      mode: "ai",
+      assignedReceptionistId: null,
+      unreadCount: 0,
+    });
+    // Tạo system message reopen (sẽ được lưu sau khi message chính)
+    await Message.create({
+      conversationId,
+      senderType: "system",
+      messageType: "system",
+      eventType: "reopen",
+      metadata: {
+        timestamp: new Date(),
+        message: "Cuộc trò chuyện được mở lại",
+      },
+    });
   }
 
   const message = await Message.create({
@@ -130,13 +152,29 @@ export const saveMessage = async ({
     metadata,
   });
 
-  // Update updatedAt để sort conversation
-  await Conversation.update(
-    { updatedAt: new Date() },
-    { where: { id: conversationId } }
+  // Chỉ tăng unread_count nếu tin nhắn từ khách hàng
+  const shouldIncreaseUnread = senderType === "customer";
+  await updateConversationStats(
+    conversationId,
+    { content, eventType },
+    shouldIncreaseUnread,
   );
-
   return message;
+};
+
+/**
+ * Reset unread_count khi receptionist mở conversation
+ */
+export const resetUnreadCount = async (conversationId, receptionistId) => {
+  const conv = await Conversation.findByPk(conversationId);
+  if (conv && conv.assignedReceptionistId === receptionistId) {
+    await Conversation.update(
+      { unreadCount: 0 },
+      { where: { id: conversationId } },
+    );
+    return true;
+  }
+  return false;
 };
 
 /**
@@ -182,7 +220,7 @@ export const receptionistJoin = async (conversationId, receptionistId) => {
         status: "in_progress",
         assignedReceptionistId: receptionistId,
       },
-      { transaction: t }
+      { transaction: t },
     );
 
     const systemMessage = await Message.create(
@@ -198,7 +236,7 @@ export const receptionistJoin = async (conversationId, receptionistId) => {
           timestamp: new Date(),
         },
       },
-      { transaction: t }
+      { transaction: t },
     );
 
     return { conversation, systemMessage, receptionist };
@@ -256,29 +294,20 @@ export const receptionistLeave = async (conversationId, receptionistId) => {
 export const transferConversation = async (
   conversationId,
   fromReceptionistId,
-  toReceptionistId
+  toReceptionistId,
 ) => {
   const conversation = await Conversation.findByPk(conversationId);
-
-  if (!conversation) {
-    throw new Error("Conversation not found");
-  }
-
-  if (conversation.assignedReceptionistId !== fromReceptionistId) {
-    throw new Error("You are not assigned to this conversation");
-  }
+  if (!conversation) throw new Error("Conversation not found");
+  if (conversation.assignedReceptionistId !== fromReceptionistId)
+    throw new Error("Not your conversation");
 
   const fromReceptionist = await Receptionist.findByPk(fromReceptionistId, {
     include: [{ model: User, as: "user", attributes: ["fullName"] }],
   });
-
   const toReceptionist = await Receptionist.findByPk(toReceptionistId, {
     include: [{ model: User, as: "user", attributes: ["fullName"] }],
   });
-
-  if (!toReceptionist) {
-    throw new Error("Target receptionist not found");
-  }
+  if (!toReceptionist) throw new Error("Target receptionist not found");
 
   const systemMessage = await saveMessage({
     conversationId,
@@ -294,10 +323,8 @@ export const transferConversation = async (
     },
   });
 
-  await conversation.update({
-    assignedReceptionistId: toReceptionistId,
-  });
-
+  await conversation.update({ assignedReceptionistId: toReceptionistId });
+  // Reset unread cho người nhận? Để nguyên, vì system message là tin mới.
   return { conversation, systemMessage, toReceptionist };
 };
 
@@ -322,13 +349,8 @@ export const closeConversation = async (conversationId) => {
  * Active conversations (đang xử lý)
  */
 export const getActiveConversations = async (receptionistId = null) => {
-  const where = {
-    status: "in_progress",
-  };
-
-  if (receptionistId) {
-    where.assignedReceptionistId = receptionistId;
-  }
+  const where = { status: "in_progress" };
+  if (receptionistId) where.assignedReceptionistId = receptionistId;
 
   return await Conversation.findAll({
     where,
@@ -360,15 +382,9 @@ export const getActiveConversations = async (receptionistId = null) => {
   });
 };
 
-/**
- * Waiting conversations (chưa có lễ tân)
- */
 export const getWaitingConversations = async () => {
   return await Conversation.findAll({
-    where: {
-      status: "waiting",
-      mode: "ai",
-    },
+    where: { status: "waiting", mode: "ai" },
     include: [
       {
         model: Customer,
@@ -386,7 +402,39 @@ export const getWaitingConversations = async () => {
   });
 };
 
+// Search conversations (closed hoặc tất cả)
+export const searchConversations = async (keyword, status = null) => {
+  const where = {};
+  if (status) where.status = status;
 
+  const include = [
+    {
+      model: Customer,
+      as: "customer",
+      required: true,
+      include: [
+        {
+          model: User,
+          as: "user",
+          attributes: ["fullName", "email", "phoneNumber", "image"],
+        },
+      ],
+    },
+  ];
+
+  if (keyword) {
+    where[Op.or] = [
+      { "$customer.user.fullName$": { [Op.like]: `%${keyword}%` } },
+      { "$customer.user.phoneNumber$": { [Op.like]: `%${keyword}%` } },
+    ];
+  }
+
+  return await Conversation.findAll({
+    where,
+    include,
+    order: [["updatedAt", "DESC"]],
+  });
+};
 
 /**
  * All conversations (admin)
@@ -459,4 +507,7 @@ export const getAllReceptionists = async () => {
         }
       : null,
   }));
+};
+export const getConversationById = async (conversationId) => {
+  return await Conversation.findByPk(conversationId);
 };

@@ -150,12 +150,6 @@ export default function LiveChat({ customerId, token }) {
     <div className="chat-card">
       <div className="chat-header">
         <h3>💬 Chat với lễ tân</h3>
-        {conversation?.status === "in_progress" && (
-          <span className="badge">Đang có lễ tân</span>
-        )}
-        <button onClick={handleCloseChat} className="close-btn">
-          Đóng chat
-        </button>
       </div>
 
       <div className="chat-body">

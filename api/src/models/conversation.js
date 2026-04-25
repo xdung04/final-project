@@ -1,4 +1,3 @@
-// api/src/models/Conversation.js
 "use strict";
 import { Model, DataTypes } from "sequelize";
 
@@ -50,6 +49,17 @@ export default (sequelize) => {
         type: DataTypes.BIGINT,
         allowNull: true,
         field: "assigned_receptionist_id",
+      },
+      lastMessage: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+        field: "last_message",
+      },
+      unreadCount: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+        field: "unread_count",
       },
     },
     {
