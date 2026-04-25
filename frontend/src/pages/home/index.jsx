@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import styles from "./Home.module.scss";
 import { useAuth } from "~/context/AuthContext";
-import ServiceCard from "~/components/ServiceCard";
 import AIChat from "../../components/AIChat/AIChat";
 import Modal from "~/components/Modal";
 import { fetchHotServicesPaged } from "~/services/serviceService";
@@ -13,58 +12,54 @@ import { BranchAPI } from "~/apis/branchAPI";
 import LiveChat from "../../components/LiveChat";
 
 // Import Header và Footer của bạn
+import { fetchReelsPaged } from "~/services/reelService"; // ← thêm import
+import { useNavigate } from "react-router-dom"; // ← thêm import
 
 const DEFAULT_BANNER =
   "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=1600&q=80";
 
 const Home = () => {
   const { isLogin, user, accessToken } = useAuth();
+  const navigate = useNavigate();
+
   const [hot, setHot] = useState([]);
   const [hotBarbers, setHotBarbers] = useState([]);
+  const [reels, setReels] = useState([]); // ← state mới cho reels
   const [page, setPage] = useState(1);
   const limit = 5;
+  const barberLimit = 4; // ← hiển thị 4 barber
+
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [nextRoute, setNextRoute] = useState(null);
-  const [showAddBanner, setShowAddBanner] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [chatType, setChatType] = useState("ai");
   const [branches, setBranches] = useState([]);
   const [activeBranch, setActiveBranch] = useState(null);
-  // References cho Custom Cursor
+
   const cursorRef = useRef(null);
   const ringRef = useRef(null);
 
-  /* ===== BANNER API ===== */
-  const [currentBanner, setCurrentBanner] = useState(0);
-  const { showToast } = useToast();
-  const formatPrice = (price) => {
-    return Number(price).toLocaleString("vi-VN");
-  };
+  const formatPrice = (price) => Number(price).toLocaleString("vi-VN");
 
+  // ── Load branches ──
   useEffect(() => {
     const fetchBranches = async () => {
       try {
-        // Gọi API lấy danh sách chi nhánh giống bên trang Quản lý
         const data = await BranchAPI.getAll();
         if (data && data.length > 0) {
-          // Chỉ lấy những chi nhánh đang hoạt động (nếu cần)
-          const activeBranches = data.filter(
-            (b) => b.status === "Active" || b.status === "Hoạt động",
-          );
-
-          setBranches(activeBranches.length > 0 ? activeBranches : data);
-          // Set chi nhánh đầu tiên làm mặc định để hiển thị bản đồ
-          setActiveBranch(
-            activeBranches.length > 0 ? activeBranches[0] : data[0],
-          );
+          const active = data.filter((b) => b.status === "Active" || b.status === "Hoạt động");
+          const list = active.length > 0 ? active : data;
+          setBranches(list);
+          setActiveBranch(list[0]);
         }
       } catch (err) {
-        console.error("Lỗi load danh sách chi nhánh:", err);
+        console.error("Lỗi load branches:", err);
       }
     };
     fetchBranches();
   }, []);
-  /* ===== HOT SERVICES API ===== */
+
+  // ── Load hot services ──
   useEffect(() => {
     const loadHot = async () => {
       try {
@@ -77,7 +72,35 @@ const Home = () => {
     loadHot();
   }, [page]);
 
-  /* ===== CUSTOM CURSOR ===== */
+  // ── Load hot barbers ──
+  useEffect(() => {
+    const loadHotBarbers = async () => {
+      try {
+        const data = await fetchHotBarbersPaged(page, barberLimit);
+        setHotBarbers(data.data);
+      } catch (err) {
+        console.error("Lỗi load barber hot:", err);
+      }
+    };
+    loadHotBarbers();
+  }, [page]);
+
+  // ── Load 4 reels mới nhất ──
+  useEffect(() => {
+    const loadReels = async () => {
+      try {
+        // page=1, limit=4 → lấy 4 reel mới nhất (API sort theo createdAt DESC)
+        const data = await fetchReelsPaged(1, 4, accessToken);
+        // fetchReelsPaged trả về mảng trực tiếp
+        setReels(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Lỗi load reels:", err);
+      }
+    };
+    loadReels();
+  }, [accessToken]);
+
+  // ── Custom cursor ──
   useEffect(() => {
     let mx = 0,
       my = 0,
@@ -88,7 +111,6 @@ const Home = () => {
       my = e.clientY;
     };
     window.addEventListener("mousemove", handleMouseMove);
-
     const animateCursor = () => {
       if (cursorRef.current && ringRef.current) {
         cursorRef.current.style.left = mx + "px";
@@ -101,27 +123,12 @@ const Home = () => {
       requestAnimationFrame(animateCursor);
     };
     const animId = requestAnimationFrame(animateCursor);
-
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
       cancelAnimationFrame(animId);
     };
   }, []);
 
-  useEffect(() => {
-    const loadHotBarbers = async () => {
-      try {
-        const data = await fetchHotBarbersPaged(page, limit);
-        setHotBarbers(data.data);
-      } catch (err) {
-        console.error("Lỗi load barber hot:", err);
-      }
-    };
-
-    loadHotBarbers();
-  }, [page]);
-
-  /* ===== ACTIONS ===== */
   const handleBookingClick = () => {
     if (isLogin) {
       window.location.href = "/booking";
@@ -131,16 +138,18 @@ const Home = () => {
     }
   };
 
+  // Click vào reel → vào trang /reels với keyword rỗng
+  const handleReelClick = (reel) => {
+    navigate("/reels");
+  };
+
   return (
     <div className={styles.homeWrapper}>
-      {/* GRAIN OVERLAY */}
       <div className={styles.grainOverlay}></div>
-
-      {/* CUSTOM CURSOR */}
       <div className={styles.cursor} ref={cursorRef}></div>
       <div className={styles.cursorRing} ref={ringRef}></div>
 
-      {/* HERO SECTION */}
+      {/* ── HERO ── */}
       <header className={styles.hero}>
         <div
           className={styles.heroBg}
@@ -172,10 +181,7 @@ const Home = () => {
         </div>
 
         {user?.role === "admin" && (
-          <button
-            className={styles.addBannerBtn}
-            onClick={() => setShowAddBanner(true)}
-          >
+          <button className={styles.addBannerBtn} onClick={() => {}}>
             + Thêm banner
           </button>
         )}
@@ -186,7 +192,7 @@ const Home = () => {
         </div>
       </header>
 
-      {/* MARQUEE */}
+      {/* ── MARQUEE ── */}
       <div className={styles.marqueeBar}>
         <div className={styles.marqueeTrack}>
           {[1, 2, 3, 4, 5].map((_, i) => (
@@ -208,7 +214,7 @@ const Home = () => {
         </div>
       </div>
 
-      {/* SERVICES */}
+      {/* ── SERVICES ── */}
       <section id="services" className={styles.services}>
         <div className={styles.servicesHeader}>
           <div>
@@ -218,53 +224,37 @@ const Home = () => {
             </h2>
           </div>
         </div>
-
         <div className={styles.servicesGrid}>
-          {/* CARD ĐẦU TIÊN - LỚN, ẢNH TRÀN VIỀN */}
-          {hot[0] && (
-            <div
-              className={`${styles.serviceCard} ${styles.featured}`}
-              style={{
-                backgroundImage: `url(${hot[0].image})`,
-              }}
-            >
-              <div className={styles.serviceNum}>01</div>
-              <h3 className={styles.serviceName}>{hot[0].name}</h3>
-              <p className={styles.serviceDesc}>{hot[0].description}</p>
-              <div className={styles.servicePrice}>
-                {formatPrice(hot[0].price)} <span>VNĐ</span>
-              </div>
-            </div>
-          )}
-
-          {/* 4 CARD CÒN LẠI - CŨNG ẢNH TRÀN VIỀN */}
-          {hot.slice(1, 5).map((service, index) => (
-            <div
-              key={service.idService}
-              className={styles.serviceCard}
-              style={{
-                backgroundImage: `url(${service.image})`,
-              }}
-            >
-              <div className={styles.serviceNum}>
-                {String(index + 2).padStart(2, "0")}
-              </div>
-
-              {/* KHÔNG CÒN serviceIcon nữa */}
-
-              <h3 className={styles.serviceName}>{service.name}</h3>
-              <p className={styles.serviceDesc}>
-                {service.description || "Dịch vụ đẳng cấp."}
-              </p>
-              <div className={styles.servicePrice}>
-                {formatPrice(service.price)} <span>VNĐ</span>
+          {hot.map((service, index) => (
+            <div key={service.idService} className={`${styles.serviceCard} ${index === 0 ? styles.featured : ""}`}>
+              {/* Ảnh nền — z-index 0, position absolute */}
+              {service.image && (
+                <img
+                  src={service.image}
+                  alt={service.name}
+                  className={styles.serviceImg}
+                  onError={(e) => {
+                    e.target.style.display = "none";
+                  }}
+                />
+              )}
+              {/* Gradient overlay — z-index 1 */}
+              <div className={styles.serviceOverlay} />
+              {/* Nội dung chữ — z-index 2, nổi trên ảnh */}
+              <div className={styles.serviceContent}>
+                <div className={styles.serviceNum}>{String(index + 1).padStart(2, "0")}</div>
+                <h3 className={styles.serviceName}>{service.name}</h3>
+                <p className={styles.serviceDesc}>{service.description || "Dịch vụ đẳng cấp."}</p>
+                <div className={styles.servicePrice}>
+                  {formatPrice(service.price)} <span>VNĐ</span>
+                </div>
               </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* AI SCAN SECTION */}
+      {/* ── AI SCAN ── */}
       <section className={styles.aiScanSection}>
         <div className={styles.aiContent}>
           <div className={styles.aiBadge}>
@@ -316,7 +306,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* BARBERS (API) */}
+      {/* ── BARBERS ── */}
       <section id="barbers" className={styles.barbers}>
         <div className={styles.barbersHeader}>
           <div className={styles.sectionLabel}>MASTER BARBERS</div>
@@ -324,21 +314,16 @@ const Home = () => {
             Đội ngũ <em>Thợ Cạo</em>
           </h2>
         </div>
-
         <div className={styles.barbersGrid}>
           {hotBarbers.map((barber, index) => (
             <div key={barber.idBarber} className={styles.barberCard}>
               <div className={styles.barberPhoto}>
                 <img src={barber.avatar} alt={barber.name} />
               </div>
-
               <span className={styles.barberRole}>TOP #{index + 1}</span>
-
               <div className={styles.barberOverlay}>
                 <h4 className={styles.barberName}>{barber.name}</h4>
-
                 <span className={styles.barberExp}>{barber.branch}</span>
-
                 <div className={styles.barberStats}>
                   <span className={styles.barberBadge}>⭐ {barber.rating}</span>
                   <span className={styles.barberBadge}>
@@ -351,7 +336,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* STATS (Tĩnh) */}
+      {/* ── STATS ── */}
       <section className={styles.stats}>
         <div className={styles.statItem}>
           <div className={styles.statNum}>
@@ -379,7 +364,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* REELS / VIDEO (Tĩnh) */}
+      {/* ══ REELS — 4 video mới nhất trên 1 hàng ══ */}
       <section id="reels" className={styles.reels}>
         <div className={styles.reelsHeader}>
           <div className={styles.sectionLabel}>VIDEO & MEDIA</div>
@@ -387,29 +372,66 @@ const Home = () => {
             Tác phẩm <em>Mới nhất</em>
           </h2>
         </div>
-        <div className={styles.reelsGrid}>
-          <div className={`${styles.reelItem} ${styles.main}`}>
-            <img
-              src="https://images.unsplash.com/photo-1593702275687-f8b402bf1fb5?w=800&q=80"
-              alt="Reel"
-            />
+        {reels.length > 0 ? (
+          /* Grid 4 cột đều nhau */
+          <div className={styles.reelsGridFour}>
+            {reels.map((reel) => (
+              <div key={reel.idReel} className={styles.reelItemFour} onClick={() => handleReelClick(reel)}>
+                {/* Thumbnail */}
+                <div className={styles.reelThumbWrapper}>
+                  <img
+                    src={reel.thumbnail}
+                    alt={reel.title}
+                    className={styles.reelThumb}
+                    onError={(e) => {
+                      e.target.src = "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=400&q=80";
+                    }}
+                  />
+                  {/* Play icon overlay */}
+                  <div className={styles.reelPlayOverlay}>
+                    <svg viewBox="0 0 24 24" className={styles.playIcon}>
+                      <polygon points="5,3 19,12 5,21" fill="white" />
+                    </svg>
+                  </div>
+                  {/* Stats overlay */}
+                  <div className={styles.reelStatsOverlay}>
+                    <span>❤️ {reel.likesCount || 0}</span>
+                    <span>👁 {reel.viewCount || 0}</span>
+                  </div>
+                </div>
+
+                {/* Info */}
+                <div className={styles.reelInfo}>
+                  <p className={styles.reelTitle}>{reel.title || "Không có tiêu đề"}</p>
+                  <span className={styles.reelBarberName}>{reel.Barber?.user?.fullName || "Barber"}</span>
+                </div>
+              </div>
+            ))}
           </div>
-          <div className={styles.reelItem}>
-            <img
-              src="https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=400&q=80"
-              alt="Reel"
-            />
+        ) : (
+          /* Fallback: ảnh tĩnh khi chưa có reel */
+          <div className={styles.reelsGrid}>
+            <div className={`${styles.reelItem} ${styles.main}`}>
+              <img src="https://images.unsplash.com/photo-1593702275687-f8b402bf1fb5?w=800&q=80" alt="Reel" />
+            </div>
+            <div className={styles.reelItem}>
+              <img src="https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=400&q=80" alt="Reel" />
+            </div>
+            <div className={styles.reelItem}>
+              <img src="https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=400&q=80" alt="Reel" />
+            </div>
           </div>
-          <div className={styles.reelItem}>
-            <img
-              src="https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=400&q=80"
-              alt="Reel"
-            />
-          </div>
+        )}
+
+        {/* Nút xem thêm */}
+        <div style={{ textAlign: "center", marginTop: 36 }}>
+          <button className={styles.btnOutline} onClick={() => navigate("/reels")} style={{ margin: "0 auto" }}>
+            <span>Xem tất cả video</span>
+          </button>
         </div>
       </section>
 
-      {/* BRANCHES (Động từ API) */}
+      {/* ── BRANCHES ── */}
       <section id="branches" className={styles.branches}>
         <div className={styles.branchesMap}>
           {activeBranch && activeBranch.latitude && activeBranch.longitude ? (
@@ -420,12 +442,10 @@ const Home = () => {
               style={{ border: 0, borderRadius: "8px" }}
               loading="lazy"
               allowFullScreen
-              // Truyền Kinh độ và Vĩ độ vào URL của Google Maps
               src={`https://maps.google.com/maps?q=${activeBranch.latitude},${activeBranch.longitude}&z=16&output=embed`}
-            ></iframe>
+            />
           ) : (
             <div
-              className={styles.branchesMapPlaceholder}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -435,27 +455,21 @@ const Home = () => {
                 borderRadius: "8px",
               }}
             >
-              {activeBranch
-                ? "Chi nhánh này chưa được cập nhật tọa độ bản đồ."
-                : "Đang tải bản đồ..."}
+              {activeBranch ? "Chi nhánh này chưa được cập nhật tọa độ." : "Đang tải bản đồ..."}
             </div>
           )}
         </div>
-
         <div className={styles.branchList}>
           {branches.length > 0 ? (
             branches.map((branch) => (
               <div
                 key={branch.idBranch}
-                // Thêm class active nếu id trùng với chi nhánh đang được chọn
                 className={`${styles.branchItem} ${activeBranch?.idBranch === branch.idBranch ? styles.active : ""}`}
                 onClick={() => setActiveBranch(branch)}
                 style={{ cursor: "pointer" }}
               >
-                <div>
-                  <h4 className={styles.branchName}>{branch.name}</h4>
-                  <p className={styles.branchAddr}>{branch.address}</p>
-                </div>
+                <h4 className={styles.branchName}>{branch.name}</h4>
+                <p className={styles.branchAddr}>{branch.address}</p>
               </div>
             ))
           ) : (
@@ -466,7 +480,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* CHATBOT POPUP */}
+      {/* ── CHATBOT ── */}
       <div className={styles.chatbotBubble}>
         <div
           className={`${styles.chatbotPopup} ${chatOpen ? styles.open : ""}`}

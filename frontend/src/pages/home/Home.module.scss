@@ -562,3 +562,286 @@
     color: var(--cream);
   }
 }
+
+/* ── THÊM VÀO CUỐI FILE Home.module.scss ── */
+
+/* Grid 4 cột đều nhau cho reels */
+.reelsGridFour {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  @media (max-width: 600px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+}
+
+/* Mỗi reel card */
+.reelItemFour {
+  cursor: pointer;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--charcoal);
+  border: 1px solid rgba(184, 150, 106, 0.1);
+  transition: all 0.3s ease;
+
+  &:hover {
+    border-color: var(--gold);
+    transform: translateY(-6px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+
+    .reelPlayOverlay {
+      opacity: 1;
+    }
+    .reelThumb {
+      transform: scale(1.05);
+    }
+  }
+}
+
+/* Wrapper ảnh — tỉ lệ 9:16 */
+.reelThumbWrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  overflow: hidden;
+  background: #000;
+}
+
+.reelThumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+/* Play button overlay khi hover */
+.reelPlayOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.playIcon {
+  width: 48px;
+  height: 48px;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.6));
+}
+
+/* Stats (like + view) ở góc dưới */
+.reelStatsOverlay {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  display: flex;
+  gap: 10px;
+  font-size: 12px;
+  color: #fff;
+  font-weight: 600;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+}
+
+/* Info bên dưới thumb */
+.reelInfo {
+  padding: 12px 14px;
+}
+
+.reelTitle {
+  font-family: var(--ff-serif);
+  font-size: 14px;
+  color: var(--cream);
+  margin: 0 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.reelBarberName {
+  font-size: 12px;
+  color: var(--gold);
+  font-family: var(--ff-body);
+}
+
+/* ════════════════════════════════════════════════════════
+   THÊM VÀO CUỐI FILE: frontend/src/pages/home/Home.module.scss
+   ════════════════════════════════════════════════════════ */
+
+
+/* ── FIX SERVICES: ảnh dưới, chữ trên ── */
+
+/* 1. Card là position:relative để con absolute định vị theo */
+.serviceCard {
+  position: relative;
+  overflow: hidden;
+  /* XÓA backgroundImage khỏi inline style — dùng <img> thay thế */
+  background-color: var(--charcoal); /* màu nền dự phòng */
+}
+
+/* 2. Ảnh: trải full card, z-index thấp nhất */
+.serviceImg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+  transition: transform 0.6s ease;
+}
+
+.serviceCard:hover .serviceImg {
+  transform: scale(1.07);
+}
+
+/* 3. Gradient overlay: z-index 1 — làm tối ảnh để chữ dễ đọc */
+.serviceOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    to top,
+    rgba(10, 10, 10, 0.95) 0%,
+    rgba(10, 10, 10, 0.55) 45%,
+    rgba(10, 10, 10, 0.15) 100%
+  );
+  transition: background 0.3s ease;
+}
+
+.serviceCard:hover .serviceOverlay {
+  background: linear-gradient(
+    to top,
+    rgba(10, 10, 10, 0.98) 0%,
+    rgba(10, 10, 10, 0.65) 50%,
+    rgba(10, 10, 10, 0.25) 100%
+  );
+}
+
+/* 4. Nội dung chữ: z-index 2 — nổi hẳn lên trên ảnh và overlay */
+.serviceContent {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  height: 100%;
+}
+
+/* Card featured chiếm 2 hàng, cần flex-end từ trên xuống */
+.serviceCard.featured .serviceContent {
+  justify-content: flex-end;
+}
+
+/* ── FIX BARBERS: 4 cột thay vì 5 ── */
+.barbersGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* ← đổi từ repeat(4,1fr) cũ thành cố định 4 cột */
+  gap: 1px;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+
+/* ── REELS GRID 4 CỘT (từ file bổ sung trước) ── */
+.reelsGridFour {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+
+  @media (max-width: 1024px) { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 600px)  { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+}
+
+.reelItemFour {
+  cursor: pointer;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--charcoal);
+  border: 1px solid rgba(184, 150, 106, 0.1);
+  transition: all 0.3s ease;
+
+  &:hover {
+    border-color: var(--gold);
+    transform: translateY(-6px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+
+    .reelPlayOverlay { opacity: 1; }
+    .reelThumb       { transform: scale(1.05); }
+  }
+}
+
+.reelThumbWrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  overflow: hidden;
+  background: #000;
+}
+
+.reelThumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.reelPlayOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.playIcon {
+  width: 48px;
+  height: 48px;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.6));
+}
+
+.reelStatsOverlay {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  display: flex;
+  gap: 10px;
+  font-size: 12px;
+  color: #fff;
+  font-weight: 600;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+}
+
+.reelInfo {
+  padding: 12px 14px;
+}
+
+.reelTitle {
+  font-family: var(--ff-serif);
+  font-size: 14px;
+  color: var(--cream);
+  margin: 0 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.reelBarberName {
+  font-size: 12px;
+  color: var(--gold);
+  font-family: var(--ff-body);
+}
