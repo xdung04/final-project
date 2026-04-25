@@ -1,7 +1,6 @@
 import { io } from "socket.io-client";
 
-const socket = io("https://resolved-climatic-tapestry.ngrok-free.dev", {
-  transports: ["websocket"], // tránh fallback polling
+const socket = io("http://localhost:8088", {
 });
 
 export default socket;

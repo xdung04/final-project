@@ -2,14 +2,19 @@ import React, { useState } from "react";
 import { Send, Bot, User, Camera } from "lucide-react";
 import "./AIChat.scss";
 import * as chatService from "~/services/chatService";
-
-export default function AIChat() {
+export default function AIChat({ onSwitchToLive }) {
   const [messages, setMessages] = useState([
-    { id: "1", type: "ai", content: "💈 Xin chào! Tôi là AI Barbershop. Hãy nhập tin nhắn hoặc tải ảnh lên 👋" },
+    {
+      id: "1",
+      type: "ai",
+      content:
+        "💈 Xin chào! Tôi là AI Barbershop. Hãy nhập tin nhắn hoặc tải ảnh lên 👋",
+    },
   ]);
   const [inputMessage, setInputMessage] = useState("");
   const [selectedImage, setSelectedImage] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [showLiveBtn, setShowLiveBtn] = useState(false);
 
   const handleImageUpload = (e) => {
     const file = e.target.files?.[0];
@@ -43,23 +48,34 @@ export default function AIChat() {
       });
 
       // ✅ Format AI message đẹp hơn
-      const formattedReply = formatMessage(res.reply || "AI không trả lời gì 😅");
+      const formattedReply = formatMessage(
+        res.reply || "AI không trả lời gì 😅",
+      );
 
-      setMessages((prev) => [
-        ...prev,
-        { id: (Date.now() + 1).toString(), type: "ai", content: formattedReply },
-      ]);
+      setMessages((prev) => {
+        const updated = [
+          ...prev,
+          {
+            id: (Date.now() + 1).toString(),
+            type: "ai",
+            content: formattedReply,
+          },
+        ];
+
+        // 🔥 HIỆN NÚT SAU 2 LẦN AI TRẢ LỜI
+        const aiCount = updated.filter((m) => m.type === "ai").length;
+        if (aiCount >= 2) {
+          setShowLiveBtn(true);
+        }
+
+        return updated;
+      });
     } catch (err) {
-      setMessages((prev) => [
-        ...prev,
-        { id: (Date.now() + 2).toString(), type: "ai", content: "⚠️ Đã xảy ra lỗi, vui lòng thử lại sau." },
-      ]);
       console.error(err);
     } finally {
       setLoading(false);
     }
   };
-
   // 🪄 Hàm format lại message AI
   const formatMessage = (text) => {
     return text
@@ -85,7 +101,9 @@ export default function AIChat() {
               </div>
             )}
             <div className="bubble">
-              {msg.image && <img src={msg.image} alt="upload" className="bubble-img" />}
+              {msg.image && (
+                <img src={msg.image} alt="upload" className="bubble-img" />
+              )}
               <div
                 className="bubble-text"
                 dangerouslySetInnerHTML={{ __html: msg.content }}
@@ -112,6 +130,12 @@ export default function AIChat() {
           </div>
         )}
       </div>
+
+      {showLiveBtn && (
+        <div className="suggestion">
+          <button onClick={onSwitchToLive}>💬 Nói chuyện với lễ tân</button>
+        </div>
+      )}
 
       {selectedImage && (
         <div className="preview">

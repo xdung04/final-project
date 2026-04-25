@@ -169,28 +169,43 @@ export const getBookingsByBarber = async (req, res) => {
   try {
     const { idBarber } = req.params;
 
-    const bookings = await db.Booking.findAll({
-      where: { idBarber },
-      attributes: ["idBooking", "bookingDate", "bookingTime", "status"],
-      order: [
-        ["bookingDate", "DESC"],
-        ["bookingTime", "ASC"],
-      ],
+    // Validate đầu vào nhanh gọn
+    if (!idBarber) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Thiếu idBarber" 
+      });
+    }
+
+    // Gọi Service làm việc nặng
+    const result = await bookingService.getBarberBookingsNext7Days(parseInt(idBarber));
+
+    // Thành công thì trả data về
+    return res.status(200).json({
+      success: true,
+      isLocked: result.isLocked,
+      bookings: result.bookings
     });
 
-    const unavailabilities = await db.BarberUnavailability.findAll({
-      where: { idBarber },
-      attributes: ["idUnavailable", "startDate", "endDate", "reason"],
-      order: [["startDate", "DESC"]],
-    });
-
-    res.json({ bookings, unavailabilities });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Lỗi khi lấy thời gian booking và ngày nghỉ của barber", error });
+    console.error("Lỗi Controller getBookingsByBarber:", error.message);
+
+    // Bắt lỗi cụ thể từ Service ném ra
+    if (error.message === "BARBER_NOT_FOUND") {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Không tìm thấy thợ cắt tóc này." 
+      });
+    }
+
+    // Lỗi hệ thống khác (chết DB, sai cú pháp,...)
+    return res.status(500).json({ 
+      success: false, 
+      message: "Lỗi hệ thống khi lấy lịch",
+      error: error.message 
+    });
   }
 };
-
 // ✅ HỦY BOOKING
 export const cancelBooking = async (req, res) => {
   try {

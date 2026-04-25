@@ -1,0 +1,804 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+// ── Design Tokens ─────────────────────────────────────────────────────────────
+$bg:        #0d0c0b;
+$bg2:       #141210;
+$bg3:       #1c1914;
+$bg4:       #242018;
+$border:    #2a2520;
+$border2:   #342f28;
+$gold:      #c8a050;
+$gold2:     #e0b86a;
+$white:     #ede9e0;
+$soft:      #b8b0a0;
+$muted:     #6a6050;
+$red:       #b83030;
+$red-bg:    #240e0e;
+$red-soft:  #e07070;
+$blue:      #3a7ad4;
+$blue-bg:   #0c1828;
+$blue-soft: #7ab0f0;
+$green:     #3a9c6a;
+$green-bg:  #0a1c10;
+$green-soft:#70d09a;
+$amber:     #c08020;
+$amber-bg:  #201408;
+$amber-soft:#e0a840;
+
+$ff-head: 'Sora', sans-serif;
+$ff-mono: 'IBM Plex Mono', monospace;
+$ff-body: 'Sora', sans-serif;
+
+$r:  5px;
+$r2: 8px;
+$r3: 12px;
+
+@mixin btn-base {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 18px;
+  border-radius: $r;
+  font-family: $ff-body;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    transform: none !important;
+  }
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
+.page {
+  padding: 32px 36px;
+  background: $bg;
+  min-height: 100vh;
+  font-family: $ff-body;
+  color: $white;
+}
+
+// ── Header ────────────────────────────────────────────────────────────────────
+.header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-bottom: 28px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid $border;
+}
+
+.headerLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.headerEyebrow {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: $gold;
+  font-family: $ff-mono;
+}
+
+.headerTitle {
+  font-family: $ff-head;
+  font-size: 30px;
+  font-weight: 800;
+  color: $white;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.monthPicker {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.select {
+  appearance: none;
+  padding: 9px 36px 9px 14px;
+  background: $bg3;
+  border: 1px solid $border;
+  border-radius: $r;
+  color: $white;
+  font-family: $ff-body;
+  font-size: 13px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s;
+
+  &:focus { border-color: $gold; }
+}
+
+.selectArrow {
+  position: absolute;
+  right: 12px;
+  color: $muted;
+  font-size: 10px;
+  pointer-events: none;
+}
+
+// ── Workflow status bar ───────────────────────────────────────────────────────
+.workflowBar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: $bg2;
+  border: 1px solid $border;
+  border-radius: $r2;
+  padding: 14px 20px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+}
+
+.wfStep {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  opacity: 0.35;
+  transition: opacity 0.3s;
+  min-width: 80px;
+
+  &.wf-active { opacity: 1; }
+}
+
+.wfNum {
+  font-family: $ff-mono;
+  font-size: 22px;
+  font-weight: 600;
+  color: $white;
+  line-height: 1;
+}
+
+.wfLabel {
+  font-size: 10px;
+  color: $soft;
+  text-align: center;
+  letter-spacing: 0.3px;
+}
+
+.wfArrow {
+  color: $muted;
+  font-size: 22px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+// ── Action bar ────────────────────────────────────────────────────────────────
+.actionBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.actionGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+// ── Buttons ───────────────────────────────────────────────────────────────────
+.btn { @include btn-base; }
+
+.btn-ghost {
+  background: transparent;
+  border-color: $border2;
+  color: $muted;
+  &:hover:not(:disabled) { border-color: $white; color: $white; }
+}
+
+.btn-draft {
+  background: $bg3;
+  border-color: $gold;
+  color: $gold;
+  &:hover:not(:disabled) { background: $amber-bg; }
+}
+
+.btn-send {
+  background: $blue-bg;
+  border-color: $blue;
+  color: $blue-soft;
+  &:hover:not(:disabled) { background: $blue; color: #fff; }
+}
+
+.btn-success {
+  background: $green-bg;
+  border-color: $green;
+  color: $green-soft;
+  &:hover:not(:disabled) { background: $green; color: #fff; }
+}
+
+.btn-gold {
+  background: $gold;
+  border-color: $gold;
+  color: #000;
+  font-weight: 700;
+  &:hover:not(:disabled) { background: $gold2; }
+}
+
+.btn-danger {
+  background: $red-bg;
+  border-color: $red;
+  color: $red-soft;
+  &:hover:not(:disabled) { background: $red; color: #fff; }
+}
+
+.btn-sm { padding: 6px 12px; font-size: 11px; }
+
+// ── Search ────────────────────────────────────────────────────────────────────
+.searchWrap {
+  position: relative;
+  width: 240px;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: $muted;
+  font-size: 13px;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 9px 14px 9px 36px;
+  background: $bg3;
+  border: 1px solid $border;
+  border-radius: $r;
+  color: $white;
+  font-family: $ff-body;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+
+  &::placeholder { color: $muted; }
+  &:focus { border-color: $gold; }
+}
+
+// ── Stat cards ────────────────────────────────────────────────────────────────
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+
+  @media (max-width: 1000px) { grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 640px)  { grid-template-columns: repeat(2, 1fr); }
+}
+
+.statCard {
+  background: $bg2;
+  border: 1px solid $border;
+  border-radius: $r2;
+  padding: 16px 18px;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+}
+
+.stat-draft::before    { background: $muted; }
+.stat-pending::before  { background: $blue; }
+.stat-disputed::before { background: $red; }
+.stat-confirmed::before{ background: $green; }
+.stat-paid::before     { background: $gold; }
+
+.stat-pulse {
+  animation: statPulse 2s ease-in-out infinite;
+}
+
+@keyframes statPulse {
+  0%, 100% { border-color: $border; }
+  50%       { border-color: $red; box-shadow: 0 0 12px rgba(184,48,48,.25); }
+}
+
+.statLabel {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: $muted;
+  margin-bottom: 8px;
+}
+
+.statVal {
+  font-family: $ff-mono;
+  font-size: 28px;
+  font-weight: 600;
+  color: $white;
+  line-height: 1;
+
+  .stat-disputed & { color: $red-soft; }
+  .stat-paid &     { color: $gold; }
+}
+
+.statSub {
+  font-size: 11px;
+  color: $muted;
+  margin-top: 5px;
+}
+
+// ── Table section ─────────────────────────────────────────────────────────────
+.tableSection {
+  background: $bg2;
+  border: 1px solid $border;
+  border-radius: $r3;
+  overflow: hidden;
+}
+
+.tableHeader {
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid $border;
+}
+
+.tableTitle {
+  font-family: $ff-head;
+  font-size: 16px;
+  font-weight: 700;
+  color: $white;
+  margin: 0 0 4px;
+}
+
+.tableDesc {
+  font-size: 12px;
+  color: $muted;
+  font-style: italic;
+}
+
+.tableWrap { overflow-x: auto; }
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 900px;
+
+  thead th {
+    background: $bg3;
+    padding: 11px 16px;
+    text-align: left;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: $muted;
+    border-bottom: 1px solid $border;
+    white-space: nowrap;
+  }
+
+  tbody td {
+    padding: 13px 16px;
+    border-bottom: 1px solid $border;
+    font-size: 13px;
+    vertical-align: middle;
+    color: $soft;
+  }
+
+  tbody tr {
+    transition: background 0.15s;
+    &:last-child td { border-bottom: none; }
+    &:hover td { background: rgba(255,255,255,.018); }
+  }
+}
+
+.thRight { text-align: right !important; padding-right: 20px !important; }
+
+.rowDisputed td { background: rgba(184,48,48,.05); }
+
+// ── Employee cell ─────────────────────────────────────────────────────────────
+.empCell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: $bg4;
+  border: 1px solid $border2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: $ff-head;
+  font-size: 14px;
+  font-weight: 700;
+  color: $gold;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
+.empName   { font-weight: 600; color: $white; font-size: 13px; }
+.empBranch { font-size: 11px; color: $muted; margin-top: 1px; }
+
+// ── Utilities ─────────────────────────────────────────────────────────────────
+.mono  { font-family: $ff-mono; font-size: 12px; }
+.cGold { color: $gold; }
+.cGreen{ color: $green-soft; }
+.cRed  { color: $red-soft; }
+.cMuted{ color: $muted; }
+.fw700 { font-weight: 700; }
+
+// ── Badge ─────────────────────────────────────────────────────────────────────
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+}
+
+.badge-draft        { background: $bg4;       color: $muted;      border-color: $border2; }
+.badge-pending      { background: $blue-bg;   color: $blue-soft;  border-color: #1a3860; }
+.badge-disputed     { background: $red-bg;    color: $red-soft;   border-color: #5a1818; }
+.badge-confirmed    { background: $green-bg;  color: $green-soft; border-color: #183c24; }
+.badge-autoconfirmed{ background: $amber-bg;  color: $amber-soft; border-color: #503010; }
+.badge-paid         { background: $gold;      color: #000;        font-weight: 800; }
+.badge-locked       { background: #111;       color: $muted;      border-color: #2a2a2a; }
+.badge-cancelled    { background: $bg3;       color: $muted;      border-color: $border; text-decoration:line-through; }
+
+.disputeTag {
+  display: inline-block;
+  font-size: 9px;
+  color: $amber-soft;
+  background: $amber-bg;
+  border: 1px solid $amber;
+  border-radius: 20px;
+  padding: 1px 7px;
+  margin-left: 5px;
+  font-family: $ff-mono;
+}
+
+.deadlineTag {
+  font-family: $ff-mono;
+  font-size: 11px;
+  color: $amber-soft;
+}
+
+// ── Action buttons in table ───────────────────────────────────────────────────
+.actionCell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  padding-right: 6px;
+}
+
+.iconBtn {
+  width: 30px;
+  height: 30px;
+  border-radius: $r;
+  border: 1px solid $border;
+  background: transparent;
+  color: $muted;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-family: $ff-body;
+  transition: all 0.2s;
+
+  &:hover:not(:disabled) { background: $bg4; color: $white; border-color: $border2; }
+  &:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  &.warn {
+    border-color: #5a1818;
+    color: $red-soft;
+    animation: iconPulse 1.8s ease-in-out infinite;
+    &:hover { background: $red-bg; }
+  }
+
+  &.send { border-color: #1a3860; color: $blue-soft; &:hover { background: $blue-bg; } }
+  &.pay  { border-color: #183c24; color: $green-soft; &:hover { background: $green-bg; } }
+}
+
+@keyframes iconPulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.15); }
+}
+
+.lockIcon {
+  font-size: 13px;
+  color: $muted;
+  padding: 0 4px;
+  opacity: 0.5;
+}
+
+// ── Loading & Empty ───────────────────────────────────────────────────────────
+.loadingState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 60px 0;
+  color: $muted;
+  font-size: 13px;
+}
+
+.loadingSpinner {
+  width: 30px;
+  height: 30px;
+  border: 2px solid $border2;
+  border-top-color: $gold;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.emptyRow {
+  text-align: center;
+  padding: 56px 0 !important;
+  color: $muted;
+  font-size: 14px;
+  line-height: 2;
+
+  div:first-child { font-size: 30px; margin-bottom: 6px; }
+}
+
+.emptyHint {
+  font-size: 12px;
+  color: $muted;
+  font-style: italic;
+}
+
+// ── Modal ─────────────────────────────────────────────────────────────────────
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal {
+  background: $bg2;
+  border: 1px solid $border2;
+  border-radius: $r3;
+  padding: 28px 30px;
+  width: 460px;
+  max-width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  animation: modalIn 0.22s ease;
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.modalClose {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 28px;
+  height: 28px;
+  border-radius: $r;
+  border: 1px solid $border;
+  background: transparent;
+  color: $muted;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: all 0.2s;
+  &:hover { background: $bg3; color: $white; }
+}
+
+.modalTitle {
+  font-family: $ff-head;
+  font-size: 18px;
+  font-weight: 700;
+  color: $white;
+  margin-bottom: 4px;
+}
+
+.modalSub {
+  font-size: 12px;
+  color: $muted;
+  margin-bottom: 22px;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+// ── Form ──────────────────────────────────────────────────────────────────────
+.formGroup { margin-bottom: 16px; }
+
+.formLabel {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: $muted;
+  margin-bottom: 7px;
+}
+
+.formInput, .formTextarea {
+  width: 100%;
+  background: $bg3;
+  border: 1px solid $border;
+  border-radius: $r;
+  padding: 10px 14px;
+  color: $white;
+  font-family: $ff-body;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+
+  &:focus { border-color: $gold; }
+  &::placeholder { color: $muted; }
+}
+
+.formTextarea { resize: vertical; min-height: 84px; }
+
+.inputHint {
+  display: block;
+  font-size: 11px;
+  margin-top: 5px;
+  &.warn { color: $amber-soft; }
+}
+
+// ── Preview box ───────────────────────────────────────────────────────────────
+.previewBox {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: $bg3;
+  border: 1px solid $border2;
+  border-radius: $r;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: $muted;
+  margin-bottom: 4px;
+}
+
+.previewVal {
+  font-family: $ff-mono;
+  font-size: 16px;
+  font-weight: 600;
+  color: $gold;
+}
+
+// ── Lock warning ──────────────────────────────────────────────────────────────
+.lockWarning {
+  background: $amber-bg;
+  border: 1px solid $amber;
+  border-radius: $r;
+  padding: 10px 14px;
+  font-size: 12px;
+  color: $amber-soft;
+  margin-bottom: 4px;
+}
+
+// ── Dispute box ───────────────────────────────────────────────────────────────
+.disputeBox {
+  background: $red-bg;
+  border: 1px solid $red;
+  border-radius: $r;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+
+.disputeBoxLabel {
+  font-size: 10px;
+  color: $muted;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+
+.disputeBoxText {
+  color: #f0a0a0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.disputeCountRow {
+  font-size: 12px;
+  color: $muted;
+  margin-bottom: 16px;
+  strong { color: $amber-soft; }
+}
+
+// ── Payslip breakdown (modal) ─────────────────────────────────────────────────
+.breakdownGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+  margin-bottom: 14px;
+}
+
+.breakdownItem {
+  background: $bg3;
+  border: 1px solid $border;
+  border-radius: $r;
+  padding: 11px 14px;
+}
+
+.biLabel { font-size: 11px; color: $muted; margin-bottom: 4px; }
+.biVal   { font-family: $ff-mono; font-size: 15px; font-weight: 600; }
+.plus    { color: $green-soft; }
+.minus   { color: $red-soft; }
+
+.totalRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 11px 14px;
+  border-radius: $r;
+  border: 1px solid $border;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: $muted;
+
+  &.minus   { border-color: transparent; background: transparent; }
+  &.highlight {
+    background: $bg3;
+    border-color: rgba($gold, 0.4);
+    font-size: 14px;
+    font-weight: 600;
+    color: $white;
+    padding: 13px 16px;
+
+    .mono { font-size: 20px; }
+  }
+}
+
+.noteRow {
+  font-size: 12px;
+  color: $muted;
+  padding: 8px 14px;
+  font-style: italic;
+}
+
+.bigNum { font-size: 20px !important; }

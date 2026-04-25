@@ -15,7 +15,12 @@ export default (sequelize) => {
         otherKey: "idVoucher",
         as: "vouchers",
       });
-    } 
+
+      Customer.hasOne(models.Conversation, {
+        foreignKey: "customerId",
+        as: "conversation",
+      });
+    }
   }
 
   Customer.init(
@@ -38,7 +43,7 @@ export default (sequelize) => {
       modelName: "Customer",
       tableName: "customers",
       timestamps: true,
-    }
+    },
   );
 
   return Customer;
