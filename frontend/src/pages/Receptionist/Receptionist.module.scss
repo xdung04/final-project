@@ -24,7 +24,8 @@
 /* ===== MAIN LAYOUT ===== */
 .adminLayout {
   display: flex;
-  min-height: 100vh;
+  height: 100vh; 
+  overflow:hidden;
   background: var(--bg-cream);
   font-family: var(--ff-body);
   color: var(--charcoal);
@@ -235,6 +236,7 @@
 /* ===== MAIN CONTENT ===== */
 .mainContent {
   flex: 1;
+  min-width: 0;
   margin-left: var(--sidebar-width);
   display: flex;
   flex-direction: column;
@@ -306,7 +308,9 @@
   flex: 1;
   padding: 30px 40px;
   background: var(--bg-cream);
-  overflow-y: auto;
+  overflow-y: hidden;
+  min-height: 0;
+  
 
   /* Tạo hiệu ứng fade-in khi chuyển trang */
   animation: fadeIn 0.4s ease;

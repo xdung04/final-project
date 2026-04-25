@@ -9,10 +9,14 @@ import AddBannerModal from "~/components/AddBannerModal";
 import { fetchActiveBanners, uploadBanner } from "~/services/bannerService";
 import { useToast } from "~/context/ToastContext";
 import { BranchAPI } from "~/apis/branchAPI";
+import LiveChat from "../../components/LiveChat";
+
+// Import Header và Footer của bạn
 import { fetchReelsPaged } from "~/services/reelService"; // ← thêm import
 import { useNavigate } from "react-router-dom"; // ← thêm import
 
-const DEFAULT_BANNER = "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=1600&q=80";
+const DEFAULT_BANNER =
+  "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=1600&q=80";
 
 const Home = () => {
   const { isLogin, user, accessToken } = useAuth();
@@ -28,6 +32,7 @@ const Home = () => {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [nextRoute, setNextRoute] = useState(null);
   const [chatOpen, setChatOpen] = useState(false);
+  const [chatType, setChatType] = useState("ai");
   const [branches, setBranches] = useState([]);
   const [activeBranch, setActiveBranch] = useState(null);
 
@@ -146,7 +151,10 @@ const Home = () => {
 
       {/* ── HERO ── */}
       <header className={styles.hero}>
-        <div className={styles.heroBg} style={{ backgroundImage: `url(${DEFAULT_BANNER})` }}></div>
+        <div
+          className={styles.heroBg}
+          style={{ backgroundImage: `url(${DEFAULT_BANNER})` }}
+        ></div>
         <div className={styles.heroLines}></div>
 
         <div className={styles.heroTag}>NOBLE CUT EXPERIENCE</div>
@@ -155,12 +163,18 @@ const Home = () => {
         </h1>
 
         <div className={styles.heroBottom}>
-          <p className={styles.heroDesc}>Chăm sóc tóc cho quý ông – Đẳng cấp và sự tinh tế trong từng chi tiết.</p>
+          <p className={styles.heroDesc}>
+            Chăm sóc tóc cho quý ông – Đẳng cấp và sự tinh tế trong từng chi
+            tiết.
+          </p>
           <div className={styles.heroActions}>
             <button className={styles.btnPrimary} onClick={handleBookingClick}>
               <span>Đặt lịch ngay</span>
             </button>
-            <button className={styles.btnOutline} onClick={() => setChatOpen(true)}>
+            <button
+              className={styles.btnOutline}
+              onClick={() => setChatOpen(true)}
+            >
               <span>Tư vấn AI</span>
             </button>
           </div>
@@ -251,10 +265,13 @@ const Home = () => {
             Tìm kiểu tóc <em>Hoàn hảo</em>
           </h2>
           <p className={styles.aiDesc}>
-            Bạn chưa chắc chắn kiểu tóc nào phù hợp? Hãy quét khuôn mặt bằng AI để tìm ra phong cách sinh ra dành riêng
-            cho bạn.
+            Bạn chưa chắc chắn kiểu tóc nào phù hợp? Hãy quét khuôn mặt bằng AI
+            để tìm ra phong cách sinh ra dành riêng cho bạn.
           </p>
-          <button className={styles.aiScanBtn} onClick={() => (window.location.href = "/hair-consult")}>
+          <button
+            className={styles.aiScanBtn}
+            onClick={() => (window.location.href = "/hair-consult")}
+          >
             <div className={styles.aiBtnInner}>
               <div className={styles.aiBtnIcon}>
                 <div className={styles.scanRing}></div>
@@ -309,7 +326,9 @@ const Home = () => {
                 <span className={styles.barberExp}>{barber.branch}</span>
                 <div className={styles.barberStats}>
                   <span className={styles.barberBadge}>⭐ {barber.rating}</span>
-                  <span className={styles.barberBadge}>{barber.totalBookings} lượt đặt</span>
+                  <span className={styles.barberBadge}>
+                    {barber.totalBookings} lượt đặt
+                  </span>
                 </div>
               </div>
             </div>
@@ -353,7 +372,6 @@ const Home = () => {
             Tác phẩm <em>Mới nhất</em>
           </h2>
         </div>
-
         {reels.length > 0 ? (
           /* Grid 4 cột đều nhau */
           <div className={styles.reelsGridFour}>
@@ -455,22 +473,42 @@ const Home = () => {
               </div>
             ))
           ) : (
-            <p style={{ color: "var(--text-dim)" }}>Chưa có thông tin chi nhánh.</p>
+            <p style={{ color: "var(--text-dim)" }}>
+              Chưa có thông tin chi nhánh.
+            </p>
           )}
         </div>
       </section>
 
       {/* ── CHATBOT ── */}
       <div className={styles.chatbotBubble}>
-        <div className={`${styles.chatbotPopup} ${chatOpen ? styles.open : ""}`}>{chatOpen && <AIChat />}</div>
-        <button className={styles.chatbotBtn} onClick={() => setChatOpen(!chatOpen)}>
-          {chatOpen ? (
-            "✕"
-          ) : (
-            <svg viewBox="0 0 24 24">
-              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z" />
-            </svg>
+        <div
+          className={`${styles.chatbotPopup} ${chatOpen ? styles.open : ""}`}
+        >
+          {chatOpen && chatType === "ai" && (
+            <AIChat
+              onSwitchToLive={() => {
+                setChatType("live");
+                setChatOpen(true); // 🔥 đảm bảo popup mở
+              }}
+            />
           )}
+
+          {chatOpen && chatType === "live" && (
+            <LiveChat customerId={user?.idUser} token={accessToken} />
+          )}
+        </div>
+
+        <button
+          className={styles.chatbotBtn}
+          onClick={() => {
+            setChatOpen(!chatOpen);
+
+            // 🔥 reset về AI khi đóng
+            if (chatOpen) setChatType("ai");
+          }}
+        >
+          {chatOpen ? "✕" : "💬"}
         </button>
       </div>
 

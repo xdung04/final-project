@@ -32,6 +32,7 @@ import notificationRoute from "./routes/notification.js";
 import bannerRoute from "./routes/banner.js";
 import initSocket from "./config/socket.js";
 import paymentRoute from "./routes/payment.js";
+import chatLiveRoute from "./routes/chatLive.js";
 import receptionistRouter from "./routes/receptionist.js";
 dotenv.config();
 
@@ -50,6 +51,7 @@ app.use((req, res, next) => {
 app.use("/api/services", serviceRoute);
 app.use("/api/user/profile", profileRoutes);
 app.use("/api/chat", chatRoute);
+app.use("/api/chat-live", chatLiveRoute);
 app.use("/api/barbers", barberRoutes);
 app.use("/api/branches", branchRoutes);
 app.use("/api/ratings", ratingRoutes);

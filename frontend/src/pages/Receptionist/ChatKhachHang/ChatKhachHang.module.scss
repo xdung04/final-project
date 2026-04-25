@@ -1,7 +1,8 @@
 .chatContainer {
   display: grid;
   grid-template-columns: 320px 1fr;
-  height: 650px;
+  height: 100%;       // 👈 ăn theo cha
+  min-height: 0; 
   background: var(--bg-white);
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -15,6 +16,8 @@
   display: flex;
   flex-direction: column;
   background: #fff;
+  overflow: hidden; 
+  min-height: 0;/* Đảm bảo sidebar không bị tràn */
 
   .chatSearch {
     padding: 20px;
@@ -23,9 +26,12 @@
     gap: 12px;
     background: var(--bg-cream);
     border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
 
-    svg { color: var(--gold); }
-    
+    svg {
+      color: var(--gold);
+    }
+
     input {
       border: none;
       background: transparent;
@@ -33,7 +39,10 @@
       font-size: 14px;
       width: 100%;
       font-family: var(--ff-body);
-      &::placeholder { color: var(--text-light); }
+
+      &::placeholder {
+        color: var(--text-light);
+      }
     }
   }
 }
@@ -41,9 +50,16 @@
 .conversationList {
   flex: 1;
   overflow-y: auto;
-  
-  &::-webkit-scrollbar { width: 4px; }
-  &::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+  min-height: 0; /* Quan trọng để flex co lại */
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 10px;
+  }
 }
 
 .conversationItem {
@@ -52,13 +68,20 @@
   gap: 15px;
   cursor: pointer;
   transition: all 0.25s ease;
-  border-bottom: 1px solid rgba(0,0,0,0.03);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.03);
   position: relative;
 
-  &:hover { background: var(--bg-cream); }
-  
+  &:hover {
+    background: var(--bg-cream);
+  }
+
   &.active {
-    background: linear-gradient(90deg, rgba(184, 150, 106, 0.1) 0%, transparent 100%);
+    background: linear-gradient(
+      90deg,
+      rgba(184, 150, 106, 0.1) 0%,
+      transparent 100%
+    );
+
     &::before {
       content: "";
       position: absolute;
@@ -92,8 +115,16 @@
       align-items: center;
       margin-bottom: 4px;
 
-      .name { font-weight: 700; color: var(--charcoal); font-size: 15px; }
-      .time { font-size: 11px; color: var(--text-light); }
+      .name {
+        font-weight: 700;
+        color: var(--charcoal);
+        font-size: 15px;
+      }
+
+      .time {
+        font-size: 11px;
+        color: var(--text-light);
+      }
     }
 
     .lastMsg {
@@ -104,31 +135,44 @@
       text-overflow: ellipsis;
     }
   }
+
+  .unreadBadge {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    background: red;
+    color: white;
+    border-radius: 10px;
+    padding: 2px 6px;
+    font-size: 10px;
+  }
 }
 
 /* KHUNG CHAT BÊN PHẢI */
 .chatWindow {
   display: flex;
   flex-direction: column;
+  height: 100%;
+  min-height: 0; /* Quan trọng: cho phép flex con co lại */
+  overflow: hidden;
   background: #fcfcfc;
 
   .windowHeader {
+    flex-shrink: 0;
     padding: 18px 25px;
     background: #fff;
     border-bottom: 1px solid var(--border);
     display: flex;
     justify-content: space-between;
     align-items: center;
-
-    strong { font-family: var(--ff-serif); font-size: 18px; color: var(--charcoal); }
-    span { font-size: 12px; color: #2ecc71; font-weight: 600; &::before { content: "● "; } }
   }
 }
 
 .messageArea {
   flex: 1;
-  padding: 25px;
+  min-height: 0;
   overflow-y: auto;
+  padding: 25px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -136,15 +180,40 @@
   .msgRow {
     display: flex;
     max-width: 80%;
-    
-    &.sent { 
-      align-self: flex-end; 
-      .msgBubble { background: var(--charcoal); color: #fff; border-radius: 18px 18px 2px 18px; } 
+
+    &.sent {
+      align-self: flex-end;
+
+      .msgBubble {
+        background: var(--charcoal);
+        color: #fff;
+        border-radius: 18px 18px 2px 18px;
+      }
     }
-    
-    &.received { 
-      align-self: flex-start; 
-      .msgBubble { background: #fff; color: var(--charcoal); border: 1px solid var(--border); border-radius: 18px 18px 18px 2px; } 
+
+    &.received {
+      align-self: flex-start;
+
+      .msgBubble {
+        background: #fff;
+        color: var(--charcoal);
+        border: 1px solid var(--border);
+        border-radius: 18px 18px 18px 2px;
+      }
+    }
+
+    &.system {
+      align-self: center;
+      max-width: 90%;
+
+      .msgBubble {
+        background: #f0f0f0;
+        color: #666;
+        font-size: 12px;
+        padding: 6px 12px;
+        text-align: center;
+        border-radius: 12px;
+      }
     }
   }
 
@@ -152,11 +221,12 @@
     padding: 12px 18px;
     font-size: 14px;
     line-height: 1.5;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
   }
 }
 
 .inputArea {
+  flex-shrink: 0;
   padding: 20px 25px;
   background: #fff;
   border-top: 1px solid var(--border);
@@ -172,10 +242,21 @@
     font-family: var(--ff-body);
     outline: none;
     transition: 0.3s;
-    &:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(184, 150, 106, 0.1); }
+
+    &:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(184, 150, 106, 0.1);
+    }
   }
 
-  .attachBtn { color: var(--text-light); cursor: pointer; &:hover { color: var(--gold); } }
+  .attachBtn {
+    color: var(--text-light);
+    cursor: pointer;
+
+    &:hover {
+      color: var(--gold);
+    }
+  }
 
   .sendBtn {
     background: var(--gold);
@@ -189,6 +270,35 @@
     justify-content: center;
     cursor: pointer;
     transition: 0.3s;
-    &:hover { background: var(--gold-dark); transform: translateY(-2px); }
+
+    &:hover {
+      background: var(--gold-dark);
+      transform: translateY(-2px);
+    }
   }
+}
+
+.backButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: var(--gold);
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: 20px;
+  transition: all 0.2s;
+  font-size: 14px;
+
+  &:hover {
+    background: rgba(184, 150, 106, 0.1);
+  }
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  font-size: 16px;
+  color: var(--text-light);
 }
