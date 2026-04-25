@@ -1,0 +1,135 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+:root {
+  --black:    #0a0a0a;
+  --charcoal: #151515;
+  --graphite: #1f1f1f;
+  --cream:    #fdfbf8;
+  --gold:     #b8966a;
+  --gold-dark:#967a54;
+  --text-dim: #8a8580;
+  --border:   rgba(184, 150, 106, 0.25);
+
+  --ff-serif:  'Playfair Display', Georgia, serif;
+  --ff-display:'Bebas Neue', sans-serif;
+  --ff-body:   'DM Sans', sans-serif;
+}
+
+/* --- CONTAINER CHÍNH --- */
+.container {
+  padding: 25px;
+  font-family: var(--ff-body);
+  color: var(--cream);
+  background: var(--charcoal);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  min-height: calc(100vh - 100px); /* Đảm bảo chiều cao để fill đẹp */
+}
+
+/* --- HEADER QUẢN LÝ --- */
+.headerInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 30px;
+  border-bottom: 1px dashed var(--border);
+  padding-bottom: 20px;
+}
+
+.title {
+  font-family: var(--ff-serif);
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--gold);
+  margin: 0 0 8px 0;
+  letter-spacing: 0.5px;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--text-dim);
+  margin: 0;
+}
+
+/* --- NÚT UPLOAD --- */
+.uploadBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--graphite);
+  color: var(--gold);
+  border: 1px solid var(--gold-dark);
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--ff-body);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: var(--gold);
+    color: var(--black);
+    box-shadow: 0 0 15px rgba(184, 150, 106, 0.4);
+  }
+}
+
+/* --- KHU VỰC HIỂN THỊ --- */
+.gridContainer {
+  position: relative;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+
+  /* Responsive cho các màn hình nhỏ hơn */
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  @media (max-width: 900px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- TRẠNG THÁI LOADING & TRỐNG --- */
+.loadingState, .emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  background: var(--graphite);
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+  color: var(--gold);
+  text-align: center;
+  
+  p {
+    margin-top: 15px;
+    font-size: 15px;
+    color: var(--text-dim);
+  }
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+  color: var(--gold);
+}
+
+.emptyIcon {
+  color: var(--gold-dark);
+  opacity: 0.5;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
