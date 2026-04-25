@@ -267,26 +267,3 @@
   0%, 80%, 100% { transform: translateY(0); opacity: 0.3; }
   40% { transform: translateY(-4px); opacity: 1; }
 }
-
-.suggestion {
-  padding: 10px;
-  text-align: center;
-  background: rgba(0,0,0,0.3);
-  border-top: 1px solid rgba(255,255,255,0.05);
-
-  button {
-    background: transparent;
-    border: 1px solid var(--gold);
-    color: var(--gold);
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    cursor: pointer;
-    transition: 0.3s;
-
-    &:hover {
-      background: var(--gold);
-      color: var(--black);
-    }
-  }
-}

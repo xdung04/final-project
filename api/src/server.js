@@ -2,7 +2,7 @@ import express from "express";
 import bodyParser from "body-parser";
 import dotenv from "dotenv";
 import cors from "cors";
-import http from "http"; 
+import http from "http";
 import bookingHistory from "./routes/bookingHistory.js";
 import barberRoutes from "./routes/barber.js";
 import viewEngine from "./config/viewEngine.js";
@@ -33,6 +33,8 @@ import bannerRoute from "./routes/banner.js";
 import initSocket from "./config/socket.js";
 import paymentRoute from "./routes/payment.js";
 import hrPolicyRoutes from "./routes/hrPolicyRoutes.js";
+import chatLiveRoute from "./routes/chatLive.js";
+import receptionistRouter from "./routes/receptionist.js";
 dotenv.config();
 
 const app = express();
@@ -54,6 +56,7 @@ app.use((req, res, next) => {
 app.use("/api/services", serviceRoute);
 app.use("/api/user/profile", profileRoutes);
 app.use("/api/chat", chatRoute);
+app.use("/api/chat-live", chatLiveRoute);
 app.use("/api/barbers", barberRoutes);
 app.use("/api/branches", branchRoutes);
 app.use("/api/ratings", ratingRoutes);
@@ -77,6 +80,8 @@ app.use("/api/hashtags", hashtagRoutes);
 app.use("/api/hair-consult", hairConsultRoutes);
 app.use("/api/notifications", notificationRoute);
 app.use("/api/banners", bannerRoute);
+
+app.use("/api/receptionist", receptionistRouter);
 
 // View engine & auth routes
 viewEngine(app);

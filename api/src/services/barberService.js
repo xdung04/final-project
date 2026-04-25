@@ -7,7 +7,7 @@ export const getAllBarbers = async () => {
   try {
     const barbers = await db.Barber.findAll({
       include: [
-        { model: db.User, as: "user", attributes: ["fullName", "createdAt"] },
+        { model: db.User, as: "user", attributes: ["fullName", "image", "createdAt"] },
         { model: db.Branch, as: "branch", attributes: ["name"] },
         { model: db.BarberRatingSummary, as: "ratingSummary", attributes: ["avgRate"] },
         {
@@ -25,18 +25,17 @@ export const getAllBarbers = async () => {
     const now = new Date();
 
     const barberData = barbers.map((b) => {
-      // 🔹 Tính kinh nghiệm (năm)
       const startDate = b.user?.createdAt ? new Date(b.user.createdAt) : now;
       const expYears = Math.max(0, now.getFullYear() - startDate.getFullYear());
-
-      // 🔹 Tính số lượng khách hàng duy nhất
       const customerIds = b.Bookings?.map((bk) => bk.idCustomer).filter(Boolean) || [];
       const totalCustomers = new Set(customerIds).size;
 
       return {
         idBarber: b.idBarber,
         fullName: b.user?.fullName || "Chưa có tên",
+        image: b.user?.image || "", // 👈 thêm dòng này
         branchName: b.branch?.name || "Chưa có chi nhánh",
+        idBranch: b.idBranch, // 👈 thêm để sidebar filter theo branch
         exp: `${expYears} năm`,
         rating: Number(b.ratingSummary?.avgRate || 0).toFixed(1),
         customers: totalCustomers,
