@@ -10,10 +10,12 @@ import AddBannerModal from "~/components/AddBannerModal";
 import { fetchActiveBanners, uploadBanner } from "~/services/bannerService";
 import { useToast } from "~/context/ToastContext";
 import { BranchAPI } from "~/apis/branchAPI";
+import LiveChat from "../../components/LiveChat";
 
 // Import Header và Footer của bạn
 
-const DEFAULT_BANNER = "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=1600&q=80";
+const DEFAULT_BANNER =
+  "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=1600&q=80";
 
 const Home = () => {
   const { isLogin, user, accessToken } = useAuth();
@@ -25,6 +27,7 @@ const Home = () => {
   const [nextRoute, setNextRoute] = useState(null);
   const [showAddBanner, setShowAddBanner] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  const [chatType, setChatType] = useState("ai");
   const [branches, setBranches] = useState([]);
   const [activeBranch, setActiveBranch] = useState(null);
   // References cho Custom Cursor
@@ -45,11 +48,15 @@ const Home = () => {
         const data = await BranchAPI.getAll();
         if (data && data.length > 0) {
           // Chỉ lấy những chi nhánh đang hoạt động (nếu cần)
-          const activeBranches = data.filter((b) => b.status === "Active" || b.status === "Hoạt động");
+          const activeBranches = data.filter(
+            (b) => b.status === "Active" || b.status === "Hoạt động",
+          );
 
           setBranches(activeBranches.length > 0 ? activeBranches : data);
           // Set chi nhánh đầu tiên làm mặc định để hiển thị bản đồ
-          setActiveBranch(activeBranches.length > 0 ? activeBranches[0] : data[0]);
+          setActiveBranch(
+            activeBranches.length > 0 ? activeBranches[0] : data[0],
+          );
         }
       } catch (err) {
         console.error("Lỗi load danh sách chi nhánh:", err);
@@ -135,7 +142,10 @@ const Home = () => {
 
       {/* HERO SECTION */}
       <header className={styles.hero}>
-        <div className={styles.heroBg} style={{ backgroundImage: `url(${DEFAULT_BANNER})` }}></div>
+        <div
+          className={styles.heroBg}
+          style={{ backgroundImage: `url(${DEFAULT_BANNER})` }}
+        ></div>
         <div className={styles.heroLines}></div>
 
         <div className={styles.heroTag}>NOBLE CUT EXPERIENCE</div>
@@ -144,19 +154,28 @@ const Home = () => {
         </h1>
 
         <div className={styles.heroBottom}>
-          <p className={styles.heroDesc}>Chăm sóc tóc cho quý ông – Đẳng cấp và sự tinh tế trong từng chi tiết.</p>
+          <p className={styles.heroDesc}>
+            Chăm sóc tóc cho quý ông – Đẳng cấp và sự tinh tế trong từng chi
+            tiết.
+          </p>
           <div className={styles.heroActions}>
             <button className={styles.btnPrimary} onClick={handleBookingClick}>
               <span>Đặt lịch ngay</span>
             </button>
-            <button className={styles.btnOutline} onClick={() => setChatOpen(true)}>
+            <button
+              className={styles.btnOutline}
+              onClick={() => setChatOpen(true)}
+            >
               <span>Tư vấn AI</span>
             </button>
           </div>
         </div>
 
         {user?.role === "admin" && (
-          <button className={styles.addBannerBtn} onClick={() => setShowAddBanner(true)}>
+          <button
+            className={styles.addBannerBtn}
+            onClick={() => setShowAddBanner(true)}
+          >
             + Thêm banner
           </button>
         )}
@@ -227,12 +246,16 @@ const Home = () => {
                 backgroundImage: `url(${service.image})`,
               }}
             >
-              <div className={styles.serviceNum}>{String(index + 2).padStart(2, "0")}</div>
+              <div className={styles.serviceNum}>
+                {String(index + 2).padStart(2, "0")}
+              </div>
 
               {/* KHÔNG CÒN serviceIcon nữa */}
 
               <h3 className={styles.serviceName}>{service.name}</h3>
-              <p className={styles.serviceDesc}>{service.description || "Dịch vụ đẳng cấp."}</p>
+              <p className={styles.serviceDesc}>
+                {service.description || "Dịch vụ đẳng cấp."}
+              </p>
               <div className={styles.servicePrice}>
                 {formatPrice(service.price)} <span>VNĐ</span>
               </div>
@@ -252,10 +275,13 @@ const Home = () => {
             Tìm kiểu tóc <em>Hoàn hảo</em>
           </h2>
           <p className={styles.aiDesc}>
-            Bạn chưa chắc chắn kiểu tóc nào phù hợp? Hãy quét khuôn mặt bằng AI để tìm ra phong cách sinh ra dành riêng
-            cho bạn.
+            Bạn chưa chắc chắn kiểu tóc nào phù hợp? Hãy quét khuôn mặt bằng AI
+            để tìm ra phong cách sinh ra dành riêng cho bạn.
           </p>
-          <button className={styles.aiScanBtn} onClick={() => (window.location.href = "/hair-consult")}>
+          <button
+            className={styles.aiScanBtn}
+            onClick={() => (window.location.href = "/hair-consult")}
+          >
             <div className={styles.aiBtnInner}>
               <div className={styles.aiBtnIcon}>
                 <div className={styles.scanRing}></div>
@@ -315,7 +341,9 @@ const Home = () => {
 
                 <div className={styles.barberStats}>
                   <span className={styles.barberBadge}>⭐ {barber.rating}</span>
-                  <span className={styles.barberBadge}>{barber.totalBookings} lượt đặt</span>
+                  <span className={styles.barberBadge}>
+                    {barber.totalBookings} lượt đặt
+                  </span>
                 </div>
               </div>
             </div>
@@ -361,13 +389,22 @@ const Home = () => {
         </div>
         <div className={styles.reelsGrid}>
           <div className={`${styles.reelItem} ${styles.main}`}>
-            <img src="https://images.unsplash.com/photo-1593702275687-f8b402bf1fb5?w=800&q=80" alt="Reel" />
+            <img
+              src="https://images.unsplash.com/photo-1593702275687-f8b402bf1fb5?w=800&q=80"
+              alt="Reel"
+            />
           </div>
           <div className={styles.reelItem}>
-            <img src="https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=400&q=80" alt="Reel" />
+            <img
+              src="https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=400&q=80"
+              alt="Reel"
+            />
           </div>
           <div className={styles.reelItem}>
-            <img src="https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=400&q=80" alt="Reel" />
+            <img
+              src="https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=400&q=80"
+              alt="Reel"
+            />
           </div>
         </div>
       </section>
@@ -398,7 +435,9 @@ const Home = () => {
                 borderRadius: "8px",
               }}
             >
-              {activeBranch ? "Chi nhánh này chưa được cập nhật tọa độ bản đồ." : "Đang tải bản đồ..."}
+              {activeBranch
+                ? "Chi nhánh này chưa được cập nhật tọa độ bản đồ."
+                : "Đang tải bản đồ..."}
             </div>
           )}
         </div>
@@ -420,22 +459,42 @@ const Home = () => {
               </div>
             ))
           ) : (
-            <p style={{ color: "var(--text-dim)" }}>Chưa có thông tin chi nhánh.</p>
+            <p style={{ color: "var(--text-dim)" }}>
+              Chưa có thông tin chi nhánh.
+            </p>
           )}
         </div>
       </section>
 
       {/* CHATBOT POPUP */}
       <div className={styles.chatbotBubble}>
-        <div className={`${styles.chatbotPopup} ${chatOpen ? styles.open : ""}`}>{chatOpen && <AIChat />}</div>
-        <button className={styles.chatbotBtn} onClick={() => setChatOpen(!chatOpen)}>
-          {chatOpen ? (
-            "✕"
-          ) : (
-            <svg viewBox="0 0 24 24">
-              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z" />
-            </svg>
+        <div
+          className={`${styles.chatbotPopup} ${chatOpen ? styles.open : ""}`}
+        >
+          {chatOpen && chatType === "ai" && (
+            <AIChat
+              onSwitchToLive={() => {
+                setChatType("live");
+                setChatOpen(true); // 🔥 đảm bảo popup mở
+              }}
+            />
           )}
+
+          {chatOpen && chatType === "live" && (
+            <LiveChat customerId={user?.idUser} token={accessToken} />
+          )}
+        </div>
+
+        <button
+          className={styles.chatbotBtn}
+          onClick={() => {
+            setChatOpen(!chatOpen);
+
+            // 🔥 reset về AI khi đóng
+            if (chatOpen) setChatType("ai");
+          }}
+        >
+          {chatOpen ? "✕" : "💬"}
         </button>
       </div>
 

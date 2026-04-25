@@ -1,77 +1,66 @@
 "use strict";
 
-// Migration thêm các field profile cho bảng barbers
-
 export async function up(queryInterface, Sequelize) {
-  const table = await queryInterface.describeTable("barbers");
+  await queryInterface.createTable("barbers", {
+    idBarber: {
+      type: Sequelize.INTEGER,
+      primaryKey: true,
 
-  if (!table.experienceYears) {
-    await queryInterface.addColumn("barbers", "experienceYears", {
+      // 🔥 đây là cái QUAN TRỌNG NHẤT
+      references: {
+        model: "users",
+        key: "idUser",
+      },
+
+      onUpdate: "CASCADE",
+      onDelete: "CASCADE",
+    },
+
+    idBranch: {
       type: Sequelize.INTEGER,
       allowNull: true,
+      references: {
+        model: "branches",
+        key: "idBranch",
+      },
+      onUpdate: "CASCADE",
+      onDelete: "SET NULL",
+    },
+
+    profileDescription: {
+      type: Sequelize.TEXT,
+      allowNull: true,
+    },
+
+    experienceYears: {
+      type: Sequelize.INTEGER,
       defaultValue: 0,
-      comment: "Số năm kinh nghiệm",
-      after: "profileDescription",
-    });
-  }
+    },
 
-  if (!table.specialty) {
-    await queryInterface.addColumn("barbers", "specialty", {
-      type: Sequelize.STRING(255),
-      allowNull: true,
-      comment: "Chuyên môn chính",
-      after: "experienceYears",
-    });
-  }
+    specialty: Sequelize.STRING(255),
+    style: Sequelize.STRING(255),
+    certificates: Sequelize.TEXT,
+    philosophy: Sequelize.TEXT,
 
-  if (!table.style) {
-    await queryInterface.addColumn("barbers", "style", {
-      type: Sequelize.STRING(255),
-      allowNull: true,
-      comment: "Phong cách làm việc",
-      after: "specialty",
-    });
-  }
+    isLocked: {
+      type: Sequelize.BOOLEAN,
+      defaultValue: false,
+    },
 
-  if (!table.certificates) {
-    await queryInterface.addColumn("barbers", "certificates", {
-      type: Sequelize.TEXT,
-      allowNull: true,
-      comment: "Chứng chỉ",
-      after: "style",
-    });
-  }
+    createdAt: {
+      type: Sequelize.DATE,
+      defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
+    },
 
-  if (!table.philosophy) {
-    await queryInterface.addColumn("barbers", "philosophy", {
-      type: Sequelize.TEXT,
-      allowNull: true,
-      comment: "Triết lý làm nghề",
-      after: "certificates",
-    });
-  }
+    updatedAt: {
+      type: Sequelize.DATE,
+      defaultValue: Sequelize.literal(
+        "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+      ),
+    },
+  });
 }
 
 export async function down(queryInterface) {
-  const table = await queryInterface.describeTable("barbers");
-
-  if (table.philosophy) {
-    await queryInterface.removeColumn("barbers", "philosophy");
-  }
-
-  if (table.certificates) {
-    await queryInterface.removeColumn("barbers", "certificates");
-  }
-
-  if (table.style) {
-    await queryInterface.removeColumn("barbers", "style");
-  }
-
-  if (table.specialty) {
-    await queryInterface.removeColumn("barbers", "specialty");
-  }
-
-  if (table.experienceYears) {
-    await queryInterface.removeColumn("barbers", "experienceYears");
-  }
+  await queryInterface.dropTable("barbers");
 }
