@@ -32,6 +32,7 @@ import notificationRoute from "./routes/notification.js";
 import bannerRoute from "./routes/banner.js";
 import initSocket from "./config/socket.js";
 import paymentRoute from "./routes/payment.js";
+import hrPolicyRoutes from "./routes/hrPolicyRoutes.js";
 import chatLiveRoute from "./routes/chatLive.js";
 import receptionistRouter from "./routes/receptionist.js";
 dotenv.config();
@@ -40,7 +41,11 @@ const app = express();
 const server = http.createServer(app);
 const io = initSocket(server);
 
-app.use(cors());
+app.use(cors({
+  origin: '*', // Cho phép tất cả các nguồn
+  methods: ['GET', 'POST', 'PUT', 'DELETE',"PATCH", 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use((req, res, next) => {
@@ -64,10 +69,11 @@ app.use("/api/customer-galleries", customerGalleryRoutes);
 app.use("/api/booking-history", bookingHistory);
 app.use("/api/vouchers", voucherRoutes);
 app.use("/api/loyalty-rules", loyaltyRuleRoute);
-app.use("/api/salary", authenticate, authorize(["admin"]), salaryRoute);
+app.use("/api/salary", authenticate, salaryRoute);
 app.use("/api/statistics", authenticate, authorize(["admin"]), statisticRoute);
 app.use("/api/bonus", authenticate, authorize(["admin"]), bonusRoutes);
 app.use("/api/statistics/summary", authenticate, authorize(["admin"]), summaryRoutes);
+app.use("/api/hr-policy",authenticate, hrPolicyRoutes);
 
 app.use("/api/booking-direct", bookingDirectRoutes);
 app.use("/api/hashtags", hashtagRoutes);
@@ -85,6 +91,6 @@ authRoutes(app);
 connectDB();
 startBranchStatusCron();
 const PORT = process.env.PORT || 8088;
-server.listen(PORT, () => {
-  console.log(`Backend Node.js & Socket is running on port: ${PORT}`);
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`Backend Node.js & Socket is running on http://0.0.0.0:${PORT}`);
 });

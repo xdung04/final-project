@@ -224,6 +224,7 @@ export const unlockBarber = async (idBarber) => {
   await barber.save();
   return barber;
 };
+
 export const calculateBarberReward = async (idBarber) => {
   const now = new Date();
   const month = now.getMonth() + 1;
@@ -232,71 +233,118 @@ export const calculateBarberReward = async (idBarber) => {
   const startOfMonth = new Date(year, month - 1, 1);
   const endOfMonth = new Date(year, month, 1);
 
-  // 1️⃣ Tổng doanh thu dịch vụ (Booking.total)
-  const serviceRevenue = await db.Booking.sum("total", {
+  // 1️⃣ Thống kê Doanh thu & Số lượt khách (Dùng Booking.total như cũ của ông)
+  const bookingStats = await db.Booking.findOne({
     where: {
       idBarber,
       isPaid: true,
       bookingDate: { [Op.gte]: startOfMonth, [Op.lt]: endOfMonth },
     },
-  });
-
-  // 2️⃣ Tổng tip
-  const tipAmount = await db.BookingTip.sum("tipAmount", {
-    include: [
-      {
-        model: db.Booking,
-        as: "booking",
-        where: {
-          idBarber,
-          isPaid: true,
-          bookingDate: { [Op.gte]: startOfMonth, [Op.lt]: endOfMonth },
-        },
-        attributes: [],
-      },
+    attributes: [
+      [fn("COALESCE", fn("SUM", col("total")), 0), "serviceRevenue"],
+      [fn("COUNT", col("idBooking")), "customerCount"] // Đếm số lượng bill = số khách
     ],
+    raw: true
   });
 
-  const totalServiceRevenue = Number(serviceRevenue) || 0;
-  const totalTipAmount = Number(tipAmount) || 0;
+  const serviceRevenue = parseFloat(bookingStats?.serviceRevenue || 0);
+  const customerCount = parseInt(bookingStats?.customerCount || 0);
 
-  // 3️⃣ Lấy danh sách mốc thưởng
-  const rewardRules = await db.BonusRule.findAll({
-    where: { active: true },
-    order: [["minRevenue", "ASC"]],
-    raw: true,
+  // 2️⃣ Thống kê Tổng tiền Tip
+  const tipAmountResult = await db.BookingTip.sum("tipAmount", {
+    include: [{
+      model: db.Booking,
+      as: "booking",
+      where: {
+        idBarber,
+        isPaid: true,
+        bookingDate: { [Op.gte]: startOfMonth, [Op.lt]: endOfMonth },
+      },
+      attributes: [],
+    }],
+  });
+  const tipAmount = parseFloat(tipAmountResult || 0);
+
+  // 3️⃣ Lấy Đánh giá (Rating) trung bình hiện tại của thợ
+  const ratingSummary = await db.BarberRatingSummary.findOne({
+    where: { idBarber }
+  });
+  const averageRating = parseFloat(ratingSummary?.avgRate || 0);
+
+  // 4️⃣ Lấy Hợp đồng đang Active + Cấu hình Cấp bậc & Luật của thợ đó
+  const activeContract = await db.SalaryContract.findOne({
+    where: { idBarber, status: "active" },
+    include: [{
+      model: db.CompensationPlan,
+      as: "plan",
+      include: [
+        { model: db.CommissionRule, as: "commissionRules" },
+        { model: db.BonusRule, as: "bonusRules" }
+      ]
+    }]
   });
 
-  if (!rewardRules.length) throw new Error("Không có mốc thưởng nào trong hệ thống.");
+  // 5️⃣ Tự động tính toán lương thưởng theo luật mới
+  let planName = "Chưa có hợp đồng";
+  let baseSalary = 0;
+  let commissionAmount = 0;
+  let bonusAmount = 0;
+  let commissionRules = [];
+  let bonusRules = [];
 
-  // 4️⃣ Xác định mốc hiện tại và kế tiếp
-  let currentRule = rewardRules[0];
-  let nextRule = rewardRules[1] || null;
+  if (activeContract) {
+    baseSalary = parseFloat(activeContract.actualBaseSalary || 0);
+    const plan = activeContract.plan;
 
-  for (let i = 0; i < rewardRules.length; i++) {
-    if (totalServiceRevenue >= rewardRules[i].minRevenue) {
-      currentRule = rewardRules[i];
-      nextRule = rewardRules[i + 1] || null;
+    if (plan) {
+      planName = plan.displayName;
+      
+      // Sắp xếp rules theo mốc doanh thu tăng dần để FE hiển thị bảng cho chuẩn
+      commissionRules = (plan.commissionRules || []).sort((a, b) => parseFloat(a.minRevenueStep) - parseFloat(b.minRevenueStep));
+      bonusRules = plan.bonusRules || [];
+
+      // ── TÍNH HOA HỒNG BẬC THANG ──
+      if (commissionRules.length > 0) {
+        // Tìm bậc cao nhất mà thợ đã đạt được (đi từ trên xuống dưới)
+        const matchedRule = [...commissionRules].reverse().find(r => 
+          serviceRevenue >= parseFloat(r.minRevenueStep)
+        );
+
+        if (matchedRule) {
+          commissionAmount = serviceRevenue * (parseFloat(matchedRule.commissionRate) / 100);
+        }
+      }
+
+      // ── TÍNH THƯỞNG KPI KÉP ──
+      if (bonusRules.length > 0) {
+        bonusRules.forEach(rule => {
+          // Thoả mãn CẢ 2 điều kiện: Lượt khách VÀ Rating
+          if (
+            customerCount >= parseInt(rule.minCustomerCount) &&
+            averageRating >= parseFloat(rule.minAverageRating)
+          ) {
+            bonusAmount += parseFloat(rule.rewardAmount);
+          }
+        });
+      }
     }
   }
 
-  // 5️⃣ Tính thưởng theo mốc cao nhất đạt được
-  const bonus = Math.floor((totalServiceRevenue * currentRule.bonusPercent) / 100);
-
-  // 6️⃣ Tính % progress sang mốc kế tiếp
-  const progressPercent = nextRule ? Math.min((totalServiceRevenue / nextRule.minRevenue) * 100, 100) : 100;
-
+  // 6️⃣ Trả về cục Data chuẩn 100% khớp với file Thuong.jsx
   return {
-    idBarber,
     month,
     year,
-    serviceRevenue: totalServiceRevenue, // ✅ Doanh thu lấy từ Booking.total
-    tipAmount: totalTipAmount,
-    bonus,
-    progressPercent,
-    currentRule,
-    nextRule,
-    rewardRules,
+    planName,
+    baseSalary,
+    serviceRevenue,
+    tipAmount,
+    commissionAmount,
+    bonusAmount,
+    customerCount,
+    averageRating,
+    // Trả luôn mảng luật về cho Frontend để nó vẽ Bảng lộ trình & Thanh tiến độ
+    commissionRules, 
+    bonusRules
   };
 };
 

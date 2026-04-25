@@ -1,0 +1,333 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+:root {
+  --black:    #0a0a0a;
+  --charcoal: #151515;
+  --graphite: #1f1f1f;
+  --cream:    #fdfbf8;
+  --gold:     #b8966a;
+  --gold-dark:#967a54;
+  --text-dim: #8a8580;
+  --border:   rgba(184, 150, 106, 0.25);
+  --success:  #22c55e;
+
+  --ff-serif:  'Playfair Display', Georgia, serif;
+  --ff-display:'Bebas Neue', sans-serif;
+  --ff-body:   'DM Sans', sans-serif;
+}
+
+/* --- TRẠNG THÁI LOADING / EMPTY --- */
+.loadingContainer, .emptyContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  background: var(--charcoal);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--gold);
+  font-family: var(--ff-body);
+  max-width: 800px;
+  margin: 40px auto;
+
+  .loadingIcon {
+    margin-bottom: 15px;
+    animation: spin 1s linear infinite;
+  }
+  .emptyIcon {
+    color: var(--gold-dark);
+    opacity: 0.5;
+    margin-bottom: 15px;
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* --- CONTAINER CHÍNH --- */
+.container {
+  max-width: 800px;
+  margin: 40px auto;
+  background: var(--charcoal);
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--border);
+  padding: 30px 40px;
+  font-family: var(--ff-body);
+  color: var(--cream);
+}
+
+/* --- HEADER QUẢN LÝ --- */
+.headerInfo {
+  margin-bottom: 30px;
+  border-bottom: 1px dashed var(--border);
+  padding-bottom: 20px;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--ff-serif);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--gold);
+  margin: 0 0 8px 0;
+  letter-spacing: 0.5px;
+}
+
+.titleIcon {
+  color: var(--gold-dark);
+}
+
+.subtitle {
+  font-size: 15px;
+  color: var(--text-dim);
+  margin: 0;
+}
+
+/* --- SECTION CHUNG --- */
+.section {
+  margin-bottom: 35px;
+}
+
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+
+  h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 18px;
+    color: var(--cream);
+    margin: 0;
+    font-weight: 600;
+  }
+}
+
+.badge {
+  background: var(--gold);
+  color: var(--black);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  box-shadow: 0 0 10px rgba(184, 150, 106, 0.3);
+}
+
+/* --- TIẾN ĐỘ & STATS --- */
+.progressBox {
+  margin-top: 10px;
+}
+
+.progressBar {
+  width: 100%;
+  height: 10px;
+  background: var(--black);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold-dark), var(--gold));
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: inset 0 0 5px rgba(255,255,255,0.2);
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 15px;
+}
+
+.statCard {
+  background: var(--graphite);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  .statLabel {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .statValue {
+    font-size: 18px;
+    color: var(--cream);
+    font-weight: 600;
+  }
+}
+
+/* --- PHẦN THƯỞNG --- */
+.rewardBox {
+  position: relative;
+  background: linear-gradient(135deg, var(--graphite) 0%, var(--black) 100%);
+  border: 1px solid var(--gold-dark);
+  border-radius: 8px;
+  padding: 25px;
+  margin-top: 25px;
+  overflow: hidden;
+}
+
+.rewardContent {
+  position: relative;
+  z-index: 2;
+}
+
+.rewardBgIcon {
+  position: absolute;
+  right: 20px;
+  bottom: 10px;
+  color: var(--gold);
+  opacity: 0.05;
+  transform: scale(2.5) rotate(-15deg);
+  z-index: 1;
+}
+
+.rewardLabel {
+  font-size: 15px;
+  color: var(--gold-dark);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0 0 8px 0;
+  font-weight: 600;
+}
+
+.rewardValue {
+  font-family: var(--ff-serif);
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--gold);
+  margin: 0 0 15px 0;
+  
+  .percent {
+    font-family: var(--ff-body);
+    font-size: 18px;
+    color: var(--success);
+    margin-left: 8px;
+  }
+}
+
+.nextMilestone {
+  font-size: 14px;
+  color: var(--text-dim);
+  margin: 0;
+
+  .highlight {
+    color: var(--cream);
+    font-weight: 600;
+  }
+}
+
+/* --- BẢNG MỐC THƯỞNG --- */
+.tableSection {
+  margin-top: 40px;
+
+  h3 {
+    font-family: var(--ff-display);
+    font-size: 22px;
+    color: var(--gold);
+    letter-spacing: 1px;
+    margin-bottom: 15px;
+  }
+}
+
+.tableWrapper {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.rewardTable {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--graphite);
+
+  th {
+    background: var(--black);
+    color: var(--gold-dark);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+
+  td {
+    padding: 15px;
+    border-bottom: 1px solid rgba(184, 150, 106, 0.1);
+    font-size: 15px;
+    transition: background 0.3s ease;
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  /* Trạng thái hàng */
+  tr.reached {
+    background: rgba(184, 150, 106, 0.08);
+    td { font-weight: 600; }
+  }
+
+  tr.next {
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  tr.notYet {
+    td { opacity: 0.6; }
+  }
+
+  /* Cột & Badge */
+  .statusReached {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--gold);
+  }
+  
+  .statusNext {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--cream);
+  }
+
+  .statusNotYet {
+    color: var(--text-dim);
+    padding-left: 24px; /* Căn chỉnh cho đều với các icon bên trên */
+  }
+
+  .amountCol {
+    color: var(--cream);
+    font-family: var(--ff-body);
+  }
+
+  .percentCol {
+    color: var(--success);
+    font-weight: 600;
+  }
+
+  tr.notYet .percentCol {
+    color: var(--text-dim);
+  }
+}

@@ -1,0 +1,369 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap');
+
+// ─── TOKENS ───────────────────────────────────────────────────
+$black:          #111111;
+$black-soft:     #1E1E1E;
+$bg-page:        #EFEFEB;
+$bg-surface:     #FFFFFF;
+
+$gold:           #C9A84C;
+$gold-dark:      #8B6914;
+$gold-light:     #FEF6E4;
+
+$text-primary:   #111111;
+$text-muted:     #999999;
+$border:         #DDDDDD;
+$border-dark:    #2A2A2A;
+
+$ff-serif:  'Playfair Display', serif;
+$ff-display:'Bebas Neue', sans-serif;
+$ff-body:   'DM Sans', sans-serif;
+// ──────────────────────────────────────────────────────────────
+
+/* ════════════════════════════════════════
+   PAGE SHELL
+════════════════════════════════════════ */
+.page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 100vh;
+  background: $bg-page;
+  font-family: $ff-body;
+  color: $text-primary;
+}
+
+/* ════════════════════════════════════════
+   HEADER
+════════════════════════════════════════ */
+.header {
+  background: $bg-surface;
+  border-bottom: 2px solid $black;
+  padding: 28px 36px;
+  flex-shrink: 0;
+}
+
+.eyebrow {
+  font-family: $ff-display;
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: $text-muted;
+  margin: 0 0 6px;
+}
+
+.title {
+  font-family: $ff-serif;
+  font-size: 28px;
+  font-weight: 900;
+  color: $text-primary;
+  margin: 0;
+  letter-spacing: -0.3px;
+  line-height: 1;
+}
+
+/* ════════════════════════════════════════
+   TAB BAR — giống nav của admin sidebar
+════════════════════════════════════════ */
+.tabBar {
+  display: flex;
+  background: $black;
+  border-bottom: none;
+  overflow-x: auto;
+  flex-shrink: 0;
+
+  &::-webkit-scrollbar { height: 0; }
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 22px;
+  height: 46px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #666666;
+  font-family: $ff-body;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: color 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+
+  &:hover {
+    color: #F5F0E8;
+    background: $black-soft;
+  }
+
+  &.active {
+    color: $gold;
+    border-bottom-color: $gold;
+    background: rgba($gold, 0.06);
+    font-weight: 700;
+
+    .tabIcon {
+      color: $gold;
+    }
+  }
+}
+
+.tabIcon {
+  color: inherit;
+  flex-shrink: 0;
+  transition: color 0.12s ease;
+}
+
+.tabLabel {
+  white-space: nowrap;
+}
+
+/* ════════════════════════════════════════
+   BODY CONTENT
+════════════════════════════════════════ */
+.body {
+  flex: 1;
+  overflow-y: auto;
+  background: $bg-page;
+
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-thumb {
+    background: rgba($gold, 0.25);
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+.inner {
+  padding: 32px 36px;
+  max-width: 1600px;
+  margin: 0 auto;
+  width: 100%;
+  animation: reveal 0.25s ease both;
+}
+
+@keyframes reveal {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ════════════════════════════════════════
+   SHARED UTILITY — dùng trong Tab components
+════════════════════════════════════════ */
+
+// Filter bar
+:global(.tk-filters) {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+:global(.tk-filter-label) {
+  font-family: $ff-display;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: $text-muted;
+  white-space: nowrap;
+}
+
+:global(.tk-select) {
+  height: 36px;
+  padding: 0 12px;
+  background: $bg-surface;
+  border: 1.5px solid $border;
+  border-radius: 0;
+  font-family: $ff-body;
+  font-size: 13px;
+  color: $text-primary;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 28px;
+  transition: border-color 0.12s;
+
+  &:hover  { border-color: $black; }
+  &:focus  { outline: none; border-color: $gold; box-shadow: 0 0 0 3px rgba($gold, 0.1); }
+}
+
+:global(.tk-btn) {
+  height: 36px;
+  padding: 0 18px;
+  background: $black;
+  color: $gold;
+  border: 1.5px solid $black;
+  border-radius: 0;
+  font-family: $ff-display;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.12s ease;
+
+  &:hover  { background: $gold; color: $black; border-color: $gold; }
+  &:active { transform: translateY(1px); }
+}
+
+:global(.tk-btn-outline) {
+  background: transparent;
+  color: $text-primary;
+  border-color: $border;
+
+  &:hover { border-color: $black; background: $bg-page; color: $text-primary; }
+}
+
+// Stat cards grid
+:global(.tk-grid) {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+:global(.tk-card) {
+  background: $bg-surface;
+  border: 1.5px solid $border;
+  border-top: 3px solid $black;
+  padding: 20px 22px;
+  transition: box-shadow 0.15s ease;
+
+  &:hover { box-shadow: 3px 3px 0 rgba($black, 0.08); }
+
+  &--gold      { border-top-color: $gold; }
+  &--gold-dark { border-top-color: $gold-dark; }
+  &--black     { border-top-color: $black; }
+}
+
+:global(.tk-card-label) {
+  font-family: $ff-display;
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: $text-muted;
+  margin: 0 0 10px;
+}
+
+:global(.tk-card-value) {
+  font-family: $ff-serif;
+  font-size: 30px;
+  font-weight: 900;
+  color: $text-primary;
+  margin: 0;
+  line-height: 1;
+}
+
+:global(.tk-card-sub) {
+  font-size: 12px;
+  color: $text-muted;
+  margin: 8px 0 0;
+
+  &--up   { color: #27AE60; }
+  &--down { color: #E74C3C; }
+}
+
+// Chart wrapper
+:global(.tk-chart) {
+  background: $bg-surface;
+  border: 1.5px solid $border;
+  border-top: 3px solid $gold;
+  padding: 24px;
+  margin-bottom: 20px;
+
+  &--dark-top { border-top-color: $black; }
+  &--gold-dark { border-top-color: $gold-dark; }
+}
+
+:global(.tk-chart-title) {
+  font-family: $ff-serif;
+  font-size: 16px;
+  font-weight: 900;
+  color: $text-primary;
+  margin: 0 0 18px;
+  letter-spacing: -0.2px;
+}
+
+// Table
+:global(.tk-table-wrap) {
+  overflow-x: auto;
+  margin-bottom: 20px;
+}
+
+:global(.tk-table) {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+
+  thead tr {
+    border-bottom: 2px solid $black;
+  }
+
+  th {
+    text-align: left;
+    padding: 10px 14px;
+    font-family: $ff-display;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: $text-primary;
+    font-weight: 400;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 13px 14px;
+    border-bottom: 1px solid $border;
+    color: #444444;
+    vertical-align: middle;
+  }
+
+  tbody tr {
+    transition: background 0.1s;
+
+    &:hover  { background: $bg-page; }
+    &:last-child td { border-bottom: none; }
+  }
+}
+
+// Badge
+:global(.tk-badge) {
+  display: inline-block;
+  padding: 3px 8px;
+  font-family: $ff-display;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+
+  &--gold  { background: $gold-light; color: $gold-dark; }
+  &--dark  { background: $black; color: $gold; }
+  &--muted { background: #F0F0EC; color: $text-muted; }
+}
+
+/* ════════════════════════════════════════
+   RESPONSIVE
+════════════════════════════════════════ */
+@media (max-width: 1024px) {
+  .header  { padding: 22px 28px; }
+  .title   { font-size: 24px; }
+  .inner   { padding: 28px; }
+}
+
+@media (max-width: 768px) {
+  .header { padding: 18px 20px; }
+  .title  { font-size: 22px; }
+  .tab    { padding: 0 16px; font-size: 11px; }
+  .inner  { padding: 20px; }
+
+  :global(.tk-grid) {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+}
