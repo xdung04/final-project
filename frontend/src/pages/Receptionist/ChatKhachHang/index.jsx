@@ -5,6 +5,7 @@ import * as chatLiveService from "~/services/chatLiveService";
 import { useAuth } from "~/context/AuthContext";
 import { useToast } from "~/context/ToastContext";
 import styles from "./ChatKhachHang.module.scss";
+import ConfirmModal from "../../../components/ComfirmModal/index";
 
 const ChatKhachHang = () => {
   const { user, accessToken } = useAuth();
@@ -27,8 +28,21 @@ const ChatKhachHang = () => {
   const [isSearching, setIsSearching] = useState(false);
   const sentMessagesRef = useRef(new Set());
   const messagesEndRef = useRef(null);
+  const activeConversationIdRef = useRef(null);
   const receptionistId = user?.idUser;
   const token = accessToken;
+
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    confirmText: "Xác nhận",
+    confirmType: "danger",
+    onConfirm: null,
+  });
+
+  const closeConfirmModal = () =>
+    setConfirmModal((prev) => ({ ...prev, isOpen: false }));
 
   // Load conversations (waiting & inProgress)
   const loadConversations = useCallback(async () => {
@@ -39,10 +53,20 @@ const ChatKhachHang = () => {
         chatLiveService.getWaitingConversations(token),
         chatLiveService.getActiveConversations(receptionistId, token),
       ]);
+
+      // 🔥 Patch unreadCount = 0 cho conversation đang mở
+      const currentOpenId = activeConversationIdRef.current;
+      const patchUnread = (list) =>
+        (list || []).map((c) =>
+          currentOpenId && Number(c.id) === currentOpenId
+            ? { ...c, unreadCount: 0 }
+            : c,
+        );
+
       setConversations((prev) => ({
         ...prev,
-        waiting: waitingList || [],
-        inProgress: activeList || [],
+        waiting: patchUnread(waitingList),
+        inProgress: patchUnread(activeList),
       }));
     } catch (error) {
       console.error("Lỗi load conversations:", error);
@@ -147,6 +171,7 @@ const ChatKhachHang = () => {
         );
         if (result.success) {
           await loadConversations();
+          setActiveTab("inProgress");
           setActiveConversationId(conversation.id);
           await loadChatHistory(conversation.id);
           showToast({ text: "Đã tham gia cuộc trò chuyện", type: "success" });
@@ -162,22 +187,34 @@ const ChatKhachHang = () => {
   );
 
   // Leave conversation
-  const handleLeaveConversation = useCallback(async () => {
+  const handleLeaveConversation = useCallback(() => {
     if (!activeConversationId) return;
-    if (window.confirm("Bạn có chắc muốn rời cuộc trò chuyện?")) {
-      try {
-        await chatLiveService.receptionistLeave(
-          activeConversationId,
-          receptionistId,
-          token,
-        );
-        await loadConversations();
-        setActiveConversationId(null);
-        showToast({ text: "Đã rời cuộc trò chuyện", type: "info" });
-      } catch (error) {
-        showToast({ text: "Rời thất bại", type: "error" });
-      }
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: "Rời cuộc trò chuyện?",
+      message:
+        "Cuộc trò chuyện sẽ trở về hàng chờ và chưa có lễ tân tiếp nhận.",
+      confirmText: "Rời",
+      confirmType: "warning",
+      onConfirm: async () => {
+        closeConfirmModal();
+        try {
+          await chatLiveService.receptionistLeave(
+            activeConversationId,
+            receptionistId,
+            token,
+          );
+          socket.emit("leave_conversation", {
+            conversationId: activeConversationId,
+          });
+          await loadConversations();
+          setActiveConversationId(null);
+          showToast({ text: "Đã rời cuộc trò chuyện", type: "info" });
+        } catch {
+          showToast({ text: "Rời thất bại", type: "error" });
+        }
+      },
+    });
   }, [
     activeConversationId,
     receptionistId,
@@ -197,6 +234,9 @@ const ChatKhachHang = () => {
           toReceptionistId,
           token,
         );
+        socket.emit("leave_conversation", {
+          conversationId: activeConversationId,
+        }); // 🔥
         await loadConversations();
         setActiveConversationId(null);
         setShowTransfer(false);
@@ -213,21 +253,29 @@ const ChatKhachHang = () => {
   );
 
   // Close conversation
-  const handleCloseConversation = useCallback(async () => {
+  const handleCloseConversation = useCallback(() => {
     if (!activeConversationId) return;
-    if (window.confirm("Đóng cuộc trò chuyện này?")) {
-      try {
-        await chatLiveService.closeCustomerConversation(
-          activeConversationId,
-          token,
-        );
-        await loadConversations();
-        setActiveConversationId(null);
-        showToast({ text: "Đã đóng cuộc trò chuyện", type: "info" });
-      } catch (error) {
-        showToast({ text: "Đóng thất bại", type: "error" });
-      }
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: "Đóng cuộc trò chuyện?",
+      message: "Cuộc trò chuyện sẽ kết thúc và được chuyển vào mục Đã đóng.",
+      confirmText: "Đóng",
+      confirmType: "danger",
+      onConfirm: async () => {
+        closeConfirmModal();
+        try {
+          await chatLiveService.closeCustomerConversation(
+            activeConversationId,
+            token,
+          );
+          await loadConversations();
+          setActiveConversationId(null);
+          showToast({ text: "Đã đóng cuộc trò chuyện", type: "info" });
+        } catch {
+          showToast({ text: "Đóng thất bại", type: "error" });
+        }
+      },
+    });
   }, [activeConversationId, token, loadConversations, showToast]);
 
   // Back button: reset active conversation
@@ -254,46 +302,6 @@ const ChatKhachHang = () => {
         ...prev,
         [msg.conversationId]: [...(prev[msg.conversationId] || []), msg],
       }));
-
-      // Update conversation list (unreadCount, lastMessage)
-      const shouldIncreaseUnread = msg.senderType === "customer";
-      const updateList = (list) =>
-        list.map((conv) =>
-          conv.id === msg.conversationId
-            ? {
-                ...conv,
-                lastMessage:
-                  msg.content ||
-                  (msg.eventType === "system" ? "Tin nhắn hệ thống" : ""),
-                unreadCount:
-                  activeConversationId === msg.conversationId ||
-                  !shouldIncreaseUnread
-                    ? 0
-                    : (conv.unreadCount || 0) + 1,
-              }
-            : conv,
-        );
-      setConversations((prev) => ({
-        waiting: updateList(prev.waiting),
-        inProgress: updateList(prev.inProgress),
-        closed: updateList(prev.closed),
-      }));
-      if (isSearching) {
-        setSearchResults((prev) => updateList(prev));
-      }
-
-      // Notify transfer receiver
-      if (
-        msg.eventType === "transfer" &&
-        Number(msg.metadata?.toId) === Number(receptionistId)
-      ) {
-        showToast({
-          text: `🔔 Bạn được chuyển cuộc trò chuyện từ ${msg.metadata.fromName}`,
-          type: "info",
-        });
-        setActiveTab("inProgress");
-        loadConversations();
-      }
     };
 
     const handleConversationUpdated = () => {
@@ -305,19 +313,76 @@ const ChatKhachHang = () => {
       }
     };
 
+    const handleTransferNotify = ({ toId, fromName, conversationId }) => {
+      if (Number(toId) !== Number(receptionistId)) return;
+      showToast({
+        text: `🔔 Bạn được chuyển cuộc trò chuyện từ ${fromName}`,
+        type: "info",
+      });
+      setActiveTab("inProgress");
+      loadConversations();
+    };
+
+    // 🔥 Handler mới: update sidebar lastMessage + unreadCount
+    const handleNewMessage = ({
+      conversationId,
+      lastMessage,
+      senderType,
+      clientId,
+    }) => {
+      if (sentMessagesRef.current.has(clientId)) return;
+      if (senderType === "receptionist") return;
+
+      // 🔥 Ép kiểu để so sánh đúng
+      const convId = Number(conversationId);
+      const isCurrentlyOpen = activeConversationIdRef.current === convId;
+
+      // 🔥 Nếu đang mở conversation này → reset unread ngay trên server
+      if (isCurrentlyOpen) {
+        socket.emit("reset_unread", {
+          conversationId: convId,
+          receptionistId,
+        });
+      }
+
+      const updateList = (list) =>
+        list.map((conv) =>
+          Number(conv.id) === convId
+            ? {
+                ...conv,
+                lastMessage,
+                unreadCount: isCurrentlyOpen ? 0 : (conv.unreadCount || 0) + 1,
+              }
+            : conv,
+        );
+
+      setConversations((prev) => ({
+        waiting: updateList(prev.waiting),
+        inProgress: updateList(prev.inProgress),
+        closed: updateList(prev.closed),
+      }));
+
+      if (isSearching) {
+        setSearchResults((prev) => updateList(prev));
+      }
+    };
+
+    socket.on("conversation_new_message", handleNewMessage);
+    socket.on("conversation_transfer_notify", handleTransferNotify);
     socket.on("receive_message", handleReceiveMessage);
     socket.on("conversation_updated", handleConversationUpdated);
     socket.on("conversation_closed", ({ conversationId }) => {
       if (activeConversationId === conversationId)
         setActiveConversationId(null);
       handleConversationUpdated();
-      showToast({ text: "Một cuộc trò chuyện vừa đóng", type: "info" });
     });
 
     return () => {
       socket.off("receive_message", handleReceiveMessage);
       socket.off("conversation_updated", handleConversationUpdated);
       socket.off("conversation_closed");
+      socket.off("conversation_transfer_notify", handleTransferNotify);
+      socket.off("conversation_new_message", handleNewMessage);
     };
   }, [
     activeConversationId,
@@ -330,6 +395,13 @@ const ChatKhachHang = () => {
     handleSearch,
     showToast,
   ]);
+
+  // Sync ref — ép về Number để đồng nhất
+  useEffect(() => {
+    activeConversationIdRef.current = activeConversationId
+      ? Number(activeConversationId)
+      : null;
+  }, [activeConversationId]);
 
   // Join room when conversation selected
   useEffect(() => {
@@ -403,10 +475,31 @@ const ChatKhachHang = () => {
         if (isWaiting) {
           handleJoinConversation(conv);
         } else {
-          // Chỉ set active và load nếu chưa active
           if (activeConversationId !== conv.id) {
             setActiveConversationId(conv.id);
-            loadChatHistory(conv.id);
+            loadChatHistory(conv.id); // loadChatHistory đã có reset_unread emit
+
+            // 🔥 Reset unread ngay trên UI không cần chờ server
+            setConversations((prev) => ({
+              ...prev,
+              waiting: prev.waiting.map((c) =>
+                c.id === conv.id ? { ...c, unreadCount: 0 } : c,
+              ),
+              inProgress: prev.inProgress.map((c) =>
+                c.id === conv.id ? { ...c, unreadCount: 0 } : c,
+              ),
+              closed: prev.closed.map((c) =>
+                c.id === conv.id ? { ...c, unreadCount: 0 } : c,
+              ),
+            }));
+
+            if (isSearching) {
+              setSearchResults((prev) =>
+                prev.map((c) =>
+                  c.id === conv.id ? { ...c, unreadCount: 0 } : c,
+                ),
+              );
+            }
           }
         }
       }}
@@ -667,6 +760,15 @@ const ChatKhachHang = () => {
           </div>
         )}
       </div>
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText={confirmModal.confirmText}
+        confirmType={confirmModal.confirmType}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={closeConfirmModal}
+      />
     </div>
   );
 };
