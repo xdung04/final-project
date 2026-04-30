@@ -41,6 +41,50 @@ const ChatKhachHang = () => {
     onConfirm: null,
   });
 
+  const formatTime = (dateStr) => {
+    if (!dateStr) return "";
+    return new Date(dateStr).toLocaleTimeString("vi-VN", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const formatDateLabel = (dateStr) => {
+    if (!dateStr) return "";
+    const date = new Date(dateStr);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+
+    if (date.toDateString() === today.toDateString()) return "Hôm nay";
+    if (date.toDateString() === yesterday.toDateString()) return "Hôm qua";
+    return date.toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  };
+
+  const groupMessagesByDate = (messages) => {
+    const groups = [];
+    let currentDate = null;
+
+    messages.forEach((msg) => {
+      const msgDate = new Date(msg.createdAt).toDateString();
+      if (msgDate !== currentDate) {
+        currentDate = msgDate;
+        groups.push({
+          type: "date",
+          label: formatDateLabel(msg.createdAt),
+          key: msgDate,
+        });
+      }
+      groups.push({ type: "message", data: msg });
+    });
+
+    return groups;
+  };
+
   const closeConfirmModal = () =>
     setConfirmModal((prev) => ({ ...prev, isOpen: false }));
 
@@ -295,13 +339,15 @@ const ChatKhachHang = () => {
   // Socket events
   useEffect(() => {
     const handleReceiveMessage = (msg) => {
-      if (sentMessagesRef.current.has(msg.clientId)) return;
+      if (msg.senderType === "receptionist" && msg.senderId === receptionistId)
+        return;
 
-      // Update messages map
-      setMessagesMap((prev) => ({
-        ...prev,
-        [msg.conversationId]: [...(prev[msg.conversationId] || []), msg],
-      }));
+      setMessagesMap((prev) => {
+        const existing = prev[msg.conversationId] || [];
+        if (existing.some((m) => m.clientId === msg.clientId && msg.clientId))
+          return prev;
+        return { ...prev, [msg.conversationId]: [...existing, msg] };
+      });
     };
 
     const handleConversationUpdated = () => {
@@ -462,11 +508,6 @@ const ChatKhachHang = () => {
     setInputMessage("");
   };
 
-  const formatTime = (dateStr) => {
-    const date = new Date(dateStr);
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  };
-
   const renderConversationItem = (conv, isWaiting = false) => (
     <div
       key={conv.id}
@@ -479,7 +520,6 @@ const ChatKhachHang = () => {
             setActiveConversationId(conv.id);
             loadChatHistory(conv.id); // loadChatHistory đã có reset_unread emit
 
-            // 🔥 Reset unread ngay trên UI không cần chờ server
             setConversations((prev) => ({
               ...prev,
               waiting: prev.waiting.map((c) =>
@@ -692,35 +732,52 @@ const ChatKhachHang = () => {
               {!messagesMap[activeConversationId] ? (
                 <div className={styles.loading}>Đang tải tin nhắn...</div>
               ) : (
-                messagesMap[activeConversationId].map((msg, idx) => {
-                  let msgClass = styles.msgRow;
-                  if (msg.senderType === "receptionist")
-                    msgClass += ` ${styles.sent}`;
-                  else if (msg.senderType === "customer")
-                    msgClass += ` ${styles.received}`;
-                  else if (msg.senderType === "system")
-                    msgClass += ` ${styles.system}`;
-                  return (
-                    <div key={idx} className={msgClass}>
-                      <div className={styles.msgBubble}>
-                        {msg.messageType === "system" ? (
-                          <>
-                            {msg.eventType === "join" &&
-                              `💼 ${msg.metadata?.name} đã tham gia`}
-                            {msg.eventType === "leave" &&
-                              `💼 ${msg.metadata?.name} đã rời`}
-                            {msg.eventType === "transfer" &&
-                              `🔄 Chuyển từ ${msg.metadata?.fromName} sang ${msg.metadata?.toName}`}
-                            {msg.eventType === "reopen" &&
-                              `🔄 Cuộc trò chuyện được mở lại`}
-                          </>
-                        ) : (
-                          msg.content
+                groupMessagesByDate(messagesMap[activeConversationId]).map(
+                  (item, idx) => {
+                    if (item.type === "date") {
+                      return (
+                        <div key={item.key} className={styles.dateSeparator}>
+                          <span>{item.label}</span>
+                        </div>
+                      );
+                    }
+
+                    const msg = item.data;
+                    let msgClass = styles.msgRow;
+                    if (msg.senderType === "receptionist")
+                      msgClass += ` ${styles.sent}`;
+                    else if (msg.senderType === "customer")
+                      msgClass += ` ${styles.received}`;
+                    else if (msg.senderType === "system")
+                      msgClass += ` ${styles.system}`;
+
+                    return (
+                      <div key={idx} className={msgClass}>
+                        <div className={styles.msgBubble}>
+                          {msg.messageType === "system" ? (
+                            <>
+                              {msg.eventType === "join" &&
+                                `💼 ${msg.metadata?.name} đã tham gia`}
+                              {msg.eventType === "leave" &&
+                                `💼 ${msg.metadata?.name} đã rời`}
+                              {msg.eventType === "transfer" &&
+                                `🔄 Chuyển từ ${msg.metadata?.fromName} sang ${msg.metadata?.toName}`}
+                              {msg.eventType === "reopen" &&
+                                `🔄 Cuộc trò chuyện được mở lại`}
+                            </>
+                          ) : (
+                            msg.content
+                          )}
+                        </div>
+                        {msg.messageType !== "system" && (
+                          <div className={styles.msgTime}>
+                            {formatTime(msg.createdAt)}
+                          </div>
                         )}
                       </div>
-                    </div>
-                  );
-                })
+                    );
+                  },
+                )
               )}
               <div ref={messagesEndRef} />
             </div>
