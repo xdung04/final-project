@@ -1,5 +1,5 @@
 import classNames from "classnames/bind";
-import { SuccessIcon, CloseIcon, ErrorIcon } from "~/components/Icons";
+import { SuccessIcon, CloseIcon, ErrorIcon, InfoIcon } from "~/components/Icons";
 import styles from "./Toast.module.scss";
 import { useEffect, useState } from "react";
 
@@ -9,7 +9,6 @@ function Toast({ type, text, duration = 3000, onClose }) {
   const [fadeOut, setFadeOut] = useState(false);
 
   useEffect(() => {
-    // Bắt đầu hiệu ứng biến mất trước khi đóng hẳn 400ms (khớp với CSS)
     const fadeTimeout = setTimeout(() => {
       setFadeOut(true);
     }, duration - 400);
@@ -28,10 +27,14 @@ function Toast({ type, text, duration = 3000, onClose }) {
     <div className={cx("wrapper", { "fade-out": fadeOut })}>
       <div className={cx("inner", type)}>
         <div className={cx("body")}>
-          <div className={cx("icon")}>
-            {type === "success" ? <SuccessIcon /> : <ErrorIcon />}
-          </div>
           
+          {/* ✅ FIX LOGIC ICON */}
+          <div className={cx("icon")}>
+            {type === "success" && <SuccessIcon />}
+            {type === "error" && <ErrorIcon />}
+            {type === "info" && <InfoIcon />}
+          </div>
+
           <div className={cx("text")}>{text}</div>
 
           <button className={cx("close")} onClick={() => setFadeOut(true)}>
@@ -39,7 +42,6 @@ function Toast({ type, text, duration = 3000, onClose }) {
           </button>
         </div>
 
-        {/* Thanh tiến trình màu Gold chạy ngược */}
         <div className={cx("progress-bar")}>
           <div 
             className={cx("fill")} 

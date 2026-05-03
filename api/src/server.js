@@ -35,6 +35,7 @@ import paymentRoute from "./routes/payment.js";
 import hrPolicyRoutes from "./routes/hrPolicyRoutes.js";
 import chatLiveRoute from "./routes/chatLive.js";
 import receptionistRouter from "./routes/receptionist.js";
+import calendarRoutes from "./routes/calendarRoutes.js";
 dotenv.config();
 
 const app = express();
@@ -82,6 +83,8 @@ app.use("/api/notifications", notificationRoute);
 app.use("/api/banners", bannerRoute);
 
 app.use("/api/receptionist", receptionistRouter);
+
+app.use("/api/calendar", calendarRoutes);
 
 // View engine & auth routes
 viewEngine(app);
