@@ -70,8 +70,31 @@
   }
 }
 
-.success .icon { color: #2ecc71; } // Giữ xanh lá nhẹ nhưng thanh mảnh
-.error .icon { color: #e74c3c; }
+/* ===== TYPE STYLES ===== */
+
+.success {
+  border-left: 4px solid #2ecc71;
+
+  .icon {
+    color: #2ecc71;
+  }
+}
+
+.error {
+  border-left: 4px solid #e74c3c;
+
+  .icon {
+    color: #e74c3c;
+  }
+}
+
+.info {
+  border-left: 4px solid #3498db;
+
+  .icon {
+    color: #3498db;
+  }
+}
 
 .text {
   flex: 1;
@@ -116,7 +139,3 @@
   background: var(--gold); /* Thanh tiến trình màu vàng kim */
   animation: progressShrink linear forwards;
 }
-
-// Màu sắc nhấn cho icon/text tùy loại
-.success-text { border-left: 3px solid #2ecc71; }
-.error-text { border-left: 3px solid #e74c3c; }
