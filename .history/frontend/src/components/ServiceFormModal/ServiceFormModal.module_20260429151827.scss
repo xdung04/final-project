@@ -1,0 +1,417 @@
+/* ================== MODAL WRAPPER ================== */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 17, 17, 0.75); /* Chuẩn overlay Design System */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  animation: fadeInModal 0.25s ease forwards;
+}
+
+@keyframes fadeInModal {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.modal {
+  width: 900px;
+  max-width: 95vw;
+  max-height: 85vh;
+  background: var(--bg-surface);
+  border: 2px solid var(--black);
+  border-radius: 0; /* KHÔNG BO GÓC */
+  box-shadow: 6px 6px 0 var(--black); /* HARD SHADOW MODAL */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.loadingModal {
+  width: auto;
+  padding: 48px 64px;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  
+  p {
+    font-family: 'Playfair Display', serif;
+    font-weight: 900;
+    color: var(--black);
+    font-size: 20px;
+    margin: 0;
+  }
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--border-sharp);
+  border-top: 2px solid var(--gold-main);
+  border-radius: 0; /* SPINNER VUÔNG */
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ================== HEADER ================== */
+.header {
+  padding: 20px 24px;
+  background: var(--bg-surface);
+  border-bottom: 2px solid var(--black);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  .closeBtn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    border-radius: 0;
+    transition: all 0.15s ease;
+
+    &:hover {
+      color: var(--black);
+      background: var(--gold-main);
+    }
+  }
+}
+
+/* ================== BODY ================== */
+.body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  background: var(--bg-page);
+  
+  .leftImage {
+    width: 40%;
+    padding: 24px;
+    border-right: 1.5px solid var(--border-sharp);
+    background: var(--bg-surface);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    align-items: center;
+
+    .imagePreview {
+      width: 100%;
+      aspect-ratio: 1 / 1; 
+      max-height: 300px;
+      background: var(--bg-muted);
+      border: 1.5px solid var(--border-sharp); /* KHÔNG DASHED MỀM YẾU */
+      border-radius: 0;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .noImage {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        color: var(--text-muted);
+        
+        span {
+          font-family: 'Bebas Neue', sans-serif;
+          font-size: 14px;
+          letter-spacing: 2px;
+          text-transform: uppercase;
+        }
+      }
+    }
+
+    .fileButton {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 10px 26px;
+      background: transparent;
+      color: var(--black);
+      border: 2px solid var(--black);
+      border-radius: 0;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 700;
+      font-size: 14px;
+      transition: all 0.15s ease;
+
+      &:hover:not(.disabled) {
+        background: var(--gold-main);
+        box-shadow: 4px 4px 0 var(--black);
+      }
+
+      &.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+  }
+
+  .rightInfo {
+    flex: 1;
+    padding: 24px 28px;
+    background: var(--bg-surface);
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    overflow-y: auto;
+
+    &::-webkit-scrollbar { width: 8px; }
+    &::-webkit-scrollbar-track { background: var(--bg-page); }
+    &::-webkit-scrollbar-thumb { background: var(--border-sharp); border-radius: 0; }
+    &::-webkit-scrollbar-thumb:hover { background: var(--black); }
+  }
+
+  .row {
+    display: flex;
+    gap: 24px;
+    .formGroup { flex: 1; }
+  }
+
+  .formGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    label {
+      font-family: 'Bebas Neue', sans-serif;
+      color: var(--text-primary);
+      font-size: 14px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 12px 14px;
+      background: var(--bg-muted);
+      border: 1.5px solid var(--border-sharp);
+      border-radius: 0;
+      color: var(--text-primary);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      transition: all 0.15s ease;
+
+      &::placeholder { color: var(--text-muted); }
+      
+      &:focus { 
+        border-color: var(--black); 
+        background: var(--bg-surface);
+        outline: none;
+      }
+      
+      &:disabled { 
+        background: var(--bg-page); 
+        color: var(--text-muted);
+        cursor: not-allowed; 
+      }
+    }
+
+    textarea { 
+      height: 100px; 
+      resize: vertical; 
+      line-height: 1.5;
+    }
+  }
+
+  .branchList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+
+    .branchBadge {
+      padding: 8px 16px;
+      border-radius: 0;
+      border: 1.5px solid var(--border-sharp);
+      background: var(--bg-surface);
+      color: var(--text-secondary);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      user-select: none;
+
+      &.selected {
+        background: var(--gold-light);
+        color: var(--gold-dark);
+        border-color: var(--gold-main);
+        border-left: 2px solid var(--gold-main); /* Active state styling */
+      }
+
+      &:hover:not(.disabled):not(.selected) {
+        border-color: var(--black);
+        color: var(--black);
+      }
+
+      &.disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+      }
+    }
+  }
+
+  .statusToggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    width: fit-content;
+
+    .iconActive { color: var(--gold-main); }
+    .iconInactive { color: var(--text-muted); }
+    
+    .textActive { color: var(--gold-dark); font-weight: 700; font-size: 14px; }
+    .textInactive { color: var(--text-secondary); font-weight: 500; font-size: 14px; }
+
+    &.disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+  }
+}
+
+/* ================== FOOTER ================== */
+.footer {
+  padding: 20px 24px;
+  background: var(--bg-surface);
+  border-top: 1.5px solid var(--border-sharp);
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+
+  button {
+    padding: 10px 26px;
+    border-radius: 0;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .saveBtn {
+    background: var(--black);
+    color: var(--gold-main);
+    border: 2px solid var(--black);
+
+    &:hover { 
+      background: var(--gold-main); 
+      color: var(--black);
+      box-shadow: 4px 4px 0 var(--black);
+    }
+  }
+
+  .editBtn {
+    background: transparent;
+    color: var(--black);
+    border: 2px solid var(--black);
+
+    &:hover {
+      background: var(--gold-main);
+      box-shadow: 4px 4px 0 var(--black);
+    }
+  }
+}
+
+/* ================== CONFIRM MODAL (WARNING/DELETE) ================== */
+.confirmOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 17, 17, 0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.confirmModal {
+  background: var(--bg-surface);
+  padding: 32px;
+  border-radius: 0;
+  border: 2px solid var(--black);
+  text-align: center;
+  width: 400px;
+  box-shadow: 6px 6px 0 var(--black);
+
+  h4 {
+    margin: 0 0 16px 0;
+    color: var(--text-primary);
+    font-family: 'Playfair Display', serif;
+    font-weight: 900;
+    font-size: 24px;
+  }
+
+  p {
+    margin: 0 0 24px 0;
+    color: var(--text-secondary);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+}
+
+.confirmButtons {
+  display: flex;
+  gap: 16px;
+
+  button {
+    flex: 1;
+    padding: 10px 26px;
+    border-radius: 0;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .btnCancel {
+    background: transparent;
+    border: 2px solid var(--black);
+    color: var(--black);
+
+    &:hover {
+      background: var(--bg-muted);
+      box-shadow: 4px 4px 0 var(--black);
+    }
+  }
+
+  .btnConfirm {
+    /* Được phép dùng màu đỏ tiết kiệm cho trạng thái Cảnh báo/Xóa theo Design System */
+    background: #D32F2F; 
+    border: 2px solid var(--black);
+    color: #FFFFFF;
+
+    &:hover {
+      background: #B71C1C;
+      box-shadow: 4px 4px 0 var(--black);
+    }
+  }
+}

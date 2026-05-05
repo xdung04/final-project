@@ -26,7 +26,10 @@ import summaryRoutes from "./routes/summaryStatistics.js";
 import bookingDirectRoutes from "./routes/bookingDirect.js";
 import hashtagRoutes from "./routes/hashtag.js";
 import hairConsultRoutes from "./routes/hairConsult.js";
+
 import startBranchStatusCron from "./cron/branchStatusCron.js";
+import startSalaryCron from "./cron/salaryCron.js"
+
 import { authenticate, authorize } from "./middlewares/authMiddleware.js";
 import notificationRoute from "./routes/notification.js";
 import bannerRoute from "./routes/banner.js";
@@ -35,6 +38,8 @@ import paymentRoute from "./routes/payment.js";
 import hrPolicyRoutes from "./routes/hrPolicyRoutes.js";
 import chatLiveRoute from "./routes/chatLive.js";
 import receptionistRouter from "./routes/receptionist.js";
+import contractRoute from "./routes/contract.js";
+import testRouter from "./routes/test.js";
 import calendarRoutes from "./routes/calendarRoutes.js";
 dotenv.config();
 
@@ -53,7 +58,7 @@ app.use((req, res, next) => {
   req.io = io;
   next();
 });
-
+app.use("/api/test", testRouter);
 app.use("/api/services", serviceRoute);
 app.use("/api/user/profile", profileRoutes);
 app.use("/api/chat", chatRoute);
@@ -75,6 +80,7 @@ app.use("/api/statistics", authenticate, authorize(["admin"]), statisticRoute);
 app.use("/api/bonus", authenticate, authorize(["admin"]), bonusRoutes);
 app.use("/api/statistics/summary", authenticate, authorize(["admin"]), summaryRoutes);
 app.use("/api/hr-policy",authenticate, hrPolicyRoutes);
+app.use("/api/contracts", authenticate ,contractRoute);
 
 app.use("/api/booking-direct", bookingDirectRoutes);
 app.use("/api/hashtags", hashtagRoutes);
@@ -93,6 +99,7 @@ authRoutes(app);
 // Kết nối DB
 connectDB();
 startBranchStatusCron();
+startSalaryCron();
 const PORT = process.env.PORT || 8088;
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`Backend Node.js & Socket is running on http://0.0.0.0:${PORT}`);

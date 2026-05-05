@@ -237,7 +237,7 @@ export const cancelBooking = async (req, res) => {
     res.status(500).json({ message: "Lỗi khi hủy lịch", error: error.message });
   }
 };
-// ✅ CHECK-IN BOOKING
+
 export const checkInBooking = async (req, res) => {
   try {
     const { idBooking } = req.params;
