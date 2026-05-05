@@ -4,7 +4,13 @@ import { getIO } from "../config/socket.js";
 export const getOrCreateConversation = async (req, res) => {
   try {
     const customerId = parseInt(req.params.customerId);
-    const conversation = await chatService.getOrCreateConversation(customerId);
+    const { conversation, isNew } = await chatService.getOrCreateConversation(customerId);
+    
+    const io = getIO();
+    if (io && isNew) {
+      io.emit("conversation_updated"); // 🔥 Báo cho tất cả receptionist
+    }
+
     res.status(200).json({ success: true, data: conversation });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -55,8 +61,11 @@ export const receptionistLeave = async (req, res) => {
       parseInt(receptionistId),
     );
     const io = getIO();
-    if (io && result.systemMessage)
-      io.to(conversationId).emit("receive_message", result.systemMessage);
+    if (io) {
+      if (result.systemMessage)
+        io.to(conversationId).emit("receive_message", result.systemMessage);
+      io.emit("conversation_updated"); 
+    }
     res.status(200).json({ success: true, data: result });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -75,7 +84,15 @@ export const transferConversation = async (req, res) => {
     if (io) {
       if (result.systemMessage)
         io.to(conversationId).emit("receive_message", result.systemMessage);
-      io.emit("conversation_updated"); // thông báo cho tất cả receptionist
+      
+      // 🔥 Emit riêng cho receptionist nhận — không phụ thuộc room
+      io.emit("conversation_transfer_notify", {
+        toId: toReceptionistId,
+        fromName: result.systemMessage.metadata.fromName,
+        conversationId,
+      });
+
+      io.emit("conversation_updated");
     }
     res.status(200).json({ success: true, data: result });
   } catch (err) {

@@ -28,19 +28,22 @@ export const updateConversationStats = async (
  * Nếu đã closed thì reopen
  */
 export const getOrCreateConversation = async (customerId) => {
+  let isNew = false;
   let conversation = await Conversation.findOne({ where: { customerId } });
+
   if (!conversation) {
     conversation = await Conversation.create({
       customerId,
       mode: "ai",
       status: "waiting",
     });
+    isNew = true; // 🔥 Đánh dấu mới tạo
   } else if (conversation.status === "closed") {
     await conversation.update({
       status: "waiting",
       mode: "ai",
       assignedReceptionistId: null,
-      unreadCount: 0, // reset unread khi reopen
+      unreadCount: 0,
     });
     await conversation.reload();
     await saveMessage({
@@ -53,8 +56,10 @@ export const getOrCreateConversation = async (customerId) => {
         message: "Cuộc trò chuyện được mở lại",
       },
     });
+    isNew = true;
   }
-  return conversation;
+
+  return { conversation, isNew };
 };
 
 /**
@@ -167,7 +172,14 @@ export const saveMessage = async ({
  */
 export const resetUnreadCount = async (conversationId, receptionistId) => {
   const conv = await Conversation.findByPk(conversationId);
-  if (conv && conv.assignedReceptionistId === receptionistId) {
+  if (!conv) return false;
+
+  // 🔥 Reset nếu là receptionist được assign HOẶC conversation đang waiting
+  // (receptionist có thể đang xem waiting conversation trước khi join)
+  const canReset =
+    conv.assignedReceptionistId === receptionistId || conv.status === "waiting";
+
+  if (canReset) {
     await Conversation.update(
       { unreadCount: 0 },
       { where: { id: conversationId } },

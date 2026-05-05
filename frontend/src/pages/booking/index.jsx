@@ -4,6 +4,12 @@ import styles from "./Booking.module.scss";
 import VoucherPopup from "../../components/VoucherPopup";
 import { fetchBookedSlots } from "~/services/bookingService";
 import { useToast } from "~/context/ToastContext";
+import {
+  getCalendarLinkStatus,
+  getGoogleAuthUrl,
+} from "~/services/calendarService";
+import { useAuth } from "~/context/AuthContext";
+import ConfirmModal from "../../components/ComfirmModal/index";
 
 function BookingPage() {
   const [booking, setBooking] = useState({
@@ -18,6 +24,9 @@ function BookingPage() {
     voucher: null,
     idCustomerVoucher: null,
   });
+
+  const { accessToken, user } = useAuth();
+  const [isCheckingCalendar, setIsCheckingCalendar] = useState(false);
 
   const { showToast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -38,6 +47,19 @@ function BookingPage() {
   const today = new Date();
   const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    confirmText: "Xác nhận",
+    cancelText: "Huỷ",
+    confirmType: "primary",
+    onConfirm: null,
+    onCancel: null,
+  });
+  const closeConfirmModal = () =>
+    setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+
   // ─── Fetch chi nhánh (có hoặc không có tọa độ) ───────────────────────────
   const fetchBranches = useCallback(
     async (lat, lng) => {
@@ -50,7 +72,7 @@ function BookingPage() {
         console.error("Error fetch branches:", err);
       }
     },
-    [API_BASE_URL]
+    [API_BASE_URL],
   );
 
   // ─── Lấy vị trí → fetch lại branches kèm khoảng cách ────────────────────
@@ -76,9 +98,50 @@ function BookingPage() {
         setLocationLoading(false);
         fetchBranches(); // vẫn load branches, chỉ không có distance
       },
-      { timeout: 8000 }
+      { timeout: 8000 },
     );
   }, [fetchBranches]);
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const calendarStatus = urlParams.get("calendar");
+    if (calendarStatus === "linked") {
+      const newUrl =
+        window.location.pathname +
+        window.location.search
+          .replace(/[?&]calendar=linked/, "")
+          .replace(/^&/, "?");
+      window.history.replaceState({}, "", newUrl);
+
+      const savedBooking = sessionStorage.getItem("pendingBooking");
+      if (savedBooking) {
+        const bookingData = JSON.parse(savedBooking);
+        setBooking(bookingData);
+        sessionStorage.removeItem("pendingBooking");
+
+        showToast({
+          text: "Đã liên kết Google Calendar, đang tiến hành đặt lịch...",
+          type: "info",
+        });
+        handleSubmitWithCalendarSync(true, bookingData);
+      } else {
+        showToast({
+          text: "Liên kết Google Calendar thành công!",
+          type: "success",
+        });
+      }
+    } else if (calendarStatus === "error") {
+      const msg =
+        urlParams.get("message") || "Liên kết thất bại, vui lòng thử lại";
+      showToast({ text: decodeURIComponent(msg), type: "error" });
+      const newUrl =
+        window.location.pathname +
+        window.location.search
+          .replace(/[?&]calendar=error[^&]*/, "")
+          .replace(/^&/, "?");
+      window.history.replaceState({}, "", newUrl);
+    }
+  }, []);
 
   // Auto chạy khi vào trang
   useEffect(() => {
@@ -109,7 +172,9 @@ function BookingPage() {
       }
 
       try {
-        const res = await fetch(`${API_BASE_URL}/bookings/branches/${branchId}`);
+        const res = await fetch(
+          `${API_BASE_URL}/bookings/branches/${branchId}`,
+        );
         const data = await res.json();
 
         setBarbers(data.barbers || []);
@@ -138,8 +203,81 @@ function BookingPage() {
         setTimes([]);
       }
     },
-    [branches, API_BASE_URL]
+    [branches, API_BASE_URL],
   );
+
+  const handleSubmitWithCalendarSync = async (
+    syncToCalendar,
+    bookingDataOverride = null,
+  ) => {
+    const finalBooking = bookingDataOverride || booking;
+
+    if (
+      !finalBooking.branchId ||
+      !finalBooking.barberId ||
+      !finalBooking.date ||
+      !finalBooking.time ||
+      !finalBooking.services.length
+    ) {
+      showToast({ text: "Vui lòng điền đầy đủ thông tin!", type: "error" });
+      return false;
+    }
+
+    setIsLoading(true);
+    const totalPrice = finalBooking.services.reduce(
+      (sum, s) => sum + Number(s.price),
+      0,
+    );
+    const discountAmount = (totalPrice * finalBooking.discount) / 100;
+    const finalPrice = totalPrice - discountAmount;
+
+    try {
+      const token = localStorage.getItem("accessToken");
+      const res = await fetch(`${API_BASE_URL}/bookings/create`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          idBranch: finalBooking.branchId,
+          idBarber: finalBooking.barberId,
+          bookingDate: finalBooking.date,
+          bookingTime: finalBooking.time,
+          services: finalBooking.services.map((s) => ({
+            idService: s.idService,
+            price: s.price,
+            quantity: 1,
+          })),
+          description: finalBooking.services.map((s) => s.name).join(", "),
+          idCustomerVoucher: finalBooking.idCustomerVoucher || null,
+          syncToCalendar,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Lỗi khi tạo booking");
+      }
+
+      showToast({
+        text: `Đặt lịch thành công! Thành tiền: ${finalPrice.toLocaleString()}đ`,
+        type: "success",
+      });
+
+      setTimeout(() => window.location.reload(), 2500);
+      return true;
+    } catch (err) {
+      console.error(err);
+      showToast({
+        text: err.message || "Không thể kết nối server!",
+        type: "error",
+      });
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleBranchChange = (e) => {
     applyBranchSelection(Number(e.target.value) || null);
@@ -196,7 +334,11 @@ function BookingPage() {
     if (!booking.barberId || !booking.branchId) return;
 
     try {
-      const data = await fetchBookedSlots(booking.barberId, booking.branchId, date);
+      const data = await fetchBookedSlots(
+        booking.barberId,
+        booking.branchId,
+        date,
+      );
 
       const grouped = { [date]: data.bookedSlots || [] };
       setBookedTimesByDate((prev) => ({ ...prev, ...grouped }));
@@ -216,7 +358,9 @@ function BookingPage() {
   };
 
   const handleTimeSelect = (time) => {
-    const bookedTimes = booking.date ? bookedTimesByDate[booking.date] || [] : [];
+    const bookedTimes = booking.date
+      ? bookedTimesByDate[booking.date] || []
+      : [];
     if (!bookedTimes.includes(time)) setBooking({ ...booking, time });
   };
 
@@ -225,7 +369,9 @@ function BookingPage() {
     const service = services.find((s) => Number(s.idService) === selectedId);
     if (
       service &&
-      !booking.services.find((s) => Number(s.idService) === Number(service.idService))
+      !booking.services.find(
+        (s) => Number(s.idService) === Number(service.idService),
+      )
     ) {
       setBooking({ ...booking, services: [...booking.services, service] });
     }
@@ -235,13 +381,18 @@ function BookingPage() {
     setBooking({
       ...booking,
       services: booking.services.filter(
-        (s) => Number(s.idService) !== Number(idService)
+        (s) => Number(s.idService) !== Number(idService),
       ),
     });
 
   const handleVoucherSelect = (voucher) => {
     if (!voucher) {
-      setBooking({ ...booking, discount: 0, voucher: null, idCustomerVoucher: null });
+      setBooking({
+        ...booking,
+        discount: 0,
+        voucher: null,
+        idCustomerVoucher: null,
+      });
       setShowVoucherList(false);
       return;
     }
@@ -266,57 +417,56 @@ function BookingPage() {
     if (!booking.time)
       return showToast({ text: "Vui lòng chọn thời gian!", type: "error" });
     if (!booking.services.length)
-      return showToast({ text: "Vui lòng chọn ít nhất một dịch vụ!", type: "error" });
+      return showToast({
+        text: "Vui lòng chọn ít nhất một dịch vụ!",
+        type: "error",
+      });
 
-    setIsLoading(true);
-    const totalPrice = booking.services.reduce((sum, s) => sum + Number(s.price), 0);
-    const discountAmount = (totalPrice * booking.discount) / 100;
-    const finalPrice = totalPrice - discountAmount;
+    if (!accessToken) {
+      showToast({ text: "Vui lòng đăng nhập để đặt lịch!", type: "error" });
+      return;
+    }
 
+    setIsCheckingCalendar(true);
     try {
-      const token = localStorage.getItem("accessToken");
-      const res = await fetch(`${API_BASE_URL}/bookings/create`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          idBranch: booking.branchId,
-          idBarber: booking.barberId,
-          bookingDate: booking.date,
-          bookingTime: booking.time,
-          services: booking.services.map((s) => ({
-            idService: s.idService,
-            price: s.price,
-            quantity: 1,
-          })),
-          description: booking.services.map((s) => s.name).join(", "),
-          idCustomerVoucher: booking.idCustomerVoucher || null,
-        }),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || "Lỗi khi tạo booking");
+      const calendarStatus = await getCalendarLinkStatus(accessToken);
+      if (!calendarStatus.linked) {
+        setConfirmModal({
+          isOpen: true,
+          title: "Liên kết Google Calendar",
+          message:
+            "Bạn chưa liên kết Google Calendar. Bạn có muốn liên kết để đồng bộ lịch hẹn vào Google Calendar không?",
+          confirmText: "Liên kết",
+          cancelText: "Bỏ qua",
+          confirmType: "primary",
+          onConfirm: () => {
+            closeConfirmModal();
+            sessionStorage.setItem("pendingBooking", JSON.stringify(booking));
+            const returnUrl = window.location.pathname + window.location.search;
+            getGoogleAuthUrl(accessToken, returnUrl).then((url) => {
+              window.location.href = url;
+            });
+          },
+          onCancel: () => {
+            closeConfirmModal();
+            handleSubmitWithCalendarSync(false);
+          },
+        });
+      } else {
+        await handleSubmitWithCalendarSync(true);
       }
-
-      showToast({
-        text: `Đặt lịch thành công! Thành tiền: ${finalPrice.toLocaleString()}đ`,
-        type: "success",
-      });
-
-      setTimeout(() => window.location.reload(), 2500);
-    } catch (err) {
-      console.error(err);
-      showToast({ text: err.message || "Không thể kết nối server!", type: "error" });
+    } catch (error) {
+      console.error("Lỗi kiểm tra calendar:", error);
+      showToast({ text: "Có lỗi xảy ra, vui lòng thử lại sau", type: "error" });
     } finally {
-      setIsLoading(false);
+      setIsCheckingCalendar(false);
     }
   };
-
   // ─── Tính giá ─────────────────────────────────────────────────────────────
-  const totalPrice = booking.services.reduce((sum, s) => sum + Number(s.price), 0);
+  const totalPrice = booking.services.reduce(
+    (sum, s) => sum + Number(s.price),
+    0,
+  );
   const discountAmount = (totalPrice * booking.discount) / 100;
   const finalPrice = totalPrice - discountAmount;
   const bookedTimes = booking.date ? bookedTimesByDate[booking.date] || [] : [];
@@ -327,7 +477,10 @@ function BookingPage() {
     if (b.suspendDate && !b.resumeDate) {
       const sd = new Date(b.suspendDate);
       if (sd > now)
-        return { type: "warn", label: `Ngưng ${sd.toLocaleDateString("vi-VN")}` };
+        return {
+          type: "warn",
+          label: `Ngưng ${sd.toLocaleDateString("vi-VN")}`,
+        };
     }
     if (b.resumeDate) {
       const rd = new Date(b.resumeDate);
@@ -353,7 +506,9 @@ function BookingPage() {
           ══════════════════════════════════════════ */}
           <div className={styles.branchFinder}>
             <div className={styles.branchFinderHeader}>
-              <span className={styles.branchFinderTitle}>Chi nhánh gần bạn</span>
+              <span className={styles.branchFinderTitle}>
+                Chi nhánh gần bạn
+              </span>
               <button
                 type="button"
                 className={`${styles.locationBtn} ${
@@ -392,62 +547,75 @@ function BookingPage() {
             {branches.length > 0 && (
               <div className={styles.branchCardList}>
                 {/* Thay thế đoạn .map cũ bằng đoạn này */}
-{branches.map((b, idx) => {
-  const isNearest = hasLocation && b.distanceM != null && idx === 0;
-  const isSelected = booking.branchId === b.idBranch;
-  const status = getBranchStatus(b);
+                {branches.map((b, idx) => {
+                  const isNearest =
+                    hasLocation && b.distanceM != null && idx === 0;
+                  const isSelected = booking.branchId === b.idBranch;
+                  const status = getBranchStatus(b);
 
-  return (
-    <div
-      key={b.idBranch}
-      className={`${styles.branchCard} 
+                  return (
+                    <div
+                      key={b.idBranch}
+                      className={`${styles.branchCard} 
         ${isSelected ? styles.branchCardSelected : ""} 
         ${isNearest ? styles.branchCardNearest : ""}`}
-      onClick={() => handleBranchCardClick(b.idBranch)}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => e.key === "Enter" && handleBranchCardClick(b.idBranch)}
-    >
-      {/* 1. Phần Badge */}
-      {isNearest && <span className={styles.nearestBadge}>Gần nhất</span>}
-      {isSelected && <span className={styles.selectedBadge}>✓ Đã chọn</span>}
+                      onClick={() => handleBranchCardClick(b.idBranch)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) =>
+                        e.key === "Enter" && handleBranchCardClick(b.idBranch)
+                      }
+                    >
+                      {/* 1. Phần Badge */}
+                      {isNearest && (
+                        <span className={styles.nearestBadge}>Gần nhất</span>
+                      )}
+                      {isSelected && (
+                        <span className={styles.selectedBadge}>✓ Đã chọn</span>
+                      )}
 
-      {/* 2. Nội dung chính */}
-      <div className={styles.branchCardName}>{b.name}</div>
-      
-      {b.address && (
-        <div className={styles.branchCardAddr}>
-          {/* Thêm icon ghim vị trí cho chuyên nghiệp */}
-          📍 {b.address}
-        </div>
-      )}
+                      {/* 2. Nội dung chính */}
+                      <div className={styles.branchCardName}>{b.name}</div>
 
-      {/* 3. Phần thông tin bổ trợ (Meta) */}
-      <div className={styles.branchCardMeta}>
-        {b.distanceText && (
-          <span className={styles.chipDist}>
-            📏 {b.distanceText}
-          </span>
-        )}
-        {b.durationText && (
-          <span className={styles.chipTime}>
-            🚗 {b.durationText}
-          </span>
-        )}
-        
-        {!b.distanceText && !locationLoading && (
-          <span className={styles.chipNoLoc}>— km</span>
-        )}
+                      {b.address && (
+                        <div className={styles.branchCardAddr}>
+                          {/* Thêm icon ghim vị trí cho chuyên nghiệp */}
+                          📍 {b.address}
+                        </div>
+                      )}
 
-        {status && (
-          <span className={status.type === "warn" ? styles.chipWarn : styles.chipPause}>
-            {status.label}
-          </span>
-        )}
-      </div>
-    </div>
-  );
-})}
+                      {/* 3. Phần thông tin bổ trợ (Meta) */}
+                      <div className={styles.branchCardMeta}>
+                        {b.distanceText && (
+                          <span className={styles.chipDist}>
+                            📏 {b.distanceText}
+                          </span>
+                        )}
+                        {b.durationText && (
+                          <span className={styles.chipTime}>
+                            🚗 {b.durationText}
+                          </span>
+                        )}
+
+                        {!b.distanceText && !locationLoading && (
+                          <span className={styles.chipNoLoc}>— km</span>
+                        )}
+
+                        {status && (
+                          <span
+                            className={
+                              status.type === "warn"
+                                ? styles.chipWarn
+                                : styles.chipPause
+                            }
+                          >
+                            {status.label}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -457,7 +625,10 @@ function BookingPage() {
             {/* Cơ sở */}
             <div className={styles.formGroup}>
               <label>Cơ sở đã chọn:</label>
-              <select value={booking.branchId || ""} onChange={handleBranchChange}>
+              <select
+                value={booking.branchId || ""}
+                onChange={handleBranchChange}
+              >
                 <option value="">-- Hoặc chọn từ danh sách --</option>
                 {branches.map((b) => {
                   const suspend = b.suspendDate
@@ -498,45 +669,52 @@ function BookingPage() {
 
             {/* Ngày */}
 
-<div className={styles.formGroup}>
-  <label>Ngày hẹn:</label>
-  <div className={styles.dateList}>
-    {[...Array(8)].map((_, i) => {
-      const d = new Date();
-      d.setDate(today.getDate() + i);
-      const value = d.toISOString().split("T")[0];
-      
-      // Lấy thứ (T2, T3...) hoặc hiển thị 'Hôm nay'
-      const dayLabel = i === 0 ? "Hôm nay" : d.toLocaleDateString("vi-VN", { weekday: "short" });
-      
-      // Lấy ngày và tháng
-      const dateNum = d.toLocaleDateString("vi-VN", { day: "2-digit" });
-      const monthNum = d.toLocaleDateString("vi-VN", { month: "2-digit" });
-      
-      const isUnavailable = unavailableDates.includes(value);
-      const isSelected = booking.date === value;
+            <div className={styles.formGroup}>
+              <label>Ngày hẹn:</label>
+              <div className={styles.dateList}>
+                {[...Array(8)].map((_, i) => {
+                  const d = new Date();
+                  d.setDate(today.getDate() + i);
+                  const value = d.toISOString().split("T")[0];
 
-      return (
-        <div
-          key={i}
-          className={`${styles.dateCard} 
+                  // Lấy thứ (T2, T3...) hoặc hiển thị 'Hôm nay'
+                  const dayLabel =
+                    i === 0
+                      ? "Hôm nay"
+                      : d.toLocaleDateString("vi-VN", { weekday: "short" });
+
+                  // Lấy ngày và tháng
+                  const dateNum = d.toLocaleDateString("vi-VN", {
+                    day: "2-digit",
+                  });
+                  const monthNum = d.toLocaleDateString("vi-VN", {
+                    month: "2-digit",
+                  });
+
+                  const isUnavailable = unavailableDates.includes(value);
+                  const isSelected = booking.date === value;
+
+                  return (
+                    <div
+                      key={i}
+                      className={`${styles.dateCard} 
             ${isSelected ? styles.dateCardSelected : ""} 
             ${isUnavailable ? styles.dateCardDisabled : ""}`}
-          onClick={() => {
-            if (!isUnavailable) {
-              // Gọi lại hàm handleDateChange với định dạng event giả lập
-              handleDateChange({ target: { value } });
-            }
-          }}
-        >
-          <span className={styles.dateDay}>{dayLabel}</span>
-          <span className={styles.dateNumber}>{dateNum}</span>
-          <span className={styles.dateMonth}>Tháng {monthNum}</span>
-        </div>
-      );
-    })}
-  </div>
-</div>
+                      onClick={() => {
+                        if (!isUnavailable) {
+                          // Gọi lại hàm handleDateChange với định dạng event giả lập
+                          handleDateChange({ target: { value } });
+                        }
+                      }}
+                    >
+                      <span className={styles.dateDay}>{dayLabel}</span>
+                      <span className={styles.dateNumber}>{dateNum}</span>
+                      <span className={styles.dateMonth}>Tháng {monthNum}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
 
             {/* Thời gian */}
             <div className={styles.formGroup}>
@@ -615,7 +793,8 @@ function BookingPage() {
               {booking.voucher && (
                 <div className={styles.appliedVoucher}>
                   <p>
-                    <strong>Voucher đang áp dụng:</strong> {booking.voucher.title}
+                    <strong>Voucher đang áp dụng:</strong>{" "}
+                    {booking.voucher.title}
                   </p>
                   <p>Giảm: {booking.voucher.discount}%</p>
                   <p>Điểm cần: {booking.voucher.pointCost}</p>
@@ -626,14 +805,30 @@ function BookingPage() {
               </button>
             </div>
 
-            <button type="submit" className={styles.submitBtn}>
-              Xác nhận đặt lịch
+            <button
+              type="submit"
+              className={styles.submitBtn}
+              disabled={isLoading || isCheckingCalendar}
+            >
+              {isLoading
+                ? "Đang xử lý..."
+                : isCheckingCalendar
+                  ? "Đang kiểm tra..."
+                  : "Xác nhận đặt lịch"}
             </button>
           </form>
         </div>
 
-        <img src="/keo.png" alt="Left Scissors" className={styles.scissorsLeft} />
-        <img src="/keo.png" alt="Right Scissors" className={styles.scissorsRight} />
+        <img
+          src="/keo.png"
+          alt="Left Scissors"
+          className={styles.scissorsLeft}
+        />
+        <img
+          src="/keo.png"
+          alt="Right Scissors"
+          className={styles.scissorsRight}
+        />
 
         {showVoucherList && (
           <VoucherPopup
@@ -649,6 +844,16 @@ function BookingPage() {
           <div className={styles.loader}></div>
         </div>
       )}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText={confirmModal.confirmText}
+        cancelText={confirmModal.cancelText}
+        confirmType={confirmModal.confirmType}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={confirmModal.onCancel}
+      />
     </DefaultLayout>
   );
 }

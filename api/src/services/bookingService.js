@@ -3,13 +3,22 @@ import { Op, Sequelize } from "sequelize";
 import moment from "moment";
 import { sendBookingEmail } from "./mailService.js";
 import { createNotification } from "./notificationService.js";
+import { addBookingEventToCalendar } from "./googleCalendarService.js";
 
 // Lấy tất cả chi nhánh
 export const getBranches = async (req, res) => {
   try {
     const branches = await db.Branch.findAll({
       where: { status: "Active" },
-      attributes: ["idBranch", "name", "address", "openTime", "closeTime", "status", "slotDuration"],
+      attributes: [
+        "idBranch",
+        "name",
+        "address",
+        "openTime",
+        "closeTime",
+        "status",
+        "slotDuration",
+      ],
     });
     res.json(branches);
   } catch (error) {
@@ -20,14 +29,29 @@ export const getBranches = async (req, res) => {
 // Lấy chi tiết chi nhánh (barbers + services)
 export const getBranchDetail = async (branchId) => {
   const branch = await db.Branch.findByPk(branchId, {
-    attributes: ["idBranch", "name", "address", "openTime", "closeTime", "status", "slotDuration"],
+    attributes: [
+      "idBranch",
+      "name",
+      "address",
+      "openTime",
+      "closeTime",
+      "status",
+      "slotDuration",
+    ],
     include: [
       {
         model: db.ServiceAssignment,
         include: [
           {
             model: db.Service,
-            attributes: ["idService", "name", "description", "price", "duration", "status"],
+            attributes: [
+              "idService",
+              "name",
+              "description",
+              "price",
+              "duration",
+              "status",
+            ],
           },
           {
             model: db.Barber,
@@ -53,7 +77,10 @@ export const getBranchDetail = async (branchId) => {
 
   branch.ServiceAssignments.forEach((assign) => {
     // Chuẩn hóa dữ liệu barber
-    if (assign.Barber && !barbers.find((b) => b.idBarber === assign.Barber.idBarber)) {
+    if (
+      assign.Barber &&
+      !barbers.find((b) => b.idBarber === assign.Barber.idBarber)
+    ) {
       barbers.push({
         idBarber: assign.Barber.idBarber,
         name: assign.Barber.user?.fullName || "N/A",
@@ -62,7 +89,10 @@ export const getBranchDetail = async (branchId) => {
     }
 
     // Chuẩn hóa dữ liệu service
-    if (assign.Service && !services.find((s) => s.idService === assign.Service.idService)) {
+    if (
+      assign.Service &&
+      !services.find((s) => s.idService === assign.Service.idService)
+    ) {
       services.push({
         idService: assign.Service.idService,
         name: assign.Service.name,
@@ -101,6 +131,7 @@ export const createBookingService = async ({
   services,
   description,
   idCustomerVoucher,
+  syncToCalendar = false,
 }) => {
   // Lấy thông tin chi nhánh
   const branch = await db.Branch.findByPk(idBranch, {
@@ -126,18 +157,22 @@ export const createBookingService = async ({
   const isSuspendedNow =
     suspendDate &&
     bookingDay >= new Date(suspendDate).toISOString().split("T")[0] &&
-    (!resumeDate || bookingDay < new Date(resumeDate).toISOString().split("T")[0]);
+    (!resumeDate ||
+      bookingDay < new Date(resumeDate).toISOString().split("T")[0]);
 
   if (isSuspendedNow) {
     throw new Error(
-      `Chi nhánh tạm ngưng từ ${formatDDMMYYYY(suspendDate)} đến ${resumeDate ? formatDDMMYYYY(resumeDate) : "chưa xác định"} — không thể đặt vào thời gian này.`
+      `Chi nhánh tạm ngưng từ ${formatDDMMYYYY(suspendDate)} đến ${resumeDate ? formatDDMMYYYY(resumeDate) : "chưa xác định"} — không thể đặt vào thời gian này.`,
     );
   }
 
   // Nếu đặt trước ngày hoạt động trở lại
-  if (resumeDate && bookingDay < new Date(resumeDate).toISOString().split("T")[0]) {
+  if (
+    resumeDate &&
+    bookingDay < new Date(resumeDate).toISOString().split("T")[0]
+  ) {
     throw new Error(
-      `Chi nhánh sẽ hoạt động lại từ ${formatDDMMYYYY(resumeDate)} — vui lòng chọn ngày sau thời điểm này.`
+      `Chi nhánh sẽ hoạt động lại từ ${formatDDMMYYYY(resumeDate)} — vui lòng chọn ngày sau thời điểm này.`,
     );
   }
 
@@ -149,7 +184,10 @@ export const createBookingService = async ({
   });
 
   // Tính tổng giá
-  const total = services.reduce((sum, s) => sum + s.price * (s.quantity || 1), 0);
+  const total = services.reduce(
+    (sum, s) => sum + s.price * (s.quantity || 1),
+    0,
+  );
 
   // Tạo booking
   const booking = await db.Booking.create({
@@ -181,13 +219,15 @@ export const createBookingService = async ({
   if (idCustomerVoucher) {
     await db.CustomerVoucher.update(
       { status: "used", usedAt: new Date() },
-      { where: { id: idCustomerVoucher } }
+      { where: { id: idCustomerVoucher } },
     );
   }
 
   // Lấy email khách
   const customer = await db.Customer.findByPk(idCustomer, {
-    include: [{ model: db.User, as: "user", attributes: ["email", "fullName"] }],
+    include: [
+      { model: db.User, as: "user", attributes: ["email", "fullName"] },
+    ],
   });
 
   // Gửi mail xác nhận
@@ -202,25 +242,24 @@ export const createBookingService = async ({
       total,
     });
   }
-  const serviceIds = services.map(s => s.idService);
+  const serviceIds = services.map((s) => s.idService);
   const realServices = await db.Service.findAll({
     where: {
-      idService: { [Op.in]: serviceIds }
+      idService: { [Op.in]: serviceIds },
     },
-    attributes: ["idService", "name"]
+    attributes: ["idService", "name"],
   });
 
   // Map idService → name
   const serviceNameMap = {};
-  realServices.forEach(s => {
+  realServices.forEach((s) => {
     serviceNameMap[s.idService] = s.name;
   });
 
   // Tạo danh sách tên dịch vụ đẹp
   const serviceNames = services
-    .map(s => serviceNameMap[s.idService] || "Dịch vụ không xác định")
+    .map((s) => serviceNameMap[s.idService] || "Dịch vụ không xác định")
     .join(", ");
-
 
   const formattedDate = moment(bookingDate).format("DD/MM/YYYY");
 
@@ -242,6 +281,39 @@ Cảm ơn bạn đã tin tưởng Barbershop!`;
     targetRole: "customer",
     targetId: idCustomer,
   });
+
+  if (syncToCalendar) {
+    try {
+      // Lấy thông tin khách hàng
+      const customerData = await db.Customer.findByPk(idCustomer, {
+        include: [
+          {
+            model: db.User,
+            as: "user",
+            attributes: ["email", "fullName", "phoneNumber"],
+          },
+        ],
+      });
+      if (customerData?.user) {
+        // Gọi hàm calendar với đầy đủ tham số
+        await addBookingEventToCalendar(idCustomer, {
+          customerName: customerData.user.fullName,
+          customerPhone: customerData.user.phoneNumber,
+          customerEmail: customerData.user.email,
+          services: services.map((s) => ({ idService: s.idService })),
+          barberId: idBarber, // thêm barberId
+          barberName: barber?.user?.fullName || "Chưa xác định",
+          bookingDate,
+          bookingTime,
+          branchId: idBranch, // thêm branchId
+          description: description || "",
+        });
+      }
+    } catch (calendarErr) {
+      console.error("Lỗi đồng bộ Google Calendar:", calendarErr);
+      // Không throw lỗi để đặt lịch vẫn thành công
+    }
+  }
   return booking;
 };
 // Lấy danh sách booking theo id thợ và khoảng ngày
@@ -253,14 +325,14 @@ export const getBarberBookings = async (barberId, startDate, endDate) => {
         Sequelize.where(
           Sequelize.fn("DATE", Sequelize.col("bookingDate")),
           ">=",
-          startDate
+          startDate,
         ),
         Sequelize.where(
           Sequelize.fn("DATE", Sequelize.col("bookingDate")),
           "<=",
-          endDate
-        )
-      ]
+          endDate,
+        ),
+      ],
     },
     include: [
       {
@@ -294,8 +366,12 @@ export const getBarberBookings = async (barberId, startDate, endDate) => {
   });
 };
 
-
-export const completeBooking = async (idBooking, idBarber, uploadedImages, description) => {
+export const completeBooking = async (
+  idBooking,
+  idBarber,
+  uploadedImages,
+  description,
+) => {
   const booking = await db.Booking.findByPk(idBooking);
   if (!booking) throw new Error("Không tìm thấy lịch hẹn");
 
@@ -322,7 +398,11 @@ export const completeBooking = async (idBooking, idBarber, uploadedImages, descr
   };
 };
 
-export const getBookedSlotsByBarber = async (idBranch, idBarber, bookingDate) => {
+export const getBookedSlotsByBarber = async (
+  idBranch,
+  idBarber,
+  bookingDate,
+) => {
   try {
     const normalizedDate = moment(bookingDate).format("YYYY-MM-DD");
 
@@ -375,7 +455,12 @@ export const getBookedSlotsByBarber = async (idBranch, idBarber, bookingDate) =>
     const bookings = await db.Booking.findAll({
       where: {
         idBarber,
-        [Op.and]: [Sequelize.where(Sequelize.fn("DATE", Sequelize.col("bookingDate")), normalizedDate)],
+        [Op.and]: [
+          Sequelize.where(
+            Sequelize.fn("DATE", Sequelize.col("bookingDate")),
+            normalizedDate,
+          ),
+        ],
         status: { [Op.not]: "Cancelled" },
       },
       attributes: ["bookingTime"],
@@ -401,7 +486,7 @@ export const getBookedSlotsByBarber = async (idBranch, idBarber, bookingDate) =>
 export const getBarberBookingsNext7Days = async (idBarber) => {
   // 1. Check trạng thái tài khoản thợ
   const barber = await db.Barber.findByPk(idBarber, {
-    attributes: ["idBarber", "isLocked"], 
+    attributes: ["idBarber", "isLocked"],
   });
 
   if (!barber) {
@@ -420,10 +505,10 @@ export const getBarberBookingsNext7Days = async (idBarber) => {
 
   // 4. Lấy lịch
   const bookings = await db.Booking.findAll({
-    where: { 
+    where: {
       idBarber,
       bookingDate: { [Op.between]: [today, next7Days] },
-      status: { [Op.in]: ["Pending", "Confirmed", "InProgress"] } 
+      status: { [Op.in]: ["Pending", "Confirmed", "InProgress"] },
     },
     attributes: ["idBooking", "bookingDate", "bookingTime", "status"],
     order: [

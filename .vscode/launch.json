@@ -1,56 +1,15 @@
 {
-    "version": "0.2.0",
-    "configurations": [
-        
-        
+  "version": "0.2.0",
+  "configurations": [
     {
-        "name": "Debug: NPM Start (Production Mode)",
-        "type": "node",
-        "request": "launch",
-        "runtimeExecutable": "npm",
-        "runtimeArgs": [
-            "run-script", 
-            "start" 
-        ],
-        "console": "integratedTerminal",
-        "skipFiles": [
-            "<node_internals>/**"
-        ]
-    },
-    {
-        "name": "Debug: Nodemon (Development)",
-        "type": "node",
-        "request": "launch",
-        "program": "${workspaceFolder}/src/server.js",
-        "runtimeExecutable": "npx",
-        "runtimeArgs": [
-            "nodemon",
-            "--exec",
-            "node",
-            "--inspect=9229"
-        ],
-        "console": "integratedTerminal",
-        "skipFiles": [
-            "<node_internals>/**"
-        ]
-    },
-    {
-        "name": "Attach: Pick Process (Chọn tiến trình)",
-        "type": "node",
-        "request": "attach",
-        "processId": "${command:PickProcess}", // 💡 Sửa đổi chính để chọn process
-        "skipFiles": [
-            "<node_internals>/**"
-        ]
-    },
-    {
-        "name": "Attach: Manual (Đính kèm thủ công)",
-        "port": 9229,
-        "request": "attach",
-        "skipFiles": [
-            "<node_internals>/**"
-        ],
-        "type": "node"
+      "name": "Debug Server (node trực tiếp)",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/api/src/server.js",
+      "runtimeArgs": ["--env-file=${workspaceFolder}/api/.env"],
+      "console": "integratedTerminal",
+      "outputCapture": "std",
+      "skipFiles": ["<node_internals>/**"]
     }
-    ]
+  ]
 }
