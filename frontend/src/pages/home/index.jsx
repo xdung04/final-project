@@ -15,8 +15,7 @@ import LiveChat from "../../components/LiveChat";
 import { fetchReelsPaged } from "~/services/reelService"; // ← thêm import
 import { useNavigate } from "react-router-dom"; // ← thêm import
 
-const DEFAULT_BANNER =
-  "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=1600&q=80";
+const DEFAULT_BANNER = "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=1600&q=80";
 
 const Home = () => {
   const { isLogin, user, accessToken } = useAuth();
@@ -138,9 +137,11 @@ const Home = () => {
     }
   };
 
-  // Click vào reel → vào trang /reels với keyword rỗng
+  // Click vào reel → vào trang /reels với idReeel
   const handleReelClick = (reel) => {
-    navigate("/reels");
+    navigate("/reels", {
+      state: { openReelId: reel.idReel },
+    });
   };
 
   return (
@@ -151,10 +152,7 @@ const Home = () => {
 
       {/* ── HERO ── */}
       <header className={styles.hero}>
-        <div
-          className={styles.heroBg}
-          style={{ backgroundImage: `url(${DEFAULT_BANNER})` }}
-        ></div>
+        <div className={styles.heroBg} style={{ backgroundImage: `url(${DEFAULT_BANNER})` }}></div>
         <div className={styles.heroLines}></div>
 
         <div className={styles.heroTag}>NOBLE CUT EXPERIENCE</div>
@@ -163,18 +161,12 @@ const Home = () => {
         </h1>
 
         <div className={styles.heroBottom}>
-          <p className={styles.heroDesc}>
-            Chăm sóc tóc cho quý ông – Đẳng cấp và sự tinh tế trong từng chi
-            tiết.
-          </p>
+          <p className={styles.heroDesc}>Chăm sóc tóc cho quý ông – Đẳng cấp và sự tinh tế trong từng chi tiết.</p>
           <div className={styles.heroActions}>
             <button className={styles.btnPrimary} onClick={handleBookingClick}>
               <span>Đặt lịch ngay</span>
             </button>
-            <button
-              className={styles.btnOutline}
-              onClick={() => setChatOpen(true)}
-            >
+            <button className={styles.btnOutline} onClick={() => setChatOpen(true)}>
               <span>Tư vấn AI</span>
             </button>
           </div>
@@ -265,13 +257,10 @@ const Home = () => {
             Tìm kiểu tóc <em>Hoàn hảo</em>
           </h2>
           <p className={styles.aiDesc}>
-            Bạn chưa chắc chắn kiểu tóc nào phù hợp? Hãy quét khuôn mặt bằng AI
-            để tìm ra phong cách sinh ra dành riêng cho bạn.
+            Bạn chưa chắc chắn kiểu tóc nào phù hợp? Hãy quét khuôn mặt bằng AI để tìm ra phong cách sinh ra dành riêng
+            cho bạn.
           </p>
-          <button
-            className={styles.aiScanBtn}
-            onClick={() => (window.location.href = "/hair-consult")}
-          >
+          <button className={styles.aiScanBtn} onClick={() => (window.location.href = "/hair-consult")}>
             <div className={styles.aiBtnInner}>
               <div className={styles.aiBtnIcon}>
                 <div className={styles.scanRing}></div>
@@ -326,9 +315,7 @@ const Home = () => {
                 <span className={styles.barberExp}>{barber.branch}</span>
                 <div className={styles.barberStats}>
                   <span className={styles.barberBadge}>⭐ {barber.rating}</span>
-                  <span className={styles.barberBadge}>
-                    {barber.totalBookings} lượt đặt
-                  </span>
+                  <span className={styles.barberBadge}>{barber.totalBookings} lượt đặt</span>
                 </div>
               </div>
             </div>
@@ -473,18 +460,14 @@ const Home = () => {
               </div>
             ))
           ) : (
-            <p style={{ color: "var(--text-dim)" }}>
-              Chưa có thông tin chi nhánh.
-            </p>
+            <p style={{ color: "var(--text-dim)" }}>Chưa có thông tin chi nhánh.</p>
           )}
         </div>
       </section>
 
       {/* ── CHATBOT ── */}
       <div className={styles.chatbotBubble}>
-        <div
-          className={`${styles.chatbotPopup} ${chatOpen ? styles.open : ""}`}
-        >
+        <div className={`${styles.chatbotPopup} ${chatOpen ? styles.open : ""}`}>
           {chatOpen && chatType === "ai" && (
             <AIChat
               onSwitchToLive={() => {
@@ -494,9 +477,7 @@ const Home = () => {
             />
           )}
 
-          {chatOpen && chatType === "live" && (
-            <LiveChat customerId={user?.idUser} token={accessToken} />
-          )}
+          {chatOpen && chatType === "live" && <LiveChat customerId={user?.idUser} token={accessToken} />}
         </div>
 
         <button

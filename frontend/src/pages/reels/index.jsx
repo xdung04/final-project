@@ -41,6 +41,8 @@ function Reel() {
   const touchStartY = useRef(0);
   const isFetchingRef = useRef(false);
 
+  const [pendingOpenId, setPendingOpenId] = useState(null);
+
   const loadMore = async () => {
     if (loading || !hasMore || isFetchingRef.current) return;
     isFetchingRef.current = true;
@@ -50,9 +52,7 @@ function Reel() {
       if (data.length === 0) setHasMore(false);
       else {
         setReels((prev) => {
-          const newOnes = data.filter(
-            (d) => !prev.some((p) => p.idReel === d.idReel)
-          );
+          const newOnes = data.filter((d) => !prev.some((p) => p.idReel === d.idReel));
           return [...prev, ...newOnes];
         });
         setPage((prev) => prev + 1);
@@ -68,6 +68,8 @@ function Reel() {
 
   useEffect(() => {
     const tag = location.state?.keyword;
+    const openId = location.state?.openReelId;
+
     if (tag) {
       setKeyword(tag);
       performSearch(tag);
@@ -77,11 +79,29 @@ function Reel() {
       setKeyword("");
     }
 
+    // Nếu có openReelId → đợi reels load xong rồi mở đúng video
+    if (openId) {
+      setPendingOpenId(openId);
+    }
+
     window.scrollTo({ top: 0 });
     if (rightColumnRef.current) {
       rightColumnRef.current.scrollTop = 0;
     }
   }, [location.state]);
+
+  // Khi reels đã load và có pendingOpenId → tìm index và mở dialog
+  useEffect(() => {
+    if (!pendingOpenId || reels.length === 0) return;
+
+    const idx = reels.findIndex((r) => r.idReel === pendingOpenId);
+    if (idx !== -1) {
+      setCurrentIndex(idx);
+      setDetailIndex(idx);
+      setShowDetail(true);
+      setPendingOpenId(null);
+    }
+  }, [reels, pendingOpenId]);
 
   useEffect(() => {
     getTopHashtags()
@@ -129,15 +149,9 @@ function Reel() {
       });
       return;
     }
-    setReels((prev) =>
-      prev.map((r) =>
-        r.idReel === idReel ? { ...r, isLiked: liked, likesCount: count } : r
-      )
-    );
+    setReels((prev) => prev.map((r) => (r.idReel === idReel ? { ...r, isLiked: liked, likesCount: count } : r)));
     setSearchResults((prev) =>
-      prev.map((r) =>
-        r.idReel === idReel ? { ...r, isLiked: liked, likesCount: count } : r
-      )
+      prev.map((r) => (r.idReel === idReel ? { ...r, isLiked: liked, likesCount: count } : r)),
     );
   };
 
@@ -354,16 +368,11 @@ function Reel() {
       </div>
 
       {/* CỘT PHẢI - VIDEO REELS HOẶC GRID TIKTOK */}
-      <div
-        className={`${styles.rightColumn} ${isSearching ? styles.searchingMode : ""}`}
-        ref={rightColumnRef}
-      >
+      <div className={`${styles.rightColumn} ${isSearching ? styles.searchingMode : ""}`} ref={rightColumnRef}>
         <div className={styles.rightContentInner}>
           {isSearching ? (
             <>
-              {searchLoading && (
-                <p className={styles.loadingText}>ĐANG TÌM KIẾM...</p>
-              )}
+              {searchLoading && <p className={styles.loadingText}>ĐANG TÌM KIẾM...</p>}
 
               {!searchLoading && searchResults.length > 0 ? (
                 <div className={styles.gridContainer}>
@@ -372,11 +381,7 @@ function Reel() {
                       <VideoCard
                         reel={reel}
                         onToggleLike={() =>
-                          handleLike(
-                            reel.idReel,
-                            !reel.isLiked,
-                            reel.likesCount + (reel.isLiked ? -1 : 1)
-                          )
+                          handleLike(reel.idReel, !reel.isLiked, reel.likesCount + (reel.isLiked ? -1 : 1))
                         }
                         onOpenDetail={() => {
                           if (!isLogin) {
@@ -394,9 +399,7 @@ function Reel() {
                   ))}
                 </div>
               ) : (
-                !searchLoading && (
-                  <p className={styles.noResult}>Không tìm thấy kết quả phù hợp.</p>
-                )
+                !searchLoading && <p className={styles.noResult}>Không tìm thấy kết quả phù hợp.</p>
               )}
             </>
           ) : (
@@ -417,13 +420,7 @@ function Reel() {
                     isActive={i === currentIndex && !showDetail}
                     globalMuted={globalMuted}
                     onToggleGlobalMuted={() => setGlobalMuted((prev) => !prev)}
-                    onLike={() =>
-                      handleLike(
-                        reel.idReel,
-                        !reel.isLiked,
-                        reel.likesCount + (reel.isLiked ? -1 : 1)
-                      )
-                    }
+                    onLike={() => handleLike(reel.idReel, !reel.isLiked, reel.likesCount + (reel.isLiked ? -1 : 1))}
                     onComment={() => handleCommentClick(i)}
                     onNavUp={handlePrev}
                     onNavDown={handleNext}
