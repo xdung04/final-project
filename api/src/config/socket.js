@@ -71,18 +71,23 @@ const initSocket = (server) => {
         `👉 [CHAT] ${socket.id} joined conversation: ${conversationId}`,
       );
     });
+    socket.on("leave_conversation", ({ conversationId }) => {
+      if (!conversationId) return;
+      socket.leave(conversationId);
+      console.log(
+        `👋 [CHAT] ${socket.id} left conversation: ${conversationId}`,
+      );
+    });
 
     socket.on("send_message", async (msg) => {
       try {
         if (!msg?.conversationId) return;
 
-        // Lấy conversation trước khi lưu để biết trạng thái cũ
         const convBefore = await chatLiveService.getConversationById(
           msg.conversationId,
         );
         const wasClosed = convBefore?.status === "closed";
 
-        // Lưu tin nhắn (hàm saveMessage tự động reopen nếu cần)
         const savedMessage = await chatLiveService.saveMessage({
           conversationId: msg.conversationId,
           senderType: msg.senderType,
@@ -100,12 +105,21 @@ const initSocket = (server) => {
           clientId: msg.clientId,
         };
 
-        // Emit tin nhắn realtime
+        // Emit vào room như cũ
         io.to(msg.conversationId).emit("receive_message", payload);
 
-        // Nếu conversation vừa được reopen (từ closed) và sender là customer
+        // 🔥 Emit global để tất cả receptionist update sidebar
+        // Chỉ emit khi là tin nhắn thật (không phải system)
+        if (msg.senderType == "customer") {
+          io.emit("conversation_new_message", {
+            conversationId: msg.conversationId,
+            lastMessage: msg.content || "",
+            senderType: msg.senderType,
+            clientId: msg.clientId,
+          });
+        }
+
         if (wasClosed && msg.senderType === "customer") {
-          // Thông báo cập nhật danh sách cho tất cả receptionist
           io.emit("conversation_updated");
         }
       } catch (error) {

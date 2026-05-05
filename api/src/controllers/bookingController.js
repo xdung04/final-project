@@ -78,10 +78,13 @@ export const createBooking = async (req, res) => {
       });
     }
 
+    const { syncToCalendar = false } = req.body;
+
     // 3. Sử dụng idCustomer thực sự để tạo booking
     const booking = await bookingService.createBookingService({
       ...req.body,
-      idCustomer: customer.idCustomer, // Dùng ID của bảng customers, không phải ID bảng users
+      idCustomer: customer.idCustomer,
+      syncToCalendar, // Dùng ID của bảng customers, không phải ID bảng users
     });
 
     return res.status(201).json({
@@ -234,7 +237,7 @@ export const cancelBooking = async (req, res) => {
     res.status(500).json({ message: "Lỗi khi hủy lịch", error: error.message });
   }
 };
-// ✅ CHECK-IN BOOKING
+
 export const checkInBooking = async (req, res) => {
   try {
     const { idBooking } = req.params;

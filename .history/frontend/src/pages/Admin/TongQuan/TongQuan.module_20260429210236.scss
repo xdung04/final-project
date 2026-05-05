@@ -1,0 +1,452 @@
+/* ================== WRAPPER ================== */
+.dashboardWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  animation: fadeInPage 0.3s ease forwards;
+  padding-bottom: 24px;
+}
+
+@keyframes fadeInPage {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ================== HEADER SECTION ================== */
+.welcomeSection {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 8px;
+
+  .welcomeText h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 32px;
+    font-weight: 900;
+    color: var(--text-primary);
+    margin: 0 0 8px 0;
+  }
+  
+  .welcomeText p {
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin: 0;
+  }
+
+  .dateFilter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-surface);
+    padding: 10px 20px;
+    border: 2px solid var(--black);
+    border-radius: 0; /* KHÔNG BO GÓC */
+    color: var(--black);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    transition: all 0.15s ease;
+    cursor: pointer;
+
+    &:hover {
+      background: var(--gold-main);
+      box-shadow: 4px 4px 0 var(--black); /* HARD SHADOW */
+    }
+  }
+}
+
+/* ================== STATS GRID ================== */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 24px;
+}
+
+.statCard {
+  background: var(--bg-surface);
+  border: 1.5px solid var(--border-sharp);
+  border-top: 3px solid var(--black); /* ACCENT BAR */
+  border-radius: 0; /* KHÔNG BO GÓC */
+  padding: 24px;
+  position: relative;
+  transition: all 0.15s ease;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 4px 4px 0 var(--black); /* HARD SHADOW */
+    border-color: var(--black);
+  }
+
+  .cardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+  }
+
+  .iconBox {
+    background: var(--gold-light);
+    color: var(--gold-dark);
+    width: 48px; 
+    height: 48px;
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    border-radius: 0; /* VUÔNG VỨC */
+    border: 1.5px solid var(--gold-main);
+  }
+
+  .trendBadge {
+    display: flex; 
+    align-items: center; 
+    gap: 4px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 14px; 
+    letter-spacing: 2px;
+    padding: 4px 8px; 
+    border-radius: 0; /* KHÔNG BO GÓC */
+    border: 1.5px solid var(--border-sharp);
+    background: var(--bg-surface);
+    
+    &.positive { 
+      color: var(--black); 
+      border-color: var(--black);
+    }
+    &.negative { 
+      color: var(--text-muted); 
+    }
+  }
+
+  .cardBody {
+    .cardTitle {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 14px; 
+      color: var(--text-muted); 
+      text-transform: uppercase;
+      letter-spacing: 3px; 
+      margin: 0 0 8px 0;
+    }
+    .cardValue {
+      font-family: 'Playfair Display', serif; 
+      font-weight: 900;
+      font-size: 32px; 
+      color: var(--text-primary); 
+      margin: 0;
+    }
+  }
+}
+
+/* ================== SECTION HEADERS ================== */
+.sectionHeader {
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center;
+  margin-bottom: 24px;
+
+  .titleBox {
+    display: flex; 
+    align-items: center; 
+    gap: 12px;
+    
+    h3 { 
+      font-family: 'Playfair Display', serif; 
+      font-weight: 900;
+      font-size: 24px; 
+      color: var(--text-primary); 
+      margin: 0; 
+    }
+  }
+  
+  .sectionIcon {
+    color: var(--black);
+    font-size: 20px;
+    &.gold { color: var(--gold-main); }
+  }
+  
+  .actionBtn {
+    background: transparent; 
+    border: none; 
+    color: var(--gold-dark);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 14px; 
+    letter-spacing: 2px;
+    cursor: pointer; 
+    transition: all 0.15s ease;
+    
+    &:hover { 
+      color: var(--black); 
+      text-decoration: underline;
+    }
+  }
+}
+
+/* ================== CHARTS GRID ================== */
+.chartsGrid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+}
+
+.chartCard {
+  background: var(--bg-surface);
+  border: 1.5px solid var(--border-sharp);
+  border-top: 3px solid var(--black);
+  border-radius: 0;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.15s ease;
+
+  &:hover {
+    box-shadow: 4px 4px 0 var(--black);
+  }
+}
+
+.chartWrapper {
+  flex: 1;
+  min-height: 300px;
+  width: 100%;
+}
+
+.customTooltip {
+  background: var(--bg-surface);
+  border: 2px solid var(--black);
+  border-radius: 0;
+  padding: 12px 16px;
+  box-shadow: 4px 4px 0 var(--black); /* HARD SHADOW */
+
+  .tooltipLabel {
+    font-family: 'Bebas Neue', sans-serif;
+    color: var(--text-primary);
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+}
+
+/* ================== TABLES GRID ================== */
+.tablesGrid {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr;
+  gap: 24px;
+}
+
+@media (max-width: 1024px) {
+  .chartsGrid, .tablesGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tableCard {
+  background: var(--bg-surface);
+  border: 1.5px solid var(--border-sharp);
+  border-top: 3px solid var(--black);
+  border-radius: 0;
+  padding: 0; /* Bỏ padding để table tràn viền sắc nét */
+  transition: all 0.15s ease;
+
+  &:hover {
+    box-shadow: 4px 4px 0 var(--black);
+  }
+  
+  .sectionHeader {
+    padding: 24px 24px 0 24px;
+  }
+}
+
+/* ================== LUXURY TABLE (TOP CUSTOMERS) ================== */
+.tableWrapper { 
+  overflow-x: auto; 
+  padding: 0 24px 24px 24px;
+}
+
+.luxuryTable {
+  width: 100%; 
+  border-collapse: collapse; 
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  
+  th, td { 
+    padding: 16px 12px; 
+    border-bottom: 1.5px solid var(--border-sharp); 
+  }
+  
+  th { 
+    font-family: 'Bebas Neue', sans-serif;
+    text-transform: uppercase; 
+    font-size: 14px; 
+    letter-spacing: 3px; 
+    color: var(--text-muted); 
+    font-weight: 400; 
+    text-align: left; 
+  }
+  
+  tbody tr {
+    transition: all 0.15s ease;
+    &:hover { background: var(--bg-muted); }
+    &:last-child td { border-bottom: none; }
+  }
+  
+  .textCenter { text-align: center; }
+  .textRight { text-align: right; }
+  
+  .customerInfo { 
+    display: flex; 
+    align-items: center; 
+    gap: 12px; 
+  }
+  
+  .avatarInitials {
+    width: 36px; 
+    height: 36px; 
+    background: var(--black); /* KHÔNG GRADIENT */
+    color: var(--gold-main); 
+    border-radius: 0; /* AVATAR VUÔNG */
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 16px;
+    letter-spacing: 1px;
+  }
+  
+  .customerName { 
+    font-weight: 700; 
+    color: var(--text-primary); 
+  }
+  
+  .visitCount {
+    background: var(--bg-muted); 
+    padding: 4px 10px; 
+    border-radius: 0; /* KHÔNG BO GÓC */
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 2px;
+    color: var(--text-secondary); 
+    font-size: 12px;
+    border: 1px solid var(--border-sharp);
+  }
+  
+  .totalSpent { 
+    font-weight: 700; 
+    color: var(--gold-dark); 
+  }
+}
+
+/* ================== TOP BARBERS LIST ================== */
+.barberList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 24px 24px 24px;
+}
+
+.barberItem {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  border-radius: 0; /* KHÔNG BO GÓC */
+  background: var(--bg-surface);
+  border: 1.5px solid var(--border-sharp);
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: var(--bg-muted);
+    border-color: var(--black);
+    box-shadow: 4px 4px 0 var(--black); /* HARD SHADOW */
+    transform: translateX(4px);
+  }
+
+  .rankBadge {
+    width: 36px; 
+    height: 36px;
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    border-radius: 0; /* VUÔNG VỨC */
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 16px;
+    letter-spacing: 1px;
+    border: 1.5px solid var(--black);
+    
+    /* Xóa toàn bộ Gradient, áp dụng màu Solid */
+    &.rank1 { background: var(--gold-main); color: var(--black); }
+    &.rank2 { background: var(--bg-surface); color: var(--black); }
+    &.rank3 { background: var(--bg-muted); color: var(--text-secondary); border-color: var(--border-sharp); }
+  }
+
+  .barberInfo {
+    flex: 1;
+    .barberName { 
+      margin: 0 0 4px 0; 
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 700; 
+      color: var(--text-primary); 
+      font-size: 14px; 
+    }
+    .barberRole { 
+      font-size: 12px; 
+      color: var(--text-muted); 
+    }
+  }
+
+  .barberStats {
+    display: flex; 
+    flex-direction: column; 
+    align-items: flex-end; 
+    gap: 4px;
+    
+    .barberRevenue { 
+      font-weight: 700; 
+      color: var(--gold-dark); 
+      font-size: 14px; 
+    }
+    .barberRating { 
+      display: flex; 
+      align-items: center; 
+      gap: 4px; 
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 14px; 
+      letter-spacing: 1px;
+      color: var(--black); 
+    }
+  }
+}
+
+/* ================== UTILS ================== */
+.filterSelect {
+  border: 1.5px solid var(--border-sharp);
+  border-radius: 0;
+  padding: 6px 12px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  cursor: pointer;
+  outline: none;
+  transition: all 0.15s ease;
+
+  &:focus, &:hover { 
+    border-color: var(--black); 
+  }
+}
+
+.noData {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: 2px;
+  font-size: 14px;
+  text-transform: uppercase;
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
