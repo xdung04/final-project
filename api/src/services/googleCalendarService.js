@@ -23,6 +23,13 @@ export const getAuthUrl = (userId, returnUrl = '/') => {
   });
 };
 
+const isEmailAlreadyLinkedToOtherUser = async (email, currentUserId) => {
+  const existing = await UserGoogleCalendar.findOne({
+    where: { googleEmail: email, userId: { [db.Sequelize.Op.ne]: currentUserId } },
+  });
+  return existing !== null;
+};
+
 export const saveTokensFromCode = async (userId, code) => {
   const { tokens } = await baseOAuth2Client.getToken(code);
   const { access_token, refresh_token, expiry_date, id_token } = tokens;
@@ -58,6 +65,13 @@ export const saveTokensFromCode = async (userId, code) => {
     throw new Error("Không thể lấy email từ token Google. Vui lòng thử lại.");
   }
 
+  // ✅ Kiểm tra email đã được liên kết với user khác chưa
+  const isLinkedToOther = await isEmailAlreadyLinkedToOtherUser(googleEmail, userId);
+  if (isLinkedToOther) {
+    throw new Error("Tài khoản Google này đã được liên kết với một người dùng khác. Vui lòng sử dụng tài khoản Google khác.");
+  }
+
+  // Upsert cho user hiện tại
   const [record, created] = await UserGoogleCalendar.findOrCreate({
     where: { userId },
     defaults: {
