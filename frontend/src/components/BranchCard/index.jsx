@@ -1,12 +1,27 @@
 import React from "react";
-import { MapPin, Edit3, Play, Pause, Users, DollarSign, Clock } from "lucide-react";
+import { MapPin, Edit3, Play, Pause, Users, DollarSign, Clock, UserCircle } from "lucide-react";
 import classNames from "classnames/bind";
 import styles from "./BranchCard.module.scss";
 
 const cx = classNames.bind(styles);
 
-function BranchCard({ name, address, manager, staff, revenue, status, onEdit, onToggle, onViewReceptionist, suspendInfo = {} }) {
+function BranchCard({
+  name,
+  address,
+  manager,
+  staff,
+  revenue,
+  status,
+  openTime,
+  closeTime,
+  services = [],
+  onEdit,
+  onToggle,
+  onViewReceptionist,
+  suspendInfo = {},
+}) {
   const { isSuspended = false, suspendDate = null, resumeDate = null } = suspendInfo;
+
   const today = new Date().toISOString().split("T")[0];
   const isActive = status === "Hoạt động";
 
@@ -18,8 +33,16 @@ function BranchCard({ name, address, manager, staff, revenue, status, onEdit, on
 
   const getToggleContent = () => {
     if (isActive) return { text: "Tạm ngưng", icon: <Pause size={16} /> };
-    if (suspendDate && suspendDate > today) return { text: `Ngưng từ ${formatDate(suspendDate)}`, icon: <Pause size={16} /> };
-    if (resumeDate && resumeDate > today) return { text: `Mở lại ${formatDate(resumeDate)}`, icon: <Play size={16} /> };
+    if (suspendDate && suspendDate > today)
+      return {
+        text: `Ngưng từ ${formatDate(suspendDate)}`,
+        icon: <Pause size={16} />,
+      };
+    if (resumeDate && resumeDate > today)
+      return {
+        text: `Mở lại ${formatDate(resumeDate)}`,
+        icon: <Play size={16} />,
+      };
     return { text: "Kích hoạt", icon: <Play size={16} /> };
   };
 
@@ -27,6 +50,7 @@ function BranchCard({ name, address, manager, staff, revenue, status, onEdit, on
 
   return (
     <div className={cx("card")}>
+      {/* ── Header ── */}
       <div className={cx("cardHeader")}>
         <div className={cx("titleGroup")}>
           <h3>{name}</h3>
@@ -36,43 +60,71 @@ function BranchCard({ name, address, manager, staff, revenue, status, onEdit, on
         </div>
       </div>
 
+      {/* ── Địa chỉ ── */}
       <p className={cx("address")}>
-        <MapPin size={16} /> {address}
+        <MapPin size={16} />
+        {address}
       </p>
 
+      {/* ── Thống kê ── */}
       <div className={cx("statsGrid")}>
         <div className={cx("statItem")}>
-          <label><Users size={12} /> Thợ</label>
+          <label>
+            <Users size={12} /> Thợ
+          </label>
           <value>{staff}</value>
         </div>
         <div className={cx("statItem")}>
-          <label><DollarSign size={12} /> Thu</label>
-          <value>{revenue.length > 5 ? revenue.substring(0, 5) + '..' : revenue}</value>
+          <label>
+            <DollarSign size={12} /> Doanh thu
+          </label>
+          <value title={revenue}>
+            {typeof revenue === "string" && revenue.length > 10 ? revenue.substring(0, 10) + ".." : revenue}
+          </value>
         </div>
         <div className={cx("statItem")}>
-          <label><Clock size={12} /> Ca</label>
-          <value>30p</value>
+          <label>
+            <Clock size={12} /> Giờ mở
+          </label>
+          <value>{openTime ? String(openTime).substring(0, 5) : "—"}</value>
         </div>
       </div>
 
-      {/* Khu vực thông tin Lễ tân - Có thể click */}
-      <div className={cx("managerInfo")} onClick={() => onViewReceptionist(manager)}>
+      {/* ── Dịch vụ ── */}
+      {services.length > 0 && (
+        <div className={cx("serviceTagList")}>
+          {services.slice(0, 3).map((s) => (
+            <span key={s.idService} className={cx("serviceTag")}>
+              {s.name}
+            </span>
+          ))}
+          {services.length > 3 && <span className={cx("serviceTag", "serviceTagMore")}>+{services.length - 3}</span>}
+        </div>
+      )}
+
+      {/* ── Thông tin Lễ tân ── */}
+      <div
+        className={cx("managerInfo")}
+        onClick={() => onViewReceptionist && onViewReceptionist(manager)}
+        title="Click để xem chi tiết lễ tân"
+      >
         <div className={cx("avatarPlaceholder")}>
-          {(manager?.fullName || "B").charAt(0).toUpperCase()}
+          <UserCircle size={20} />
         </div>
         <div className={cx("managerDetails")}>
           <span>Lễ tân (Click xem chi tiết)</span>
-          <strong>{manager?.fullName || "Chưa có quản lý"}</strong>
+          <strong>{manager?.fullName || "Chưa có lễ tân"}</strong>
         </div>
       </div>
 
+      {/* ── Actions ── */}
       <div className={cx("actions")}>
-        <button className={cx("editBtn")} onClick={onEdit}>
+        <button className={cx("editBtn")} onClick={onEdit} title="Chỉnh sửa">
           <Edit3 size={16} />
         </button>
 
-        <button 
-          className={cx("toggleBtn", { off: !isActive })} 
+        <button
+          className={cx("toggleBtn", { off: !isActive })}
           onClick={onToggle}
           disabled={suspendInfo.isScheduledSuspend}
         >

@@ -90,15 +90,13 @@ function Reel() {
     }
   }, [location.state]);
 
-  // Khi reels đã load và có pendingOpenId → tìm index và mở dialog
+  // Chỉ cuộn đến đúng video
   useEffect(() => {
     if (!pendingOpenId || reels.length === 0) return;
 
     const idx = reels.findIndex((r) => r.idReel === pendingOpenId);
     if (idx !== -1) {
       setCurrentIndex(idx);
-      setDetailIndex(idx);
-      setShowDetail(true);
       setPendingOpenId(null);
     }
   }, [reels, pendingOpenId]);
