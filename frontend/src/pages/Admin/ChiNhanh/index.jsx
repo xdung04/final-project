@@ -44,11 +44,11 @@ function ChiNhanh() {
       slotDuration: 30,
       selectedServices: [],
       startDate: "",
-      googleMapUrl: "", 
-      latitude: "",  
-      longitude: "", 
+      googleMapUrl: "",
+      latitude: "",
+      longitude: "",
       isEditable: true,
-      
+
       // Dữ liệu Lễ tân (Bước 2)
       receptionistName: "",
       receptionistEmail: "",
@@ -66,7 +66,11 @@ function ChiNhanh() {
     setShowReceptionistInfo(true);
   };
 
-  const normalize = (str) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const normalize = (str) =>
+    str
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
 
   const fetchBranches = async () => {
     try {
@@ -84,16 +88,31 @@ function ChiNhanh() {
             else if (b.suspendDate <= today && b.resumeDate > today) isSuspended = true;
           }
 
+          // Format revenue
+          const revenue =
+            b.totalRevenue > 0
+              ? new Intl.NumberFormat("vi-VN", {
+                  style: "currency",
+                  currency: "VND",
+                  maximumFractionDigits: 0,
+                }).format(b.totalRevenue)
+              : "Đang cập nhật";
+
           return {
             ...b,
             id: b.idBranch,
-            manager: b.manager, 
+            manager: b.manager || null, // 👈 lấy từ backend
             staff: b.totalBarbers || 0,
-            revenue: b.revenue || "Đang cập nhật",
+            revenue, // 👈 format từ totalRevenue
             status: b.status === "Active" ? "Hoạt động" : "Tạm ngưng",
-            suspendInfo: { isSuspended, isScheduledSuspend, suspendDate: b.suspendDate || null, resumeDate: b.resumeDate || null },
+            suspendInfo: {
+              isSuspended,
+              isScheduledSuspend,
+              suspendDate: b.suspendDate || null,
+              resumeDate: b.resumeDate || null,
+            },
           };
-        })
+        }),
       );
     } catch (err) {
       console.error(err);
@@ -119,7 +138,9 @@ function ChiNhanh() {
       fetch("https://provinces.open-api.vn/api/d/").then((res) => res.json()),
       fetch("https://provinces.open-api.vn/api/w/").then((res) => res.json()),
     ]).then(([p, d, w]) => {
-      setAllProvinces(p); setAllDistricts(d); setAllWards(w);
+      setAllProvinces(p);
+      setAllDistricts(d);
+      setAllWards(w);
     });
 
     fetchBranches();
@@ -190,7 +211,10 @@ function ChiNhanh() {
       }));
       showToast("success", "Đã trích xuất tọa độ thành công!");
     } else {
-      showToast("error", "Không tìm thấy tọa độ trong liên kết. Hãy chọn một địa điểm cụ thể trên bản đồ trước khi copy link!");
+      showToast(
+        "error",
+        "Không tìm thấy tọa độ trong liên kết. Hãy chọn một địa điểm cụ thể trên bản đồ trước khi copy link!",
+      );
     }
   };
 
@@ -201,7 +225,7 @@ function ChiNhanh() {
   const openCreateForm = () => {
     setEditingBranch(null);
     setFormData(getEmptyFormData());
-    setCurrentStep(1); 
+    setCurrentStep(1);
     setShowForm(true);
   };
 
@@ -214,7 +238,7 @@ function ChiNhanh() {
       startDate: branch.startDate || "",
       latitude: branch.latitude || "",
       longitude: branch.longitude || "",
-      googleMapUrl: "", 
+      googleMapUrl: "",
     });
     setCurrentStep(1);
     setShowForm(true);
@@ -244,8 +268,8 @@ function ChiNhanh() {
         startDate: formData.startDate ? `${formData.startDate} 00:00:00` : null,
         selectedServices: formData.selectedServices,
         status: formData.status === "Hoạt động" ? "Active" : "Inactive",
-        latitude: formData.latitude,   
-        longitude: formData.longitude, 
+        latitude: formData.latitude,
+        longitude: formData.longitude,
       };
 
       if (!editingBranch) {
@@ -289,23 +313,35 @@ function ChiNhanh() {
   const handleSuspendSubmit = async (e) => {
     e.preventDefault();
     try {
-      let res = suspendMode === "suspend" 
-        ? await BranchAPI.setSuspend(suspendBranch.id, { suspendDate: suspendFormData.suspendDate })
-        : await BranchAPI.setResume(suspendBranch.id, { resumeDate: suspendFormData.resumeDate });
+      let res =
+        suspendMode === "suspend"
+          ? await BranchAPI.setSuspend(suspendBranch.id, { suspendDate: suspendFormData.suspendDate })
+          : await BranchAPI.setResume(suspendBranch.id, { resumeDate: suspendFormData.resumeDate });
 
       if (res.success) {
         showToast("success", res.message);
         fetchBranches();
         setShowSuspendForm(false);
       } else showToast("error", res.message);
-    } catch (err) { showToast("error", "Lỗi khi lưu ngày!"); }
+    } catch (err) {
+      showToast("error", "Lỗi khi lưu ngày!");
+    }
   };
 
   const handleToggleStatus = (branch) => {
     const today = new Date().toISOString().split("T")[0];
-    if (branch.resumeDate && branch.resumeDate > today) return showToast("info", `Chi nhánh mở cửa lại từ ${new Date(branch.resumeDate).toLocaleDateString("vi-VN")}`);
-    if (branch.suspendInfo.suspendDate && branch.suspendInfo.suspendDate > today) return showToast("info", `Chi nhánh sẽ ngưng từ ${new Date(branch.suspendInfo.suspendDate).toLocaleDateString("vi-VN")}`);
-    if (branch.suspendInfo.suspendDate <= today && (!branch.suspendInfo.resumeDate || branch.suspendInfo.resumeDate > today)) return openSuspendForm(branch, "resume");
+    if (branch.resumeDate && branch.resumeDate > today)
+      return showToast("info", `Chi nhánh mở cửa lại từ ${new Date(branch.resumeDate).toLocaleDateString("vi-VN")}`);
+    if (branch.suspendInfo.suspendDate && branch.suspendInfo.suspendDate > today)
+      return showToast(
+        "info",
+        `Chi nhánh sẽ ngưng từ ${new Date(branch.suspendInfo.suspendDate).toLocaleDateString("vi-VN")}`,
+      );
+    if (
+      branch.suspendInfo.suspendDate <= today &&
+      (!branch.suspendInfo.resumeDate || branch.suspendInfo.resumeDate > today)
+    )
+      return openSuspendForm(branch, "resume");
     openSuspendForm(branch, "suspend");
   };
 
@@ -326,13 +362,13 @@ function ChiNhanh() {
 
       <div className={cx("grid")}>
         {branches.map((branch) => (
-          <BranchCard 
-            key={branch.id} 
-            {...branch} 
-            managerName={branch.manager?.fullName || "Chưa có quản lý"} 
-            onEdit={() => openEditForm(branch)} 
+          <BranchCard
+            key={branch.id}
+            {...branch}
+            managerName={branch.manager?.fullName || "Chưa có quản lý"}
+            onEdit={() => openEditForm(branch)}
             onToggle={() => handleToggleStatus(branch)}
-            onViewReceptionist={() => openReceptionistModal(branch.manager)} 
+            onViewReceptionist={() => openReceptionistModal(branch.manager)}
           />
         ))}
       </div>
@@ -340,7 +376,6 @@ function ChiNhanh() {
       {showForm && (
         <div className={cx("modalOverlay")}>
           <div className={cx("modal")}>
-            
             <div className={cx("modalHeader")}>
               <h3>{editingBranch ? "Cập nhật chi nhánh" : "Thêm chi nhánh mới"}</h3>
             </div>
@@ -350,9 +385,7 @@ function ChiNhanh() {
                 <div className={cx("step", { active: currentStep === 1, completed: currentStep > 1 })}>
                   1. Thông tin Chi nhánh
                 </div>
-                <div className={cx("step", { active: currentStep === 2 })}>
-                  2. Tài khoản Lễ tân
-                </div>
+                <div className={cx("step", { active: currentStep === 2 })}>2. Tài khoản Lễ tân</div>
               </div>
             )}
 
@@ -362,33 +395,72 @@ function ChiNhanh() {
                   <div className={cx("formGrid")}>
                     <div>
                       <label>Tên chi nhánh</label>
-                      <input name="name" value={formData.name} onChange={handleChange} required disabled={!formData.isEditable} placeholder="Vd: Barber Quận 1..." />
+                      <input
+                        name="name"
+                        value={formData.name}
+                        onChange={handleChange}
+                        required
+                        disabled={!formData.isEditable}
+                        placeholder="Vd: Barber Quận 1..."
+                      />
                     </div>
                     <div style={{ position: "relative" }}>
                       <label>Địa chỉ</label>
-                      <input name="address" value={formData.address} onChange={handleAddressChange} placeholder="Nhập địa chỉ…" autoComplete="off" required disabled={!formData.isEditable} />
+                      <input
+                        name="address"
+                        value={formData.address}
+                        onChange={handleAddressChange}
+                        placeholder="Nhập địa chỉ…"
+                        autoComplete="off"
+                        required
+                        disabled={!formData.isEditable}
+                      />
                       {suggestions.length > 0 && formData.isEditable && (
                         <ul className={cx("suggestList")}>
                           {suggestions.map((item, idx) => (
-                            <li key={idx} onClick={() => selectSuggestion(item)}>{item}</li>
+                            <li key={idx} onClick={() => selectSuggestion(item)}>
+                              {item}
+                            </li>
                           ))}
                         </ul>
                       )}
                     </div>
 
-                    <div style={{ gridColumn: "span 2", background: "#f8fafc", padding: "12px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
+                    <div
+                      style={{
+                        gridColumn: "span 2",
+                        background: "#f8fafc",
+                        padding: "12px",
+                        borderRadius: "8px",
+                        border: "1px solid #e2e8f0",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          marginBottom: "8px",
+                        }}
+                      >
+                        <label style={{ display: "flex", alignItems: "center", gap: "6px", margin: 0 }}>
                           <MapPin size={16} color="#0284c7" /> <b>Định vị bản đồ</b>
                         </label>
                         {formData.isEditable && (
-                          <button 
-                            type="button" 
-                            onClick={openGoogleMaps} 
-                            style={{ 
-                              display: "flex", gap: "6px", alignItems: "center",
-                              padding: "6px 12px", background: "#fff", border: "1px solid #cbd5e1", 
-                              borderRadius: "6px", cursor: "pointer", fontSize: "13px", fontWeight: "600"
+                          <button
+                            type="button"
+                            onClick={openGoogleMaps}
+                            style={{
+                              display: "flex",
+                              gap: "6px",
+                              alignItems: "center",
+                              padding: "6px 12px",
+                              background: "#fff",
+                              border: "1px solid #cbd5e1",
+                              borderRadius: "6px",
+                              cursor: "pointer",
+                              fontSize: "13px",
+                              fontWeight: "600",
                             }}
                           >
                             <Globe size={14} color="#059669" /> Mở Web Google Maps
@@ -397,45 +469,90 @@ function ChiNhanh() {
                       </div>
 
                       {formData.isEditable && (
-                        <input 
-                          name="googleMapUrl" 
-                          value={formData.googleMapUrl} 
-                          onChange={handleMapUrlChange} 
-                          placeholder="Dán toàn bộ Link Google Maps vào đây để tự động lấy tọa độ..." 
+                        <input
+                          name="googleMapUrl"
+                          value={formData.googleMapUrl}
+                          onChange={handleMapUrlChange}
+                          placeholder="Dán toàn bộ Link Google Maps vào đây để tự động lấy tọa độ..."
                           style={{ marginBottom: "10px", borderColor: "#bae6fd" }}
                         />
                       )}
 
                       <div style={{ display: "flex", gap: "10px" }}>
-                        <input name="latitude" value={formData.latitude} onChange={handleChange} placeholder="Vĩ độ (Latitude)" disabled={!formData.isEditable} style={{ flex: 1, backgroundColor: "#fff" }} />
-                        <input name="longitude" value={formData.longitude} onChange={handleChange} placeholder="Kinh độ (Longitude)" disabled={!formData.isEditable} style={{ flex: 1, backgroundColor: "#fff" }} />
+                        <input
+                          name="latitude"
+                          value={formData.latitude}
+                          onChange={handleChange}
+                          placeholder="Vĩ độ (Latitude)"
+                          disabled={!formData.isEditable}
+                          style={{ flex: 1, backgroundColor: "#fff" }}
+                        />
+                        <input
+                          name="longitude"
+                          value={formData.longitude}
+                          onChange={handleChange}
+                          placeholder="Kinh độ (Longitude)"
+                          disabled={!formData.isEditable}
+                          style={{ flex: 1, backgroundColor: "#fff" }}
+                        />
                       </div>
 
                       <small style={{ color: "#64748b", marginTop: "8px", display: "block", lineHeight: "1.5" }}>
-                        * <b>Hướng dẫn:</b> Bấm Mở Web Google Maps, tìm địa chỉ quán, sau đó copy toàn bộ đường link trên thanh URL (chứa ký tự @) và dán vào ô trên. Hệ thống sẽ tự tách tọa độ.
+                        * <b>Hướng dẫn:</b> Bấm Mở Web Google Maps, tìm địa chỉ quán, sau đó copy toàn bộ đường link
+                        trên thanh URL (chứa ký tự @) và dán vào ô trên. Hệ thống sẽ tự tách tọa độ.
                       </small>
                     </div>
 
                     {!editingBranch && (
                       <div>
                         <label>Ngày khai trương</label>
-                        <input type="date" name="startDate" required min={new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split("T")[0]} value={formData.startDate} onChange={handleChange} />
+                        <input
+                          type="date"
+                          name="startDate"
+                          required
+                          min={new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split("T")[0]}
+                          value={formData.startDate}
+                          onChange={handleChange}
+                        />
                       </div>
                     )}
 
                     <div>
                       <label>Giờ mở cửa</label>
-                      <input type="time" name="openTime" value={formData.openTime} onChange={handleChange} disabled={!formData.isEditable} required />
+                      <input
+                        type="time"
+                        name="openTime"
+                        value={formData.openTime}
+                        onChange={handleChange}
+                        disabled={!formData.isEditable}
+                        required
+                      />
                     </div>
 
                     <div>
                       <label>Giờ đóng cửa</label>
-                      <input type="time" name="closeTime" value={formData.closeTime} onChange={handleChange} disabled={!formData.isEditable} required />
+                      <input
+                        type="time"
+                        name="closeTime"
+                        value={formData.closeTime}
+                        onChange={handleChange}
+                        disabled={!formData.isEditable}
+                        required
+                      />
                     </div>
 
                     <div>
                       <label>Thời lượng 1 ca (phút)</label>
-                      <input type="number" name="slotDuration" min="10" max="120" value={formData.slotDuration} onChange={handleChange} disabled={!formData.isEditable} required />
+                      <input
+                        type="number"
+                        name="slotDuration"
+                        min="10"
+                        max="120"
+                        value={formData.slotDuration}
+                        onChange={handleChange}
+                        disabled={!formData.isEditable}
+                        required
+                      />
                     </div>
                   </div>
 
@@ -444,7 +561,12 @@ function ChiNhanh() {
                     <div className={cx("serviceListModal")}>
                       {services.map((s) => (
                         <label key={s.idService} className={cx("serviceItem")}>
-                          <input type="checkbox" checked={formData.selectedServices.includes(s.idService)} onChange={() => toggleService(s.idService)} disabled={!formData.isEditable} />
+                          <input
+                            type="checkbox"
+                            checked={formData.selectedServices.includes(s.idService)}
+                            onChange={() => toggleService(s.idService)}
+                            disabled={!formData.isEditable}
+                          />
                           <span>{s.name}</span>
                         </label>
                       ))}
@@ -454,25 +576,61 @@ function ChiNhanh() {
               )}
 
               {currentStep === 2 && !editingBranch && (
-                <div className={cx("formGrid")} style={{ marginTop: '20px' }}>
-                  <div style={{ gridColumn: 'span 2', display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-dim)', fontSize: '14px', marginBottom: '10px' }}>
-                     <UserPlus size={18} /> <span>Hệ thống sẽ tạo tự động 1 tài khoản quản lý chi nhánh (Lễ tân)</span>
+                <div className={cx("formGrid")} style={{ marginTop: "20px" }}>
+                  <div
+                    style={{
+                      gridColumn: "span 2",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                      color: "var(--text-dim)",
+                      fontSize: "14px",
+                      marginBottom: "10px",
+                    }}
+                  >
+                    <UserPlus size={18} /> <span>Hệ thống sẽ tạo tự động 1 tài khoản quản lý chi nhánh (Lễ tân)</span>
                   </div>
                   <div>
                     <label>Họ tên Lễ tân</label>
-                    <input name="receptionistName" value={formData.receptionistName} onChange={handleChange} placeholder="Vd: Nguyễn Văn A" required />
+                    <input
+                      name="receptionistName"
+                      value={formData.receptionistName}
+                      onChange={handleChange}
+                      placeholder="Vd: Nguyễn Văn A"
+                      required
+                    />
                   </div>
                   <div>
                     <label>Số điện thoại</label>
-                    <input name="receptionistPhone" value={formData.receptionistPhone} onChange={handleChange} placeholder="09xxxxxxxxx" required />
+                    <input
+                      name="receptionistPhone"
+                      value={formData.receptionistPhone}
+                      onChange={handleChange}
+                      placeholder="09xxxxxxxxx"
+                      required
+                    />
                   </div>
                   <div>
                     <label>Email đăng nhập</label>
-                    <input type="email" name="receptionistEmail" value={formData.receptionistEmail} onChange={handleChange} placeholder="letan@barber.com" required />
+                    <input
+                      type="email"
+                      name="receptionistEmail"
+                      value={formData.receptionistEmail}
+                      onChange={handleChange}
+                      placeholder="letan@barber.com"
+                      required
+                    />
                   </div>
                   <div>
                     <label>Mật khẩu</label>
-                    <input type="password" name="receptionistPassword" value={formData.receptionistPassword} onChange={handleChange} placeholder="Nhập mật khẩu..." required />
+                    <input
+                      type="password"
+                      name="receptionistPassword"
+                      value={formData.receptionistPassword}
+                      onChange={handleChange}
+                      placeholder="Nhập mật khẩu..."
+                      required
+                    />
                   </div>
                 </div>
               )}
@@ -480,56 +638,85 @@ function ChiNhanh() {
               <div className={cx("modalActions")}>
                 {currentStep === 1 ? (
                   <>
-                    <button type="button" className={cx("cancelBtn")} onClick={() => setShowForm(false)} disabled={isSubmitting}>Hủy bỏ</button>
+                    <button
+                      type="button"
+                      className={cx("cancelBtn")}
+                      onClick={() => setShowForm(false)}
+                      disabled={isSubmitting}
+                    >
+                      Hủy bỏ
+                    </button>
                     {formData.isEditable && (
                       <button type="submit" className={cx("saveBtn")} disabled={isSubmitting}>
-                        {isSubmitting ? "Đang xử lý..." : (editingBranch ? "Lưu thông tin" : "Tiếp tục (Tạo tài khoản)")}
+                        {isSubmitting ? "Đang xử lý..." : editingBranch ? "Lưu thông tin" : "Tiếp tục (Tạo tài khoản)"}
                       </button>
                     )}
                   </>
                 ) : (
                   <>
-                    <button type="button" className={cx("cancelBtn")} onClick={() => setCurrentStep(1)} disabled={isSubmitting}>Quay lại</button>
+                    <button
+                      type="button"
+                      className={cx("cancelBtn")}
+                      onClick={() => setCurrentStep(1)}
+                      disabled={isSubmitting}
+                    >
+                      Quay lại
+                    </button>
                     <button type="submit" className={cx("saveBtn")} disabled={isSubmitting}>
                       {isSubmitting ? "Đang xử lý..." : "Hoàn tất & Khai trương"}
                     </button>
                   </>
                 )}
               </div>
-
             </form>
           </div>
         </div>
       )}
 
       {showSuspendForm && (
-         <div className={cx("modalOverlay")}>
-           <div className={cx("modal", "modalSuspendForm")}>
-             <div className={cx("modalHeader")}>
-               <CalendarClock size={28} strokeWidth={1.5} style={{ color: "var(--gold-dark)", marginBottom: 10 }} />
-               <h3>{suspendMode === "suspend" ? "Lịch tạm ngưng hoạt động" : "Lịch mở cửa trở lại"}</h3>
-             </div>
-             <form onSubmit={handleSuspendSubmit}>
-               <div className={cx("formGridSuspend")}>
-                 {suspendMode === "suspend" ? (
-                   <div>
-                     <label>Chọn ngày bắt đầu đóng cửa</label>
-                     <input type="date" name="suspendDate" value={suspendFormData.suspendDate} onChange={handleSuspendChange} required />
-                   </div>
-                 ) : (
-                   <div>
-                     <label>Chọn ngày mở cửa đón khách</label>
-                     <input type="date" name="resumeDate" value={suspendFormData.resumeDate} onChange={handleSuspendChange} required />
-                   </div>
-                 )}
-               </div>
-               <div className={cx("modalActions")}>
-                 <button type="button" className={cx("cancelBtn")} onClick={() => setShowSuspendForm(false)}>Hủy</button>
-                 <button type="submit" className={cx("saveBtn")}>Xác nhận</button>
-               </div>
-             </form>
-           </div>
-         </div>
+        <div className={cx("modalOverlay")}>
+          <div className={cx("modal", "modalSuspendForm")}>
+            <div className={cx("modalHeader")}>
+              <CalendarClock size={28} strokeWidth={1.5} style={{ color: "var(--gold-dark)", marginBottom: 10 }} />
+              <h3>{suspendMode === "suspend" ? "Lịch tạm ngưng hoạt động" : "Lịch mở cửa trở lại"}</h3>
+            </div>
+            <form onSubmit={handleSuspendSubmit}>
+              <div className={cx("formGridSuspend")}>
+                {suspendMode === "suspend" ? (
+                  <div>
+                    <label>Chọn ngày bắt đầu đóng cửa</label>
+                    <input
+                      type="date"
+                      name="suspendDate"
+                      value={suspendFormData.suspendDate}
+                      onChange={handleSuspendChange}
+                      required
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <label>Chọn ngày mở cửa đón khách</label>
+                    <input
+                      type="date"
+                      name="resumeDate"
+                      value={suspendFormData.resumeDate}
+                      onChange={handleSuspendChange}
+                      required
+                    />
+                  </div>
+                )}
+              </div>
+              <div className={cx("modalActions")}>
+                <button type="button" className={cx("cancelBtn")} onClick={() => setShowSuspendForm(false)}>
+                  Hủy
+                </button>
+                <button type="submit" className={cx("saveBtn")}>
+                  Xác nhận
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
       {showReceptionistInfo && selectedReceptionist && (
@@ -557,7 +744,13 @@ function ChiNhanh() {
               </div>
             </div>
             <div className={cx("modalActions")}>
-              <button className={cx("saveBtn")} style={{ width: "100%" }} onClick={() => setShowReceptionistInfo(false)}>Đóng</button>
+              <button
+                className={cx("saveBtn")}
+                style={{ width: "100%" }}
+                onClick={() => setShowReceptionistInfo(false)}
+              >
+                Đóng
+              </button>
             </div>
           </div>
         </div>

@@ -5,7 +5,7 @@ const Barber = db.Barber;
 const Branch = db.Branch;
 const Service = db.Service;
 const Booking = db.Booking;
-import bcrypt from "bcryptjs"; 
+import bcrypt from "bcryptjs";
 import axios from "axios";
 export const createBranch = async (data) => {
   // Khởi tạo Transaction để đảm bảo tính toàn vẹn dữ liệu
@@ -47,7 +47,7 @@ export const createBranch = async (data) => {
         status: "Inactive", // Mặc định là Inactive cho đến ngày khai trương
         resumeDate: startDate ? new Date(startDate) : null,
       },
-      { transaction: t }
+      { transaction: t },
     );
 
     // 3. Xử lý tạo tài khoản Lễ tân (nếu có)
@@ -66,16 +66,16 @@ export const createBranch = async (data) => {
           authProvider: "local",
           isStatus: true, // Cho phép tài khoản hoạt động ngay
         },
-        { transaction: t }
+        { transaction: t },
       );
 
       // b. Tạo bản ghi ở bảng Receptionists (Liên kết User và Branch)
       await db.Receptionist.create(
         {
           idReceptionist: newUser.idUser, // Lấy ID từ bảng User vừa tạo
-          idBranch: newBranch.idBranch,   // Lấy ID từ Branch vừa tạo
+          idBranch: newBranch.idBranch, // Lấy ID từ Branch vừa tạo
         },
-        { transaction: t }
+        { transaction: t },
       );
     }
 
@@ -88,11 +88,10 @@ export const createBranch = async (data) => {
     await t.commit();
 
     // 5. Lấy lại thông tin đầy đủ để trả về Frontend
-  return newBranch;
-
+    return newBranch;
   } catch (error) {
     // Nếu có bất kỳ lỗi nào, hủy bỏ toàn bộ quá trình (Rollback)
-    if(!t.finished){
+    if (!t.finished) {
       await t.rollback();
     }
     console.error("Lỗi createBranch Transaction:", error.message);
@@ -106,19 +105,19 @@ const updateBranch = async (id, data) => {
     const branch = await Branch.findByPk(id, {
       include: [{ model: Service, as: "services", attributes: ["idService"] }],
     });
-    
+
     if (!branch) throw new Error("Không tìm thấy chi nhánh để cập nhật!");
 
-    const { 
-      name, 
-      address, 
-      latitude,   // Nhận vĩ độ mới
-      longitude,  // Nhận kinh độ mới
-      openTime, 
-      closeTime, 
-      slotDuration, 
-      status, 
-      selectedServices 
+    const {
+      name,
+      address,
+      latitude, // Nhận vĩ độ mới
+      longitude, // Nhận kinh độ mới
+      openTime,
+      closeTime,
+      slotDuration,
+      status,
+      selectedServices,
     } = data;
 
     // 2. Validation các trường bắt buộc
@@ -138,7 +137,7 @@ const updateBranch = async (id, data) => {
     await branch.update({
       name,
       address,
-      latitude: latitude ?? branch.latitude,   // Nếu không gửi lên thì giữ nguyên giá trị cũ
+      latitude: latitude ?? branch.latitude, // Nếu không gửi lên thì giữ nguyên giá trị cũ
       longitude: longitude ?? branch.longitude,
       openTime,
       closeTime,
@@ -164,12 +163,14 @@ const updateBranch = async (id, data) => {
 
     // 6. Load lại dữ liệu mới nhất để trả về cho Frontend
     const updatedBranch = await Branch.findByPk(id, {
-      include: [{ 
-        model: Service, 
-        as: "services",
-        attributes: ["idService", "name", "price", "duration", "status"],
-        through: { attributes: [] } 
-      }],
+      include: [
+        {
+          model: Service,
+          as: "services",
+          attributes: ["idService", "name", "price", "duration", "status"],
+          through: { attributes: [] },
+        },
+      ],
     });
 
     return updatedBranch;
@@ -201,10 +202,10 @@ export const suspendBranch = async ({ branchId, suspendDate, resumeDate }) => {
         idBranch: branchId,
         bookingDate: {
           [Op.gte]: suspend,
-          [Op.lte]: resume || new Date("9999-12-31") // nếu resume null -> vô hạn
+          [Op.lte]: resume || new Date("9999-12-31"), // nếu resume null -> vô hạn
         },
-        status: { [Op.in]: ["Pending", "InProgress"] } // booking chưa hoàn tất
-      }
+        status: { [Op.in]: ["Pending", "InProgress"] }, // booking chưa hoàn tất
+      },
     });
 
     if (hasBooking) {
@@ -216,61 +217,94 @@ export const suspendBranch = async ({ branchId, suspendDate, resumeDate }) => {
     await branch.save();
 
     return { success: true, message: "Chi nhánh đã được tạm ngưng thành công!" };
-
   } catch (error) {
     console.error("Lỗi suspendBranch:", error.message);
     throw error;
   }
 };
 
-
-
 const getAllBranches = async () => {
   try {
-const branches = await db.Branch.findAll({
-  attributes: [
-    "idBranch",
-    "name",
-    "address",
-    "openTime",
-    "closeTime",
-    "status",
-    "slotDuration",
-    "suspendDate",
-    "resumeDate",   
-    "latitude",  
-    "longitude",
-    [
-      db.Sequelize.literal(`(
-        SELECT COUNT(*)
-        FROM barbers AS b
-        WHERE b.idBranch = Branch.idBranch
-      )`),
-      "totalBarbers",
-    ],
-  ],
-  include: [
-    {
-      model: db.Service,
-      as: "services",
-      attributes: ["idService", "name", "price", "duration", "status"],
-      through: { attributes: [] },
-    },
-  ],
-  order: [["idBranch", "ASC"]],
-});
+    const branches = await db.Branch.findAll({
+      attributes: [
+        "idBranch",
+        "name",
+        "address",
+        "openTime",
+        "closeTime",
+        "status",
+        "slotDuration",
+        "suspendDate",
+        "resumeDate",
+        "latitude",
+        "longitude",
+        [
+          db.Sequelize.literal(`(
+            SELECT COUNT(*)
+            FROM barbers AS b
+            WHERE b.idBranch = Branch.idBranch
+          )`),
+          "totalBarbers",
+        ],
+        [
+          db.Sequelize.literal(`(
+            SELECT COALESCE(SUM(bk.total), 0)
+            FROM bookings AS bk
+            INNER JOIN barbers AS br ON bk.idBarber = br.idBarber
+            WHERE br.idBranch = Branch.idBranch
+            AND bk.isPaid = true
+          )`),
+          "totalRevenue",
+        ],
+      ],
+      include: [
+        {
+          model: db.Service,
+          as: "services",
+          attributes: ["idService", "name", "price", "duration", "status"],
+          through: { attributes: [] },
+        },
+        {
+          model: db.Receptionist,
+          as: "receptionist",
+          attributes: ["idReceptionist"],
+          include: [
+            {
+              model: db.User,
+              as: "user",
+              attributes: ["idUser", "fullName", "email", "phoneNumber"],
+            },
+          ],
+        },
+      ],
+      order: [["idBranch", "ASC"]],
+    });
 
     if (!branches.length) {
       return { message: "Không có chi nhánh nào trong hệ thống" };
     }
 
-    return branches;
+    return branches.map((b) => {
+      const plain = b.get({ plain: true });
+      return {
+        ...plain,
+        totalBarbers: parseInt(plain.totalBarbers || 0),
+        totalRevenue: parseFloat(plain.totalRevenue || 0),
+        manager: plain.receptionist
+          ? {
+              idUser: plain.receptionist.user?.idUser,
+              fullName: plain.receptionist.user?.fullName || "Chưa có",
+              email: plain.receptionist.user?.email || "",
+              phone: plain.receptionist.user?.phoneNumber || "",
+            }
+          : null,
+      };
+    });
   } catch (error) {
     console.error("Lỗi getAllBranches:", error);
     throw error;
   }
 };
-
 
 const syncBranchesToPinecone = async () => {
   try {
@@ -293,18 +327,12 @@ const syncBranchesToPinecone = async () => {
     const branchData = branches.map((b) => {
       const statusRaw = (b.status || "").trim().toLowerCase();
       const isActive =
-        statusRaw === "active" ||
-        statusRaw === "true" ||
-        statusRaw === "1" ||
-        statusRaw === "đang hoạt động";
+        statusRaw === "active" || statusRaw === "true" || statusRaw === "1" || statusRaw === "đang hoạt động";
 
       const serviceList =
         b.services?.length > 0
           ? b.services
-              .map(
-                (s) =>
-                  `${s.name} (${parseFloat(s.price).toLocaleString("vi-VN")}₫ / ${s.duration} phút)`
-              )
+              .map((s) => `${s.name} (${parseFloat(s.price).toLocaleString("vi-VN")}₫ / ${s.duration} phút)`)
               .join(", ")
           : "Chưa có dịch vụ";
 
@@ -395,7 +423,7 @@ const setSuspendDate = async (branchId, suspendDate) => {
     if (!suspend) return { success: false, message: "Ngày tạm ngưng không hợp lệ!" };
 
     const today = new Date();
-    today.setHours(0, 0, 0, 0); 
+    today.setHours(0, 0, 0, 0);
     suspend.setHours(0, 0, 0, 0);
 
     if (suspend <= today) {
@@ -441,8 +469,6 @@ const setSuspendDate = async (branchId, suspendDate) => {
   }
 };
 
-
-
 const setResumeDate = async (branchId, resumeDate) => {
   try {
     const branch = await Branch.findByPk(branchId);
@@ -478,32 +504,29 @@ const setResumeDate = async (branchId, resumeDate) => {
 };
 
 export const fetchBranchesWithDistance = async (userLat, userLng) => {
-
   const branches = await db.Branch.findAll({
-
     attributes: [
+      "idBranch",
+      "name",
+      "address",
 
-      "idBranch", "name", "address",
+      "latitude",
+      "longitude",
 
-      "latitude", "longitude",
+      "openTime",
+      "closeTime",
 
-      "openTime", "closeTime",
+      "status",
+      "slotDuration",
 
-      "status", "slotDuration",
-
-      "suspendDate", "resumeDate",
-
+      "suspendDate",
+      "resumeDate",
     ],
-
   });
 
   if (!userLat || !userLng) return branches.map((b) => b.toJSON());
 
-  const branchesWithCoords = branches.filter(
-
-    (b) => b.latitude != null && b.longitude != null
-
-  );
+  const branchesWithCoords = branches.filter((b) => b.latitude != null && b.longitude != null);
 
   if (branchesWithCoords.length === 0) return branches.map((b) => b.toJSON());
 
@@ -512,21 +535,18 @@ export const fetchBranchesWithDistance = async (userLat, userLng) => {
   return branches
 
     .map((b) => ({
-
       ...b.toJSON(),
 
       ...(distanceMap[b.idBranch] ?? {
+        distanceM: null,
+        durationSec: null,
 
-        distanceM: null, durationSec: null,
-
-        distanceText: null, durationText: null,
-
+        distanceText: null,
+        durationText: null,
       }),
-
     }))
 
     .sort((a, b) => {
-
       if (a.distanceM == null && b.distanceM == null) return 0;
 
       if (a.distanceM == null) return 1;
@@ -534,13 +554,10 @@ export const fetchBranchesWithDistance = async (userLat, userLng) => {
       if (b.distanceM == null) return -1;
 
       return a.distanceM - b.distanceM;
-
     });
-
 };
 
 const getDistanceMatrix = async (userLat, userLng, branches) => {
-
   const userCoord = `${parseFloat(userLng).toFixed(6)},${parseFloat(userLat).toFixed(6)}`;
 
   const branchCoords = branches
@@ -552,13 +569,10 @@ const getDistanceMatrix = async (userLat, userLng, branches) => {
   const destinations = branches.map((_, i) => i + 1).join(";");
 
   const { data } = await axios.get(
-
     `https://maps.track-asia.com/distance-matrix/v1/car/${userCoord};${branchCoords}`,
 
     {
-
       params: {
-
         key: process.env.TRACKASIA_API_KEY,
 
         sources: 0,
@@ -566,13 +580,10 @@ const getDistanceMatrix = async (userLat, userLng, branches) => {
         destinations,
 
         annotations: "distance,duration",
-
       },
 
       timeout: 5000,
-
-    }
-
+    },
   );
 
   const durationsRow = data.durations?.[0] ?? [];
@@ -582,41 +593,32 @@ const getDistanceMatrix = async (userLat, userLng, branches) => {
   const distanceMap = {};
 
   branches.forEach((b, i) => {
-
     const durationSec = durationsRow[i];
 
-    const distanceM   = distancesRow[i];
+    const distanceM = distancesRow[i];
 
     distanceMap[b.idBranch] = {
+      distanceM: distanceM != null ? Math.round(distanceM) : null,
 
-      distanceM:    distanceM   != null ? Math.round(distanceM)   : null,
+      durationSec: durationSec != null ? Math.round(durationSec) : null,
 
-      durationSec:  durationSec != null ? Math.round(durationSec) : null,
+      distanceText:
+        distanceM != null
+          ? distanceM < 1000
+            ? `${Math.round(distanceM)} m`
+            : `${(distanceM / 1000).toFixed(1)} km`
+          : null,
 
-      distanceText: distanceM   != null
-
-        ? distanceM < 1000 ? `${Math.round(distanceM)} m`
-
-                           : `${(distanceM / 1000).toFixed(1)} km`
-
-        : null,
-
-      durationText: durationSec != null
-
-        ? durationSec < 3600
-
-          ? `${Math.round(durationSec / 60)} phút`
-
-          : `${Math.floor(durationSec / 3600)} giờ ${Math.round((durationSec % 3600) / 60)} phút`
-
-        : null,
-
+      durationText:
+        durationSec != null
+          ? durationSec < 3600
+            ? `${Math.round(durationSec / 60)} phút`
+            : `${Math.floor(durationSec / 3600)} giờ ${Math.round((durationSec % 3600) / 60)} phút`
+          : null,
     };
-
   });
 
   return distanceMap;
-
 };
 
 export default {
