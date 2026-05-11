@@ -5,8 +5,6 @@ import AIChat from "../../components/AIChat/AIChat";
 import Modal from "~/components/Modal";
 import { fetchHotServicesPaged } from "~/services/serviceService";
 import { fetchHotBarbersPaged } from "~/services/barberService";
-import AddBannerModal from "~/components/AddBannerModal";
-import { fetchActiveBanners, uploadBanner } from "~/services/bannerService";
 import { useToast } from "~/context/ToastContext";
 import { BranchAPI } from "~/apis/branchAPI";
 import LiveChat from "../../components/LiveChat";
