@@ -26,20 +26,20 @@ import summaryRoutes from "./routes/summaryStatistics.js";
 import bookingDirectRoutes from "./routes/bookingDirect.js";
 import hashtagRoutes from "./routes/hashtag.js";
 import hairConsultRoutes from "./routes/hairConsult.js";
+import transactionRoutes from "./routes/transaction.js";
 
 import startBranchStatusCron from "./cron/branchStatusCron.js";
 import startSalaryCron from "./cron/salaryCron.js"
 
 import { authenticate, authorize } from "./middlewares/authMiddleware.js";
 import notificationRoute from "./routes/notification.js";
-import bannerRoute from "./routes/banner.js";
+import newsRouter from "./routes/news.js";
 import initSocket from "./config/socket.js";
 import paymentRoute from "./routes/payment.js";
 import hrPolicyRoutes from "./routes/hrPolicyRoutes.js";
 import chatLiveRoute from "./routes/chatLive.js";
 import receptionistRouter from "./routes/receptionist.js";
 import contractRoute from "./routes/contract.js";
-import testRouter from "./routes/test.js";
 import calendarRoutes from "./routes/calendarRoutes.js";
 import customerStatsRoutes from "./routes/customerStats.js";  
 dotenv.config();
@@ -59,7 +59,6 @@ app.use((req, res, next) => {
   req.io = io;
   next();
 });
-app.use("/api/test", testRouter);
 app.use("/api/services", serviceRoute);
 app.use("/api/user/profile", profileRoutes);
 app.use("/api/chat", chatRoute);
@@ -82,12 +81,12 @@ app.use("/api/bonus", authenticate, authorize(["admin"]), bonusRoutes);
 app.use("/api/statistics/summary", authenticate, authorize(["admin"]), summaryRoutes);
 app.use("/api/hr-policy",authenticate, hrPolicyRoutes);
 app.use("/api/contracts", authenticate ,contractRoute);
-
+app.use("/api/transactions", transactionRoutes);
 app.use("/api/booking-direct", bookingDirectRoutes);
 app.use("/api/hashtags", hashtagRoutes);
 app.use("/api/hair-consult", hairConsultRoutes);
 app.use("/api/notifications", notificationRoute);
-app.use("/api/banners", bannerRoute);
+app.use("/api/news", newsRouter);
 
 app.use("/api/receptionist", receptionistRouter);
 

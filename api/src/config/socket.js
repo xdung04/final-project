@@ -1,4 +1,3 @@
-// file: config/socket.js
 import { Server } from "socket.io";
 import * as chatLiveService from "../services/chatLiveService.js";
 
@@ -16,10 +15,6 @@ const initSocket = (server) => {
   io.on("connection", (socket) => {
     console.log("🟢 Thiết bị mới kết nối socket:", socket.id);
 
-    // =====================================================
-    // LUỒNG 1: LỄ TÂN → KHÁCH HÀNG (iPad/Kiosk)
-    // =====================================================
-
     socket.on("admin_push_checkout", (data) => {
       console.log(`👉 Lễ tân đẩy bill [${data.bookingId}] sang iPad`);
       io.emit("receive_checkout_request", data);
@@ -30,29 +25,17 @@ const initSocket = (server) => {
       io.emit("receive_cancel_checkout", data);
     });
 
-    // =====================================================
-    // LUỒNG 2: KHÁCH HÀNG (iPad) → LỄ TÂN (Monitoring)
-    // =====================================================
-
-    // Tiến độ thông thường (Rating, Tip, Invoice...)
     socket.on("customer_update_progress", (data) => {
       io.emit("receive_customer_progress", data);
     });
 
-    // ==================== MỚI: THANH TOÁN TIỀN MẶT ====================
     socket.on("customer_choose_cash_payment", (data) => {
-      console.log(
-        `💵 Khách yêu cầu thanh toán TIỀN MẶT - Booking: ${data.bookingId} | Tổng: ${data.total}đ`,
-      );
-
-      // Gửi thông tin chi tiết cho màn hình lễ tân
+      console.log(`💵 Khách yêu cầu thanh toán TIỀN MẶT - Booking: ${data.bookingId}`);
       io.emit("customer_choose_cash_payment", {
         ...data,
-        step: 6, // Bước đặc biệt cho tiền mặt
+        step: 6,
         timestamp: new Date().toISOString(),
       });
-
-      // (Tùy chọn) Đồng thời cập nhật luôn progress chung để MonitoringView nhận được
       io.emit("receive_customer_progress", {
         step: 6,
         rating: data.rating || 0,
@@ -63,29 +46,27 @@ const initSocket = (server) => {
       });
     });
 
+    // ✅ Ép string để đảm bảo room name nhất quán
     socket.on("join_conversation", ({ conversationId }) => {
       if (!conversationId) return;
-
-      socket.join(conversationId);
-      console.log(
-        `👉 [CHAT] ${socket.id} joined conversation: ${conversationId}`,
-      );
+      const roomId = String(conversationId);
+      socket.join(roomId);
+      console.log(`👉 [CHAT] ${socket.id} joined room: ${roomId}`);
     });
+
     socket.on("leave_conversation", ({ conversationId }) => {
       if (!conversationId) return;
-      socket.leave(conversationId);
-      console.log(
-        `👋 [CHAT] ${socket.id} left conversation: ${conversationId}`,
-      );
+      const roomId = String(conversationId);
+      socket.leave(roomId);
+      console.log(`👋 [CHAT] ${socket.id} left room: ${roomId}`);
     });
 
     socket.on("send_message", async (msg) => {
       try {
         if (!msg?.conversationId) return;
+        const roomId = String(msg.conversationId); // ✅ ép string
 
-        const convBefore = await chatLiveService.getConversationById(
-          msg.conversationId,
-        );
+        const convBefore = await chatLiveService.getConversationById(msg.conversationId);
         const wasClosed = convBefore?.status === "closed";
 
         const savedMessage = await chatLiveService.saveMessage({
@@ -105,12 +86,11 @@ const initSocket = (server) => {
           clientId: msg.clientId,
         };
 
-        // Emit vào room như cũ
-        io.to(msg.conversationId).emit("receive_message", payload);
+        // ✅ Emit vào đúng room string
+        io.to(roomId).emit("receive_message", payload);
+        console.log(`📨 Emitted to room ${roomId}:`, payload.content);
 
-        // 🔥 Emit global để tất cả receptionist update sidebar
-        // Chỉ emit khi là tin nhắn thật (không phải system)
-        if (msg.senderType == "customer") {
+        if (msg.senderType === "customer") {
           io.emit("conversation_new_message", {
             conversationId: msg.conversationId,
             lastMessage: msg.content || "",
@@ -123,6 +103,7 @@ const initSocket = (server) => {
           io.emit("conversation_updated");
         }
       } catch (error) {
+        console.error("❌ send_message error:", error.message);
         socket.emit("message_error", { error: error.message });
       }
     });
@@ -131,7 +112,6 @@ const initSocket = (server) => {
       await chatLiveService.resetUnreadCount(conversationId, receptionistId);
     });
 
-    // =====================================================
     socket.on("disconnect", () => {
       console.log("🔴 Thiết bị ngắt kết nối socket:", socket.id);
     });
@@ -139,6 +119,6 @@ const initSocket = (server) => {
 
   return io;
 };
-export const getIO = () => ioInstance;
 
+export const getIO = () => ioInstance;
 export default initSocket;

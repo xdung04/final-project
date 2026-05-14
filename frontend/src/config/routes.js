@@ -18,6 +18,8 @@ const routes = {
   bookingHistory: "/booking-history",
   hairConsult: "/hair-consult",
   kiosk: '/kiosk',
+  news: "/news",
+  newsDetail: "/tin-tuc/:slug",
 };
 
 export default routes;

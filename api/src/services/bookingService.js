@@ -519,3 +519,164 @@ export const getBarberBookingsNext7Days = async (idBarber) => {
 
   return { isLocked: false, bookings };
 };
+export const getBookingsByBranchService = async (idBranch, date) => {
+  const whereClause = {};
+
+  // Filter theo ngày nếu có
+  if (date) {
+    whereClause[Op.and] = [
+      db.Sequelize.where(
+        db.Sequelize.fn("DATE", db.Sequelize.col("Booking.bookingDate")),
+        date
+      ),
+    ];
+  }
+
+  const bookings = await db.Booking.findAll({
+    where: whereClause,
+    include: [
+      {
+        model: db.Barber,
+        as: "barber",
+        required: true,
+        where: { idBranch },
+        include: [
+          {
+            model: db.User,
+            as: "user",
+            attributes: ["idUser", "fullName", "phoneNumber"],
+          },
+          {
+            model: db.Branch,
+            as: "branch",
+            attributes: ["idBranch", "name", "address"],
+          },
+        ],
+        attributes: ["idBarber"],
+      },
+      {
+        model: db.Customer,
+        include: [
+          {
+            model: db.User,
+            as: "user",
+            attributes: ["idUser", "fullName", "phoneNumber"],
+          },
+        ],
+        attributes: ["idCustomer"],
+      },
+      {
+        model: db.BookingDetail,
+        as: "BookingDetails",
+        include: [
+          {
+            model: db.Service,
+            as: "service",
+            attributes: ["idService", "name", "price", "duration"],
+          },
+        ],
+        attributes: ["idBookingDetail", "quantity", "price"],
+      },
+      {
+        model: db.BookingTip,
+        as: "BookingTip",
+        attributes: ["tipAmount"],
+      },
+      {
+        model: db.CustomerVoucher,
+        include: [
+          {
+            model: db.Voucher,
+            as: "voucher",
+            attributes: ["idVoucher", "title", "discountPercent"],
+          },
+        ],
+        attributes: ["id", "voucherCode", "status"],
+      },
+    ],
+    order: [
+      ["bookingDate", "ASC"],
+      ["bookingTime", "ASC"],
+    ],
+  });
+
+  return bookings.map((booking) => {
+    const details = booking.BookingDetails || [];
+
+    const serviceTotal = details.reduce(
+      (sum, item) =>
+        sum + parseFloat(item.price) * (item.quantity || 1),
+      0
+    );
+
+    const tip = parseFloat(booking.BookingTip?.tipAmount || 0);
+
+    const voucher = booking.CustomerVoucher?.voucher;
+
+    const discountPercent = parseFloat(
+      voucher?.discountPercent || 0
+    );
+
+    const discountAmount =
+      (serviceTotal * discountPercent) / 100;
+
+    const total = serviceTotal + tip - discountAmount;
+
+    return {
+      idBooking: booking.idBooking,
+      bookingDate: booking.bookingDate,
+      bookingTime: booking.bookingTime,
+      status: booking.status || "Pending",
+      isPaid: Boolean(booking.isPaid),
+      description: booking.description || "",
+
+      customer: booking.Customer
+        ? {
+            id: booking.Customer.idCustomer,
+            name: booking.Customer.user?.fullName || "Khách lẻ",
+            phone: booking.Customer.user?.phoneNumber || "",
+          }
+        : {
+            id: 0,
+            name: "Khách lẻ",
+            phone: "",
+          },
+
+      barber: booking.barber
+        ? {
+            id: booking.barber.idBarber,
+            name: booking.barber.user?.fullName || "",
+          }
+        : null,
+
+      branch: booking.barber?.branch
+        ? {
+            id: booking.barber.branch.idBranch,
+            name: booking.barber.branch.name,
+            address: booking.barber.branch.address,
+          }
+        : null,
+
+      services: details.map((d) => ({
+        id: d.service?.idService,
+        name: d.service?.name,
+        price: parseFloat(d.service?.price || d.price),
+        quantity: d.quantity,
+      })),
+
+      voucher: voucher
+        ? {
+            title: voucher.title,
+            discountPercent,
+          }
+        : null,
+
+      serviceTotal: serviceTotal.toFixed(0),
+      tip: tip.toFixed(0),
+      discountPercent,
+      discountAmount: discountAmount.toFixed(0),
+      subTotal: (serviceTotal + tip).toFixed(0),
+      total: total.toFixed(0),
+    };
+  });
+};

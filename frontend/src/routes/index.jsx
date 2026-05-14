@@ -15,6 +15,8 @@ import { ProtectedRoute } from "../components/ProtectedRoute";
 import { DefaultLayout } from "~/layouts"; 
 import HairConsult from "~/pages/HairConsult";
 import CustomerKiosk from "~/pages/CustomerKiosk";
+import NewsPage from "~/pages/News";
+import NewsDetail from "~/pages/NewsDetail";
 
 // ==========================================
 // 1. TẠO CÁC COMPONENT BẢO VỆ (PROTECTED)
@@ -63,6 +65,8 @@ export const publicRouter = [
   { path: config.routes.team, component: BarberPage },
   { path: config.routes.barberProfile, component: BarberProfile },
   { path: config.routes.hairConsult, component: HairConsult },
+  { path: config.routes.news, component: NewsPage },
+  { path: config.routes.newsDetail, component: NewsDetail },
   {
     path: config.routes.receptionist,
     component: Receptionist, // Dùng trực tiếp component này, không qua bọc Protected nữa
