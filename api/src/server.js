@@ -41,7 +41,8 @@ import chatLiveRoute from "./routes/chatLive.js";
 import receptionistRouter from "./routes/receptionist.js";
 import contractRoute from "./routes/contract.js";
 import calendarRoutes from "./routes/calendarRoutes.js";
-
+import customerStatsRoutes from "./routes/customerStats.js";  
+dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
@@ -90,6 +91,10 @@ app.use("/api/news", newsRouter);
 app.use("/api/receptionist", receptionistRouter);
 
 app.use("/api/calendar", calendarRoutes);
+
+app.use("/api/customer-stats", customerStatsRoutes);
+
+
 
 // View engine & auth routes
 viewEngine(app);

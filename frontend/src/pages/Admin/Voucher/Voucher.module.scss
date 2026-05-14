@@ -1,92 +1,290 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap');
+/* ── Voucher.module.scss (Admin) ─────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@300;400;500;700&display=swap');
 
-.voucherPage {
+.page {
   padding: 40px;
-  background-color: #ffffff;
+  background: #ffffff;
   min-height: 100vh;
   font-family: 'DM Sans', sans-serif;
 }
 
+/* Header */
 .header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 40px;
-  border-bottom: 1.5px solid #000000; // Đường kẻ ngang phân cách tiêu đề sắc nét
+  align-items: flex-start;
+  margin-bottom: 32px;
   padding-bottom: 20px;
+  border-bottom: 1.5px solid #000;
 
-  h2 {
+  .header-title {
     font-family: 'Playfair Display', serif;
     font-size: 32px;
     font-weight: 800;
-    color: #000000;
+    color: #000;
+    margin: 0 0 4px;
+  }
+  .header-sub {
+    font-size: 13px;
+    color: #999;
     margin: 0;
-    letter-spacing: -0.5px;
   }
 }
 
-.addBtn {
-  background: #000000; // Nút đen tuyền
-  color: #ffffff;
-  border: none;
-  border-radius: 4px; // Bo góc nhẹ cho nam tính
-  padding: 12px 24px;
-  cursor: pointer;
-  font-weight: 700;
-  font-size: 13px;
-  text-transform: uppercase; // Viết hoa toàn bộ cho chuyên nghiệp
-  letter-spacing: 1.5px;
+.btn-create {
   display: flex;
   align-items: center;
   gap: 10px;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background: #000;
+  color: #fff;
+  border: none;
+  padding: 12px 24px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.3s;
 
-  svg {
-    font-size: 14px;
-  }
-
-  &:hover {
-    background: #4b382a; // Chuyển sang Nâu đồng khi hover
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(75, 56, 42, 0.2);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
+  &:hover { background: #4b382a; transform: translateY(-2px); }
 }
 
-/* 🏆 LAYOUT DANH SÁCH VOUCHER */
-.voucherList {
+/* Summary cards */
+.summary {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); // Tự động chia cột
-  gap: 30px;
-  padding-top: 10px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+
+  @media (max-width: 768px) { grid-template-columns: repeat(2, 1fr); }
 }
 
-/* Responsive cho màn hình điện thoại */
-@media (max-width: 768px) {
-  .voucherPage {
-    padding: 20px;
+.summary-card {
+  padding: 20px;
+  border: 1px solid #eee;
+  border-top: 3px solid var(--accent, #000);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  transition: box-shadow 0.2s;
+
+  &:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+
+  .summary-icon { font-size: 20px; color: var(--accent, #000); }
+  .summary-count { font-size: 36px; font-weight: 800; font-family: 'Playfair Display', serif; color: #000; line-height: 1; }
+  .summary-label { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: #999; }
+}
+
+/* Filter tabs */
+.filter-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 0;
+}
+
+.filter-tab {
+  padding: 10px 20px;
+  background: none;
+  border: none;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #999;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: all 0.2s;
+
+  &:hover { color: #000; }
+  &.active { color: #000; border-bottom-color: #000; }
+}
+
+/* Table */
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid #eee;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+
+  th {
+    padding: 12px 16px;
+    background: #fafafa;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #999;
+    border-bottom: 1px solid #eee;
+    white-space: nowrap;
   }
 
-  .header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 20px;
-    
-    h2 {
-      font-size: 26px;
-    }
+  td {
+    padding: 14px 16px;
+    border-bottom: 1px solid #f5f5f5;
+    vertical-align: middle;
   }
 
-  .addBtn {
-    width: 100%;
-    justify-content: center;
-  }
+  .td-center { text-align: center; }
+  .td-right  { text-align: right; }
+}
 
-  .voucherList {
-    grid-template-columns: 1fr;
+.row {
+  transition: background 0.15s;
+  &:hover td { background: #fafafa; }
+  &.inactive td { opacity: 0.5; }
+}
+
+.row-name {
+  font-weight: 600;
+  color: #000;
+  margin-bottom: 2px;
+}
+.row-desc {
+  font-size: 11px;
+  color: #999;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border: 1px solid currentColor;
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+
+.discount-val {
+  font-weight: 800;
+  font-size: 16px;
+  font-family: 'Playfair Display', serif;
+  color: #4b382a;
+}
+
+.status-dot {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  background: #eee;
+  color: #999;
+
+  &.active {
+    background: rgba(0,0,0,0.07);
+    color: #000;
+  }
+}
+
+.row-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.btn-edit {
+  padding: 6px 12px;
+  border: 1px solid #4b382a;
+  color: #4b382a;
+  background: transparent;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+  &:hover { background: #4b382a; color: #fff; }
+}
+
+.btn-delete {
+  padding: 6px 12px;
+  border: 1px solid #eee;
+  color: #ccc;
+  background: transparent;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+  &:hover { border-color: #ff4d4f; color: #ff4d4f; }
+}
+
+/* Loading / Empty */
+.loading {
+  padding: 60px;
+  text-align: center;
+  color: #999;
+  font-size: 13px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.empty {
+  padding: 60px;
+  text-align: center;
+  .empty-icon { font-size: 32px; color: #ddd; margin-bottom: 12px; display: block; }
+  p { color: #bbb; font-style: italic; font-size: 13px; }
+}
+
+/* Confirm delete modal */
+.confirm-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 999;
+}
+
+.confirm-box {
+  background: #fff;
+  border: 1px solid #000;
+  padding: 32px;
+  width: 400px;
+  max-width: 95%;
+
+  .confirm-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+  .confirm-text { font-size: 13px; color: #666; margin-bottom: 24px; }
+  .confirm-actions { display: flex; gap: 12px; justify-content: flex-end; }
+
+  .confirm-cancel {
+    padding: 10px 20px;
+    border: 1px solid #eee;
+    background: transparent;
+    color: #999;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    &:hover { border-color: #000; color: #000; }
+  }
+  .confirm-ok {
+    padding: 10px 20px;
+    border: none;
+    background: #000;
+    color: #fff;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    &:hover { background: #ff4d4f; }
   }
 }
