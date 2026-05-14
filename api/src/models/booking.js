@@ -6,7 +6,6 @@ export default (sequelize, DataTypes) => {
     static associate(models) {
       Booking.belongsTo(models.Customer, {
         foreignKey: "idCustomer",
-        as: "customer",
       });
       Booking.belongsTo(models.Barber, {
         foreignKey: "idBarber",
