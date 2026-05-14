@@ -1,23 +1,31 @@
-import { getChatHistory, saveChatMessage } from "../services/chatService.js";
-import { sendMessage as sendToGemini } from "../services/geminiService.js";
+// chatController.js
+import { sendMessage } from "../services/llmService.js";
+import { getHistory, saveHistory } from "../services/historyManager.js";
 
 export async function handleChat(req, res) {
   try {
     const { sessionId, message } = req.body;
-    if (!sessionId || !message) return res.status(400).json({ error: "Missing data" });
 
-    const history = await getChatHistory(sessionId);
+    if (!sessionId || !message) {
+      return res.status(400).json({ error: "Missing sessionId or message" });
+    }
 
-    // gửi message + lịch sử lên Gemini
-    const { reply } = await sendToGemini({ message, history });
+    // Lấy history cũ của session này
+    const history = getHistory(sessionId);
 
-    // lưu user + AI vào Redis
-    await saveChatMessage(sessionId, { type: "user", content: message });
-    await saveChatMessage(sessionId, { type: "ai", content: reply });
+    // Gọi LLM với history
+    const result = await sendMessage({ message, history });
 
-    res.json({ reply });
+    // Lưu history mới lại
+    saveHistory(sessionId, result.history);
+
+    return res.json({
+      reply:            result.reply,
+      intent:           result.intent,
+      needReceptionist: result.needReceptionist,
+    });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ reply: "Đã xảy ra lỗi, thử lại sau" });
+    console.error("Chat controller error:", err.message);
+    return res.status(500).json({ reply: "Đã xảy ra lỗi, thử lại sau" });
   }
 }

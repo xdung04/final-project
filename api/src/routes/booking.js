@@ -6,7 +6,6 @@ import {
   completeBooking,
   getBookingsByBarber,
   upload,
-  getAllBookingDetails,
   cancelBooking,
   getBookingsForBarber,
   getBookedSlotsByBarber,
@@ -26,8 +25,6 @@ router.get("/branches/:idBranch", getBranchDetails);
 // 🧑‍💼 Booking theo barber
 router.get("/barbers/:idBarber", getBookingsByBarber);
 
-// 📋 Danh sách booking admin
-router.get("/details", getAllBookingDetails);
 
 // 📋 Danh sách booking receptionist
 router.get("/branch/:idBranch", getBookingsByBranch);
