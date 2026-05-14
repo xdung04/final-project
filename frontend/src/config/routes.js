@@ -1,8 +1,11 @@
 // File: src/config/routes.js
 
+import { m } from "framer-motion";
+
 const routes = {
   home: "/",
   profile: "/profile",
+  myVouchers: "/my-vouchers",
   reels: "/reels",
   productDetails: "/products/:id",
   about: "/about",
@@ -15,6 +18,8 @@ const routes = {
   bookingHistory: "/booking-history",
   hairConsult: "/hair-consult",
   kiosk: '/kiosk',
+  news: "/news",
+  newsDetail: "/tin-tuc/:slug",
 };
 
 export default routes;

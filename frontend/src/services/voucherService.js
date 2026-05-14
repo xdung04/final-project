@@ -1,46 +1,64 @@
-import * as request from "~/apis/configs/httpRequest";
+import voucherApi from "~/apis/voucherAPI";
 
-// --- Voucher CRUD ---
-export const createVoucher = async (voucherData) => {
-  if (!voucherData.title || !voucherData.discountPercent || !voucherData.pointCost || !voucherData.expiryDate) {
-    throw new Error("Missing required voucher fields");
-  }
-  const res = await request.post("/vouchers", voucherData);
-  return res;
+// ── ADMIN ──────────────────────────────────────────────────────────────────────
+export const fetchAllVouchers = async (token) => {
+  const res = await voucherApi.getAll(token);
+  return res.data?.data || [];
 };
 
-export const getAllVouchers = async () => {
-  const res = await request.get("/vouchers");
-  return res;
+export const createVoucher = async (token, data) => {
+  const res = await voucherApi.create(token, data);
+  return res.data;
 };
 
-export const getVoucherById = async (idVoucher) => {
-  const res = await request.get(`/vouchers/${idVoucher}`);
-  return res;
+export const updateVoucher = async (token, id, data) => {
+  const res = await voucherApi.update(token, id, data);
+  return res.data;
 };
 
-export const updateVoucher = async (idVoucher, updateData) => {
-  const res = await request.put(`/vouchers/${idVoucher}`, updateData);
-  return res;
+export const deleteVoucher = async (token, id) => {
+  const res = await voucherApi.delete(token, id);
+  return res.data;
 };
 
-export const deleteVoucher = async (idVoucher) => {
-  const res = await request.del(`/vouchers/${idVoucher}`);
-  return res;
+// ── CUSTOMER: Kho voucher ──────────────────────────────────────────────────────
+export const fetchMyVouchers = async (token) => {
+  const res = await voucherApi.getMyVouchers(token);
+  return res.data?.data || [];
 };
 
-// --- Voucher liên quan khách hàng ---
-export const getCustomerVouchers = async () => {
-  const res = await request.get(`/vouchers/customer/me`);
- return res.data || []; 
+export const fetchVoucherHistory = async (token) => {
+  const res = await voucherApi.getMyVoucherHistory(token);
+  return res.data?.data || [];
 };
 
-export const getAvailableVouchersByPoint = async () => {
-  const res = await request.get(`/vouchers/available`);
-  return res.data || []; 
+// ── CUSTOMER: Campaign ─────────────────────────────────────────────────────────
+export const fetchActiveCampaigns = async (token) => {
+  const res = await voucherApi.getActiveCampaigns(token);
+  return res.data?.data || [];
 };
 
-export const exchangeVoucher = async (idVoucher) => {
-  const res = await request.post(`/vouchers/exchange`, { idVoucher });
-  return res;
+export const collectCampaignVoucher = async (token, voucherId) => {
+  const res = await voucherApi.collectCampaign(token, voucherId);
+  return res.data;
+};
+
+// ── CUSTOMER: Đổi điểm ────────────────────────────────────────────────────────
+export const fetchExchangeableVouchers = async (token) => {
+  const res = await voucherApi.getExchangeableVouchers(token);
+  return res.data?.data || [];
+};
+
+export const exchangeVoucher = async (token, voucherId) => {
+  const res = await voucherApi.exchangeVoucher(token, voucherId);
+  return res.data;
+};
+
+export const fetchCustomerPoints = async (token) => {
+  const res = await voucherApi.getCustomerPoints(token);
+  return res.data.points;
+};
+export const sendRetentionVoucher = async (token, voucherId, customerIds) => {
+  const res = await voucherApi.sendRetention(token, voucherId, customerIds);
+  return res.data;
 };

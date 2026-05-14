@@ -1,331 +1,478 @@
-/* Mượn lại bộ biến từ Booking (nếu bạn đã khai báo global thì không cần block :root này) */
-:root {
-  --bg-cream:  #fdfbf8;
-  --gold:      #b8966a;
-  --gold-dark: #967a54;
-  --charcoal:  #2c2c2c;
-  --border:    #e0d7cc;
-  --text-dim:  #666666;
-  
-  --ff-serif:  'Playfair Display', serif;
-  --ff-display:'Bebas Neue', sans-serif;
-  --ff-body:   'DM Sans', sans-serif;
-}
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,700&family=Bebas+Neue&family=DM+Sans:wght@300;400;500;700&display=swap');
 
-/* ─── Overlays ───────────────────────────────────────────────────────────── */
-.overlay, .fullOverlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(26, 26, 26, 0.85); // Đen than mờ sang trọng
-  backdrop-filter: blur(8px); // Hiệu ứng kính mờ
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 999;
-  animation: fadeIn 0.3s ease-out;
-}
+$bg-cream:  #fdfbf8;
+$gold:      #b8966a;
+$gold-dark: #967a54;
+$charcoal:  #2c2c2c;
+$border:    #e8e0d6;
+$text-dim:  #888;
 
-.fullOverlay { z-index: 2000; }
+$ff-serif:   'Playfair Display', serif;
+$ff-display: 'Bebas Neue', sans-serif;
+$ff-body:    'DM Sans', sans-serif;
+
+// ── Overlay ───────────────────────────────────────────────────────────────────
+.overlay {
+  position: fixed; inset: 0;
+  background: rgba(10, 10, 10, 0.80);
+  backdrop-filter: blur(6px);
+  display: flex; justify-content: center; align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.25s ease;
+  padding: 16px;
+}
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.98); }
-  to   { opacity: 1; transform: scale(1); }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
-/* ─── Main Popup ─────────────────────────────────────────────────────────── */
+// ── Popup ─────────────────────────────────────────────────────────────────────
 .popup {
-  background: var(--bg-cream);
-  border: 1px solid var(--gold);
-  border-top: 5px solid var(--gold);
-  border-radius: 4px; // Bo góc ít để tạo sự nam tính, góc cạnh
-  padding: 35px;
-  width: 650px;
-  max-width: 95vw;
-  max-height: 85vh;
+  background: $bg-cream;
+  border: 1px solid rgba($gold, 0.35);
+  border-top: 4px solid $gold;
+  width: 600px;
+  max-width: 100%;
+  max-height: 86vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
-
-  h3 {
-    font-family: var(--ff-serif);
-    font-size: 28px;
-    color: var(--charcoal);
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    text-align: center;
-    margin-bottom: 25px;
-    position: relative;
-
-    &::after {
-      content: "";
-      display: block;
-      width: 40px;
-      height: 2px;
-      background: var(--gold);
-      margin: 12px auto 0;
-    }
-  }
+  box-shadow: 0 32px 64px rgba(0,0,0,0.4);
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* ─── Applied Voucher Box (Thẻ đang áp dụng) ─────────────────────────────── */
-.appliedBox {
-  background: linear-gradient(135deg, #2c2c2c 0%, #1a1a1a 100%);
-  border: 1px solid var(--gold);
-  padding: 15px 20px;
-  border-radius: 4px;
-  margin-bottom: 25px;
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+// ── Header ────────────────────────────────────────────────────────────────────
+.popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 22px 28px 16px;
+  border-bottom: 1px solid $border;
+  flex-shrink: 0;
+}
+
+.popup-label {
+  display: block;
+  font-family: $ff-body;
+  font-size: 9px;
+  letter-spacing: 4px;
+  color: $gold;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.popup-title h3 {
+  font-family: $ff-serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: $charcoal;
+  margin: 0;
+  em { font-style: italic; color: $gold-dark; }
+}
+
+.close-btn {
+  width: 30px; height: 30px;
+  border: 1px solid $border;
+  background: transparent;
+  color: $text-dim;
+  cursor: pointer;
+  font-size: 13px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  margin-top: 2px;
+  &:hover { border-color: $charcoal; color: $charcoal; }
+}
+
+// ── Applied banner ────────────────────────────────────────────────────────────
+.applied-banner {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 10px 20px rgba(184, 150, 106, 0.15);
+  padding: 10px 28px;
+  background: rgba($gold, 0.08);
+  border-bottom: 1px solid rgba($gold, 0.2);
+  flex-shrink: 0;
 
-  p {
-    color: #f1d592;
-    font-family: var(--ff-body);
-    font-size: 15px;
-    margin: 0;
+  span {
+    font-size: 12px;
+    color: $gold-dark;
+    strong { font-weight: 700; }
+  }
+  button {
+    background: transparent; border: none;
+    font-size: 11px; color: #e53935;
+    cursor: pointer; font-weight: 600;
+    text-decoration: underline;
+    font-family: $ff-body;
+    &:hover { opacity: 0.7; }
+  }
+}
 
-    strong {
-      color: #ffffff;
-      font-weight: 500;
-      margin-right: 8px;
-    }
+// ── Body ──────────────────────────────────────────────────────────────────────
+.popup-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 28px;
+
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: rgba($gold, 0.4); border-radius: 4px; }
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+// Section label
+.list-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: $text-dim;
+  padding: 4px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+
+  &::after { content: ''; flex: 1; height: 1px; background: $border; }
+  &:first-child { margin-top: 0; }
+
+  &.label-exchange {
+    color: #60a5fa;
+    margin-top: 16px;
+    &::after { background: rgba(96,165,250,0.2); }
+  }
+}
+
+// ── Ticket ────────────────────────────────────────────────────────────────────
+.ticket {
+  display: flex;
+  background: #fff;
+  border: 1px solid $border;
+  overflow: visible;
+  transition: all 0.2s;
+
+  &:hover { border-color: rgba($gold, 0.45); box-shadow: 0 3px 12px rgba(0,0,0,0.07); }
+
+  &.applied {
+    border-color: $gold;
+    box-shadow: 0 0 0 1px rgba($gold, 0.25);
   }
 
-  .removeBtn {
+  &.urgent { border-color: rgba(251,146,60,0.5); }
+
+  &.exchange-ticket .ticket-left {
+    background: rgba(96,165,250,0.06);
+  }
+}
+
+.ticket-left {
+  width: 76px;
+  min-width: 76px;
+  background: rgba(184,150,106,0.06);
+  border-left: 3px solid var(--accent, $gold);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 6px;
+  gap: 2px;
+
+  .ticket-pct {
+    font-family: $ff-display;
+    font-size: 32px;
+    color: var(--accent, $gold);
+    line-height: 1;
+  }
+  .ticket-off {
+    font-size: 7px;
+    letter-spacing: 2px;
+    color: $text-dim;
+    text-transform: uppercase;
+  }
+}
+
+.ticket-divider {
+  width: 12px;
+  min-width: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+
+  .hole {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: $bg-cream;
+    border: 1px solid $border;
+    flex-shrink: 0;
+    z-index: 1;
+    &.hole-t { margin-top: -6px; }
+    &.hole-b { margin-bottom: -6px; }
+  }
+
+  .dash {
+    flex: 1;
+    width: 1px;
+    background: repeating-linear-gradient(
+      to bottom,
+      $border 0, $border 4px,
+      transparent 4px, transparent 8px
+    );
+  }
+}
+
+.ticket-right {
+  flex: 1;
+  padding: 13px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.ticket-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ticket-type {
+  font-size: 8px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  font-weight: 700;
+  border: 1px solid currentColor;
+  padding: 2px 6px;
+  flex-shrink: 0;
+  font-family: $ff-body;
+}
+
+.ticket-source {
+  font-size: 10px;
+  color: $text-dim;
+  font-family: $ff-body;
+}
+
+.ticket-name {
+  font-family: $ff-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: $charcoal;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ticket-conditions {
+  display: flex;
+  gap: 14px;
+  font-size: 11px;
+  color: $text-dim;
+  font-family: $ff-body;
+  flex-wrap: wrap;
+  strong { color: $charcoal; font-weight: 600; }
+}
+
+.ticket-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 2px;
+  padding-top: 8px;
+  border-top: 1px solid rgba($border, 0.7);
+  gap: 8px;
+}
+
+.ticket-expire {
+  font-size: 10px;
+  color: $text-dim;
+  letter-spacing: 0.3px;
+  font-family: $ff-body;
+  &.urgent { color: #fb923c; font-weight: 600; }
+}
+
+.apply-btn {
+  padding: 6px 16px;
+  background: $gold;
+  border: none;
+  color: #fff;
+  font-family: $ff-body;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  &:hover { background: $gold-dark; }
+}
+
+.applied-tag {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: $gold-dark;
+  border: 1px solid rgba($gold, 0.5);
+  padding: 5px 12px;
+  text-transform: uppercase;
+  font-family: $ff-body;
+  flex-shrink: 0;
+}
+
+.cost-tag {
+  font-family: $ff-display;
+  font-size: 18px;
+  color: #60a5fa;
+  letter-spacing: 1px;
+}
+
+.exchange-btn {
+  padding: 6px 14px;
+  background: rgba(96,165,250,0.1);
+  border: 1px solid rgba(96,165,250,0.4);
+  color: #3b82f6;
+  font-family: $ff-body;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  &:hover { background: rgba(96,165,250,0.18); border-color: #60a5fa; }
+}
+
+// ── Empty / Loading ───────────────────────────────────────────────────────────
+.loading {
+  padding: 48px;
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: $gold;
+  font-family: $ff-body;
+}
+
+.empty {
+  padding: 48px 24px;
+  text-align: center;
+  border: 1px dashed rgba($gold, 0.25);
+  background: rgba($gold, 0.02);
+
+  .empty-icon { font-size: 30px; display: block; margin-bottom: 12px; opacity: 0.5; }
+  p { color: $text-dim; font-style: italic; font-size: 13px; margin: 0; font-family: $ff-body; }
+}
+
+// ── Footer ────────────────────────────────────────────────────────────────────
+.popup-footer {
+  padding: 14px 28px;
+  border-top: 1px solid $border;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.footer-close {
+  padding: 9px 26px;
+  background: transparent;
+  border: 1px solid rgba($charcoal, 0.18);
+  color: $text-dim;
+  font-family: $ff-body;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+  &:hover { border-color: $charcoal; color: $charcoal; }
+}
+
+// ── Confirm exchange ──────────────────────────────────────────────────────────
+.confirm-overlay {
+  position: fixed; inset: 0;
+  background: rgba(10,10,10,0.65);
+  backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1100;
+}
+
+.confirm-box {
+  background: $bg-cream;
+  border: 1px solid rgba($gold, 0.3);
+  border-top: 4px solid $gold;
+  padding: 30px;
+  width: 360px;
+  max-width: 95%;
+  box-shadow: 0 20px 48px rgba(0,0,0,0.3);
+
+  .confirm-label {
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: $gold;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    font-family: $ff-body;
+  }
+  .confirm-name {
+    font-family: $ff-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: $charcoal;
+    margin-bottom: 12px;
+  }
+  .confirm-desc {
+    font-size: 13px;
+    color: $text-dim;
+    font-family: $ff-body;
+    line-height: 1.6;
+    margin: 0 0 24px;
+    strong { color: $gold-dark; }
+  }
+  .confirm-actions {
+    display: flex;
+    gap: 10px;
+  }
+  .confirm-cancel {
+    flex: 1; padding: 11px;
     background: transparent;
-    color: #e53935;
-    border: 1px solid #e53935;
-    padding: 6px 12px;
-    border-radius: 2px;
-    font-size: 12px;
-    font-weight: bold;
+    border: 1px solid $border;
+    color: $text-dim;
+    font-family: $ff-body;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
     text-transform: uppercase;
     cursor: pointer;
     transition: all 0.2s;
-
-    &:hover {
-      background: #e53935;
-      color: #fff;
-    }
+    &:hover:not(:disabled) { border-color: $charcoal; color: $charcoal; }
+    &:disabled { opacity: 0.5; cursor: not-allowed; }
   }
-}
-
-/* ─── Voucher List & Items ───────────────────────────────────────────────── */
-.voucherList {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  overflow-y: auto;
-  padding-right: 10px;
-
-  /* Scrollbar xịn */
-  &::-webkit-scrollbar { width: 4px; }
-  &::-webkit-scrollbar-track { background: transparent; }
-  &::-webkit-scrollbar-thumb { background: var(--gold-dark); border-radius: 4px; }
-}
-
-.voucherItem {
-  display: flex;
-  background: #ffffff;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  margin-bottom: 16px;
-  position: relative;
-  transition: all 0.3s;
-
-  &:hover {
-    border-color: var(--gold);
-    box-shadow: 0 8px 20px rgba(184, 150, 106, 0.12);
-    transform: translateY(-2px);
-  }
-
-  /* Tạo rãnh cắt kiểu cuống vé (Ticket tear-off) */
-  &::before {
-    content: "";
-    position: absolute;
-    top: 0; bottom: 0; left: 65%;
-    border-left: 2px dashed var(--border);
-    z-index: 1;
-  }
-}
-
-.info {
-  flex: 0 0 65%;
-  padding: 20px;
-
-  .title {
-    font-family: var(--ff-serif);
-    font-size: 18px;
-    color: var(--charcoal);
-    margin-bottom: 6px;
-  }
-
-  .description {
-    font-size: 13px;
-    color: var(--text-dim);
-    margin-bottom: 12px;
-    line-height: 1.4;
-  }
-
-  .discount {
-    font-family: var(--ff-display);
-    font-size: 24px;
-    color: var(--gold-dark);
-    letter-spacing: 1px;
-    margin-bottom: 12px;
-  }
-
-  .pointCost, .totalQuantity, .status, .expire {
-    font-size: 11px;
-    color: #888;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 4px;
-  }
-}
-
-/* ─── Actions (Bên phải cuống vé) ────────────────────────────────────────── */
-.actions {
-  flex: 1;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  background: #faf8f5;
-  border-radius: 0 4px 4px 0;
-
-  button {
-    width: 100%;
-    padding: 12px 10px;
-    font-family: var(--ff-display);
-    font-size: 15px;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
+  .confirm-ok {
+    flex: 1; padding: 11px;
+    background: $gold;
     border: none;
-    border-radius: 2px;
-    cursor: pointer;
-    transition: all 0.3s;
-  }
-}
-
-.exchangeBtn {
-  background: var(--charcoal);
-  color: #fff;
-  border: 1px solid var(--charcoal);
-
-  &:hover {
-    background: var(--gold);
-    border-color: var(--gold);
-    box-shadow: 0 4px 10px rgba(184, 150, 106, 0.3);
-  }
-}
-
-.useBtn {
-  background: var(--gold);
-  color: #fff;
-
-  &:hover {
-    background: var(--gold-dark);
-  }
-}
-
-.appliedTag {
-  background: transparent;
-  color: var(--gold-dark);
-  border: 1px solid var(--gold);
-  padding: 10px 15px;
-  border-radius: 2px;
-  font-family: var(--ff-display);
-  font-size: 14px;
-  letter-spacing: 1px;
-  text-align: center;
-  width: 100%;
-}
-
-/* ─── Footer & Confirm Box ───────────────────────────────────────────────── */
-.footer {
-  margin-top: 25px;
-  text-align: center;
-  padding-top: 20px;
-  border-top: 1px solid var(--border);
-
-  .closeBtn {
-    background: transparent;
-    color: var(--text-dim);
-    border: 1px solid var(--text-dim);
-    padding: 10px 30px;
-    font-family: var(--ff-display);
-    font-size: 16px;
-    letter-spacing: 2px;
-    cursor: pointer;
-    text-transform: uppercase;
-    transition: 0.3s;
-
-    &:hover {
-      background: var(--charcoal);
-      color: #fff;
-      border-color: var(--charcoal);
-    }
-  }
-}
-
-.confirmBox {
-  background: var(--bg-cream);
-  padding: 30px;
-  border-top: 5px solid var(--gold);
-  border-radius: 4px;
-  width: 420px;
-  text-align: center;
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
-
-  h4 {
-    font-family: var(--ff-serif);
-    font-size: 22px;
-    color: var(--charcoal);
-    margin-bottom: 15px;
-  }
-
-  p {
-    font-size: 15px;
-    color: var(--text-dim);
-    margin-bottom: 25px;
-    line-height: 1.5;
-
-    strong {
-      color: var(--gold-dark);
-    }
-  }
-}
-
-.confirmActions {
-  display: flex;
-  gap: 15px;
-
-  button {
-    flex: 1;
-    padding: 12px;
-    font-family: var(--ff-display);
-    font-size: 16px;
+    color: #fff;
+    font-family: $ff-body;
+    font-size: 11px;
+    font-weight: 700;
     letter-spacing: 1.5px;
     text-transform: uppercase;
     cursor: pointer;
-    border-radius: 2px;
-    transition: 0.3s;
+    transition: background 0.2s;
+    &:hover:not(:disabled) { background: $gold-dark; }
+    &:disabled { opacity: 0.6; cursor: not-allowed; }
   }
-}
-
-.confirmBtn {
-  background: var(--gold);
-  color: #fff;
-  border: none;
-  &:hover { background: var(--gold-dark); }
-}
-
-.cancelBtn {
-  background: transparent;
-  color: var(--charcoal);
-  border: 1px solid var(--charcoal);
-  &:hover { background: var(--charcoal); color: #fff; }
 }

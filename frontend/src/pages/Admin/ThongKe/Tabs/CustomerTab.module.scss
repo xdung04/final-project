@@ -1,63 +1,376 @@
-.wrapper {
-  display: grid;
-  grid-template-columns: 1fr 1.2fr;
-  gap: 25px;
-  animation: fadeIn 0.4s ease;
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500;700&display=swap');
+
+$gold:      #D4AF37;
+$gold-dark: #b8960c;
+$black:     #1A1A1A;
+$bg:        #fafaf8;
+$border:    #eeeeee;
+$text-dim:  #888;
+$red:       #f43f5e;
+
+$ff-serif: 'Playfair Display', serif;
+$ff-body:  'DM Sans', sans-serif;
+
+
+// ── Main Tabs ───────────────────────────────────────────────────────────────
+.mainTabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid $border;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
 }
 
-.pieCard, .riskCard {
-  background: #fff;
-  padding: 30px;
-  border-radius: 24px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
-  h4 { margin-bottom: 20px; font-size: 18px; }
-}
+.mainTab {
+  background: transparent;
+  border: none;
+  padding: 14px 28px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: $ff-body;
+  color: $text-dim;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+  border-radius: 8px 8px 0 0;
 
-.riskCard {
-  .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 25px;
-    h4 { margin: 0; display: flex; align-items: center; gap: 8px; }
-    span { font-size: 12px; color: #999; background: #f5f5f5; padding: 4px 10px; border-radius: 20px; }
+  &:hover {
+    color: $black;
+    background: rgba(212, 175, 55, 0.06);
   }
 
-  .list {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
+  &.mainTabActive {
+    color: $gold-dark;
+    background: white;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid $border;
+    border-bottom: 3px solid $gold;
 
-    .item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 15px;
-      border-radius: 16px;
-      background: #fcfcfc;
-      border: 1px solid #f0f0f0;
-      transition: 0.2s;
-
-      &:hover { border-color: #D4AF37; background: #fff; }
-
-      .user {
-        p { margin: 0; font-weight: 700; color: #1a1a1a; }
-        small { color: #f43f5e; font-weight: 500; }
-      }
-
-      .btnVoucher {
-        background: #1a1a1a;
-        color: #fff;
-        border: none;
-        padding: 8px 16px;
-        border-radius: 8px;
-        font-size: 12px;
-        font-weight: 600;
-        cursor: pointer;
-        &:hover { background: #D4AF37; color: #1a1a1a; }
-      }
+    .tabBadge {
+      background: $gold;
+      color: $black;
     }
   }
+
+  .tabBadge {
+    background: #f0f0f0;
+    color: $black;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    margin-left: 8px;
+    font-weight: 700;
+  }
 }
 
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+// ── Section ───────────────────────────────────────────────────────────────────
+.section {
+  background: #fff;
+  border: 1px solid $border;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+}
+
+// ── Stat cards (giữ nguyên nhưng tinh chỉnh) ────────────────────────────────
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 20px;
+
+  @media (max-width: 1200px) { grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 768px)  { grid-template-columns: repeat(2, 1fr); }
+}
+
+.statCard {
+  padding: 20px 22px;
+  border: 1px solid $border;
+  border-top: 4px solid var(--accent, $gold);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: all 0.25s ease;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+  }
+}
+
+.statIcon {
+  width: 48px; 
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(212,175,55,0.1);
+  display: flex; 
+  align-items: center; 
+  justify-content: center;
+  color: var(--accent, $gold);
+  flex-shrink: 0;
+  font-size: 22px;
+}
+
+.statValue {
+  font-family: $ff-serif;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.statTitle {
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: $text-dim;
+  margin-top: 4px;
+}
+
+// ── Segment Cards ─────────────────────────────────────────────────────────────
+.segCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.segCard {
+  background: white;
+  border: 1px solid $border;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  transition: all 0.25s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+
+  &:hover {
+    border-color: var(--seg-color);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.1);
+  }
+
+  &.segActive {
+    border-color: var(--seg-color);
+    box-shadow: 0 0 0 3px rgba(212,175,55,0.15);
+  }
+}
+
+.segIcon {
+  font-size: 28px;
+  margin-bottom: 12px;
+}
+
+.segCount {
+  font-family: $ff-serif;
+  font-size: 32px;
+  font-weight: 700;
+  color: $black;
+  margin: 8px 0 4px;
+}
+
+.segLabel {
+  font-weight: 600;
+  font-size: 15px;
+  margin-bottom: 8px;
+}
+
+.segPct {
+  font-size: 13px;
+  color: var(--seg-color);
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.segBar {
+  height: 6px;
+  background: #f0f0f0;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.segBarFill {
+  height: 100%;
+  border-radius: 10px;
+  transition: width 0.6s ease;
+}
+
+.segDesc {
+  font-size: 12px;
+  color: $text-dim;
+  line-height: 1.4;
+}
+
+// ── Segment Detail ────────────────────────────────────────────────────────────
+.segDetailHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid $border;
+}
+
+.segDetailIcon {
+  font-size: 26px;
+  margin-right: 10px;
+}
+
+.segDetailCount {
+  color: $text-dim;
+  font-weight: 500;
+}
+
+// ── Table & Other components (tinh chỉnh nhẹ) ───────────────────────────────
+.tableWrap, .monthTable, .segTable {
+  border: 1px solid $border;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.table, .monthTable table, .segTable table {
+  th {
+    background: #f9f9f9;
+    font-size: 10.5px;
+    letter-spacing: 1.1px;
+    padding: 14px 16px;
+  }
+  
+  td {
+    padding: 14px 16px;
+  }
+}
+
+.row:hover td {
+  background: #fdfaf4;
+}
+
+// Action Bar
+.actionBar {
+  background: $bg;
+  border: 1px solid $border;
+  border-radius: 12px;
+  padding: 18px 20px;
+  margin-bottom: 20px;
+}
+
+// Filter Bar
+.filterBar {
+  background: $bg;
+  border: 1px solid $border;
+  border-radius: 12px;
+  padding: 16px 20px;
+}
+
+// Button hover gold effect
+.sendMassBtn:hover:not(:disabled) {
+  background: $gold;
+  color: $black;
+  transform: translateY(-1px);
+}
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.chartBox {
+  background: white;
+  border: 1px solid $border;
+  border-radius: 16px;
+  padding: 20px;
+}
+.chartHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.chartTitle {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+}
+.insightBadge {
+  background: rgba(212,175,55,0.1);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: $gold-dark;
+}
+
+.segmentsRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.detailBox {
+  background: white;
+  border: 1px solid $border;
+  border-radius: 16px;
+  padding: 24px;
+  margin-top: 16px;
+}
+.detailHeader {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid $border;
+  margin-bottom: 20px;
+}
+.detailIcon { font-size: 24px; }
+.detailCount { color: $text-dim; font-weight: 500; }
+.detailDesc { color: $text-dim; font-size: 13px; margin-left: auto; }
+
+.inactiveToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  background: $bg;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+.filterRange {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  label { font-size: 12px; color: $text-dim; }
+  input {
+    width: 70px; padding: 6px; border: 1px solid $border; border-radius: 6px; text-align: center;
+  }
+  span { font-size: 13px; color: $text-dim; }
+}
+.voucherSelect {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  label { font-size: 12px; color: $text-dim; }
+  select { padding: 6px 12px; border-radius: 6px; border: 1px solid $border; background: white; }
+}
+.sendMassBtn {
+  background: $black; color: white; border: none; padding: 8px 16px; border-radius: 6px;
+  display: flex; align-items: center; gap: 6px; font-weight: 600;
+  &:hover:not(:disabled) { background: $gold; color: $black; }
+  &:disabled { opacity: 0.5; }
+}
+.selectAllBtn {
+  background: transparent; border: 1px solid $border; padding: 8px 14px; border-radius: 6px;
+  display: flex; align-items: center; gap: 6px;
+  &:hover { border-color: $gold; }
+}

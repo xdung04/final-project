@@ -11,8 +11,8 @@ export default (sequelize) => {
 
       Customer.belongsToMany(models.Voucher, {
         through: models.CustomerVoucher,
-        foreignKey: "idCustomer",
-        otherKey: "idVoucher",
+        foreignKey: "customer_id",  
+        otherKey: "voucher_id",      
         as: "vouchers",
       });
 
