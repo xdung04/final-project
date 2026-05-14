@@ -8,7 +8,7 @@ import { fetchHotBarbersPaged } from "~/services/barberService";
 import { useToast } from "~/context/ToastContext";
 import { BranchAPI } from "~/apis/branchAPI";
 import LiveChat from "../../components/LiveChat";
-
+import { X, MessageCircle } from "lucide-react";
 // Import Header và Footer của bạn
 import { fetchReelsPaged } from "~/services/reelService"; // ← thêm import
 import { useNavigate } from "react-router-dom"; // ← thêm import
@@ -466,15 +466,19 @@ const Home = () => {
       {/* ── CHATBOT ── */}
       <div className={styles.chatbotBubble}>
         <div className={`${styles.chatbotPopup} ${chatOpen ? styles.open : ""}`}>
-          {chatOpen && chatType === "ai" && (
-            <AIChat
-              onSwitchToLive={() => {
-                setChatType("live");
-                setChatOpen(true); // 🔥 đảm bảo popup mở
-              }}
-            />
-          )}
 
+{chatOpen && chatType === "ai" && (
+  <AIChat
+    onSwitchToLive={() => {
+      setChatType("live");
+      setChatOpen(true);
+    }}
+    onRequestLogin={() => {
+      setChatOpen(false);       // đóng chat
+      setShowLoginModal(true);  // mở modal login sẵn có
+    }}
+  />
+)}
           {chatOpen && chatType === "live" && <LiveChat customerId={user?.idUser} token={accessToken} />}
         </div>
 
@@ -487,7 +491,10 @@ const Home = () => {
             if (chatOpen) setChatType("ai");
           }}
         >
-          {chatOpen ? "✕" : "💬"}
+ {chatOpen
+    ? <X size={20} />          
+    : <MessageCircle size={20} />
+  }
         </button>
       </div>
 
