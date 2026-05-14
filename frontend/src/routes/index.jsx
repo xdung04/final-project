@@ -1,6 +1,7 @@
 import config from "~/config";
 import Home from "~/pages/home";
 import Profile from "~/pages/profile";
+import MyVouchers from "~/pages/MyVouchers";
 import About from "~/pages/about";
 import Admin from "~/pages/Admin";
 import ThoCatToc from "~/pages/ThoCatToc";
@@ -56,6 +57,7 @@ const BookingHistoryProtected = () => (
 export const publicRouter = [
   { path: config.routes.home, component: Home },
   { path: config.routes.profile, component: Profile },
+  { path: config.routes.myVouchers, component: MyVouchers },
   { path: config.routes.about, component: About },
   { path: config.routes.reels, component: Reel },
   { path: config.routes.team, component: BarberPage },

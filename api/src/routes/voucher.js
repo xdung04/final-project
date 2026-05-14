@@ -4,18 +4,23 @@ import { authenticate } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
-// --- CRUD voucher (admin) ---
-router.post("/", voucherController.create);
-router.get("/", voucherController.getAll);
+// --- Admin routes ---
+router.post("/", authenticate, voucherController.create);
+router.get("/", authenticate, voucherController.getAll);
+router.get("/stats/:id", authenticate, voucherController.getVoucherStats);
+router.post("/retention/issue", authenticate, voucherController.issueRetentionVouchers);
+router.put("/:id", authenticate, voucherController.update);
+router.delete("/:id", authenticate, voucherController.delete);
+router.get("/:id", authenticate, voucherController.getById);
 
-// --- Voucher khách (cần authenticate) ---
-router.get("/customer/me", authenticate, voucherController.getCustomerVouchers);
-router.get("/available", authenticate, voucherController.getAvailableVouchersByPoint);
-router.post("/exchange", authenticate, voucherController.exchangeVoucher);
-
-// --- Route động ở cuối cùng ---
-router.get("/:id", voucherController.getById);
-router.put("/:id", voucherController.update);
-router.delete("/:id", voucherController.delete);
+// --- Customer routes (cần authenticate) ---
+router.get("/customer/available", authenticate, voucherController.getCustomerAvailableVouchers);
+router.get("/customer/history", authenticate, voucherController.getCustomerVoucherHistory);
+router.get("/customer/exchangeable", authenticate, voucherController.getExchangeableVouchers);
+router.get("/customer/campaigns", authenticate, voucherController.getActiveCampaigns);
+router.post("/customer/exchange", authenticate, voucherController.exchangeVoucher);
+router.post("/customer/collect", authenticate, voucherController.collectCampaignVoucher);
+router.get("/customer/points", authenticate, voucherController.getCustomerPoints);
+// router.post("/customer/apply", authenticate, voucherController.applyVoucher); // có thể dùng riêng
 
 export default router;

@@ -4,13 +4,18 @@ import { Model } from "sequelize";
 export default (sequelize, DataTypes) => {
   class CustomerVoucher extends Model {
     static associate(models) {
+      CustomerVoucher.belongsTo(models.Voucher, {
+        foreignKey: "voucher_id",
+        as: "voucher",
+      });
       CustomerVoucher.belongsTo(models.Customer, {
-        foreignKey: "idCustomer",
+        foreignKey: "customer_id",
         as: "customer",
       });
-      CustomerVoucher.belongsTo(models.Voucher, {
-        foreignKey: "idVoucher",
-        as: "voucher",
+
+      CustomerVoucher.hasOne(models.Booking, {
+        foreignKey: "idCustomerVoucher",
+        as: "booking",
       });
     }
   }
@@ -22,43 +27,42 @@ export default (sequelize, DataTypes) => {
         autoIncrement: true,
         primaryKey: true,
       },
-      idCustomer: {
+      voucher_id: {
         type: DataTypes.INTEGER,
         allowNull: false,
       },
-      idVoucher: {
+      customer_id: {
         type: DataTypes.INTEGER,
         allowNull: false,
       },
-      voucherCode: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        unique: true,
+      status: {
+        type: DataTypes.ENUM("AVAILABLE", "USED", "EXPIRED"),
+        defaultValue: "AVAILABLE",
       },
-      obtainedAt: {
+      issued_at: {
         type: DataTypes.DATE,
         allowNull: false,
         defaultValue: DataTypes.NOW,
       },
-      usedAt: {
+      expires_at: {
         type: DataTypes.DATE,
         allowNull: true,
       },
-      expiredAt: {
+      used_at: {
         type: DataTypes.DATE,
         allowNull: true,
       },
-      status: {
-        type: DataTypes.ENUM("unused", "used", "expired"),
-        allowNull: false,
-        defaultValue: "unused",
+      source_note: {
+        type: DataTypes.STRING,
+        allowNull: true,
       },
     },
     {
       sequelize,
       modelName: "CustomerVoucher",
-      tableName: "customer_voucher",
+      tableName: "customer_vouchers",
       timestamps: true,
+      underscored: true,
     }
   );
 

@@ -1,190 +1,303 @@
-import React, { useState, useEffect } from "react";
-import styles from "./VoucherPopup.module.scss";
+import { useState, useEffect } from "react";
+import classNames from "classnames/bind";
 import * as voucherService from "~/services/voucherService";
+import { useAuth } from "~/context/AuthContext";
+import styles from "./VoucherPopup.module.scss";
 
-function VoucherPopup({ idCustomer, onClose, onSelect, defaultVoucher }) {
-  const [vouchers, setVouchers] = useState([]);
-  const [selectedVoucher, setSelectedVoucher] = useState(null); 
-  const [appliedVoucher, setAppliedVoucher] = useState(defaultVoucher || null); 
-  const [loading, setLoading] = useState(true);
+const cx = classNames.bind(styles);
 
+const TYPE_LABEL = {
+  NEW_CUSTOMER:    "Khách mới",
+  POINTS_EXCHANGE: "Đổi điểm",
+  RETENTION:       "Tri ân",
+  CAMPAIGN:        "Khuyến mãi",
+};
+
+const TYPE_COLOR = {
+  NEW_CUSTOMER:    "#4ade80",
+  POINTS_EXCHANGE: "#60a5fa",
+  RETENTION:       "#f59e0b",
+  CAMPAIGN:        "#c084fc",
+};
+
+const SOURCE_LABEL = {
+  new_customer_welcome: "Voucher chào mừng",
+  retention_gift:       "Quà tri ân",
+  campaign_collect:     "Từ chiến dịch",
+};
+
+function formatMoney(val) {
+  return Number(val).toLocaleString("vi-VN") + "đ";
+}
+
+function daysLeft(expiresAt) {
+  if (!expiresAt) return null;
+  return Math.ceil((new Date(expiresAt) - new Date()) / (1000 * 60 * 60 * 24));
+}
+
+// ── Voucher ticket (kho) ──────────────────────────────────────────────────────
+function VoucherTicket({ cv, isApplied, onApply }) {
+  const voucherData = cv.voucher || cv;
+  const color  = TYPE_COLOR[voucherData.type] || "#b8966a";
+  const days   = daysLeft(cv.expires_at);
+  const urgent = days !== null && days <= 3;
+
+  return (
+    <div className={cx("ticket", { applied: isApplied, urgent })}>
+      <div className={cx("ticket-left")} style={{ "--accent": color }}>
+        <span className={cx("ticket-pct")}>{voucherData.discount_percent}%</span>
+        <span className={cx("ticket-off")}>GIẢM</span>
+      </div>
+
+      <div className={cx("ticket-divider")}>
+        <span className={cx("hole", "hole-t")} />
+        <div className={cx("dash")} />
+        <span className={cx("hole", "hole-b")} />
+      </div>
+
+      <div className={cx("ticket-right")}>
+        <div className={cx("ticket-meta")}>
+          <span className={cx("ticket-type")} style={{ color, borderColor: color }}>
+            {TYPE_LABEL[voucherData.type] || "Voucher"}
+          </span>
+          {cv.source_note && SOURCE_LABEL[cv.source_note] && (
+            <span className={cx("ticket-source")}>{SOURCE_LABEL[cv.source_note]}</span>
+          )}
+        </div>
+
+        <div className={cx("ticket-name")}>{voucherData.name}</div>
+
+        <div className={cx("ticket-conditions")}>
+          <span>Giảm tối đa <strong>{formatMoney(voucherData.max_discount_amount)}</strong></span>
+          <span>Đơn từ <strong>{formatMoney(voucherData.min_invoice_amount)}</strong></span>
+        </div>
+
+        <div className={cx("ticket-footer")}>
+          <span className={cx("ticket-expire", { urgent })}>
+            {!cv.expires_at
+              ? "Không hết hạn"
+              : urgent
+              ? `⚡ Còn ${days} ngày`
+              : `HSD: ${new Date(cv.expires_at).toLocaleDateString("vi-VN")}`}
+          </span>
+
+          {isApplied ? (
+            <span className={cx("applied-tag")}>✓ Đang dùng</span>
+          ) : (
+            <button className={cx("apply-btn")} onClick={() => onApply(cv)}>
+              Áp dụng
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Exchange ticket (đổi điểm) ────────────────────────────────────────────────
+function ExchangeTicket({ voucher, onExchange }) {
+  return (
+    <div className={cx("ticket", "exchange-ticket")}>
+      <div className={cx("ticket-left")} style={{ "--accent": "#60a5fa" }}>
+        <span className={cx("ticket-pct")}>{voucher.discount_percent}%</span>
+        <span className={cx("ticket-off")}>GIẢM</span>
+      </div>
+
+      <div className={cx("ticket-divider")}>
+        <span className={cx("hole", "hole-t")} />
+        <div className={cx("dash")} />
+        <span className={cx("hole", "hole-b")} />
+      </div>
+
+      <div className={cx("ticket-right")}>
+        <div className={cx("ticket-meta")}>
+          <span className={cx("ticket-type")} style={{ color: "#60a5fa", borderColor: "#60a5fa" }}>
+            Đổi điểm
+          </span>
+          <span className={cx("ticket-source")}>Dùng điểm tích lũy</span>
+        </div>
+
+        <div className={cx("ticket-name")}>{voucher.name}</div>
+
+        <div className={cx("ticket-conditions")}>
+          <span>Giảm tối đa <strong>{formatMoney(voucher.max_discount_amount)}</strong></span>
+          <span>Đơn từ <strong>{formatMoney(voucher.min_invoice_amount)}</strong></span>
+        </div>
+
+        <div className={cx("ticket-footer")}>
+          <span className={cx("cost-tag")}>{voucher.points_required} điểm</span>
+          <button className={cx("exchange-btn")} onClick={() => onExchange(voucher)}>
+            Đổi ngay
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Confirm exchange ──────────────────────────────────────────────────────────
+function ConfirmExchange({ voucher, onConfirm, onCancel, loading }) {
+  if (!voucher) return null;
+  return (
+    <div className={cx("confirm-overlay")} onClick={onCancel}>
+      <div className={cx("confirm-box")} onClick={(e) => e.stopPropagation()}>
+        <div className={cx("confirm-label")}>Xác nhận đổi điểm</div>
+        <div className={cx("confirm-name")}>{voucher.name}</div>
+        <p className={cx("confirm-desc")}>
+          Bạn có chắc muốn đổi{" "}
+          <strong>{voucher.points_required} điểm</strong>{" "}
+          để nhận voucher này không?
+        </p>
+        <div className={cx("confirm-actions")}>
+          <button className={cx("confirm-cancel")} onClick={onCancel} disabled={loading}>
+            Huỷ
+          </button>
+          <button className={cx("confirm-ok")} onClick={onConfirm} disabled={loading}>
+            {loading ? "Đang đổi..." : "Xác nhận"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Main ──────────────────────────────────────────────────────────────────────
+function VoucherPopup({ onClose, onSelect, defaultVoucher }) {
+  const { accessToken } = useAuth();
+
+  const [availableVouchers,    setAvailableVouchers]    = useState([]);
+  const [exchangeableVouchers, setExchangeableVouchers] = useState([]);
+  const [appliedVoucher,       setAppliedVoucher]       = useState(defaultVoucher || null);
+  const [loading,              setLoading]              = useState(true);
+  const [confirmVoucher,       setConfirmVoucher]       = useState(null);
+  const [exchanging,           setExchanging]           = useState(false);
+
+  // Giữ nguyên luồng load ban đầu
   useEffect(() => {
+    if (!accessToken) return;
     const fetchVouchers = async () => {
+      setLoading(true);
       try {
-        setLoading(true);
-
-        const customerVouchers = await voucherService.getCustomerVouchers(idCustomer);
-        const availableVouchers = await voucherService.getAvailableVouchersByPoint();
-
-        const allVouchers = [
-          ...customerVouchers.map((v) => ({
-            id: v.voucher.idVoucher,
-            idCustomerVoucher: v.id,
-            title: v.voucher.title,
-            description: v.voucher.description || "-",
-            discount: parseFloat(v.voucher.discountPercent).toFixed(2),
-            pointCost: v.voucher.pointCost,
-            expireDate: v.voucher.expiryDate,
-            totalQuantity: v.voucher.totalQuantity ?? "Không giới hạn",
-            status: v.voucher.status ?? false,
-            exchanged: true,
-          })),
-          ...availableVouchers.map((v) => ({
-            id: v.idVoucher,
-            title: v.title,
-            description: v.description || "-",
-            discount: parseFloat(v.discountPercent).toFixed(2),
-            pointCost: v.pointCost,
-            expireDate: v.expiryDate,
-            totalQuantity: v.totalQuantity ?? "Không giới hạn",
-            status: v.status ?? false,
-            exchanged: false,
-            idCustomerVoucher: null,
-          })),
-        ];
-
-        setVouchers(allVouchers);
+        const [myVouchers, exchangeable] = await Promise.all([
+          voucherService.fetchMyVouchers(accessToken),
+          voucherService.fetchExchangeableVouchers(accessToken),
+        ]);
+        setAvailableVouchers(myVouchers || []);
+        setExchangeableVouchers(exchangeable || []);
       } catch (error) {
         console.error("Lỗi khi lấy danh sách voucher:", error);
       } finally {
         setLoading(false);
       }
     };
-
     fetchVouchers();
-  }, [idCustomer]);
+  }, [accessToken]);
 
-  // Áp dụng voucher mới
   const handleApplyVoucher = (voucher) => {
     setAppliedVoucher(voucher);
     onSelect(voucher);
     onClose();
   };
 
-  // Bỏ áp dụng
   const handleRemoveApplied = () => {
     setAppliedVoucher(null);
     onSelect(null);
     onClose();
   };
 
-  // Xác nhận đổi voucher
   const handleConfirmExchange = async () => {
-    if (!selectedVoucher) return;
-
+    if (!confirmVoucher) return;
+    setExchanging(true);
     try {
-      const exchangedVoucher = await voucherService.exchangeVoucher(selectedVoucher.id);
-
-      alert(`Đổi voucher ${selectedVoucher.title} thành công!`);
-
-      setVouchers((prev) =>
-        prev.map((v) =>
-          v.id === selectedVoucher.id
-            ? { ...v, exchanged: true, idCustomerVoucher: exchangedVoucher.idCustomerVoucher }
-            : v
-        )
-      );
-
-      setSelectedVoucher(null);
+      await voucherService.exchangeVoucher(accessToken, confirmVoucher.id);
+      // Refresh lại cả 2 list sau khi đổi thành công
+      const [updatedMy, updatedExchange] = await Promise.all([
+        voucherService.fetchMyVouchers(accessToken),
+        voucherService.fetchExchangeableVouchers(accessToken),
+      ]);
+      setAvailableVouchers(updatedMy || []);
+      setExchangeableVouchers(updatedExchange || []);
+      setConfirmVoucher(null);
     } catch (error) {
-      alert(error.message || "Đổi voucher thất bại!");
-      console.error(error);
+      console.error(error.response?.data?.message || "Đổi voucher thất bại!");
+    } finally {
+      setExchanging(false);
     }
   };
 
-  if (loading) return <div className={styles.overlay}>Đang tải...</div>;
+  const hasContent = availableVouchers.length > 0 || exchangeableVouchers.length > 0;
 
   return (
-    <div className={styles.overlay}>
-      <div className={styles.popup}>
-        <h3>Chọn Voucher</h3>
+    <>
+      <div className={cx("overlay")} onClick={onClose}>
+        <div className={cx("popup")} onClick={(e) => e.stopPropagation()}>
 
-        {/* Box đang áp dụng */}
-        {appliedVoucher && (
-          <div className={styles.appliedBox}>
-            <p><strong>Đang áp dụng:</strong> {appliedVoucher.title}</p>
-            <button className={styles.removeBtn} onClick={handleRemoveApplied}>
-              Bỏ áp dụng
-            </button>
+          {/* Header */}
+          <div className={cx("popup-header")}>
+            <div className={cx("popup-title")}>
+              <span className={cx("popup-label")}>ƯU ĐÃI</span>
+              <h3>Chọn <em>Voucher</em></h3>
+            </div>
+            <button className={cx("close-btn")} onClick={onClose}>✕</button>
           </div>
-        )}
 
-        <ul className={styles.voucherList}>
-          {vouchers.map((voucher) => {
-            const isApplied = appliedVoucher?.id === voucher.id;
+          {/* Applied banner */}
+          {appliedVoucher && (
+            <div className={cx("applied-banner")}>
+              <span>
+                ✓ Đang áp dụng:{" "}
+                <strong>{appliedVoucher.voucher?.name || appliedVoucher.name}</strong>
+              </span>
+              <button onClick={handleRemoveApplied}>Bỏ áp dụng</button>
+            </div>
+          )}
 
-            return (
-              <li key={voucher.id} className={styles.voucherItem}>
-                <div className={styles.info}>
-                  <p className={styles.title}><strong>{voucher.title}</strong></p>
-                  <p className={styles.description}>{voucher.description}</p>
-                  <p className={styles.discount}>Giảm {voucher.discount}%</p>
-                  {!voucher.exchanged && (
-                    <>
-                      <p className={styles.pointCost}>Giá điểm: {voucher.pointCost}</p>
-                      <p className={styles.totalQuantity}>Số lượng còn: {voucher.totalQuantity}</p>
-                    </>
-                  )}
-                  <p className={styles.status}>
-                    Trạng thái: {voucher.status ? "Còn hiệu lực" : "Hết hiệu lực"}
-                  </p>
-                  <p className={styles.expire}>
-                    Hết hạn: {new Date(voucher.expireDate).toLocaleDateString("vi-VN")}
-                  </p>
-                </div>
+          {/* Body — 1 list: kho trước, đổi điểm sau */}
+          <div className={cx("popup-body")}>
+            {loading ? (
+              <div className={cx("loading")}>Đang tải...</div>
+            ) : !hasContent ? (
+              <div className={cx("empty")}>
+                <span className={cx("empty-icon")}>🎟</span>
+                <p>Bạn chưa có voucher nào và chưa đủ điểm để đổi</p>
+              </div>
+            ) : (
+              <div className={cx("list")}>
+                {/* Kho voucher */}
+                {availableVouchers.length > 0 && (
+                  <>
+                    <div className={cx("list-label")}>Voucher trong kho</div>
+                    {availableVouchers.map((cv) => (
+                      <VoucherTicket
+                        key={cv.id}
+                        cv={cv}
+                        isApplied={appliedVoucher?.id === cv.id}
+                        onApply={handleApplyVoucher}
+                      />
+                    ))}
+                  </>
+                )}
 
-                <div className={styles.actions}>
-                  {voucher.exchanged ? (
-                    isApplied ? (
-                      <span className={styles.appliedTag}>Đang áp dụng</span>
-                    ) : (
-                      <button
-                        className={styles.useBtn}
-                        onClick={() => handleApplyVoucher(voucher)}
-                      >
-                        Áp dụng
-                      </button>
-                    )
-                  ) : (
-                    <button
-                      className={styles.exchangeBtn}
-                      onClick={() => setSelectedVoucher(voucher)}
-                    >
-                      Đổi ngay ({voucher.pointCost} điểm)
-                    </button>
-                  )}
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+                {/* Đổi điểm */}
+                exchangeableVouchers
+              </div>
+            )}
+          </div>
 
-        <div className={styles.footer}>
-          <button className={styles.closeBtn} onClick={onClose}>Đóng</button>
+          {/* Footer */}
+          <div className={cx("popup-footer")}>
+            <button className={cx("footer-close")} onClick={onClose}>Đóng</button>
+          </div>
         </div>
       </div>
 
-      {/* Pop-up xác nhận đổi */}
-      {selectedVoucher && (
-        <div className={styles.fullOverlay}>
-          <div className={styles.confirmBox}>
-            <h4>Xác nhận đổi</h4>
-            <p>
-              Bạn có chắc muốn đổi <strong>{selectedVoucher.title}</strong> với{" "}
-              <strong>{selectedVoucher.pointCost} điểm</strong>?
-            </p>
-            <div className={styles.confirmActions}>
-              <button className={styles.confirmBtn} onClick={handleConfirmExchange}>
-                Đồng ý
-              </button>
-              <button className={styles.cancelBtn} onClick={() => setSelectedVoucher(null)}>
-                Hủy
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+      <ConfirmExchange
+        voucher={confirmVoucher}
+        onConfirm={handleConfirmExchange}
+        onCancel={() => setConfirmVoucher(null)}
+        loading={exchanging}
+      />
+    </>
   );
 }
 

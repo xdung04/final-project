@@ -1,31 +1,31 @@
 "use strict";
 
 export async function up(queryInterface, Sequelize) {
-  const now = new Date();
-
-  const bookings = await queryInterface.sequelize.query(`SELECT idBooking, bookingDate FROM bookings`, {
-    type: queryInterface.sequelize.QueryTypes.SELECT,
-  });
+  const bookings = await queryInterface.sequelize.query(
+    `SELECT idBooking, bookingDate FROM bookings ORDER BY bookingDate`,
+    { type: queryInterface.sequelize.QueryTypes.SELECT }
+  );
 
   const services = [
-    { idService: 1, price: 100000 },
-    { idService: 2, price: 150000 },
-    { idService: 3, price: 100000 },
-    { idService: 4, price: 50000 },
-    { idService: 5, price: 300000 },
-    { idService: 6, price: 200000 },
-    { idService: 7, price: 500000 },
-    { idService: 8, price: 600000 },
+    { idService: 1, price: 120000 },
+    { idService: 2, price: 180000 },
+    { idService: 3, price: 95000 },
+    { idService: 4, price: 65000 },
+    { idService: 5, price: 350000 },
+    { idService: 6, price: 250000 },
+    { idService: 7, price: 550000 },
+    { idService: 8, price: 680000 },
   ];
 
   const bookingDetails = [];
 
   for (const booking of bookings) {
-    const numServices = Math.floor(Math.random() * 3) + 1; // 1–3 dịch vụ
+    const numServices = Math.random() > 0.6 ? 2 : Math.random() > 0.3 ? 3 : 1;
     const shuffled = [...services].sort(() => 0.5 - Math.random());
     const chosen = shuffled.slice(0, numServices);
 
     let total = 0;
+
     for (const svc of chosen) {
       bookingDetails.push({
         idBooking: booking.idBooking,
@@ -39,8 +39,9 @@ export async function up(queryInterface, Sequelize) {
       total += svc.price;
     }
 
-    // Cập nhật tổng tiền booking theo dịch vụ thực tế
-    await queryInterface.sequelize.query(`UPDATE bookings SET total = ${total} WHERE idBooking = ${booking.idBooking}`);
+    await queryInterface.sequelize.query(
+      `UPDATE bookings SET total = ${total} WHERE idBooking = ${booking.idBooking}`
+    );
   }
 
   if (bookingDetails.length > 0) {

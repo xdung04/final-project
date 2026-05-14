@@ -41,6 +41,7 @@ import receptionistRouter from "./routes/receptionist.js";
 import contractRoute from "./routes/contract.js";
 import testRouter from "./routes/test.js";
 import calendarRoutes from "./routes/calendarRoutes.js";
+import customerStatsRoutes from "./routes/customerStats.js";  
 dotenv.config();
 
 const app = express();
@@ -91,6 +92,10 @@ app.use("/api/banners", bannerRoute);
 app.use("/api/receptionist", receptionistRouter);
 
 app.use("/api/calendar", calendarRoutes);
+
+app.use("/api/customer-stats", customerStatsRoutes);
+
+
 
 // View engine & auth routes
 viewEngine(app);

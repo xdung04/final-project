@@ -30,6 +30,7 @@ import { authenticate, authorize } from "./middlewares/authMiddleware.js";
 import notificationRoute from "./routes/notification.js";
 import bannerRoute from "./routes/banner.js";
 import receptionistRouter from "./routes/receptionist.js";
+import customerStatsRoutes from "./routes/customerStats.js";
 
 dotenv.config();
 
@@ -66,6 +67,8 @@ app.use("/api/notifications", notificationRoute);
 app.use("/api/banners", bannerRoute);
 
 app.use("/api/receptionist", receptionistRouter);
+
+app.use ("/api/customer-stats", customerStatsRoutes);
 
 // Auth + view
 viewEngine(app);
