@@ -31,25 +31,91 @@
 }
 
 /* HEADER CHAT */
+/* HEADER CHAT */
 .chat-header {
-  padding: 14px 18px;
-  background: rgba(0, 0, 0, 0.4);
   display: flex;
   align-items: center;
   gap: 12px;
-  border-bottom: 1px solid rgba(184, 150, 106, 0.2); /* Viền gold mờ */
-  
-  svg {
-    stroke: var(--gold);
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #111 0%, #1e1a16 100%);
+  border-bottom: 1px solid rgba(184, 150, 106, 0.35);
+  position: relative;
+
+  // Đường accent vàng phía trên
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
   }
 
-  h3 {
-    margin: 0;
-    font-family: var(--ff-serif);
-    font-size: 18px;
-    color: var(--gold);
-    letter-spacing: 1px;
+  &-logo {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    background: rgba(184, 150, 106, 0.12);
+    border: 1px solid rgba(184, 150, 106, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .scissor-icon {
+      width: 22px;
+      height: 22px;
+      color: var(--gold);
+    }
   }
+
+  &-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+
+    h3 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: var(--ff-serif);
+      color: var(--cream);
+      letter-spacing: 0.3px;
+    }
+  }
+
+  &-status {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--text-dim);
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #4caf50;
+      box-shadow: 0 0 6px rgba(76, 175, 80, 0.6);
+      animation: pulse-dot 2s infinite;
+    }
+  }
+
+  &-badge {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--gold);
+    background: rgba(184, 150, 106, 0.12);
+    border: 1px solid rgba(184, 150, 106, 0.35);
+    border-radius: 6px;
+    padding: 3px 8px;
+  }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { box-shadow: 0 0 4px rgba(76, 175, 80, 0.5); }
+  50%       { box-shadow: 0 0 10px rgba(76, 175, 80, 0.9); }
 }
 
 /* BODY CHAT (Khu vực tin nhắn) */
