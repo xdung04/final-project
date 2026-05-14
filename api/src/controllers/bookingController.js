@@ -274,145 +274,7 @@ export const checkInBooking = async (req, res) => {
     });
   }
 };
-// ✅ Danh sách lịch hẹn bên Admin
-export const getAllBookingDetails = async (req, res) => {
-  try {
-    const bookings = await db.Booking.findAll({
-      include: [
-        {
-          model: db.Customer,
-          include: [
-            {
-              model: db.User,
-              as: "user",
-              attributes: ["idUser", "fullName", "email", "phoneNumber"],
-            },
-          ],
-          attributes: ["idCustomer", "address", "loyaltyPoint"],
-        },
-        {
-          model: db.Barber,
-          as: "barber",
-          include: [
-            {
-              model: db.User,
-              as: "user",
-              attributes: ["idUser", "fullName", "email", "phoneNumber"],
-            },
-            {
-              model: db.Branch,
-              as: "branch",
-              attributes: ["idBranch", "name", "address"],
-            },
-          ],
-          attributes: ["idBarber"],
-        },
-        {
-          model: db.BookingDetail,
-          include: [
-            {
-              model: db.Service,
-              as: "service",
-              attributes: ["idService", "name", "price", "duration"],
-            },
-          ],
-          attributes: ["idBookingDetail", "quantity", "price"],
-        },
-        {
-          model: db.BookingTip,
-          as: "BookingTip",
-          attributes: ["tipAmount"],
-        },
 
-        // ✅ Thêm phần này để lấy voucher thông qua CustomerVoucher
-        {
-          model: db.CustomerVoucher,
-          include: [
-            {
-              model: db.Voucher,
-              as: "voucher",
-              attributes: ["idVoucher", "title", "discountPercent", "description"],
-            },
-          ],
-          attributes: ["id", "voucherCode", "status", "usedAt"],
-        },
-      ],
-      order: [["bookingDate", "DESC"]],
-    });
-
-    const result = bookings.map((booking) => {
-      const details = booking.BookingDetails || [];
-      const subTotal = details.reduce((sum, item) => sum + parseFloat(item.price) * (item.quantity || 1), 0);
-      const tip = parseFloat(booking.BookingTip?.tipAmount || 0);
-      const total = subTotal + tip;
-
-      const isPaid =
-        booking.isPaid !== undefined ? Boolean(booking.isPaid) : booking.status?.toLowerCase() === "completed";
-
-      // ✅ Lấy voucher nếu có
-      const voucher = booking.CustomerVoucher?.voucher;
-
-      return {
-        idBooking: booking.idBooking,
-        bookingDate: booking.bookingDate,
-        bookingTime: booking.bookingTime,
-        status: booking.status || "Pending",
-        isPaid,
-        description: booking.description || "",
-        idVoucher: voucher?.idVoucher || null,
-        voucher: voucher
-          ? {
-              title: voucher.title,
-              discountPercent: parseFloat(voucher.discountPercent),
-              description: voucher.description,
-            }
-          : null,
-        customer: booking.Customer
-          ? {
-              id: booking.Customer.idCustomer,
-              name: booking.Customer.user?.fullName,
-              email: booking.Customer.user?.email,
-              phone: booking.Customer.user?.phoneNumber,
-            }
-          : null,
-        barber: booking.barber
-          ? {
-              id: booking.barber.idBarber,
-              name: booking.barber.user?.fullName,
-              branch: booking.barber.branch?.name,
-            }
-          : null,
-        branch: booking.barber?.branch
-          ? {
-              id: booking.barber.branch.idBranch,
-              name: booking.barber.branch.name,
-              address: booking.barber.branch.address,
-            }
-          : null,
-        services: details.map((d) => ({
-          id: d.service?.idService,
-          name: d.service?.name,
-          price: parseFloat(d.service?.price),
-          quantity: d.quantity,
-        })),
-        subTotal: subTotal.toFixed(2),
-        tip: tip.toFixed(2),
-        total: total.toFixed(2),
-      };
-    });
-
-    res.status(200).json({
-      message: "Lấy danh sách booking thành công",
-      data: result,
-    });
-  } catch (error) {
-    console.error("Lỗi khi lấy danh sách booking chi tiết:", error);
-    res.status(500).json({
-      message: "Lỗi khi lấy danh sách booking chi tiết",
-      error,
-    });
-  }
-};
 // ✅ Lấy khung giờ đã đặt
 export const getBookedSlotsByBarber = async (req, res) => {
   try {
@@ -458,146 +320,26 @@ export const getBookingsByBranch = async (req, res) => {
     const { date } = req.query;
 
     if (!idBranch) {
-      return res.status(400).json({ message: "Thiếu idBranch" });
+      return res.status(400).json({
+        success: false,
+        message: "Thiếu idBranch",
+      });
     }
 
-    const whereClause = {};
-    if (date) {
-      const { Op } = await import("sequelize");
-      whereClause[Op.and] = [
-        db.Sequelize.where(db.Sequelize.fn("DATE", db.Sequelize.col("Booking.bookingDate")), date),
-      ];
-    }
+    const result = await bookingService.getBookingsByBranchService(
+      parseInt(idBranch),
+      date
+    );
 
-    const bookings = await db.Booking.findAll({
-      where: whereClause,
-      include: [
-        {
-          model: db.Barber,
-          as: "barber",
-          required: true,
-          where: { idBranch: parseInt(idBranch) },
-          include: [
-            {
-              model: db.User,
-              as: "user",
-              attributes: ["idUser", "fullName", "phoneNumber"],
-            },
-            {
-              model: db.Branch,
-              as: "branch",
-              attributes: ["idBranch", "name", "address"],
-            },
-          ],
-          attributes: ["idBarber"],
-        },
-        {
-          model: db.Customer,
-          include: [
-            {
-              model: db.User,
-              as: "user",
-              attributes: ["idUser", "fullName", "phoneNumber"],
-            },
-          ],
-          attributes: ["idCustomer"],
-        },
-        {
-          model: db.BookingDetail,
-          as: "BookingDetails",
-          include: [
-            {
-              model: db.Service,
-              as: "service",
-              attributes: ["idService", "name", "price", "duration"],
-            },
-          ],
-          attributes: ["idBookingDetail", "quantity", "price"],
-        },
-        {
-          model: db.BookingTip,
-          as: "BookingTip",
-          attributes: ["tipAmount"],
-        },
-        {
-          model: db.CustomerVoucher,
-          include: [
-            {
-              model: db.Voucher,
-              as: "voucher",
-              attributes: ["idVoucher", "title", "discountPercent"],
-            },
-          ],
-          attributes: ["id", "voucherCode", "status"],
-        },
-      ],
-      order: [
-        ["bookingDate", "ASC"],
-        ["bookingTime", "ASC"],
-      ],
+    return res.status(200).json({
+      success: true,
+      data: result,
     });
-
-    const result = bookings.map((booking) => {
-      const details = booking.BookingDetails || [];
-      const serviceTotal = details.reduce((sum, item) => sum + parseFloat(item.price) * (item.quantity || 1), 0);
-      const tip = parseFloat(booking.BookingTip?.tipAmount || 0);
-      const voucher = booking.CustomerVoucher?.voucher;
-      const discountPercent = parseFloat(voucher?.discountPercent || 0);
-      const discountAmount = (serviceTotal * discountPercent) / 100;
-      const total = serviceTotal + tip - discountAmount;
-
-      return {
-        idBooking: booking.idBooking,
-        bookingDate: booking.bookingDate,
-        bookingTime: booking.bookingTime,
-        status: booking.status || "Pending",
-        isPaid: Boolean(booking.isPaid),
-        description: booking.description || "",
-        customer: booking.Customer
-          ? {
-              id: booking.Customer.idCustomer,
-              name: booking.Customer.user?.fullName || "Khách lẻ",
-              phone: booking.Customer.user?.phoneNumber || "",
-            }
-          : { id: 0, name: "Khách lẻ", phone: "" },
-        barber: booking.barber
-          ? {
-              id: booking.barber.idBarber,
-              name: booking.barber.user?.fullName || "",
-            }
-          : null,
-        branch: booking.barber?.branch
-          ? {
-              id: booking.barber.branch.idBranch,
-              name: booking.barber.branch.name,
-              address: booking.barber.branch.address,
-            }
-          : null,
-        services: details.map((d) => ({
-          id: d.service?.idService,
-          name: d.service?.name,
-          price: parseFloat(d.service?.price || d.price),
-          quantity: d.quantity,
-        })),
-        voucher: voucher
-          ? {
-              title: voucher.title,
-              discountPercent,
-            }
-          : null,
-        serviceTotal: serviceTotal.toFixed(0),
-        tip: tip.toFixed(0),
-        discountPercent,
-        discountAmount: discountAmount.toFixed(0),
-        subTotal: (serviceTotal + tip).toFixed(0),
-        total: total.toFixed(0),
-      };
-    });
-
-    return res.status(200).json({ success: true, data: result });
   } catch (error) {
     console.error("Lỗi getBookingsByBranch:", error);
+
     return res.status(500).json({
+      success: false,
       message: "Lỗi khi lấy danh sách booking theo chi nhánh",
       error: error.message,
     });

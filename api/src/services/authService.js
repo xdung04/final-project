@@ -25,6 +25,20 @@ async function ensureCustomer(userId, transaction = null) {
   }
 }
 
+/**
+ * Helper tìm idBranch dựa vào vai trò của User
+ */
+async function getBranchIdByUser(user) {
+  if (user.role === "receptionist") {
+    const receptionist = await db.Receptionist.findOne({ where: { idReceptionist: user.idUser } });
+    return receptionist ? receptionist.idBranch : null;
+  }
+  if (user.role === "barber") {
+    const barber = await db.Barber.findOne({ where: { idBarber: user.idUser } });
+    return barber ? barber.idBranch : null;
+  }
+  return null;
+}
 
 // ==================== LOGIN ====================
 export async function login(email, password) {
@@ -49,14 +63,21 @@ export async function login(email, password) {
     }
   }
 
-  // ✅ Đảm bảo customer tồn tại (fix luôn cho login thường)
   if (user.role === "customer") {
     await ensureCustomer(user.idUser);
   }
 
   const needPhone = !user.phoneNumber;
 
-  const payload = { idUser: user.idUser, email: user.email, role: user.role };
+  // 🌟 NÂNG CẤP BẢO MẬT: Lấy idBranch đính kèm vào Token
+  const idBranch = await getBranchIdByUser(user);
+
+  const payload = { 
+    idUser: user.idUser, 
+    email: user.email, 
+    role: user.role,
+    idBranch: idBranch // Đưa vào payload của cả cặp token
+  };
 
   const accessToken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1h" });
   const refreshToken = jwt.sign(payload, process.env.JWT_REFRESH_SECRET, { expiresIn: "7d" });
@@ -74,6 +95,7 @@ export async function login(email, password) {
       image: user.image || null,
       role: user.role,
       phoneNumber: user.phoneNumber,
+      idBranch: idBranch // Trả về cho Frontend lưu Context
     },
     needPhone,
   };
@@ -91,8 +113,14 @@ export async function refresh(refreshToken) {
       throw { status: 403, message: "INVALID_REFRESH_TOKEN" };
     }
 
+    // 🌟 ĐỒNG BỘ: Giữ nguyên thông tin idBranch khi tạo Access Token mới
     const newAccessToken = jwt.sign(
-      { idUser: decoded.idUser, email: decoded.email, role: decoded.role },
+      { 
+        idUser: decoded.idUser, 
+        email: decoded.email, 
+        role: decoded.role,
+        idBranch: decoded.idBranch || null 
+      },
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
@@ -139,7 +167,6 @@ export async function googleLogin(googleToken) {
   let needPhone = false;
 
   if (!user) {
-    // 🆕 Tạo user mới
     user = await db.User.create({
       email,
       fullName: name,
@@ -154,7 +181,6 @@ export async function googleLogin(googleToken) {
     isNewUser = true;
     needPhone = true;
   } else if (!user.googleId) {
-    // 🔗 Link Google với account local
     user.googleId = googleId;
     user.authProvider = user.authProvider === "local" ? "hybrid" : user.authProvider;
     await user.save();
@@ -169,7 +195,6 @@ export async function googleLogin(googleToken) {
     await ensureCustomer(user.idUser);
   }
 
-  // Kiểm tra barber bị khóa
   if (user.role === "barber") {
     const barber = await db.Barber.findOne({ where: { idBarber: user.idUser } });
     if (barber && Number(barber.isLocked) === 1) {
@@ -177,7 +202,15 @@ export async function googleLogin(googleToken) {
     }
   }
 
-  const tokenPayload = { idUser: user.idUser, email: user.email, role: user.role };
+  // 🌟 NÂNG CẤP BẢO MẬT: Đính kèm idBranch cho tài khoản Google (Nếu phân quyền)
+  const idBranch = await getBranchIdByUser(user);
+
+  const tokenPayload = { 
+    idUser: user.idUser, 
+    email: user.email, 
+    role: user.role,
+    idBranch: idBranch
+  };
 
   const accessToken = jwt.sign(tokenPayload, process.env.JWT_SECRET, { expiresIn: "1h" });
   const refreshToken = jwt.sign(tokenPayload, process.env.JWT_REFRESH_SECRET, { expiresIn: "7d" });
@@ -195,6 +228,7 @@ export async function googleLogin(googleToken) {
       image: user.image,
       role: user.role,
       phoneNumber: user.phoneNumber,
+      idBranch: idBranch
     },
     isNewUser,
     isLinked,
@@ -205,7 +239,7 @@ export async function googleLogin(googleToken) {
 // ==================== GET ME ====================
 export async function getMe(idUser) {
   const user = await db.User.findByPk(idUser, {
-    attributes: ["idUser", "email", "role", "fullName"],
+    attributes: ["idUser", "email", "role", "fullName", "image", "phoneNumber"],
   });
 
   if (!user) {
@@ -214,7 +248,18 @@ export async function getMe(idUser) {
     throw error;
   }
 
-  return user;
+  // 🌟 ĐỒNG BỘ FRONTEND: Trả thêm dữ liệu idBranch về cho Client Context đồng nhất số liệu
+  const idBranch = await getBranchIdByUser(user);
+  
+  return {
+    idUser: user.idUser,
+    fullName: user.fullName,
+    email: user.email,
+    image: user.image,
+    role: user.role,
+    phoneNumber: user.phoneNumber,
+    idBranch: idBranch
+  };
 }
 
 export default {

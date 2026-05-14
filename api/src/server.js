@@ -26,6 +26,7 @@ import summaryRoutes from "./routes/summaryStatistics.js";
 import bookingDirectRoutes from "./routes/bookingDirect.js";
 import hashtagRoutes from "./routes/hashtag.js";
 import hairConsultRoutes from "./routes/hairConsult.js";
+import transactionRoutes from "./routes/transaction.js";
 
 import startBranchStatusCron from "./cron/branchStatusCron.js";
 import startSalaryCron from "./cron/salaryCron.js"
@@ -40,7 +41,7 @@ import chatLiveRoute from "./routes/chatLive.js";
 import receptionistRouter from "./routes/receptionist.js";
 import contractRoute from "./routes/contract.js";
 import calendarRoutes from "./routes/calendarRoutes.js";
-dotenv.config();
+
 
 const app = express();
 const server = http.createServer(app);
@@ -79,7 +80,7 @@ app.use("/api/bonus", authenticate, authorize(["admin"]), bonusRoutes);
 app.use("/api/statistics/summary", authenticate, authorize(["admin"]), summaryRoutes);
 app.use("/api/hr-policy",authenticate, hrPolicyRoutes);
 app.use("/api/contracts", authenticate ,contractRoute);
-
+app.use("/api/transactions", transactionRoutes);
 app.use("/api/booking-direct", bookingDirectRoutes);
 app.use("/api/hashtags", hashtagRoutes);
 app.use("/api/hair-consult", hairConsultRoutes);
