@@ -6,6 +6,8 @@ import Toast from "~/components/Toast";
 import { BranchAPI } from "~/apis/branchAPI";
 import serviceApi from "~/apis/serviceAPI";
 import { Plus, Store, CalendarClock, UserPlus, MapPin, Globe } from "lucide-react";
+import { Eye, EyeOff, Edit3, Save, X } from "lucide-react";
+import { getReceptionistByBranch, updateReceptionistByBranch } from "~/services/receptionistService";
 
 const cx = classNames.bind(styles);
 
@@ -34,6 +36,12 @@ function ChiNhanh() {
   const [selectedReceptionist, setSelectedReceptionist] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [isEditingReceptionist, setIsEditingReceptionist] = useState(false);
+  const [receptionistForm, setReceptionistForm] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [receptionistLoading, setReceptionistLoading] = useState(false);
+  const [selectedBranchId, setSelectedBranchId] = useState(null);
+
   function getEmptyFormData() {
     return {
       // Dữ liệu chi nhánh (Bước 1)
@@ -57,13 +65,34 @@ function ChiNhanh() {
     };
   }
 
-  const openReceptionistModal = (manager) => {
-    if (!manager) {
-      showToast("error", "Chi nhánh này chưa có thông tin quản lý!");
+  const openReceptionistModal = async (manager, branchId) => {
+    if (!branchId) {
+      showToast("error", "Không tìm thấy chi nhánh!");
       return;
     }
-    setSelectedReceptionist(manager);
+
+    setSelectedBranchId(branchId);
+    setIsEditingReceptionist(false);
+    setShowPassword(false);
     setShowReceptionistInfo(true);
+    setReceptionistLoading(true);
+
+    try {
+      const res = await getReceptionistByBranch(branchId);
+      const data = res.data || {};
+      setSelectedReceptionist(data);
+      setReceptionistForm({
+        fullName: data.fullName || "",
+        email: data.email || "",
+        phoneNumber: data.phoneNumber || "",
+        password: "",
+      });
+    } catch (err) {
+      showToast("error", "Không thể tải thông tin lễ tân!");
+      setShowReceptionistInfo(false);
+    } finally {
+      setReceptionistLoading(false);
+    }
   };
 
   const normalize = (str) =>
@@ -345,6 +374,27 @@ function ChiNhanh() {
     openSuspendForm(branch, "suspend");
   };
 
+  const handleReceptionistFormChange = (e) => {
+    setReceptionistForm({ ...receptionistForm, [e.target.name]: e.target.value });
+  };
+
+  const handleUpdateReceptionist = async (e) => {
+    e.preventDefault();
+    setReceptionistLoading(true);
+    try {
+      const res = await updateReceptionistByBranch(selectedBranchId, receptionistForm);
+      setSelectedReceptionist(res.data);
+      setIsEditingReceptionist(false);
+      showToast("success", "Cập nhật thông tin lễ tân thành công!");
+      fetchBranches();
+    } catch (err) {
+      const msg = err.message || "Có lỗi xảy ra!";
+      showToast("error", msg);
+    } finally {
+      setReceptionistLoading(false);
+    }
+  };
+
   if (loading) return <div className={cx("loading")}>Đang tải dữ liệu...</div>;
 
   return (
@@ -368,7 +418,7 @@ function ChiNhanh() {
             managerName={branch.manager?.fullName || "Chưa có quản lý"}
             onEdit={() => openEditForm(branch)}
             onToggle={() => handleToggleStatus(branch)}
-            onViewReceptionist={() => openReceptionistModal(branch.manager)}
+            onViewReceptionist={() => openReceptionistModal(branch.manager, branch.id)}
           />
         ))}
       </div>
@@ -721,37 +771,177 @@ function ChiNhanh() {
 
       {showReceptionistInfo && selectedReceptionist && (
         <div className={cx("modalOverlay")}>
-          <div className={cx("modal")} style={{ maxWidth: "500px" }}>
-            <div className={cx("modalHeader")}>
-              <h3>Tài khoản quản lý</h3>
+          <div className={cx("modal")} style={{ maxWidth: "520px" }}>
+            {/* Header */}
+            <div
+              className={cx("modalHeader")}
+              style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
+            >
+              <h3>{isEditingReceptionist ? "Chỉnh sửa Lễ tân" : "Thông tin Lễ tân"}</h3>
+              <div style={{ display: "flex", gap: 10 }}>
+                {!isEditingReceptionist && (
+                  <button
+                    className={cx("saveBtn")}
+                    style={{ display: "flex", alignItems: "center", gap: 6 }}
+                    onClick={() => setIsEditingReceptionist(true)}
+                  >
+                    <Edit3 size={15} /> Chỉnh sửa
+                  </button>
+                )}
+                <button
+                  className={cx("cancelBtn")}
+                  style={{ display: "flex", alignItems: "center", gap: 6 }}
+                  onClick={() => {
+                    setShowReceptionistInfo(false);
+                    setIsEditingReceptionist(false);
+                  }}
+                >
+                  <X size={15} /> Đóng
+                </button>
+              </div>
             </div>
-            <div className={cx("formGrid")} style={{ gridTemplateColumns: "1fr", gap: "15px" }}>
-              <div>
-                <label>Họ và tên</label>
-                <input value={selectedReceptionist.fullName || ""} readOnly />
+
+            {/* Loading */}
+            {receptionistLoading ? (
+              <div style={{ textAlign: "center", padding: "40px 0", color: "var(--gold-dark)" }}>Đang tải...</div>
+            ) : isEditingReceptionist ? (
+              /* Form chỉnh sửa */
+              <form onSubmit={handleUpdateReceptionist}>
+                <div className={cx("formGrid")} style={{ gridTemplateColumns: "1fr", gap: 16, marginTop: 8 }}>
+                  <div>
+                    <label>Họ và tên</label>
+                    <input
+                      name="fullName"
+                      value={receptionistForm.fullName}
+                      onChange={handleReceptionistFormChange}
+                      placeholder="Nguyễn Văn A"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label>Email đăng nhập</label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={receptionistForm.email}
+                      onChange={handleReceptionistFormChange}
+                      placeholder="letan@barber.com"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label>Số điện thoại</label>
+                    <input
+                      name="phoneNumber"
+                      value={receptionistForm.phoneNumber}
+                      onChange={handleReceptionistFormChange}
+                      placeholder="09xxxxxxxxx"
+                    />
+                  </div>
+
+                  <div>
+                    <label>Mật khẩu mới (để trống nếu không đổi)</label>
+                    <div style={{ position: "relative" }}>
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        name="password"
+                        value={receptionistForm.password}
+                        onChange={handleReceptionistFormChange}
+                        placeholder="Nhập mật khẩu mới..."
+                        style={{ paddingRight: 44 }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        style={{
+                          position: "absolute",
+                          right: 12,
+                          top: "50%",
+                          transform: "translateY(-50%)",
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          color: "var(--text-dim)",
+                          display: "flex",
+                          alignItems: "center",
+                          padding: 0,
+                        }}
+                      >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className={cx("modalActions")}>
+                  <button
+                    type="button"
+                    className={cx("cancelBtn")}
+                    onClick={() => setIsEditingReceptionist(false)}
+                    disabled={receptionistLoading}
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    className={cx("saveBtn")}
+                    disabled={receptionistLoading}
+                    style={{ display: "flex", alignItems: "center", gap: 6 }}
+                  >
+                    <Save size={15} />
+                    {receptionistLoading ? "Đang lưu..." : "Lưu thay đổi"}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              /* Chế độ xem */
+              <div className={cx("formGrid")} style={{ gridTemplateColumns: "1fr", gap: 16, marginTop: 8 }}>
+                <div>
+                  <label>Họ và tên</label>
+                  <input value={selectedReceptionist?.fullName || "—"} readOnly />
+                </div>
+                <div>
+                  <label>Email đăng nhập</label>
+                  <input value={selectedReceptionist?.email || "—"} readOnly />
+                </div>
+                <div>
+                  <label>Số điện thoại</label>
+                  <input value={selectedReceptionist?.phoneNumber || "—"} readOnly />
+                </div>
+                <div>
+                  <label>Mật khẩu</label>
+                  <div style={{ position: "relative" }}>
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value="••••••••"
+                      readOnly
+                      style={{ paddingRight: 44 }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      style={{
+                        position: "absolute",
+                        right: 12,
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        color: "var(--text-dim)",
+                        display: "flex",
+                        alignItems: "center",
+                        padding: 0,
+                      }}
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div>
-                <label>Số điện thoại</label>
-                <input value={selectedReceptionist.phone || ""} readOnly />
-              </div>
-              <div>
-                <label>Email đăng nhập</label>
-                <input value={selectedReceptionist.email || ""} readOnly />
-              </div>
-              <div>
-                <label>Mật khẩu hệ thống</label>
-                <input value={selectedReceptionist.password || "********"} readOnly />
-              </div>
-            </div>
-            <div className={cx("modalActions")}>
-              <button
-                className={cx("saveBtn")}
-                style={{ width: "100%" }}
-                onClick={() => setShowReceptionistInfo(false)}
-              >
-                Đóng
-              </button>
-            </div>
+            )}
           </div>
         </div>
       )}
