@@ -1,28 +1,17 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import classNames from "classnames/bind";
 import styles from "./LichSuGiaoDich.module.scss";
+import { TransactionAPI } from "~/apis/transactionAPI"; // Import theo cấu trúc của bạn
 import {
   Search, Download, FileText, Filter,
   CreditCard, Wallet, BadgeDollarSign, TrendingUp,
-  ChevronLeft, ChevronRight, Banknote,
+  ChevronLeft, ChevronRight, Banknote, X, Loader2
 } from "lucide-react";
 
 const cx = classNames.bind(styles);
 
-// ── Mock data (xoá khi có API) ────────────────────────────────────────────────
-const MOCK_TRANSACTIONS = [
-  { id: 101, customer: "Nguyễn Văn Nam",   barber: "Barber Nam",   total: 550000, date: "2025-04-11", time: "14:30", status: "completed",  method: "transfer" },
-  { id: 102, customer: "Trần Minh Khôi",   barber: "Barber Tuấn",  total: 850000, date: "2025-04-11", time: "15:15", status: "completed",  method: "cash" },
-  { id: 103, customer: "Lê Tuấn Anh",      barber: "Barber Khiêm", total: 200000, date: "2025-04-11", time: "16:00", status: "cancelled",  method: "cash" },
-  { id: 104, customer: "Phạm Đức Huy",     barber: "Barber Nam",   total: 320000, date: "2025-04-11", time: "16:45", status: "completed",  method: "momo" },
-  { id: 105, customer: "Hoàng Minh Tân",   barber: "Barber Khiêm", total: 450000, date: "2025-04-10", time: "10:00", status: "completed",  method: "cash" },
-  { id: 106, customer: "Vũ Thành Đạt",     barber: "Barber Tuấn",  total: 680000, date: "2025-04-10", time: "11:30", status: "completed",  method: "transfer" },
-  { id: 107, customer: "Đinh Quang Vinh",  barber: "Barber Nam",   total: 150000, date: "2025-04-10", time: "14:00", status: "cancelled",  method: "cash" },
-  { id: 108, customer: "Bùi Văn Khánh",    barber: "Barber Khiêm", total: 500000, date: "2025-04-09", time: "09:30", status: "completed",  method: "transfer" },
-];
-
-const STATUS_LABEL  = { completed: "Hoàn tất",    cancelled: "Đã hủy",   pending: "Chờ xử lý" };
-const METHOD_LABEL  = { cash: "Tiền mặt",          transfer: "Chuyển khoản", momo: "MoMo" };
+const STATUS_LABEL  = { completed: "Hoàn tất", cancelled: "Đã hủy", pending: "Chờ xử lý" };
+const METHOD_LABEL  = { cash: "Tiền mặt", transfer: "Chuyển khoản", momo: "MoMo" };
 
 const fmt = (n) => Number(n || 0).toLocaleString("vi-VN") + "đ";
 const initials = (name) => (name || "K").split(" ").slice(-1)[0].charAt(0).toUpperCase();
@@ -36,82 +25,123 @@ const STATUS_FILTERS = [
 
 const PAGE_SIZE = 6;
 
-// ── Component ─────────────────────────────────────────────────────────────────
 function LichSuGiaoDich() {
-  const [search,     setSearch]     = useState("");
-  const [dateFrom,   setDateFrom]   = useState("");
-  const [dateTo,     setDateTo]     = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [page,       setPage]       = useState(1);
+  // ── States cho Bộ lọc ──────────────────────────────────────────────────
+  const [search,         setSearch]         = useState("");
+  const [dateFrom,       setDateFrom]       = useState("");
+  const [dateTo,         setDateTo]         = useState("");
+  const [statusFilter,   setStatusFilter]   = useState("all");
+  const [methodFilter,   setMethodFilter]   = useState("all");
+  const [page,           setPage]           = useState(1);
+  const [showMoreFilter, setShowMoreFilter] = useState(false);
 
-  // ── Filter logic ───────────────────────────────────────────────────────────
-  const filtered = MOCK_TRANSACTIONS.filter((t) => {
-    const matchSearch = !search ||
-      t.customer.toLowerCase().includes(search.toLowerCase()) ||
-      String(t.id).includes(search);
-    const matchStatus = statusFilter === "all" || t.status === statusFilter;
-    const matchFrom   = !dateFrom || t.date >= dateFrom;
-    const matchTo     = !dateTo   || t.date <= dateTo;
-    return matchSearch && matchStatus && matchFrom && matchTo;
-  });
+  // ── States cho Dữ liệu API ──────────────────────────────────────────────
+  const [transactions,   setTransactions]   = useState([]);
+  const [statsData,      setStatsData]      = useState(null);
+  const [totalItems,     setTotalItems]     = useState(0);
+  const [totalPages,     setTotalPages]     = useState(1);
+  const [loading,        setLoading]        = useState(false);
+  const [selectedTx,     setSelectedTx]     = useState(null);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paginated  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  // ── 1. Lấy danh sách giao dịch (Server-side Filtering) ──────────────────
+  const loadTransactions = useCallback(async () => {
+    setLoading(true);
+    try {
+      const filters = {
+        search,
+        dateFrom,
+        dateTo,
+        statusFilter,
+        methodFilter,
+        page,
+        limit: PAGE_SIZE
+      };
+      
+      const res = await TransactionAPI.getTransactions(filters);
+      if (res.success) {
+        setTransactions(res.data);
+        setTotalPages(res.totalPages);
+        setTotalItems(res.totalItems);
+      }
+    } catch (error) {
+      console.error("Lỗi khi tải giao dịch:", error.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [search, dateFrom, dateTo, statusFilter, methodFilter, page]);
 
-  // Reset page khi filter thay đổi
-  const handleFilter = (fn) => { fn(); setPage(1); };
+  // ── 2. Lấy thống kê tổng hợp (4 thẻ đầu trang) ──────────────────────────
+  const loadStats = async () => {
+    try {
+      const res = await TransactionAPI.getSummaryStats();
+      if (res.success) {
+        setStatsData(res.data);
+      }
+    } catch (error) {
+      console.error("Lỗi khi tải thống kê:", error.message);
+    }
+  };
 
-  // ── Stats ──────────────────────────────────────────────────────────────────
-  const completed = MOCK_TRANSACTIONS.filter((t) => t.status === "completed");
-  const totalRev  = completed.reduce((s, t) => s + t.total, 0);
-  const cashRev   = completed.filter((t) => t.method === "cash").reduce((s, t) => s + t.total, 0);
-  const transRev  = completed.filter((t) => t.method === "transfer").reduce((s, t) => s + t.total, 0);
-  const cancelCnt = MOCK_TRANSACTIONS.filter((t) => t.status === "cancelled").length;
+  // Khởi chạy khi component mount hoặc bộ lọc thay đổi
+  useEffect(() => {
+    loadTransactions();
+  }, [loadTransactions]);
 
+  // Chỉ lấy thống kê lại khi có thay đổi quan trọng hoặc khi mount
+  useEffect(() => {
+    loadStats();
+  }, [statusFilter, dateFrom, dateTo]); // Cập nhật stats khi lọc ngày/trạng thái
+
+  // Reset về trang 1 khi thay đổi bất kỳ bộ lọc nào
+  const handleFilterChange = (setter, value) => {
+    setter(value);
+    setPage(1);
+  };
+
+  // ── Render Stats Content ────────────────────────────────────────────────
   const stats = [
     {
       icon: <BadgeDollarSign size={18} strokeWidth={1.5} />,
       label: "Tổng doanh thu",
-      value: fmt(totalRev),
-      sub: `${completed.length} giao dịch hoàn tất`,
+      value: fmt(statsData?.totalRev),
+      sub: `${statsData?.completedCount || 0} đơn hoàn tất`,
       highlight: true,
     },
     {
       icon: <Wallet size={18} strokeWidth={1.5} />,
       label: "Tiền mặt",
-      value: fmt(cashRev),
-      sub: `${completed.filter((t) => t.method === "cash").length} giao dịch`,
+      value: fmt(statsData?.cashRev),
+      sub: "Thu tại quầy",
     },
     {
       icon: <CreditCard size={18} strokeWidth={1.5} />,
       label: "Chuyển khoản",
-      value: fmt(transRev),
-      sub: `${completed.filter((t) => t.method === "transfer").length} giao dịch`,
+      value: fmt(statsData?.transRev),
+      sub: "Bank / Momo",
     },
     {
       icon: <TrendingUp size={18} strokeWidth={1.5} />,
       label: "Đã hủy",
-      value: cancelCnt,
-      sub: "giao dịch bị huỷ",
+      value: statsData?.cancelCnt || 0,
+      sub: "Số lượng đơn hủy",
     },
   ];
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className={cx("page")}>
-
-      {/* ── PAGE HEADER ────────────────────────────────────────────────── */}
+      {/* HEADER */}
       <div className={cx("pageHead")}>
         <div>
-          <p className={cx("pageEyebrow")}>Tài chính &amp; Vận hành</p>
+          <p className={cx("pageEyebrow")}>Lễ tân chi nhánh</p>
           <h1 className={cx("pageTitle")}>Lịch sử <em>Giao dịch</em></h1>
         </div>
-        <button className={cx("btnGold")}>
+        <button className={cx("btnGold")} onClick={() => alert("Đang xử lý xuất file...")}>
           <Download size={14} strokeWidth={2} /> Xuất Excel
         </button>
       </div>
 
-      {/* ── STATS STRIP ────────────────────────────────────────────────── */}
+      {/* STATS STRIP */}
       <div className={cx("statsStrip")}>
         {stats.map((s, i) => (
           <div key={i} className={cx("statCard", { "statCard--highlight": s.highlight })}>
@@ -125,64 +155,66 @@ function LichSuGiaoDich() {
         ))}
       </div>
 
-      {/* ── FILTER BAR ─────────────────────────────────────────────────── */}
+      {/* FILTER BAR */}
       <div className={cx("filterBar")}>
         <div className={cx("filterLeft")}>
-          {/* Search */}
           <div className={cx("searchBox")}>
             <Search size={14} />
             <input
               type="text"
               placeholder="Tìm tên khách, mã đơn..."
               value={search}
-              onChange={(e) => handleFilter(() => setSearch(e.target.value))}
+              onChange={(e) => handleFilterChange(setSearch, e.target.value)}
             />
           </div>
-
-          {/* Date range */}
           <div className={cx("dateRange")}>
-            <input
-              type="date" className={cx("dateInput")}
-              value={dateFrom}
-              onChange={(e) => handleFilter(() => setDateFrom(e.target.value))}
-            />
+            <input type="date" className={cx("dateInput")} value={dateFrom} onChange={(e) => handleFilterChange(setDateFrom, e.target.value)} />
             <span>—</span>
-            <input
-              type="date" className={cx("dateInput")}
-              value={dateTo}
-              onChange={(e) => handleFilter(() => setDateTo(e.target.value))}
-            />
+            <input type="date" className={cx("dateInput")} value={dateTo} onChange={(e) => handleFilterChange(setDateTo, e.target.value)} />
           </div>
         </div>
+        <button className={cx("btnGold")}>
+          <Download size={14} strokeWidth={2} /> Xuất Excel
+        </button>
+      </div>
 
         <div className={cx("filterRight")}>
-          {/* Status pills */}
           <div className={cx("pills")}>
             {STATUS_FILTERS.map((f) => (
               <button
                 key={f.id}
                 className={cx("pill", { "pill--active": statusFilter === f.id })}
-                onClick={() => handleFilter(() => setStatusFilter(f.id))}
+                onClick={() => handleFilterChange(setStatusFilter, f.id)}
               >
                 {f.id !== "all" && <span className={cx("pill__dot")} />}
                 {f.label}
               </button>
             ))}
           </div>
-          <button className={cx("btnGhost")}>
+          <button className={cx("btnGhost", { "btnGhost--active": showMoreFilter })} onClick={() => setShowMoreFilter(!showMoreFilter)}>
             <Filter size={13} strokeWidth={2} /> Lọc thêm
           </button>
         </div>
       </div>
 
-      {/* ── TABLE ──────────────────────────────────────────────────────── */}
+      {showMoreFilter && (
+        <div className={cx("moreFilterPanel")}>
+          <div className={cx("filterGroup")}>
+            <label>Phương thức thanh toán:</label>
+            <select value={methodFilter} onChange={(e) => handleFilterChange(setMethodFilter, e.target.value)} className={cx("selectInput")}>
+              <option value="all">Tất cả phương thức</option>
+              <option value="cash">Tiền mặt</option>
+              <option value="transfer">Chuyển khoản</option>
+            </select>
+          </div>
+        </div>
+      )}
+
+      {/* TABLE SECTION */}
       <div className={cx("tableWrap")}>
-        {/* Dark header */}
         <div className={cx("tableHead")}>
-          <span className={cx("tableHead__title")}>Danh sách giao dịch</span>
-          <span className={cx("tableHead__count")}>
-            {filtered.length} kết quả
-          </span>
+          <span className={cx("tableHead__title")}>Dữ liệu chi nhánh</span>
+          <span className={cx("tableHead__count")}>{totalItems} kết quả</span>
         </div>
 
         <div className={cx("tableOverflow")}>
@@ -191,7 +223,7 @@ function LichSuGiaoDich() {
               <tr>
                 <th>Thời gian</th>
                 <th>Khách hàng</th>
-                <th>Thợ phụ trách</th>
+                <th>Thợ thực hiện</th>
                 <th>Phương thức</th>
                 <th>Tổng tiền</th>
                 <th>Trạng thái</th>
@@ -199,19 +231,22 @@ function LichSuGiaoDich() {
               </tr>
             </thead>
             <tbody>
-              {paginated.length > 0 ? paginated.map((t) => (
+              {loading ? (
+                <tr>
+                  <td colSpan={7}>
+                    <div className={cx("loadingState")}>
+                      <Loader2 className={cx("spinner")} /> Đang tải dữ liệu...
+                    </div>
+                  </td>
+                </tr>
+              ) : transactions.length > 0 ? transactions.map((t) => (
                 <tr key={t.id}>
-                  {/* Time */}
                   <td>
                     <div className={cx("timeCell")}>
                       <span className={cx("timeHour")}>{t.time}</span>
-                      <span className={cx("timeDate")}>
-                        {new Date(t.date).toLocaleDateString("vi-VN")}
-                      </span>
+                      <span className={cx("timeDate")}>{new Date(t.date).toLocaleDateString("vi-VN")}</span>
                     </div>
                   </td>
-
-                  {/* Customer */}
                   <td>
                     <div className={cx("customerCell")}>
                       <div className={cx("customerAvatar")}>{initials(t.customer)}</div>
@@ -221,49 +256,28 @@ function LichSuGiaoDich() {
                       </div>
                     </div>
                   </td>
-
-                  {/* Barber */}
                   <td><span className={cx("barberName")}>{t.barber}</span></td>
-
-                  {/* Method */}
                   <td>
                     <span className={cx("methodTag", `methodTag--${t.method}`)}>
-                      {t.method === "cash"     && <Banknote size={11} strokeWidth={2} />}
-                      {t.method === "transfer" && <CreditCard size={11} strokeWidth={2} />}
-                      {t.method === "momo"     && <Wallet size={11} strokeWidth={2} />}
+                      {t.method === "cash" ? <Banknote size={11} /> : <CreditCard size={11} />}
                       {METHOD_LABEL[t.method]}
                     </span>
                   </td>
-
-                  {/* Amount */}
-                  <td>
-                    <span className={cx("amount", { cMuted: t.status === "cancelled" })}>
-                      {t.status === "cancelled" ? "—" : fmt(t.total)}
-                    </span>
-                  </td>
-
-                  {/* Status */}
+                  <td><span className={cx("amount", { cMuted: t.status === "cancelled" })}>{t.status === "cancelled" ? "—" : fmt(t.total)}</span></td>
                   <td>
                     <span className={cx("statusTag", `statusTag--${t.status}`)}>
                       <span className={cx("statusTag__dot")} />
                       {STATUS_LABEL[t.status]}
                     </span>
                   </td>
-
-                  {/* Action */}
                   <td>
-                    <button className={cx("actionBtn")} title="Chi tiết giao dịch">
-                      <FileText size={14} strokeWidth={1.5} />
-                    </button>
+                    <button className={cx("actionBtn")} onClick={() => setSelectedTx(t)}><FileText size={14} /></button>
                   </td>
                 </tr>
               )) : (
                 <tr>
                   <td colSpan={7}>
-                    <div className={cx("empty")}>
-                      <Search size={28} strokeWidth={1} />
-                      Không tìm thấy giao dịch nào
-                    </div>
+                    <div className={cx("empty")}>Không có dữ liệu giao dịch</div>
                   </td>
                 </tr>
               )}
@@ -271,40 +285,45 @@ function LichSuGiaoDich() {
           </table>
         </div>
 
-        {/* Pagination */}
-        {filtered.length > PAGE_SIZE && (
+        {/* PAGINATION */}
+        {totalPages > 1 && (
           <div className={cx("pagination")}>
-            <span className={cx("pagination__info")}>
-              {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} / {filtered.length}
-            </span>
+            <span className={cx("pagination__info")}>Trang {page} / {totalPages}</span>
             <div className={cx("pagination__btns")}>
-              <button
-                className={cx("pagination__btn")}
-                onClick={() => setPage((p) => p - 1)}
-                disabled={page === 1}
-              >
-                <ChevronLeft size={14} />
-              </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                <button
-                  key={p}
-                  className={cx("pagination__btn", { "pagination__btn--active": p === page })}
-                  onClick={() => setPage(p)}
-                >
-                  {p}
-                </button>
+              <button className={cx("pagination__btn")} onClick={() => setPage(p => p - 1)} disabled={page === 1}><ChevronLeft size={14} /></button>
+              {[...Array(totalPages)].map((_, i) => (
+                <button key={i+1} className={cx("pagination__btn", { "pagination__btn--active": i+1 === page })} onClick={() => setPage(i+1)}>{i+1}</button>
               ))}
-              <button
-                className={cx("pagination__btn")}
-                onClick={() => setPage((p) => p + 1)}
-                disabled={page === totalPages}
-              >
-                <ChevronRight size={14} />
-              </button>
+              <button className={cx("pagination__btn")} onClick={() => setPage(p => p + 1)} disabled={page === totalPages}><ChevronRight size={14} /></button>
             </div>
           </div>
         )}
       </div>
+
+      {/* MODAL CHI TIẾT */}
+      {selectedTx && (
+        <div className={cx("modalOverlay")} onClick={() => setSelectedTx(null)}>
+          <div className={cx("modalContent")} onClick={(e) => e.stopPropagation()}>
+            <div className={cx("modalHeader")}>
+              <h3>Chi tiết hoá đơn #{selectedTx.id}</h3>
+              <button onClick={() => setSelectedTx(null)}><X size={16} /></button>
+            </div>
+            <div className={cx("modalBody")}>
+              <div className={cx("modalGrid")}>
+                <p><strong>Khách hàng:</strong> {selectedTx.customer}</p>
+                <p><strong>Thợ:</strong> {selectedTx.barber}</p>
+                <p><strong>Ngày:</strong> {new Date(selectedTx.date).toLocaleDateString("vi-VN")} lúc {selectedTx.time}</p>
+                <p><strong>Thanh toán:</strong> {METHOD_LABEL[selectedTx.method]}</p>
+              </div>
+              <hr />
+              <div className={cx("modalTotal")}>
+                <strong>Tổng cộng:</strong>
+                <span>{fmt(selectedTx.total)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

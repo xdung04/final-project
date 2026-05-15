@@ -545,6 +545,7 @@ $radius-xl:   18px;
     display: flex;
     gap: 4px;
   }
+}
 
   &__btn {
     width: 30px;
@@ -576,4 +577,169 @@ $radius-xl:   18px;
   .page       { padding: 16px 16px 40px; }
   .statsStrip { grid-template-columns: 1fr; }
   .filterBar  { flex-direction: column; align-items: flex-start; }
+}// ── CHÈN THÊM VÀO CUỐI FILE SCSS ĐỂ ĐỒNG BỘ EVENT LOGIC MỚI ───────────────────
+
+// Trạng thái active cho nút Lọc thêm
+.btnGhost--active {
+  background: $gold-faint !important;
+  border-color: $gold !important;
+  color: $ink !important;
+}
+
+// Bảng điều khiển khi nhấn "Lọc thêm"
+.moreFilterPanel {
+  background: $card-bg;
+  border: 1px solid $border-md;
+  border-radius: $radius-md;
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  animation: slideDown 0.2s ease forwards;
+
+  .filterGroup {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    label {
+      font-size: 12px;
+      font-weight: 500;
+      color: #666;
+    }
+  }
+}
+
+// Ô dropdown select trùng style với dateInput của bạn
+.selectInput {
+  padding: 7px 12px;
+  font-size: 12px;
+  border: 1px solid $border-md;
+  border-radius: $radius-md;
+  background: $card-bg;
+  color: $ink;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+
+  &:focus, &:hover { border-color: $gold; }
+}
+
+// Lớp phủ mờ nền đen cho Modal
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(26, 22, 18, 0.6); // Phủ mờ bằng tông màu thương hiệu $ink
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  animation: fadeIn 0.2s ease forwards;
+}
+
+// Hộp thoại Chi tiết hóa đơn
+.modalContent {
+  background: $card-bg;
+  border: 1px solid $gold-border;
+  border-radius: $radius-lg;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  animation: zoomIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  overflow: hidden;
+}
+
+.modalHeader {
+  background: $ink;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid $gold-border;
+
+  h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: $ink-text;
+    font-family: Georgia, 'Times New Roman', serif;
+  }
+}
+
+// ── Empty ─────────────────────────────────────────────────────────────────────
+.empty {
+  text-align: center;
+  padding: 56px 0;
+  color: #bbb;
+  font-size: 13px;
+  font-style: italic;
+
+  svg { display: block; margin: 0 auto 12px; color: #ddd; }
+}
+
+  button {
+    background: transparent;
+    border: none;
+    color: $ink-muted;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    transition: color 0.15s;
+
+    &:hover { color: $gold; }
+  }
+}
+
+.modalBody {
+  padding: 20px;
+
+  p {
+    margin: 0 0 10px;
+    font-size: 13px;
+    color: #555;
+    display: flex;
+    justify-content: space-between;
+
+    strong {
+      color: #888;
+      font-weight: 500;
+    }
+  }
+
+  hr {
+    border: none;
+    border-top: 1px dashed $border-md;
+    margin: 14px 0;
+  }
+}
+
+.modalTotal {
+  font-size: 16px !important;
+  
+  strong {
+    color: $ink !important;
+    font-weight: 600 !important;
+  }
+
+  // Giá tiền hiển thị to, font Serif đồng bộ với trang của bạn
+  span, &:last-child {
+    font-size: 18px;
+    font-weight: 600;
+    color: $gold-dim;
+    font-family: Georgia, 'Times New Roman', serif;
+  }
+}
+
+// Các Animation bổ sung
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes zoomIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
 }
