@@ -1,112 +1,232 @@
+/* RevenueTab.module.scss
+   NOULE Admin — Doanh thu Tab
+   Design System: Editorial · Luxury Barber · Dark-Gold
+---------------------------------------------------------------- */
+
+// ─── Tokens ──────────────────────────────────────────────────
+$gold:        #C9A84C;
+$gold-hover:  #BA9A3E;
+$gold-dim:    #8A6A28;
+$gold-faint:  rgba(201, 168, 76, 0.15);
+$gold-border: rgba(201, 168, 76, 0.3);
+
+$ink:         #1A1612;
+$ink-2:       #2C2720;
+$ink-text:    #F5F0E8;
+$ink-muted:   rgba(245, 240, 232, 0.5);
+
+$card-bg:     #FFFFFF;
+$input-bg:    #F9F6F1;
+$border:      1px solid rgba(0, 0, 0, 0.07);
+$border-hover: 1px solid rgba(201, 168, 76, 0.5);
+
+$radius-sm:   6px;
+$radius-md:   10px;
+$radius-lg:   14px;
+
+$transition:  0.15s;
+
+// ─── Wrapper ─────────────────────────────────────────────────
 .thongke {
   display: flex;
   flex-direction: column;
-  gap: 40px;
-  background-color: #fbfbfb;
-  padding: 30px;
-  font-family: 'Inter', sans-serif;
+  gap: 20px;
+  animation: fadeSlideIn 0.2s ease;
 }
 
+// ─── Chart Box ───────────────────────────────────────────────
 .chartBox {
-  background: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.04);
-  border: 1px solid #eee;
+  background: $card-bg;
+  border: $border;
+  border-radius: $radius-lg;
   overflow: hidden;
+  transition: border $transition;
 
-  .boxHeader {
-    padding: 24px 35px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: #fff;
-    border-bottom: 1px solid #f5f5f5;
+  &:hover {
+    border: $border-hover;
+  }
+}
 
-    .chartTitle {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: #1a1a1a;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
+// ─── Box Header ──────────────────────────────────────────────
+.boxHeader {
+  padding: 14px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  border-bottom: $border;
+  flex-wrap: wrap;
+}
 
-    .filterBox {
-      display: flex;
-      gap: 15px;
+.titleGroup {
+  flex-shrink: 0;
+}
 
-      select {
-        padding: 10px 20px;
-        border-radius: 8px;
-        border: 1px solid #ddd;
-        background: #fff;
-        font-weight: 500;
-        cursor: pointer;
-        outline: none;
-        transition: 0.3s;
-        &:hover { border-color: #d4af37; }
-      }
+.chartTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: $ink;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0;
+}
 
-      button.update {
-        background: #1a1a1a;
-        color: #fff;
-        padding: 10px 25px;
-        border-radius: 8px;
-        border: none;
-        font-weight: 600;
-        cursor: pointer;
-        &:hover { background: #333; }
-      }
+// ─── Filter Box ──────────────────────────────────────────────
+.filterBox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 
-      button.excel {
-        background: transparent;
-        border: 1px solid #8e6e53;
-        color: #8e6e53;
-        padding: 10px 20px;
-        border-radius: 8px;
-        font-weight: 600;
-        cursor: pointer;
-        &:hover { background: #8e6e53; color: #fff; }
-      }
+  select {
+    padding: 7px 11px;
+    border-radius: $radius-md;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    background: $input-bg;
+    font-size: 12px;
+    font-weight: 500;
+    color: $ink;
+    cursor: pointer;
+    outline: none;
+    transition: border $transition, background $transition;
+
+    &:hover,
+    &:focus {
+      border-color: $gold;
+      background: $card-bg;
     }
   }
 
-  .chartContent {
-    display: grid;
-    grid-template-columns: 1fr 360px;
+  // "Xem & Phân tích" — btnNew pattern
+  button.update {
+    background: $gold;
+    color: $ink;
+    padding: 7px 16px;
+    border-radius: $radius-md;
+    border: none;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: background $transition;
+    white-space: nowrap;
 
-    .chartWrapper {
-      padding: 40px;
+    &:hover:not(:disabled) {
+      background: $gold-hover;
     }
 
-    .aiAnalysis {
-      background: #1a1a1a; // Màu đen sâu sang trọng
-      padding: 40px;
-      color: #fff;
-      border-left: 4px solid #d4af37; // Viền Vàng Gold làm điểm nhấn
+    &:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+  }
 
-      h4 {
-        color: #d4af37;
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        margin-bottom: 25px;
-        font-weight: 600;
-      }
+  // "Xuất Excel" — btnGhost pattern
+  button.excel {
+    background: transparent;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    color: #666;
+    padding: 7px 14px;
+    border-radius: $radius-md;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background $transition, border $transition, color $transition;
+    white-space: nowrap;
 
-      p {
-        font-size: 1rem;
-        line-height: 1.8;
-        color: #d1d1d1;
-        font-weight: 300;
-        &.loading { opacity: 0.5; font-style: italic; }
-      }
+    &:hover:not(:disabled) {
+      background: $input-bg;
+      border-color: rgba(0, 0, 0, 0.2);
+      color: $ink;
+    }
+
+    &:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
     }
   }
 }
 
-@media (max-width: 1200px) {
-  .chartBox .chartContent {
-    grid-template-columns: 1fr;
-    .aiAnalysis { border-left: none; border-top: 4px solid #d4af37; }
+// ─── Chart Content ───────────────────────────────────────────
+.chartContent {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+}
+
+.chartWrapper {
+  padding: 24px 22px;
+}
+
+// ─── AI Analysis Panel — dark surface ────────────────────────
+.aiAnalysis {
+  background: $ink;
+  border-left: 1px solid $gold-border;
+  padding: 22px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  h4 {
+    font-size: 10px;
+    font-weight: 600;
+    color: $gold;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    margin: 0;
   }
+
+  p {
+    font-size: 13px;
+    line-height: 1.7;
+    color: $ink-muted;
+    margin: 0;
+    font-weight: 400;
+  }
+
+  // loading state
+  .loading-text {
+    opacity: 0.5;
+    font-style: italic;
+  }
+}
+
+// ─── Responsive ──────────────────────────────────────────────
+@media (max-width: 1200px) {
+  .chartContent {
+    grid-template-columns: 1fr;
+  }
+
+  .aiAnalysis {
+    border-left: none;
+    border-top: 1px solid $gold-border;
+  }
+}
+
+@media (max-width: 768px) {
+  .boxHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .filterBox {
+    width: 100%;
+
+    select {
+      flex: 1;
+    }
+  }
+
+  .chartWrapper {
+    padding: 16px;
+  }
+
+  .aiAnalysis {
+    padding: 18px 16px;
+  }
+}
+
+// ─── Animation ───────────────────────────────────────────────
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }

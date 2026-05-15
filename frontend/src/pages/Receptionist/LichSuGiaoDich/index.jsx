@@ -1,157 +1,312 @@
-import React from 'react';
-import classNames from 'classnames/bind';
-import { Download, Filter, FileText, Search, CreditCard, Wallet, BadgeDollarSign, Calendar } from 'lucide-react';
-import styles from './LichSuGiaoDich.module.scss';
+import React, { useState } from "react";
+import classNames from "classnames/bind";
+import styles from "./LichSuGiaoDich.module.scss";
+import {
+  Search, Download, FileText, Filter,
+  CreditCard, Wallet, BadgeDollarSign, TrendingUp,
+  ChevronLeft, ChevronRight, Banknote,
+} from "lucide-react";
 
 const cx = classNames.bind(styles);
 
-const LichSuGiaoDich = () => {
-  const transactions = [
-    { 
-      idBooking: 101, 
-      customerName: 'Nguyễn Văn Nam', 
-      barberName: 'Barber Nam', 
-      total: 550000, 
-      bookingDate: '11/04/2025', 
-      bookingTime: '14:30', 
-      status: 'Completed', 
-      paymentMethod: 'Transfer' 
+// ── Mock data (xoá khi có API) ────────────────────────────────────────────────
+const MOCK_TRANSACTIONS = [
+  { id: 101, customer: "Nguyễn Văn Nam",   barber: "Barber Nam",   total: 550000, date: "2025-04-11", time: "14:30", status: "completed",  method: "transfer" },
+  { id: 102, customer: "Trần Minh Khôi",   barber: "Barber Tuấn",  total: 850000, date: "2025-04-11", time: "15:15", status: "completed",  method: "cash" },
+  { id: 103, customer: "Lê Tuấn Anh",      barber: "Barber Khiêm", total: 200000, date: "2025-04-11", time: "16:00", status: "cancelled",  method: "cash" },
+  { id: 104, customer: "Phạm Đức Huy",     barber: "Barber Nam",   total: 320000, date: "2025-04-11", time: "16:45", status: "completed",  method: "momo" },
+  { id: 105, customer: "Hoàng Minh Tân",   barber: "Barber Khiêm", total: 450000, date: "2025-04-10", time: "10:00", status: "completed",  method: "cash" },
+  { id: 106, customer: "Vũ Thành Đạt",     barber: "Barber Tuấn",  total: 680000, date: "2025-04-10", time: "11:30", status: "completed",  method: "transfer" },
+  { id: 107, customer: "Đinh Quang Vinh",  barber: "Barber Nam",   total: 150000, date: "2025-04-10", time: "14:00", status: "cancelled",  method: "cash" },
+  { id: 108, customer: "Bùi Văn Khánh",    barber: "Barber Khiêm", total: 500000, date: "2025-04-09", time: "09:30", status: "completed",  method: "transfer" },
+];
+
+const STATUS_LABEL  = { completed: "Hoàn tất",    cancelled: "Đã hủy",   pending: "Chờ xử lý" };
+const METHOD_LABEL  = { cash: "Tiền mặt",          transfer: "Chuyển khoản", momo: "MoMo" };
+
+const fmt = (n) => Number(n || 0).toLocaleString("vi-VN") + "đ";
+const initials = (name) => (name || "K").split(" ").slice(-1)[0].charAt(0).toUpperCase();
+
+const STATUS_FILTERS = [
+  { id: "all",       label: "Tất cả" },
+  { id: "completed", label: "Hoàn tất" },
+  { id: "cancelled", label: "Đã hủy" },
+  { id: "pending",   label: "Chờ xử lý" },
+];
+
+const PAGE_SIZE = 6;
+
+// ── Component ─────────────────────────────────────────────────────────────────
+function LichSuGiaoDich() {
+  const [search,     setSearch]     = useState("");
+  const [dateFrom,   setDateFrom]   = useState("");
+  const [dateTo,     setDateTo]     = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [page,       setPage]       = useState(1);
+
+  // ── Filter logic ───────────────────────────────────────────────────────────
+  const filtered = MOCK_TRANSACTIONS.filter((t) => {
+    const matchSearch = !search ||
+      t.customer.toLowerCase().includes(search.toLowerCase()) ||
+      String(t.id).includes(search);
+    const matchStatus = statusFilter === "all" || t.status === statusFilter;
+    const matchFrom   = !dateFrom || t.date >= dateFrom;
+    const matchTo     = !dateTo   || t.date <= dateTo;
+    return matchSearch && matchStatus && matchFrom && matchTo;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  // Reset page khi filter thay đổi
+  const handleFilter = (fn) => { fn(); setPage(1); };
+
+  // ── Stats ──────────────────────────────────────────────────────────────────
+  const completed = MOCK_TRANSACTIONS.filter((t) => t.status === "completed");
+  const totalRev  = completed.reduce((s, t) => s + t.total, 0);
+  const cashRev   = completed.filter((t) => t.method === "cash").reduce((s, t) => s + t.total, 0);
+  const transRev  = completed.filter((t) => t.method === "transfer").reduce((s, t) => s + t.total, 0);
+  const cancelCnt = MOCK_TRANSACTIONS.filter((t) => t.status === "cancelled").length;
+
+  const stats = [
+    {
+      icon: <BadgeDollarSign size={18} strokeWidth={1.5} />,
+      label: "Tổng doanh thu",
+      value: fmt(totalRev),
+      sub: `${completed.length} giao dịch hoàn tất`,
+      highlight: true,
     },
-    { 
-      idBooking: 102, 
-      customerName: 'Trần Minh Khôi', 
-      barberName: 'Barber Tuấn', 
-      total: 850000, 
-      bookingDate: '11/04/2025', 
-      bookingTime: '15:15', 
-      status: 'Completed', 
-      paymentMethod: 'Cash' 
+    {
+      icon: <Wallet size={18} strokeWidth={1.5} />,
+      label: "Tiền mặt",
+      value: fmt(cashRev),
+      sub: `${completed.filter((t) => t.method === "cash").length} giao dịch`,
     },
-    { 
-      idBooking: 103, 
-      customerName: 'Lê Tuấn Anh', 
-      barberName: 'Barber Khiêm', 
-      total: 200000, 
-      bookingDate: '11/04/2025', 
-      bookingTime: '16:00', 
-      status: 'Cancelled', 
-      paymentMethod: 'Cash' 
+    {
+      icon: <CreditCard size={18} strokeWidth={1.5} />,
+      label: "Chuyển khoản",
+      value: fmt(transRev),
+      sub: `${completed.filter((t) => t.method === "transfer").length} giao dịch`,
+    },
+    {
+      icon: <TrendingUp size={18} strokeWidth={1.5} />,
+      label: "Đã hủy",
+      value: cancelCnt,
+      sub: "giao dịch bị huỷ",
     },
   ];
 
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className={cx('historyWrapper')}>
-      {/* 1. Thống kê nhanh - Đã thêm statInfo để căn chỉnh text */}
-      <div className={cx('statsGrid')}>
-        <div className={cx('statCard', 'gold')}>
-          <div className={cx('statIcon')}><BadgeDollarSign size={24} /></div>
-          <div className={cx('statInfo')}>
-            <p className={cx('label')}>Tổng doanh thu</p>
-            <h2 className={cx('value')}>1.600.000đ</h2>
-            <p className={cx('subLabel')}>Hôm nay</p>
-          </div>
-        </div>
+    <div className={cx("page")}>
 
-        <div className={cx('statCard')}>
-          <div className={cx('statIcon')}><CreditCard size={24} /></div>
-          <div className={cx('statInfo')}>
-            <p className={cx('label')}>Chuyển khoản</p>
-            <h2 className={cx('value')}>550.000đ</h2>
-            <p className={cx('subLabel')}>1 giao dịch</p>
-          </div>
+      {/* ── PAGE HEADER ────────────────────────────────────────────────── */}
+      <div className={cx("pageHead")}>
+        <div>
+          <p className={cx("pageEyebrow")}>Tài chính &amp; Vận hành</p>
+          <h1 className={cx("pageTitle")}>Lịch sử <em>Giao dịch</em></h1>
         </div>
-
-        <div className={cx('statCard')}>
-          <div className={cx('statIcon')}><Wallet size={24} /></div>
-          <div className={cx('statInfo')}>
-            <p className={cx('label')}>Tiền mặt</p>
-            <h2 className={cx('value')}>1.050.000đ</h2>
-            <p className={cx('subLabel')}>2 giao dịch</p>
-          </div>
-        </div>
+        <button className={cx("btnGold")}>
+          <Download size={14} strokeWidth={2} /> Xuất Excel
+        </button>
       </div>
 
-      {/* 2. Bộ lọc & Hành động - Đồng bộ hóa SearchBox và Action Buttons */}
-      <div className={cx('filterSection')}>
-        <div className={cx('searchBox')}>
-          <Search size={18} className={cx('searchIcon')} />
-          <input type="text" placeholder="TÌM TÊN KHÁCH, MÃ ĐƠN..." />
-        </div>
-
-        <div className={cx('actions')}>
-          <div className={cx('dateFilter')}>
-             <input type="date" className={cx('dateInput')} />
+      {/* ── STATS STRIP ────────────────────────────────────────────────── */}
+      <div className={cx("statsStrip")}>
+        {stats.map((s, i) => (
+          <div key={i} className={cx("statCard", { "statCard--highlight": s.highlight })}>
+            <div className={cx("statCard__icon")}>{s.icon}</div>
+            <div>
+              <div className={cx("statCard__label")}>{s.label}</div>
+              <div className={cx("statCard__value")}>{s.value}</div>
+              <div className={cx("statCard__sub")}>{s.sub}</div>
+            </div>
           </div>
-          <button className={cx('btnOutline')}>
-            <Filter size={16} /> <span>LỌC</span>
-          </button>
-          <button className={cx('btnSolid')}>
-            <Download size={16} /> <span>XUẤT FILE</span>
-          </button>
-        </div>
+        ))}
       </div>
 
-      {/* 3. Bảng hiển thị chính - Cấu trúc Table Luxury */}
-      <div className={cx('tableContainer')}>
-        <table className={cx('luxuryTable')}>
-          <thead>
-            <tr>
-              <th>THỜI GIAN</th>
-              <th>KHÁCH HÀNG</th>
-              <th>THỢ CHÍNH</th>
-              <th>THANH TOÁN</th>
-              <th>TỔNG TIỀN</th>
-              <th>TRẠNG THÁI</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {transactions.map((tr) => (
-              <tr key={tr.idBooking}>
-                <td className={cx('time')}>
-                  <span className={cx('hour')}>{tr.bookingTime}</span>
-                  <span className={cx('date')}>{tr.bookingDate}</span>
-                </td>
+      {/* ── FILTER BAR ─────────────────────────────────────────────────── */}
+      <div className={cx("filterBar")}>
+        <div className={cx("filterLeft")}>
+          {/* Search */}
+          <div className={cx("searchBox")}>
+            <Search size={14} />
+            <input
+              type="text"
+              placeholder="Tìm tên khách, mã đơn..."
+              value={search}
+              onChange={(e) => handleFilter(() => setSearch(e.target.value))}
+            />
+          </div>
 
-                <td>
-                  <div className={cx('customerInfo')}>
-                    <span className={cx('code')}>#{tr.idBooking}</span>
-                    <strong className={cx('customerName')}>{tr.customerName}</strong>
-                  </div>
-                </td>
+          {/* Date range */}
+          <div className={cx("dateRange")}>
+            <input
+              type="date" className={cx("dateInput")}
+              value={dateFrom}
+              onChange={(e) => handleFilter(() => setDateFrom(e.target.value))}
+            />
+            <span>—</span>
+            <input
+              type="date" className={cx("dateInput")}
+              value={dateTo}
+              onChange={(e) => handleFilter(() => setDateTo(e.target.value))}
+            />
+          </div>
+        </div>
 
-                <td className={cx('barber')}>
-                  <span className={cx('barberName')}>{tr.barberName}</span>
-                </td>
-
-                <td>
-                  <span className={cx('methodTag', tr.paymentMethod.toLowerCase())}>
-                    {tr.paymentMethod === 'Transfer' ? 'Chuyển khoản' : 'Tiền mặt'}
-                  </span>
-                </td>
-
-                <td className={cx('amount')}>
-                  {tr.total.toLocaleString('vi-VN')}đ
-                </td>
-
-                <td>
-                  <span className={cx('statusTag', tr.status.toLowerCase())}>
-                    {tr.status === 'Completed' ? 'Hoàn tất' : 'Đã hủy'}
-                  </span>
-                </td>
-
-                <td>
-                  <button className={cx('actionBtn')} title="Chi tiết">
-                    <FileText size={18} />
-                  </button>
-                </td>
-              </tr>
+        <div className={cx("filterRight")}>
+          {/* Status pills */}
+          <div className={cx("pills")}>
+            {STATUS_FILTERS.map((f) => (
+              <button
+                key={f.id}
+                className={cx("pill", { "pill--active": statusFilter === f.id })}
+                onClick={() => handleFilter(() => setStatusFilter(f.id))}
+              >
+                {f.id !== "all" && <span className={cx("pill__dot")} />}
+                {f.label}
+              </button>
             ))}
-          </tbody>
-        </table>
+          </div>
+          <button className={cx("btnGhost")}>
+            <Filter size={13} strokeWidth={2} /> Lọc thêm
+          </button>
+        </div>
+      </div>
+
+      {/* ── TABLE ──────────────────────────────────────────────────────── */}
+      <div className={cx("tableWrap")}>
+        {/* Dark header */}
+        <div className={cx("tableHead")}>
+          <span className={cx("tableHead__title")}>Danh sách giao dịch</span>
+          <span className={cx("tableHead__count")}>
+            {filtered.length} kết quả
+          </span>
+        </div>
+
+        <div className={cx("tableOverflow")}>
+          <table className={cx("table")}>
+            <thead>
+              <tr>
+                <th>Thời gian</th>
+                <th>Khách hàng</th>
+                <th>Thợ phụ trách</th>
+                <th>Phương thức</th>
+                <th>Tổng tiền</th>
+                <th>Trạng thái</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginated.length > 0 ? paginated.map((t) => (
+                <tr key={t.id}>
+                  {/* Time */}
+                  <td>
+                    <div className={cx("timeCell")}>
+                      <span className={cx("timeHour")}>{t.time}</span>
+                      <span className={cx("timeDate")}>
+                        {new Date(t.date).toLocaleDateString("vi-VN")}
+                      </span>
+                    </div>
+                  </td>
+
+                  {/* Customer */}
+                  <td>
+                    <div className={cx("customerCell")}>
+                      <div className={cx("customerAvatar")}>{initials(t.customer)}</div>
+                      <div>
+                        <div className={cx("customerName")}>{t.customer}</div>
+                        <div className={cx("customerId")}>#{t.id}</div>
+                      </div>
+                    </div>
+                  </td>
+
+                  {/* Barber */}
+                  <td><span className={cx("barberName")}>{t.barber}</span></td>
+
+                  {/* Method */}
+                  <td>
+                    <span className={cx("methodTag", `methodTag--${t.method}`)}>
+                      {t.method === "cash"     && <Banknote size={11} strokeWidth={2} />}
+                      {t.method === "transfer" && <CreditCard size={11} strokeWidth={2} />}
+                      {t.method === "momo"     && <Wallet size={11} strokeWidth={2} />}
+                      {METHOD_LABEL[t.method]}
+                    </span>
+                  </td>
+
+                  {/* Amount */}
+                  <td>
+                    <span className={cx("amount", { cMuted: t.status === "cancelled" })}>
+                      {t.status === "cancelled" ? "—" : fmt(t.total)}
+                    </span>
+                  </td>
+
+                  {/* Status */}
+                  <td>
+                    <span className={cx("statusTag", `statusTag--${t.status}`)}>
+                      <span className={cx("statusTag__dot")} />
+                      {STATUS_LABEL[t.status]}
+                    </span>
+                  </td>
+
+                  {/* Action */}
+                  <td>
+                    <button className={cx("actionBtn")} title="Chi tiết giao dịch">
+                      <FileText size={14} strokeWidth={1.5} />
+                    </button>
+                  </td>
+                </tr>
+              )) : (
+                <tr>
+                  <td colSpan={7}>
+                    <div className={cx("empty")}>
+                      <Search size={28} strokeWidth={1} />
+                      Không tìm thấy giao dịch nào
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        {filtered.length > PAGE_SIZE && (
+          <div className={cx("pagination")}>
+            <span className={cx("pagination__info")}>
+              {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} / {filtered.length}
+            </span>
+            <div className={cx("pagination__btns")}>
+              <button
+                className={cx("pagination__btn")}
+                onClick={() => setPage((p) => p - 1)}
+                disabled={page === 1}
+              >
+                <ChevronLeft size={14} />
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                <button
+                  key={p}
+                  className={cx("pagination__btn", { "pagination__btn--active": p === page })}
+                  onClick={() => setPage(p)}
+                >
+                  {p}
+                </button>
+              ))}
+              <button
+                className={cx("pagination__btn")}
+                onClick={() => setPage((p) => p + 1)}
+                disabled={page === totalPages}
+              >
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
-};
+}
 
 export default LichSuGiaoDich;

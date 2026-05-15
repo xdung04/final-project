@@ -1,315 +1,579 @@
-/* =============================================================
-   OBSIDIAN DESIGN SYSTEM - BARBER LUXURY EDITORIAL
-   ============================================================= */
+// LichSuGiaoDich.module.scss
+// Admin — Lịch Sử Giao Dịch | NOULE Barber
 
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=DM+Sans:wght@300;400;500&family=Bebas+Neue&family=Playfair+Display:ital,wght@0,700;1,700&display=swap');
+$gold:        #C9A84C;
+$gold-hover:  #BA9A3E;
+$gold-dim:    #8A6A28;
+$gold-faint:  rgba(201, 168, 76, 0.15);
+$gold-border: rgba(201, 168, 76, 0.3);
 
-:root {
-  /* Bảng màu Giấy & Mực (Editorial Palette) */
-  --ink:          #1A1816;
-  --ink-soft:     #2E2C29;
-  --paper:        #F8F7F3;
-  --paper-warm:   #F2F0EA;
-  --white:        #FFFFFF;
-  
-  /* Accent: Vàng kim & Kim loại */
-  --gold:         #B8923A;
-  --gold-pale:    #E8D5A3;
-  --gold-wash:    #FAF5E9;
-  
-  /* Đường kẻ & Trạng thái */
-  --rule:         #D8D4CC;
-  --rule-light:   #EDEAE4;
-  --muted:        #9A9590;
-  
-  /* Typography */
-  --ff-editorial: 'Cormorant Garamond', serif;
-  --ff-serif:     'Playfair Display', serif;
-  --ff-body:      'DM Sans', sans-serif;
-  --ff-caps:      'Bebas Neue', sans-serif;
-}
+$ink:         #1A1612;
+$ink-2:       #2C2720;
+$ink-text:    #F5F0E8;
+$ink-muted:   rgba(245, 240, 232, 0.5);
 
-/* ================== PAGE WRAPPER ================== */
-.historyWrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
-  background: var(--paper);
-  padding: 40px;
+$page-bg:     #F7F4EF;
+$card-bg:     #FFFFFF;
+$surface-2:   #F9F6F1;
+$surface-3:   #F2EFE8;
+
+$border:      rgba(0, 0, 0, 0.07);
+$border-md:   rgba(0, 0, 0, 0.1);
+
+$green:       #3B6D11;
+$green-bg:    #EAF3DE;
+$green-bd:    rgba(59, 109, 17, 0.25);
+
+$red:         #A32D2D;
+$red-bg:      #FCEBEB;
+$red-bd:      rgba(163, 45, 45, 0.25);
+
+$amber:       #8A5C10;
+$amber-bg:    #FEF6E4;
+$amber-bd:    rgba(138, 92, 16, 0.25);
+
+$blue:        #1A4A8A;
+$blue-bg:     #EDF2FA;
+$blue-bd:     rgba(26, 74, 138, 0.25);
+
+$radius-sm:   6px;
+$radius-md:   10px;
+$radius-lg:   14px;
+$radius-xl:   18px;
+
+// ── Page ──────────────────────────────────────────────────────────────────────
+.page {
+  padding: 28px 32px 48px;
+  background: $page-bg;
   min-height: 100vh;
-  animation: fadeInPage 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
-  color: var(--ink);
+  font-family: inherit;
+  color: $ink;
+  animation: fadeIn 0.4s ease forwards;
 }
 
-@keyframes fadeInPage {
-  from { opacity: 0; transform: translateY(15px); }
-  to { opacity: 1; transform: translateY(0); }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ================== STATS GRID (THỐNG KÊ NHANH) ================== */
-.statsGrid {
+// ── Page Header ───────────────────────────────────────────────────────────────
+.pageHead {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.pageEyebrow {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: $gold-dim;
+  font-weight: 500;
+  margin-bottom: 5px;
+}
+
+.pageTitle {
+  font-size: 28px;
+  font-weight: 600;
+  color: $ink;
+  margin: 0;
+  line-height: 1.1;
+  font-family: Georgia, 'Times New Roman', serif;
+
+  em { color: $gold; font-style: italic; }
+}
+
+// ── Stats Strip ───────────────────────────────────────────────────────────────
+.statsStrip {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
 }
 
 .statCard {
-  background: var(--white);
-  border: 1px solid var(--rule-light);
-  padding: 30px;
-  position: relative;
-  transition: all 0.4s ease;
-
-  &:hover {
-    background: var(--gold-wash);
-    border-color: var(--gold-pale);
-    transform: translateY(-2px);
-  }
-
-  &.gold {
-    border-left: 3px solid var(--gold);
-    .label { color: var(--gold); }
-    .statIcon { color: var(--gold); }
-  }
-
-  .statIcon {
-    position: absolute;
-    top: 24px;
-    right: 24px;
-    color: var(--rule);
-    opacity: 0.6;
-  }
-
-  .label {
-    font-family: var(--ff-caps);
-    font-size: 12px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 12px;
-    display: block;
-  }
-
-  .value {
-    font-family: var(--ff-editorial);
-    font-size: 42px;
-    font-weight: 300;
-    color: var(--ink);
-    margin: 0;
-    letter-spacing: -1px;
-  }
-
-  .subLabel {
-    font-family: var(--ff-body);
-    font-size: 12px;
-    color: var(--muted);
-    margin-top: 8px;
-    font-style: italic;
-  }
-}
-
-/* ================== FILTER SECTION (BỘ LỌC) ================== */
-.filterSection {
+  background: $card-bg;
+  border: 1px solid $border-md;
+  border-radius: $radius-lg;
+  padding: 14px 18px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 24px 0;
-  border-top: 1px solid var(--rule);
-  border-bottom: 1px solid var(--rule);
-  gap: 30px;
+  gap: 14px;
+  transition: border-color 0.15s;
 
-  .searchBox {
-    flex: 1;
+  &:hover { border-color: rgba(201, 168, 76, 0.35); }
+
+  &__icon {
+    width: 40px;
+    height: 40px;
+    border-radius: $radius-md;
+    background: $gold-faint;
     display: flex;
     align-items: center;
-    gap: 15px;
-    
-    .searchIcon { color: var(--gold); }
-
-    input {
-      background: transparent;
-      border: none;
-      border-bottom: 1px solid transparent;
-      font-family: var(--ff-editorial);
-      font-size: 20px;
-      color: var(--ink);
-      width: 100%;
-      padding: 5px 0;
-      outline: none;
-      transition: border-color 0.3s;
-
-      &::placeholder {
-        color: var(--muted);
-        font-style: italic;
-        font-weight: 300;
-      }
-
-      &:focus {
-        border-bottom-color: var(--gold);
-      }
-    }
+    justify-content: center;
+    color: $gold;
+    flex-shrink: 0;
   }
 
-  .actions {
-    display: flex;
-    align-items: center;
-    gap: 16px;
+  &__label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #888;
+    margin-bottom: 3px;
+  }
+
+  &__value {
+    font-size: 18px;
+    font-weight: 600;
+    color: $ink;
+    line-height: 1.1;
+    font-family: Georgia, 'Times New Roman', serif;
+  }
+
+  &__sub {
+    font-size: 11px;
+    color: #aaa;
+    margin-top: 2px;
+  }
+
+  &--highlight &__icon {
+    background: $gold;
+    color: $ink;
+  }
+
+  &--highlight &__value {
+    color: $gold-dim;
   }
 }
 
-/* ================== BUTTONS & INPUTS ================== */
+// ── Filter Bar ────────────────────────────────────────────────────────────────
+.filterBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.filterLeft  { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.filterRight { display: flex; align-items: center; gap: 8px; }
+
+// Search
+.searchBox {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  svg {
+    position: absolute;
+    left: 10px;
+    color: #aaa;
+    pointer-events: none;
+  }
+
+  input {
+    padding: 7px 12px 7px 32px;
+    font-size: 12px;
+    border: 1px solid $border-md;
+    border-radius: 20px;
+    background: $card-bg;
+    color: $ink;
+    outline: none;
+    width: 200px;
+    font-family: inherit;
+    transition: border-color 0.15s, width 0.2s;
+
+    &:focus { border-color: $gold; width: 240px; }
+    &::placeholder { color: #bbb; }
+  }
+}
+
+// Date range
+.dateRange {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  span { font-size: 11px; color: #aaa; }
+}
+
 .dateInput {
-  background: var(--white);
-  border: 1px solid var(--rule-light);
-  padding: 10px 16px;
-  font-family: var(--ff-body);
-  font-size: 13px;
-  color: var(--ink);
+  padding: 7px 10px;
+  font-size: 12px;
+  border: 1px solid $border-md;
+  border-radius: $radius-md;
+  background: $card-bg;
+  color: $ink;
+  font-family: inherit;
   outline: none;
-
-  &:focus { border-color: var(--gold); }
-}
-
-.btnSolid {
-  background: var(--ink);
-  color: var(--white);
-  border: 1px solid var(--ink);
-  padding: 12px 24px;
-  font-family: var(--ff-caps);
-  font-size: 13px;
-  letter-spacing: 2px;
+  transition: border-color 0.15s;
   cursor: pointer;
-  transition: all 0.3s ease;
 
-  &:hover {
-    background: var(--gold);
-    border-color: var(--gold);
-  }
+  &:focus, &:hover { border-color: $gold; }
 }
 
-.btnOutline {
+// Status filter pills
+.pills {
+  display: flex;
+  gap: 5px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid $border-md;
   background: transparent;
-  color: var(--ink);
-  border: 1px solid var(--rule);
-  padding: 12px 24px;
-  font-family: var(--ff-caps);
-  font-size: 13px;
-  letter-spacing: 2px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #666;
   cursor: pointer;
-  transition: all 0.3s ease;
+  font-family: inherit;
+  transition: all 0.15s;
 
-  &:hover {
-    border-color: var(--ink);
-    background: var(--paper-warm);
+  &:hover { border-color: $gold-border; color: $ink; }
+
+  &--active {
+    background: $gold;
+    border-color: $gold;
+    color: $ink;
+    font-weight: 600;
+  }
+
+  &__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
   }
 }
 
-/* ================== LUXURY TABLE (DANH SÁCH) ================== */
-.tableContainer {
-  background: var(--white);
-  border: 1px solid var(--rule-light);
-  box-shadow: 0 10px 40px rgba(0,0,0,0.02);
+// Buttons
+.btnGhost {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  background: transparent;
+  border: 1px solid $border-md;
+  border-radius: $radius-md;
+  color: #666;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+
+  &:hover { border-color: $gold-border; color: $ink; background: $gold-faint; }
 }
 
-.luxuryTable {
+.btnGold {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  background: $gold;
+  border: none;
+  border-radius: $radius-md;
+  color: $ink;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+
+  &:hover { background: $gold-hover; }
+}
+
+// ── Table ─────────────────────────────────────────────────────────────────────
+.tableWrap {
+  background: $card-bg;
+  border: 1px solid $border-md;
+  border-radius: $radius-lg;
+  overflow: hidden;
+}
+
+.tableHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px 12px;
+  background: $ink;
+  border-bottom: 1px solid $gold-border;
+
+  &__title {
+    font-size: 13px;
+    font-weight: 600;
+    color: $ink-text;
+    font-family: Georgia, 'Times New Roman', serif;
+  }
+
+  &__count {
+    font-size: 11px;
+    color: $ink-muted;
+    letter-spacing: 0.05em;
+  }
+}
+
+.table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 860px;
 
-  th {
-    font-family: var(--ff-caps);
-    font-size: 11px;
-    letter-spacing: 2px;
-    color: var(--muted);
-    text-transform: uppercase;
+  thead th {
+    padding: 10px 16px;
     text-align: left;
-    padding: 24px;
-    border-bottom: 1px solid var(--rule);
-    font-weight: 400;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #888;
+    background: $surface-2;
+    border-bottom: 1px solid $border-md;
+    white-space: nowrap;
   }
 
-  td {
-    padding: 20px 24px;
-    border-bottom: 1px solid var(--rule-light);
-    font-family: var(--ff-body);
-    font-size: 14px;
-    color: var(--ink-soft);
+  tbody td {
+    padding: 12px 16px;
+    border-bottom: 1px solid $border;
+    font-size: 13px;
+    color: #555;
+    vertical-align: middle;
   }
 
   tbody tr {
-    transition: background 0.3s ease;
-    &:hover { background: var(--gold-wash); }
+    transition: background 0.1s;
     &:last-child td { border-bottom: none; }
+    &:hover td      { background: #faf8f4; }
+  }
+}
+
+.tableOverflow { overflow-x: auto; }
+
+// ── Time cell ─────────────────────────────────────────────────────────────────
+.timeCell {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.timeHour {
+  font-size: 14px;
+  font-weight: 600;
+  color: $ink;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.timeDate {
+  font-size: 11px;
+  color: #aaa;
+}
+
+// ── Customer cell ─────────────────────────────────────────────────────────────
+.customerCell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.customerAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: $gold-faint;
+  border: 1px solid $gold-border;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: $gold-dim;
+  flex-shrink: 0;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.customerName { font-size: 13px; font-weight: 600; color: $ink; }
+.customerId   { font-size: 10px; color: #aaa; }
+
+// ── Barber cell ───────────────────────────────────────────────────────────────
+.barberName {
+  font-size: 13px;
+  color: #555;
+  font-weight: 500;
+}
+
+// ── Amount ────────────────────────────────────────────────────────────────────
+.amount {
+  font-size: 14px;
+  font-weight: 600;
+  color: $ink;
+  font-family: Georgia, 'Times New Roman', serif;
+  white-space: nowrap;
+}
+
+// ── Method tag ────────────────────────────────────────────────────────────────
+.methodTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+
+  &--cash {
+    background: $green-bg;
+    border: 1px solid $green-bd;
+    color: $green;
   }
 
-  /* Định dạng cột đặc biệt */
-  .time {
-    .hour { 
-      font-weight: 500; 
-      display: block; 
-      color: var(--ink);
-    }
-    .date { 
-      font-size: 12px; 
-      color: var(--muted); 
-      font-style: italic;
-    }
+  &--transfer {
+    background: $blue-bg;
+    border: 1px solid $blue-bd;
+    color: $blue;
   }
 
-  .customerInfo {
+  &--momo {
+    background: rgba(163, 45, 100, 0.08);
+    border: 1px solid rgba(163, 45, 100, 0.2);
+    color: #A32D64;
+  }
+}
+
+// ── Status tag ────────────────────────────────────────────────────────────────
+.statusTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+
+  &__dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  &--completed {
+    background: $green-bg;
+    border: 1px solid $green-bd;
+    color: $green;
+
+    .statusTag__dot { background: #63C142; }
+  }
+
+  &--cancelled {
+    background: $surface-2;
+    border: 1px solid $border-md;
+    color: #aaa;
+    text-decoration: line-through;
+
+    .statusTag__dot { background: #C0BDB6; }
+  }
+
+  &--pending {
+    background: $amber-bg;
+    border: 1px solid $amber-bd;
+    color: $amber;
+
+    .statusTag__dot { background: $gold; }
+  }
+}
+
+// ── Action btn ────────────────────────────────────────────────────────────────
+.actionBtn {
+  width: 30px;
+  height: 30px;
+  border-radius: $radius-sm;
+  border: 1px solid $border-md;
+  background: transparent;
+  color: #aaa;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s;
+
+  &:hover {
+    background: $gold-faint;
+    border-color: $gold-border;
+    color: $gold-dim;
+  }
+}
+
+// ── Empty ─────────────────────────────────────────────────────────────────────
+.empty {
+  text-align: center;
+  padding: 56px 0;
+  color: #bbb;
+  font-size: 13px;
+  font-style: italic;
+
+  svg { display: block; margin: 0 auto 12px; color: #ddd; }
+}
+
+// ── Pagination ────────────────────────────────────────────────────────────────
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  border-top: 1px solid $border;
+  background: $surface-2;
+
+  &__info {
+    font-size: 12px;
+    color: #aaa;
+  }
+
+  &__btns {
     display: flex;
-    flex-direction: column;
-    .code {
-      font-family: var(--ff-caps);
-      font-size: 10px;
-      color: var(--gold);
-      letter-spacing: 1px;
-    }
-    .customerName {
-      font-family: var(--ff-editorial);
-      font-size: 18px;
-      font-weight: 400;
-    }
+    gap: 4px;
   }
 
-  .amount {
-    font-family: var(--ff-editorial);
-    font-size: 20px;
-    color: var(--ink);
-    font-weight: 400;
-  }
-
-  /* Tags & Status */
-  .methodTag {
-    font-family: var(--ff-caps);
-    font-size: 10px;
-    padding: 4px 10px;
-    letter-spacing: 1px;
-    border: 1px solid var(--rule);
-    color: var(--muted);
-    
-    &.transfer {
-      border-color: var(--gold-pale);
-      color: var(--gold);
-      background: var(--gold-wash);
-    }
-  }
-
-  .statusTag {
-    font-family: var(--ff-editorial);
-    font-style: italic;
-    font-size: 15px;
-
-    &.completed { color: #5B8467; } // Màu xanh úa cổ điển
-    &.cancelled { color: var(--muted); text-decoration: line-through; }
-  }
-
-  .actionBtn {
+  &__btn {
+    width: 30px;
+    height: 30px;
+    border-radius: $radius-sm;
+    border: 1px solid $border-md;
     background: transparent;
-    border: none;
-    color: var(--muted);
+    font-size: 12px;
+    color: #666;
     cursor: pointer;
-    transition: color 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: inherit;
+    transition: all 0.12s;
 
-    &:hover { color: var(--gold); }
+    &:hover         { border-color: $gold-border; color: $ink; background: $gold-faint; }
+    &--active       { background: $gold; border-color: $gold; color: $ink; font-weight: 600; }
+    &:disabled      { opacity: 0.3; cursor: not-allowed; }
   }
+}
+
+// ── Responsive ────────────────────────────────────────────────────────────────
+@media (max-width: 960px) {
+  .statsStrip { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .page       { padding: 16px 16px 40px; }
+  .statsStrip { grid-template-columns: 1fr; }
+  .filterBar  { flex-direction: column; align-items: flex-start; }
 }

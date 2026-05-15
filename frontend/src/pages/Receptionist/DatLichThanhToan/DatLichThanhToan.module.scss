@@ -1,153 +1,145 @@
-// Bảng màu chuẩn Luxury Salon
-$gold-primary: #D4AF37; // Vàng ánh kim chuẩn
-$gold-dark: #AA8628;
-$charcoal-dark: #121212; // Đen tuyền sang trọng
-$charcoal-light: #2A2A2A;
-$bg-cream: #FAF9F6; // Trắng kem ngọc trai
-$border-light: rgba(212, 175, 55, 0.2); // Viền vàng mờ
-$shadow-elegant: 0 8px 30px rgba(0, 0, 0, 0.04);
+// DatLichThanhToan.module.scss
+// Admin — Đặt Lịch & Thanh Toán | NOULE Barber
+// Design: NOULE gold/dark system
 
+$gold:        #C9A84C;
+$gold-hover:  #BA9A3E;
+$gold-dim:    #8A6A28;
+$gold-faint:  rgba(201, 168, 76, 0.15);
+$gold-border: rgba(201, 168, 76, 0.3);
+
+$ink:         #1A1612;
+$ink-text:    #F5F0E8;
+$ink-muted:   rgba(245, 240, 232, 0.5);
+
+$page-bg:     #F7F4EF;
+$card-bg:     #FFFFFF;
+$surface-2:   #F9F6F1;
+
+$border:      rgba(0, 0, 0, 0.07);
+$border-md:   rgba(0, 0, 0, 0.1);
+
+$radius-sm:   6px;
+$radius-md:   10px;
+$radius-lg:   14px;
+$radius-xl:   50px;
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 .page {
-  padding: 30px;
-  background-color: transparent;
+  padding: 28px 32px 48px;
+  background: $page-bg;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  gap: 32px;
-  font-family: 'Inter', sans-serif; // Hoặc font serif nếu project ông có
+  gap: 24px;
+  font-family: inherit;
+  color: $ink;
+  animation: fadeInPage 0.4s ease forwards;
 }
 
-/* Header bar cho Page */
+@keyframes fadeInPage {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+// ── Page Header ───────────────────────────────────────────────────────────────
 .pageHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 24px;
-  border-bottom: 1px solid #EBEBEB;
-  position: relative;
-
-  // Điểm nhấn line vàng cực nhỏ ở dưới cùng mang nét tinh tế
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: -1px;
-    left: 0;
-    width: 80px;
-    height: 2px;
-    background: linear-gradient(90deg, $gold-primary, transparent);
-  }
+  padding-bottom: 22px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-/* Bộ chọn ngày kiểu Luxury (Hình viên thuốc - Pill shape) */
+// ── Date Selector (pill) ──────────────────────────────────────────────────────
 .dateSelector {
   display: flex;
   align-items: center;
-  background: #FFFFFF;
-  padding: 4px;
-  border-radius: 50px; // Bo tròn hoàn toàn
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  box-shadow: $shadow-elegant;
-  transition: all 0.3s ease;
+  background: $card-bg;
+  padding: 3px;
+  border-radius: $radius-xl;
+  border: 1px solid $border-md;
+  transition: border-color 0.15s;
 
-  &:hover {
-    border-color: $border-light;
-    box-shadow: 0 10px 40px rgba(212, 175, 55, 0.08); // Bóng ngả vàng khi hover
-  }
-
-  .arrowButton {
-    background: transparent;
-    color: #888;
-    border: none;
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.25s ease;
-
-    &:hover:not(:disabled) {
-      background-color: $bg-cream;
-      color: $gold-primary;
-    }
-
-    &:disabled {
-      opacity: 0.2;
-      cursor: not-allowed;
-    }
-  }
-
-  .dateDisplay {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 0 24px;
-    min-width: 160px;
-    justify-content: center;
-
-    .calendarIcon {
-      color: $gold-primary;
-    }
-
-    span {
-      font-size: 14px;
-      font-weight: 600;
-      color: $charcoal-dark;
-      text-transform: uppercase;
-      letter-spacing: 1.5px; // Giãn chữ nhẹ là chìa khóa của sự sang trọng
-    }
-  }
+  &:hover { border-color: $gold-border; }
 }
 
-/* Nút booking thiết kế lại - Gradient & Glow effect */
-.bookingButton {
-  background: linear-gradient(135deg, $charcoal-dark, $charcoal-light);
-  border: 1px solid $charcoal-dark;
-  color: #fff;
-  padding: 12px 28px;
-  border-radius: 50px; // Bo tròn đồng bộ với date picker
-  font-weight: 600;
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  cursor: pointer;
+.arrowButton {
+  background: transparent;
+  color: #aaa;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
-  gap: 10px;
-  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+
+  &:hover:not(:disabled) {
+    background: $gold-faint;
+    color: $gold-dim;
+  }
+
+  &:disabled {
+    opacity: 0.25;
+    cursor: not-allowed;
+  }
+}
+
+.dateDisplay {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 20px;
+  min-width: 150px;
+  justify-content: center;
+
+  .calendarIcon { color: $gold; }
 
   span {
-    margin-top: 2px; // Cân bằng text với icon
+    font-size: 13px;
+    font-weight: 600;
+    color: $ink;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
   }
+}
+
+// ── Booking Button ────────────────────────────────────────────────────────────
+.bookingButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  background: $ink;
+  border: 1px solid $ink;
+  color: $gold;
+  border-radius: $radius-md;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 
   &:hover {
-    background: $gold-primary;
-    border-color: $gold-primary;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(212, 175, 55, 0.35); // Glow màu vàng kim
-    color: #fff;
-  }
-
-  &:active {
-    transform: translateY(0);
+    background: $gold;
+    border-color: $gold;
+    color: $ink;
   }
 }
 
+// ── Container ─────────────────────────────────────────────────────────────────
 .container {
   width: 100%;
-  animation: fadeInSoft 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
+  animation: fadeIn 0.3s ease;
 }
 
-@keyframes fadeInSoft {
-  from { 
-    opacity: 0; 
-    transform: translateY(15px); 
-    filter: blur(2px);
-  }
-  to { 
-    opacity: 1; 
-    transform: translateY(0); 
-    filter: blur(0);
-  }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
