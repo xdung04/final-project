@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import classNames from "classnames/bind";
 import styles from "./LichSuGiaoDich.module.scss";
-import { TransactionAPI } from "~/apis/transactionAPI";
+import { TransactionAPI } from "~/apis/transactionAPI"; // Import theo cấu trúc của bạn
 import {
   Search, Download, FileText, Filter,
   CreditCard, Wallet, BadgeDollarSign, TrendingUp,
@@ -43,11 +43,20 @@ function LichSuGiaoDich() {
   const [loading,        setLoading]        = useState(false);
   const [selectedTx,     setSelectedTx]     = useState(null);
 
-  // ── 1. Lấy danh sách giao dịch ──────────────────────────────────────────
+  // ── 1. Lấy danh sách giao dịch (Server-side Filtering) ──────────────────
   const loadTransactions = useCallback(async () => {
     setLoading(true);
     try {
-      const filters = { search, dateFrom, dateTo, statusFilter, methodFilter, page, limit: PAGE_SIZE };
+      const filters = {
+        search,
+        dateFrom,
+        dateTo,
+        statusFilter,
+        methodFilter,
+        page,
+        limit: PAGE_SIZE
+      };
+      
       const res = await TransactionAPI.getTransactions(filters);
       if (res.success) {
         setTransactions(res.data);
@@ -61,25 +70,35 @@ function LichSuGiaoDich() {
     }
   }, [search, dateFrom, dateTo, statusFilter, methodFilter, page]);
 
-  // ── 2. Lấy thống kê tổng hợp ────────────────────────────────────────────
+  // ── 2. Lấy thống kê tổng hợp (4 thẻ đầu trang) ──────────────────────────
   const loadStats = async () => {
     try {
       const res = await TransactionAPI.getSummaryStats();
-      if (res.success) setStatsData(res.data);
+      if (res.success) {
+        setStatsData(res.data);
+      }
     } catch (error) {
       console.error("Lỗi khi tải thống kê:", error.message);
     }
   };
 
-  useEffect(() => { loadTransactions(); }, [loadTransactions]);
-  useEffect(() => { loadStats(); }, [statusFilter, dateFrom, dateTo]);
+  // Khởi chạy khi component mount hoặc bộ lọc thay đổi
+  useEffect(() => {
+    loadTransactions();
+  }, [loadTransactions]);
 
+  // Chỉ lấy thống kê lại khi có thay đổi quan trọng hoặc khi mount
+  useEffect(() => {
+    loadStats();
+  }, [statusFilter, dateFrom, dateTo]); // Cập nhật stats khi lọc ngày/trạng thái
+
+  // Reset về trang 1 khi thay đổi bất kỳ bộ lọc nào
   const handleFilterChange = (setter, value) => {
     setter(value);
     setPage(1);
   };
 
-  // ── Stats ────────────────────────────────────────────────────────────────
+  // ── Render Stats Content ────────────────────────────────────────────────
   const stats = [
     {
       icon: <BadgeDollarSign size={18} strokeWidth={1.5} />,
@@ -108,10 +127,9 @@ function LichSuGiaoDich() {
     },
   ];
 
-  // ── Render ───────────────────────────────────────────────────────────────
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className={cx("page")}>
-
       {/* HEADER */}
       <div className={cx("pageHead")}>
         <div>
@@ -155,6 +173,10 @@ function LichSuGiaoDich() {
             <input type="date" className={cx("dateInput")} value={dateTo} onChange={(e) => handleFilterChange(setDateTo, e.target.value)} />
           </div>
         </div>
+        <button className={cx("btnGold")}>
+          <Download size={14} strokeWidth={2} /> Xuất Excel
+        </button>
+      </div>
 
         <div className={cx("filterRight")}>
           <div className={cx("pills")}>
@@ -169,25 +191,17 @@ function LichSuGiaoDich() {
               </button>
             ))}
           </div>
-          <button
-            className={cx("btnGhost", { "btnGhost--active": showMoreFilter })}
-            onClick={() => setShowMoreFilter(!showMoreFilter)}
-          >
+          <button className={cx("btnGhost", { "btnGhost--active": showMoreFilter })} onClick={() => setShowMoreFilter(!showMoreFilter)}>
             <Filter size={13} strokeWidth={2} /> Lọc thêm
           </button>
         </div>
-      </div> {/* ← đóng filterBar */}
+      </div>
 
-      {/* MORE FILTER PANEL */}
       {showMoreFilter && (
         <div className={cx("moreFilterPanel")}>
           <div className={cx("filterGroup")}>
             <label>Phương thức thanh toán:</label>
-            <select
-              value={methodFilter}
-              onChange={(e) => handleFilterChange(setMethodFilter, e.target.value)}
-              className={cx("selectInput")}
-            >
+            <select value={methodFilter} onChange={(e) => handleFilterChange(setMethodFilter, e.target.value)} className={cx("selectInput")}>
               <option value="all">Tất cả phương thức</option>
               <option value="cash">Tiền mặt</option>
               <option value="transfer">Chuyển khoản</option>
@@ -249,11 +263,7 @@ function LichSuGiaoDich() {
                       {METHOD_LABEL[t.method]}
                     </span>
                   </td>
-                  <td>
-                    <span className={cx("amount", { cMuted: t.status === "cancelled" })}>
-                      {t.status === "cancelled" ? "—" : fmt(t.total)}
-                    </span>
-                  </td>
+                  <td><span className={cx("amount", { cMuted: t.status === "cancelled" })}>{t.status === "cancelled" ? "—" : fmt(t.total)}</span></td>
                   <td>
                     <span className={cx("statusTag", `statusTag--${t.status}`)}>
                       <span className={cx("statusTag__dot")} />
@@ -261,9 +271,7 @@ function LichSuGiaoDich() {
                     </span>
                   </td>
                   <td>
-                    <button className={cx("actionBtn")} onClick={() => setSelectedTx(t)}>
-                      <FileText size={14} />
-                    </button>
+                    <button className={cx("actionBtn")} onClick={() => setSelectedTx(t)}><FileText size={14} /></button>
                   </td>
                 </tr>
               )) : (
@@ -282,25 +290,15 @@ function LichSuGiaoDich() {
           <div className={cx("pagination")}>
             <span className={cx("pagination__info")}>Trang {page} / {totalPages}</span>
             <div className={cx("pagination__btns")}>
-              <button className={cx("pagination__btn")} onClick={() => setPage(p => p - 1)} disabled={page === 1}>
-                <ChevronLeft size={14} />
-              </button>
+              <button className={cx("pagination__btn")} onClick={() => setPage(p => p - 1)} disabled={page === 1}><ChevronLeft size={14} /></button>
               {[...Array(totalPages)].map((_, i) => (
-                <button
-                  key={i + 1}
-                  className={cx("pagination__btn", { "pagination__btn--active": i + 1 === page })}
-                  onClick={() => setPage(i + 1)}
-                >
-                  {i + 1}
-                </button>
+                <button key={i+1} className={cx("pagination__btn", { "pagination__btn--active": i+1 === page })} onClick={() => setPage(i+1)}>{i+1}</button>
               ))}
-              <button className={cx("pagination__btn")} onClick={() => setPage(p => p + 1)} disabled={page === totalPages}>
-                <ChevronRight size={14} />
-              </button>
+              <button className={cx("pagination__btn")} onClick={() => setPage(p => p + 1)} disabled={page === totalPages}><ChevronRight size={14} /></button>
             </div>
           </div>
         )}
-      </div> {/* ← đóng tableWrap */}
+      </div>
 
       {/* MODAL CHI TIẾT */}
       {selectedTx && (
@@ -326,8 +324,7 @@ function LichSuGiaoDich() {
           </div>
         </div>
       )}
-
-    </div> /* ← đóng page */
+    </div>
   );
 }
 

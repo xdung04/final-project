@@ -9,6 +9,9 @@ export const TransactionAPI = {
     return await transactionService.fetchTransactions(filters);
   },
 
+  /**
+   * Component gọi: await TransactionAPI.getSummaryStats()
+   */
   getSummaryStats: async () => {
     return await transactionService.fetchSummaryStats();
   },
