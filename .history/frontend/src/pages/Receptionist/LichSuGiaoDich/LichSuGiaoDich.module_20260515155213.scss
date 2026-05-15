@@ -566,7 +566,7 @@ $radius-xl:   18px;
     &--active       { background: $gold; border-color: $gold; color: $ink; font-weight: 600; }
     &:disabled      { opacity: 0.3; cursor: not-allowed; }
   }
-
+}
 
 // ── Responsive ────────────────────────────────────────────────────────────────
 @media (max-width: 960px) {
@@ -691,7 +691,7 @@ $radius-xl:   18px;
 
     &:hover { color: $gold; }
   }
-
+}
 
 .modalBody {
   padding: 20px;
