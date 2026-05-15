@@ -1,199 +1,270 @@
-/* ======================= WRAPPER & HEADER ======================= */
+// DichVu.module.scss
+// Admin — Dịch Vụ | NOULE Barber
+// Design: NOULE gold/dark — đồng bộ TongQuan
+
+$gold:        #C9A84C;
+$gold-hover:  #BA9A3E;
+$gold-dim:    #8A6A28;
+$gold-faint:  rgba(201, 168, 76, 0.15);
+$gold-border: rgba(201, 168, 76, 0.3);
+
+$ink:         #1A1612;
+$ink-text:    #F5F0E8;
+$ink-muted:   rgba(245, 240, 232, 0.5);
+
+$page-bg:     #F7F4EF;
+$card-bg:     #FFFFFF;
+$surface-2:   #F9F6F1;
+
+$border:      1px solid rgba(0, 0, 0, 0.07);
+$border-md:   rgba(0, 0, 0, 0.1);
+
+$green:       #3B6D11;
+$green-bg:    #EAF3DE;
+$green-bd:    rgba(59, 109, 17, 0.25);
+
+$radius-sm:   6px;
+$radius-md:   10px;
+$radius-lg:   14px;
+
+// ── Wrapper (khớp TongQuan .dashboardWrapper) ─────────────────────────────────
 .serviceList {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  background: $page-bg;
+  min-height: 100vh;
+  padding-bottom: 48px;
+  color: $ink;
   animation: fadeInPage 0.4s ease forwards;
-  padding-bottom: 32px;
-  color: var(--ink);
-  font-weight: 300;
 }
 
 @keyframes fadeInPage {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-.header {
+// ── Page heading (khớp TongQuan .pageHead) ────────────────────────────────────
+.pageHead {
   display: flex;
-  justify-content: space-between;
   align-items: flex-end;
-  margin-bottom: 24px;
-  border-bottom: 1px solid var(--rule);
-  padding-bottom: 16px;
-  position: relative;
+  justify-content: space-between;
+  padding-bottom: 22px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 
-  /* Line vàng mỏng trang trí */
-  &::before {
-    content: '';
-    position: absolute;
-    bottom: -2px;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: var(--gold);
-    opacity: 0.3;
+  &__eyebrow {
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: $gold-dim;
+    margin-bottom: 6px;
+    font-weight: 500;
   }
 
-  .titleBox {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+  &__title {
+    font-size: 28px;
+    font-weight: 600;
+    color: $ink;
+    line-height: 1.1;
+    font-family: Georgia, 'Times New Roman', serif;
+    margin: 0;
 
-    .titleIcon {
-      color: var(--muted);
-    }
-
-    h2 {
-      font-family: var(--ff-editorial);
-      font-size: 38px;
-      font-weight: 300;
-      color: var(--ink);
-      margin: 0;
-      letter-spacing: -0.5px;
-    }
+    em { color: $gold; font-style: italic; }
   }
 }
 
-.addButton {
+// ── Section card (khớp TongQuan .sectionCard) ─────────────────────────────────
+.sectionCard {
+  background: $card-bg;
+  border: $border;
+  border-radius: $radius-lg;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+// ── Section head dark (khớp TongQuan .sectionHead) ────────────────────────────
+.sectionHead {
+  background: $ink;
+  padding: 13px 18px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: transparent;
-  color: var(--ink);
-  border: 1px solid var(--rule);
-  border-radius: 0;
-  padding: 8px 16px;
-  font-family: var(--ff-body);
-  font-size: 13px;
-  font-weight: 300;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  justify-content: space-between;
+  border-bottom: 1px solid $gold-border;
+  flex-shrink: 0;
 
-  &:hover {
-    background: var(--ink);
-    color: var(--paper-warm);
-    border-color: var(--ink);
+  &__left {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+
+  &__icon { color: $gold; }
+
+  &__title {
+    font-size: 13px;
+    font-weight: 600;
+    color: $ink-text;
+    font-family: Georgia, 'Times New Roman', serif;
+    letter-spacing: 0.01em;
   }
 }
 
-/* ======================= TABLE STYLES ======================= */
-.tableContainer {
-  background: var(--white);
-  border: 1px solid var(--rule-light);
-  border-radius: 0;
-  overflow: hidden; 
-  box-shadow: none; /* Bỏ hoàn toàn shadow */
+// ── Add Button ────────────────────────────────────────────────────────────────
+.addButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 18px;
+  font-size: 12px;
+  font-weight: 600;
+  background: $gold;
+  color: $ink;
+  border: none;
+  border-radius: $radius-sm;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+
+  &:hover { background: $gold-hover; }
 }
+
+// ── Table (khớp TongQuan .table) ──────────────────────────────────────────────
+.tableWrap { overflow-x: auto; }
 
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-family: var(--ff-body);
-  font-size: 13px;
-  text-align: left;
+  font-family: inherit;
+
+  th, td {
+    padding: 12px 18px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    text-align: left;
+  }
 
   th {
-    background: transparent;
-    padding: 16px 24px;
-    color: var(--muted);
-    font-family: var(--ff-caps);
-    font-weight: 400;
-    font-size: 11px;
-    letter-spacing: 2px;
+    font-size: 10px;
+    font-weight: 600;
     text-transform: uppercase;
-    border-bottom: 1px solid var(--rule);
-    padding-top: 20px;
+    letter-spacing: 0.09em;
+    color: #888;
+    padding-top: 16px;
+    padding-bottom: 10px;
+    background: $surface-2;
   }
 
-  td {
-    padding: 16px 24px;
-    border-bottom: 1px solid var(--rule-light);
-    color: var(--ink);
-    vertical-align: middle;
-    font-weight: 300; /* Text mỏng, thanh lịch */
+  tbody tr {
+    transition: background 0.1s;
+
+    &:hover td      { background: #faf8f4; }
+    &:last-child td { border-bottom: none; }
   }
 
-  tr:last-child td {
-    border-bottom: none;
-  }
+  td { font-size: 13px; color: $ink; }
 
-  tr {
-    transition: background 0.2s ease;
-    
-    &:hover td {
-      background: var(--gold-wash); /* Hover nền vàng nhạt cực êm */
-    }
-  }
-
-  .fw-bold {
-    font-weight: 400;
-    color: var(--ink);
-  }
-
-  .desc {
-    max-width: 250px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    color: var(--muted);
-  }
-
-  .price {
-    font-weight: 400;
-    color: var(--gold);
-  }
-
-  .textCenter {
-    text-align: center;
-  }
+  .textCenter { text-align: center; }
 }
 
-/* ======================= BADGES & BUTTONS ======================= */
-/* Đổi badge mảng khối thành text in nghiêng cổ điển */
+// ── Cells ─────────────────────────────────────────────────────────────────────
+.serviceName {
+  font-size: 13px;
+  font-weight: 600;
+  color: $ink;
+}
+
+.desc {
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #888;
+  font-size: 12px;
+}
+
+.price {
+  font-size: 14px;
+  font-weight: 600;
+  color: $gold-dim;
+  font-family: Georgia, 'Times New Roman', serif;
+  white-space: nowrap;
+}
+
+// ── Status Badge ──────────────────────────────────────────────────────────────
 .statusBadge {
   display: inline-flex;
   align-items: center;
-  padding: 0;
-  background: transparent;
-  border: none;
-  font-family: var(--ff-editorial);
-  font-size: 16px;
-  font-style: italic;
-  font-weight: 400;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
   white-space: nowrap;
 
+  &::before {
+    content: '';
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
   &.active {
-    color: var(--gold);
+    background: $green-bg;
+    border: 1px solid $green-bd;
+    color: $green;
+
+    &::before { background: #63C142; }
   }
 
   &.inactive {
-    color: var(--muted);
+    background: $surface-2;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    color: #aaa;
+
+    &::before { background: #C0BDB6; }
   }
 }
 
+// ── Edit Button ───────────────────────────────────────────────────────────────
 .editBtn {
+  width: 30px;
+  height: 30px;
+  border-radius: $radius-sm;
+  border: 1px solid rgba(0, 0, 0, 0.08);
   background: transparent;
-  border: none;
+  color: #aaa;
   cursor: pointer;
-  color: var(--muted);
-  padding: 8px;
-  border-radius: 50%; /* Tròn thanh mảnh */
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  transition: all 0.12s;
 
   &:hover {
-    color: var(--gold);
-    background: var(--gold-wash);
+    background: $gold-faint;
+    border-color: $gold-border;
+    color: $gold-dim;
   }
 }
 
-/* ======================= LOADING ======================= */
-.loading {
-  text-align: center;
-  padding: 50px;
-  font-family: var(--ff-editorial);
+// ── Loading / Empty ───────────────────────────────────────────────────────────
+.loading, .empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  font-size: 13px;
+  color: #bbb;
   font-style: italic;
-  color: var(--muted);
-  font-size: 16px;
-  font-weight: 300;
+}
+
+// ── Responsive ────────────────────────────────────────────────────────────────
+@media (max-width: 768px) {
+  .pageHead {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+
+    &__title { font-size: 22px; }
+  }
 }

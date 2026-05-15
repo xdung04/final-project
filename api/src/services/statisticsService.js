@@ -240,6 +240,7 @@ export const getTopCustomers = async (limit = 10) => {
     include: [
       {
         model: db.Customer,
+        
         include: [
           {
             model: db.User,

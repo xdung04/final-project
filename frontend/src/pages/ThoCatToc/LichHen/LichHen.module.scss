@@ -1,57 +1,53 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap');
+// LichHen.module.scss
+// Barber — Lịch Hẹn | NOULE Barber
+// Design: NOULE gold/dark system
 
-:root {
-  --black:      #111111;
-  --black-soft: #1E1E1E;
-  --bg-page:    #EFEFEB;
-  --bg-surface: #FFFFFF;
-  --bg-muted:   #F7F7F5;
+$gold:        #C9A84C;
+$gold-hover:  #BA9A3E;
+$gold-dim:    #8A6A28;
+$gold-faint:  rgba(201, 168, 76, 0.15);
+$gold-border: rgba(201, 168, 76, 0.3);
 
-  --gold-main:  #C9A84C;
-  --gold-dark:  #8B6914;
-  --gold-light: #FEF6E4;
+$ink:         #1A1612;
+$ink-2:       #2C2720;
+$ink-text:    #F5F0E8;
+$ink-muted:   rgba(245, 240, 232, 0.5);
 
-  --text-primary:   #111111;
-  --text-secondary: #444444;
-  --text-muted:     #999999;
-  --text-hint:      #BBBBBB;
+$page-bg:     #F7F4EF;
+$card-bg:     #FFFFFF;
+$surface-2:   #F9F6F1;
 
-  --border-sharp: #DDDDDD;
-  --border-dark:  #2A2A2A;
+$border:      rgba(0, 0, 0, 0.07);
+$border-md:   rgba(0, 0, 0, 0.1);
 
-  --ff-serif:   'Playfair Display', Georgia, serif;
-  --ff-display: 'Bebas Neue', sans-serif;
-  --ff-body:    'DM Sans', sans-serif;
-}
+$radius-sm:   6px;
+$radius-md:   10px;
+$radius-lg:   14px;
+$radius-xl:   18px;
 
-/* ═══════════════════════════════════════
-   LOADING / EMPTY
-═══════════════════════════════════════ */
+// ── Loading / Empty ───────────────────────────────────────────────────────────
 .loadingContainer,
 .emptyContainer {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 50px 20px;
-  background: var(--bg-surface);
-  border: 1.5px solid var(--border-sharp);
-  border-top: 3px solid var(--black);
-  border-radius: 0;
-  font-family: var(--ff-body);
+  padding: 60px 20px;
+  background: $card-bg;
+  border: 1px solid $border-md;
+  border-radius: $radius-lg;
+  gap: 12px;
 
   .loadingIcon {
-    margin-bottom: 14px;
-    color: var(--gold-main);
+    color: $gold;
     animation: spin 0.9s linear infinite;
   }
 
   p {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--text-muted);
+    font-size: 13px;
+    color: #bbb;
+    font-style: italic;
+    margin: 0;
   }
 }
 
@@ -60,136 +56,127 @@
   to   { transform: rotate(360deg); }
 }
 
-/* ═══════════════════════════════════════
-   CONTAINER CHÍNH
-═══════════════════════════════════════ */
+// ── Container ─────────────────────────────────────────────────────────────────
 .container {
-  padding: 24px;
-  font-family: var(--ff-body);
-  color: var(--text-primary);
-  background: var(--bg-surface);
-  border: 1.5px solid var(--border-sharp);
-  border-top: 3px solid var(--black);
-  border-radius: 0;
-  box-shadow: 4px 4px 0 var(--black);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: $page-bg;
+  font-family: inherit;
+  color: $ink;
+  animation: fadeIn 0.4s ease forwards;
 }
 
-/* ═══════════════════════════════════════
-   HEADER
-═══════════════════════════════════════ */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+// ── Header (khớp TongQuan .pageHead) ─────────────────────────────────────────
 .header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  border-bottom: 1.5px solid var(--border-sharp);
-  padding-bottom: 16px;
+  align-items: flex-end;
+  padding-bottom: 22px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;
 }
 
 .title {
-  font-family: var(--ff-serif);
-  font-size: 22px;
-  font-weight: 900;
-  color: var(--text-primary);
+  font-size: 28px;
+  font-weight: 600;
+  color: $ink;
   margin: 0;
-  letter-spacing: 0.3px;
+  line-height: 1.1;
+  font-family: Georgia, 'Times New Roman', serif;
 }
 
+// ── View Select ───────────────────────────────────────────────────────────────
 .select {
-  padding: 8px 12px;
-  border: 1.5px solid var(--border-sharp);
-  border-radius: 0;
-  color: var(--text-primary);
-  background: var(--bg-muted);
-  font-family: var(--ff-body);
+  padding: 7px 10px;
   font-size: 12px;
-  font-weight: 600;
+  border: 1px solid $border-md;
+  border-radius: $radius-md;
+  background: $card-bg;
+  color: $ink;
   cursor: pointer;
   outline: none;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  transition: border-color 0.12s ease;
+  font-family: inherit;
+  font-weight: 500;
+  transition: border-color 0.15s;
   appearance: none;
 
-  &:hover,
-  &:focus {
-    border-color: var(--black);
-  }
+  &:hover, &:focus { border-color: $gold; }
 }
 
-/* ═══════════════════════════════════════
-   NAVIGATION
-═══════════════════════════════════════ */
+// ── Navigation (date picker) ──────────────────────────────────────────────────
 .nav {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 20px;
-  margin-bottom: 20px;
+  gap: 16px;
+  background: $card-bg;
+  border: 1px solid $border-md;
+  border-radius: $radius-lg;
+  padding: 10px 18px;
 }
 
 .navBtn {
-  background: var(--bg-muted);
-  border: 1.5px solid var(--border-sharp);
-  border-radius: 0;
-  color: var(--text-secondary);
-  padding: 7px;
+  width: 32px;
+  height: 32px;
+  border-radius: $radius-sm;
+  border: 1px solid $border-md;
+  background: transparent;
+  color: #aaa;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.12s ease;
+  transition: all 0.15s;
+  flex-shrink: 0;
 
   &:hover {
-    background: var(--black);
-    color: var(--gold-main);
-    border-color: var(--black);
+    background: $ink;
+    color: $gold;
+    border-color: $ink;
   }
 }
 
 .rangeText {
-  font-family: var(--ff-display);
-  font-size: 20px;
-  letter-spacing: 2px;
-  color: var(--text-primary);
-  min-width: 160px;
+  font-size: 14px;
+  font-weight: 600;
+  color: $ink;
+  min-width: 180px;
   text-align: center;
-  text-transform: uppercase;
+  font-family: Georgia, 'Times New Roman', serif;
+  letter-spacing: 0.02em;
 }
 
-/* ═══════════════════════════════════════
-   VIEW THEO NGÀY — DANH SÁCH
-═══════════════════════════════════════ */
+// ── Day View — List ───────────────────────────────────────────────────────────
 .list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   max-height: 560px;
   overflow-y: auto;
-  padding-right: 4px;
+  padding-right: 2px;
 
-  &::-webkit-scrollbar { width: 4px; }
-  &::-webkit-scrollbar-track { background: var(--bg-muted); }
-  &::-webkit-scrollbar-thumb { background: var(--border-sharp); }
-  &::-webkit-scrollbar-thumb:hover { background: var(--gold-main); }
+  &::-webkit-scrollbar       { width: 3px; }
+  &::-webkit-scrollbar-thumb { background: $border-md; border-radius: 10px; }
 }
 
 .emptyState {
   text-align: center;
-  color: var(--text-muted);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  padding: 32px;
-  background: var(--bg-muted);
-  border: 1.5px dashed var(--border-sharp);
-  border-radius: 0;
+  color: #bbb;
+  font-size: 13px;
+  font-style: italic;
+  padding: 40px 24px;
+  background: $card-bg;
+  border: 1px dashed $border-md;
+  border-radius: $radius-lg;
 }
 
-/* ═══════════════════════════════════════
-   VIEW THEO TUẦN — GRID
-═══════════════════════════════════════ */
+// ── Week View — Grid ──────────────────────────────────────────────────────────
 .weekGrid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -201,28 +188,27 @@
 }
 
 .weekCol {
-  border: 1.5px solid var(--border-sharp);
-  border-radius: 0;
-  background: var(--bg-surface);
+  background: $card-bg;
+  border: 1px solid $border-md;
+  border-radius: $radius-md;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transition: border-color 0.12s;
+  transition: border-color 0.15s;
 
-  &:hover {
-    border-color: var(--gold-main);
-  }
+  &:hover { border-color: $gold-border; }
 }
 
+// ── Week Column Header (dark — giống sectionHead TongQuan) ───────────────────
 .weekHeader {
-  padding: 10px 6px;
-  background: var(--black);
-  font-family: var(--ff-display);
-  font-size: 13px;
-  letter-spacing: 2px;
+  padding: 9px 6px;
+  background: $ink;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
   text-align: center;
-  border-bottom: 2px solid var(--gold-main);
-  color: var(--gold-main);
+  border-bottom: 1px solid $gold-border;
+  color: $gold;
   text-transform: uppercase;
 }
 
@@ -230,24 +216,20 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 10px 8px;
+  gap: 5px;
+  padding: 8px 6px;
   max-height: 450px;
   overflow-y: auto;
 
-  &::-webkit-scrollbar { width: 3px; }
-  &::-webkit-scrollbar-track { background: transparent; }
-  &::-webkit-scrollbar-thumb { background: var(--border-sharp); }
+  &::-webkit-scrollbar       { width: 3px; }
+  &::-webkit-scrollbar-thumb { background: $border-md; border-radius: 10px; }
 }
 
 .noAppt {
   text-align: center;
-  color: var(--text-hint);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  margin: 12px 0;
+  color: #ccc;
+  font-size: 12px;
+  margin: 10px 0;
   padding: 8px 0;
-  border-top: 1px dashed var(--border-sharp);
+  border-top: 1px dashed $border-md;
 }

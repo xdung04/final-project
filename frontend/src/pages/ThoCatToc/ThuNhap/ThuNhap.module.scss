@@ -1,356 +1,629 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap');
+/* ThuNhap.module.scss
+   NOULE Admin — Phiếu Lương Chi tiết (Barber)
+   Design System: Editorial · Luxury Barber · Dark-Gold
+---------------------------------------------------------------- */
 
-:root {
-  --black:      #111111;
-  --black-soft: #1E1E1E;
-  --bg-page:    #EFEFEB;
-  --bg-surface: #FFFFFF;
-  --bg-muted:   #F7F7F5;
-  --gold-main:  #C9A84C;
-  --gold-dark:  #8B6914;
-  --gold-light: #FEF6E4;
-  --text-primary:   #111111;
-  --text-secondary: #444444;
-  --text-muted:     #999999;
-  --text-hint:      #BBBBBB;
-  --border-sharp: #DDDDDD;
-  --border-dark:  #2A2A2A;
-  --success:      #2D6A2D;
-  --ff-serif:   'Playfair Display', Georgia, serif;
-  --ff-display: 'Bebas Neue', sans-serif;
-  --ff-body:    'DM Sans', sans-serif;
-}
+// ─── Tokens ──────────────────────────────────────────────────
+$gold:        #C9A84C;
+$gold-hover:  #BA9A3E;
+$gold-dim:    #8A6A28;
+$gold-faint:  rgba(201, 168, 76, 0.15);
+$gold-border: rgba(201, 168, 76, 0.3);
 
-/* CONTAINER */
-.container {
-  max-width: 850px;
-  margin: 32px auto;
-  background: var(--bg-surface);
-  border: 1.5px solid var(--border-sharp);
-  border-top: 4px solid var(--black);
-  box-shadow: 6px 6px 0 var(--black);
-  padding: 40px;
-  font-family: var(--ff-body);
-}
+$ink:         #1A1612;
+$ink-2:       #2C2720;
+$ink-text:    #F5F0E8;
+$ink-muted:   rgba(245, 240, 232, 0.5);
 
-.headerInfo {
-  margin-bottom: 30px;
-  border-bottom: 1.5px solid var(--border-sharp);
-  padding-bottom: 20px;
+$card-bg:     #FFFFFF;
+$input-bg:    #F9F6F1;
+$page-bg:     #F7F4EF;
 
-  .title {
-    font-family: var(--ff-serif);
-    font-size: 28px;
-    font-weight: 900;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    .titleIcon { color: var(--gold-main); }
+$border:      1px solid rgba(0, 0, 0, 0.07);
+$border-hover: 1px solid rgba(201, 168, 76, 0.5);
+
+// status colors
+$green:       #63C142;
+$green-bg:    #EAF3DE;
+$green-text:  #3B6D11;
+
+$danger:      #E24B4A;
+$danger-bg:   #FCEBEB;
+$danger-border: #F09595;
+$danger-text: #A32D2D;
+
+$amber:       #C97C2A;
+$amber-bg:    #FAEEDA;
+
+$ff-serif:    Georgia, 'Times New Roman', serif;
+
+$radius-sm:   6px;
+$radius-md:   10px;
+$radius-lg:   14px;
+
+$transition:  0.15s;
+
+// ─── Loading / Empty ─────────────────────────────────────────
+.loadingContainer,
+.emptyContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 60px 20px;
+  background: $card-bg;
+  border: $border;
+  border-radius: $radius-lg;
+
+  .loadingIcon {
+    color: $gold;
+    animation: spin 0.9s linear infinite;
   }
 
-  .subtitle {
-    font-size: 12px;
+  svg { color: #ccc; }
+
+  p {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    letter-spacing: 2px;
-    color: var(--text-muted);
-    margin-top: 5px;
+    color: #888;
+    margin: 0;
   }
 }
 
-/* PAYSLIP CARD */
-.payslipList { display: flex; flex-direction: column; gap: 24px; }
+// ─── Container ───────────────────────────────────────────────
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  color: $ink;
+}
 
+// ─── Header ──────────────────────────────────────────────────
+.headerInfo {
+  background: $ink;
+  border: 1px solid $gold-border;
+  border-radius: $radius-lg;
+  padding: 24px 28px;
+}
+
+.title {
+  font-family: $ff-serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: $ink-text;
+  margin: 0 0 6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  .titleIcon { color: $gold; }
+}
+
+.subtitle {
+  font-size: 11px;
+  color: $ink-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin: 0;
+}
+
+// ─── Payslip List ────────────────────────────────────────────
+.payslipList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+// ─── Payslip Card ────────────────────────────────────────────
 .payslipCard {
-  border: 1.5px solid var(--border-sharp);
-  transition: all 0.2s;
-  
-  &:hover { border-color: var(--black); }
-  &.expanded { border-color: var(--black); box-shadow: 4px 4px 0 var(--black); }
+  background: $card-bg;
+  border: $border;
+  border-radius: $radius-lg;
+  overflow: hidden;
+  transition: border $transition;
+
+  &:hover       { border: $border-hover; }
+  &.expanded    { border: $border-hover; }
 }
 
+// ─── Card Summary ────────────────────────────────────────────
 .cardSummary {
-  padding: 24px;
+  padding: 18px 22px;
   cursor: pointer;
-  background: var(--bg-surface);
+  user-select: none;
+}
 
-  .headerRow {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 15px;
-    h3 { 
-      font-family: var(--ff-display); 
-      font-size: 18px; 
-      letter-spacing: 1px;
-      margin: 0;
-    }
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+
+  h3 {
+    font-family: $ff-serif;
+    font-size: 16px;
+    font-weight: 600;
+    color: $ink;
+    margin: 0;
+    letter-spacing: 0.01em;
   }
+}
+
+// Status badge
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 11px;
+  border-radius: $radius-sm;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+
+  // variants — map theo STATUS_CONFIG cls
+  &.pending       { background: $amber-bg;   color: $amber;       }
+  &.confirmed,
+  &.autoconfirmed { background: $green-bg;   color: $green-text;  }
+  &.disputed      { background: $danger-bg;  color: $danger-text; border: 1px solid $danger-border; }
+  &.paid          { background: $gold-faint; color: $gold-dim;    border: 1px solid $gold-border; }
+  &.locked        { background: $input-bg;   color: #777;         }
 }
 
 .summaryMain {
   display: flex;
   justify-content: space-between;
   align-items: center;
+
+  svg { color: #aaa; }
 }
 
 .netPayBox {
-  .label { font-size: 10px; font-weight: 800; color: var(--text-muted); letter-spacing: 1px; }
-  .value { 
+  .label {
     display: block;
-    font-family: var(--ff-serif); 
-    font-size: 32px; 
-    font-weight: 900; 
-    color: var(--gold-dark);
+    font-size: 10px;
+    font-weight: 600;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 4px;
+  }
+
+  .value {
+    display: block;
+    font-family: $ff-serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: $gold-dim;
+    line-height: 1;
   }
 }
 
-.badge {
-  background: var(--black);
-  color: var(--gold-main);
-  padding: 4px 12px;
-  font-family: var(--ff-display);
-  font-size: 14px;
-}
-
-/* DETAILS AREA */
+// ─── Card Details ────────────────────────────────────────────
 .cardDetails {
-  padding: 0 24px 24px;
-  border-top: 1.5px solid var(--bg-muted);
-  animation: fadeIn 0.3s ease;
+  padding: 0 22px 22px;
+  border-top: $border;
+  animation: fadeSlideIn 0.2s ease;
 }
 
+// ─── Stats Grid ──────────────────────────────────────────────
 .statsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 12px;
-  margin: 20px 0;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  padding: 18px 0 0;
 }
 
 .statCard {
-  background: var(--bg-muted);
-  border: 1.5px solid var(--border-sharp);
-  border-top: 3px solid var(--black-soft);
-  padding: 15px;
-  
-  .statLabel { font-size: 9px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); letter-spacing: 1.5px; }
-  .statValue { font-family: var(--ff-display); font-size: 20px; color: var(--text-primary); margin-top: 5px; }
-  
-  &.deduction .statValue { color: #A4161A; }
-}
+  background: $input-bg;
+  border: $border;
+  border-radius: $radius-md;
+  padding: 13px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: border $transition;
 
-/* TABLE SECTION */
-.tableSection {
-  margin-top: 30px;
-  h3 { 
-    font-family: var(--ff-display); 
-    font-size: 13px; 
-    letter-spacing: 2px; 
-    color: var(--text-muted);
-    margin-bottom: 10px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-}
+  &:hover { border: $border-hover; }
 
-.tableWrapper { border: 1.5px solid var(--border-sharp); border-top: 3px solid var(--black); }
-
-.rewardTable {
-  width: 100%;
-  border-collapse: collapse;
-  th {
-    background: var(--black);
-    color: var(--gold-main);
-    font-size: 9px;
-    padding: 12px;
-    text-align: left;
+  .statLabel {
+    font-size: 10px;
+    font-weight: 600;
     text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #888;
   }
-  td {
-    padding: 12px;
-    border-bottom: 1px solid var(--bg-muted);
-    font-size: 13px;
+
+  .statValue {
+    font-family: $ff-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: $ink;
+    line-height: 1;
   }
-  .amountCol { font-family: var(--ff-display); font-size: 16px; color: var(--gold-dark); }
+
+  &.deduction .statValue { color: $danger-text; }
 }
 
-/* ACTIONS */
-.actionSection { margin-top: 24px; padding-top: 20px; border-top: 1px dashed var(--border-sharp); }
+// ─── Income / Net rows ───────────────────────────────────────
+.incomeRow,
+.netRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  font-size: 13px;
+  border-top: $border;
+  margin-top: 2px;
 
-.btnGroup { display: flex; gap: 12px; }
-
-.btnMain {
-  background: var(--black);
-  color: var(--gold-main);
-  border: none;
-  padding: 12px 24px;
-  font-family: var(--ff-display);
-  font-size: 16px;
-  cursor: pointer;
-  letter-spacing: 1px;
-  &:hover { background: #000; }
-}
-
-.btnOutline {
-  background: transparent;
-  border: 1.5px solid var(--black);
-  padding: 12px 24px;
-  font-family: var(--ff-display);
-  font-size: 16px;
-  cursor: pointer;
-  &:hover { background: var(--bg-muted); }
-}
-
-.disputeForm {
-  background: var(--gold-light);
-  padding: 20px;
-  border: 1.5px solid var(--gold-main);
-  textarea {
-    width: 100%;
-    height: 80px;
-    padding: 12px;
-    border: 1.5px solid var(--gold-main);
-    margin-bottom: 10px;
-    font-family: var(--ff-body);
+  span:first-child {
+    font-weight: 500;
+    color: #666;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.08em;
   }
 }
 
-/* LOADING & EMPTY */
-.loadingContainer, .emptyContainer {
-  text-align: center;
-  padding: 60px;
-  border: 1.5px solid var(--border-sharp);
-  border-top: 3px solid var(--black);
-  box-shadow: 4px 4px 0 var(--black);
-  background: #fff;
-  p { font-family: var(--ff-display); letter-spacing: 2px; color: var(--text-muted); }
+.netRow {
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  margin-top: 4px;
 }
 
-@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }// ── Deduction List — ThuNhap.module.scss ─────────────────────────────────────
-// Thêm vào cuối file ThuNhap.module.scss
+.cGreen { font-family: $ff-serif; font-size: 16px; font-weight: 700; color: $green-text; }
+.cGold  { font-family: $ff-serif; font-size: 20px; font-weight: 700; color: $gold-dim; }
 
-// ── Empty state ───────────────────────────────────────────────────────────────
+// ─── Deduction ───────────────────────────────────────────────
 .deductionEmpty {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 14px 16px;
-  background: #F7F7F5;
-  border: 1.5px dashed #DDDDDD;
-  font-size: 13px;
-  color: #999999;
+  padding: 12px 14px;
+  background: $input-bg;
+  border: $border;
+  border-radius: $radius-md;
+  font-size: 12px;
+  color: #aaa;
   font-style: italic;
+  margin: 10px 0;
 }
 
-// ── Section wrapper ───────────────────────────────────────────────────────────
 .deductionSection {
-  margin: 16px 0;
-  border: 1.5px solid #DDDDDD;
-  border-top: 3px solid #B33A3A;
-  background: #FFFFFF;
+  margin: 10px 0;
+  border: 1px solid $danger-border;
+  border-radius: $radius-md;
+  overflow: hidden;
 }
 
-// ── Header: tiêu đề + tổng ────────────────────────────────────────────────────
 .deductionHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
-  background: #FDF0EE;
-  border-bottom: 1px solid #F5C0B8;
+  padding: 10px 14px;
+  background: $danger-bg;
+  border-bottom: 1px solid $danger-border;
 }
 
 .deductionHeaderTitle {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
-  font-weight: 700;
-  color: #B33A3A;
+  font-size: 11px;
+  font-weight: 600;
+  color: $danger-text;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.08em;
 }
 
 .deductionHeaderTotal {
-  font-size: 14px;
-  font-weight: 900;
-  color: #B33A3A;
+  font-size: 13px;
+  font-weight: 700;
+  color: $danger-text;
   font-variant-numeric: tabular-nums;
 }
 
-// ── List ──────────────────────────────────────────────────────────────────────
-.deductionList {
-  display: flex;
-  flex-direction: column;
-}
+.deductionList { display: flex; flex-direction: column; }
 
-// ── Item ──────────────────────────────────────────────────────────────────────
 .deductionItem {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  padding: 14px 16px;
-  border-bottom: 1px solid #F5C0B8;
+  padding: 13px 14px;
+  background: $card-bg;
+  border-bottom: 1px solid rgba($danger, 0.1);
 
-  &:last-child {
-    border-bottom: none;
-  }
+  &:last-child { border-bottom: none; }
 }
 
-// ── Cột trái ─────────────────────────────────────────────────────────────────
 .deductionLeft {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
   flex: 1;
   min-width: 0;
 }
 
 .deductionReason {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
-  color: #111111;
-  line-height: 1.3;
+  color: $ink;
+  line-height: 1.35;
 }
 
 .deductionMeta {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
-// Ngày vi phạm — nổi bật, amber
 .deductionViolation {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 12px;
-  font-weight: 700;
-  color: #B7791F;
-  background: #FDF4E8;
-  border: 1px solid #F0C880;
-  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: $amber;
+  background: $amber-bg;
+  border: 1px solid rgba($amber, 0.3);
+  padding: 2px 8px;
+  border-radius: $radius-sm;
   width: fit-content;
 }
 
-// Ngày ghi nhận — phụ, mờ
 .deductionCreated {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   font-size: 11px;
-  color: #999999;
+  color: #aaa;
   font-style: italic;
 }
 
-// ── Cột phải: Số tiền ────────────────────────────────────────────────────────
 .deductionAmount {
-  font-size: 16px;
-  font-weight: 900;
-  color: #B33A3A;
+  font-family: $ff-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: $danger-text;
   white-space: nowrap;
-  font-variant-numeric: tabular-nums;
   flex-shrink: 0;
   padding-top: 2px;
+}
+
+// ─── Table Section ───────────────────────────────────────────
+.tableSection {
+  margin-top: 18px;
+
+  h3 {
+    font-size: 10px;
+    font-weight: 600;
+    color: $gold-dim;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    margin: 0 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    &::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(0, 0, 0, 0.07);
+    }
+  }
+}
+
+.tableWrapper {
+  border: $border;
+  border-radius: $radius-md;
+  overflow: hidden;
+  overflow-x: auto;
+}
+
+.rewardTable {
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    background: $ink;
+    color: $gold;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 11px 14px;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 12px 14px;
+    border-bottom: $border;
+    font-size: 13px;
+    color: #555;
+    transition: background $transition;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td      { background: $input-bg; }
+}
+
+.amountCol {
+  font-family: $ff-serif;
+  font-weight: 700;
+  color: $gold-dim !important;
+  font-size: 13px;
+}
+
+.emptyRow {
+  text-align: center;
+  color: #bbb;
+  font-size: 12px;
+  padding: 20px !important;
+  font-style: italic;
+}
+
+// ─── Action Section ──────────────────────────────────────────
+.actionSection {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: $border;
+}
+
+.btnGroup {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+// "Xác nhận" — btnGold
+.btnMain {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: $gold;
+  color: $ink;
+  border: none;
+  padding: 8px 18px;
+  border-radius: $radius-md;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: background $transition;
+
+  &:hover { background: $gold-hover; }
+}
+
+// "Báo sai sót" — btnGhost
+.btnOutline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  color: #666;
+  padding: 8px 16px;
+  border-radius: $radius-md;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background $transition, color $transition;
+
+  &:hover { background: $input-bg; color: $ink; }
+}
+
+// "Hủy"
+.btnText {
+  display: inline-flex;
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: #888;
+  padding: 8px 12px;
+  font-size: 12px;
+  cursor: pointer;
+
+  &:hover { color: $ink; }
+}
+
+// "Gửi khiếu nại" — btnDanger
+.btnDanger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: $danger;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: $radius-md;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity $transition;
+
+  &:hover { opacity: 0.88; }
+}
+
+// ─── Dispute Form ────────────────────────────────────────────
+.disputeForm {
+  background: $gold-faint;
+  border: 1px solid $gold-border;
+  border-radius: $radius-md;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  textarea {
+    width: 100%;
+    padding: 8px 11px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: $radius-md;
+    background: $card-bg;
+    font-size: 13px;
+    font-family: inherit;
+    resize: vertical;
+    outline: none;
+    box-sizing: border-box;
+    line-height: 1.6;
+
+    &:focus { border-color: $gold; }
+    &::placeholder { color: #c0b8ae; }
+  }
+}
+
+// ─── Status Info ─────────────────────────────────────────────
+.statusInfo {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: $radius-md;
+  font-size: 13px;
+  line-height: 1.5;
+
+  &.warning {
+    background: $amber-bg;
+    color: $amber;
+    border: 1px solid rgba($amber, 0.3);
+  }
+
+  &.success {
+    background: $green-bg;
+    color: $green-text;
+    border: 1px solid rgba($green, 0.3);
+  }
+}
+
+// ─── Responsive ──────────────────────────────────────────────
+@media (max-width: 1024px) {
+  .statsGrid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+  .statsGrid { grid-template-columns: 1fr 1fr; }
+
+  .cardSummary { padding: 14px 16px; }
+  .cardDetails { padding: 0 16px 16px; }
+
+  .netPayBox .value { font-size: 22px; }
+
+  .btnGroup { flex-direction: column; }
+  .btnMain, .btnOutline { width: 100%; justify-content: center; }
+}
+
+// ─── Animations ──────────────────────────────────────────────
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }

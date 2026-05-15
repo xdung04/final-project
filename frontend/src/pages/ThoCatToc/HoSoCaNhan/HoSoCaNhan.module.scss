@@ -1,32 +1,38 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap');
+/* HoSoCaNhan.module.scss
+   NOULE Admin — Hồ sơ cá nhân (Barber Profile)
+   Design System: Editorial · Luxury Barber · Dark-Gold
+---------------------------------------------------------------- */
 
-:root {
-  --black:      #111111;
-  --black-soft: #1E1E1E;
-  --bg-page:    #EFEFEB;
-  --bg-surface: #FFFFFF;
-  --bg-muted:   #F7F7F5;
+// ─── Tokens ──────────────────────────────────────────────────
+$gold:        #C9A84C;
+$gold-hover:  #BA9A3E;
+$gold-dim:    #8A6A28;
+$gold-faint:  rgba(201, 168, 76, 0.15);
+$gold-border: rgba(201, 168, 76, 0.3);
 
-  --gold-main:  #C9A84C;
-  --gold-dark:  #8B6914;
-  --gold-light: #FEF6E4;
+$ink:         #1A1612;
+$ink-2:       #2C2720;
+$ink-text:    #F5F0E8;
+$ink-muted:   rgba(245, 240, 232, 0.5);
 
-  --text-primary:   #111111;
-  --text-secondary: #444444;
-  --text-muted:     #999999;
+$card-bg:     #FFFFFF;
+$input-bg:    #F9F6F1;
+$page-bg:     #F7F4EF;
 
-  --border-sharp: #DDDDDD;
-  --border-dark:  #2A2A2A;
-  --error:        #C0392B;
+$border:      1px solid rgba(0, 0, 0, 0.07);
+$border-hover: 1px solid rgba(201, 168, 76, 0.5);
 
-  --ff-serif:   'Playfair Display', Georgia, serif;
-  --ff-display: 'Bebas Neue', sans-serif;
-  --ff-body:    'DM Sans', sans-serif;
-}
+$danger:      #E24B4A;
 
-/* ═══════════════════════════════════════
-   LOADING / EMPTY
-═══════════════════════════════════════ */
+$radius-sm:   6px;
+$radius-md:   10px;
+$radius-lg:   14px;
+
+$ff-serif:    Georgia, 'Times New Roman', serif;
+
+$transition:  0.15s;
+
+// ─── Loading / Empty ─────────────────────────────────────────
 .loadingContainer,
 .emptyContainer {
   display: flex;
@@ -34,50 +40,39 @@
   align-items: center;
   justify-content: center;
   padding: 60px 20px;
-  background: var(--bg-surface);
-  border: 1.5px solid var(--border-sharp);
-  border-top: 3px solid var(--black);
-  border-radius: 0;
-  color: var(--text-muted);
-  font-family: var(--ff-body);
+  background: $card-bg;
+  border: $border;
+  border-radius: $radius-lg;
+  color: #888;
   max-width: 800px;
   margin: 40px auto;
+  gap: 12px;
 
   .loadingIcon {
-    margin-bottom: 16px;
-    color: var(--gold-main);
+    color: $gold;
     animation: spin 0.9s linear infinite;
   }
 
   p {
     font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 2px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: var(--text-muted);
+    color: #888;
+    margin: 0;
   }
 }
 
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
-
-/* ═══════════════════════════════════════
-   CONTAINER CHÍNH
-═══════════════════════════════════════ */
+// ─── Container ───────────────────────────────────────────────
 .container {
   max-width: 800px;
-  margin: 32px auto;
-  background: var(--bg-surface);
-  border: 1.5px solid var(--border-sharp);
-  border-top: 3px solid var(--black);
-  border-radius: 0;
-  box-shadow: 4px 4px 0 var(--black);
-  padding: 32px 40px;
-  font-family: var(--ff-body);
-  color: var(--text-primary);
-  transition: opacity 0.25s ease;
+  margin: 0 auto;
+  background: $card-bg;
+  border: $border;
+  border-radius: $radius-lg;
+  padding: 28px 32px;
+  color: $ink;
+  transition: opacity $transition;
 }
 
 .savingState {
@@ -85,14 +80,12 @@
   pointer-events: none;
 }
 
-/* ═══════════════════════════════════════
-   HEADER — ẢNH + THÔNG TIN
-═══════════════════════════════════════ */
+// ─── Header ──────────────────────────────────────────────────
 .header {
   display: flex;
-  gap: 32px;
-  border-bottom: 1.5px solid var(--border-sharp);
-  padding-bottom: 28px;
+  gap: 28px;
+  border-bottom: $border;
+  padding-bottom: 24px;
 
   @media (max-width: 600px) {
     flex-direction: column;
@@ -101,60 +94,62 @@
   }
 }
 
+// ─── Avatar ──────────────────────────────────────────────────
 .avatarBox {
   position: relative;
   flex-shrink: 0;
 }
 
 .avatar {
-  width: 140px;
-  height: 140px;
-  border-radius: 0;
+  width: 120px;
+  height: 120px;
+  border-radius: $radius-md;
   object-fit: cover;
-  border: 2px solid var(--black);
-  outline: 3px solid var(--gold-main);
+  border: $border;
+  outline: 2px solid $gold-border;
   outline-offset: 3px;
-  background: var(--bg-muted);
+  background: $input-bg;
   display: block;
 }
 
 .changeAvatar {
   position: absolute;
-  bottom: -8px;
-  right: -8px;
-  background: var(--black);
-  color: var(--gold-main);
-  width: 34px;
-  height: 34px;
-  border-radius: 0;
+  bottom: -6px;
+  right: -6px;
+  background: $ink;
+  color: $gold;
+  width: 30px;
+  height: 30px;
+  border-radius: $radius-sm;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.15s ease;
-  border: 2px solid var(--bg-surface);
+  border: 2px solid $card-bg;
+  transition: background $transition, color $transition;
 
   &:hover {
-    background: var(--gold-main);
-    color: var(--black);
+    background: $gold;
+    color: $ink;
   }
 }
 
+// ─── Info ────────────────────────────────────────────────────
 .info {
   flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 8px;
+  gap: 7px;
 }
 
 .name {
-  font-family: var(--ff-serif);
-  font-size: 26px;
-  font-weight: 900;
-  color: var(--text-primary);
-  margin: 0 0 4px;
-  letter-spacing: 0.3px;
+  font-family: $ff-serif;
+  font-size: 24px;
+  font-weight: 600;
+  color: $ink;
+  margin: 0 0 2px;
+  letter-spacing: 0.01em;
 }
 
 .branch,
@@ -162,230 +157,236 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--text-muted);
-  font-size: 14px;
+  font-size: 13px;
+  color: #888;
   margin: 0;
 
-  svg { color: var(--gold-dark); flex-shrink: 0; }
+  svg { color: $gold-dim; flex-shrink: 0; }
 
-  @media (max-width: 600px) {
-    justify-content: center;
-  }
+  @media (max-width: 600px) { justify-content: center; }
 }
 
 .contact {
-  gap: 20px;
+  gap: 16px;
 
   span {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
   }
 }
 
+// ─── Rating Box ──────────────────────────────────────────────
 .ratingBox {
-  margin-top: 8px;
-  font-size: 13px;
-  color: var(--text-secondary);
+  margin-top: 4px;
+  font-size: 12px;
+  color: #666;
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: var(--bg-muted);
-  padding: 8px 14px;
-  border-radius: 0;
-  border: 1.5px solid var(--border-sharp);
-  border-left: 3px solid var(--gold-main);
+  gap: 7px;
+  background: $gold-faint;
+  border: 1px solid $gold-border;
+  border-radius: $radius-md;
+  padding: 7px 13px;
   width: fit-content;
 
-  @media (max-width: 600px) {
-    margin: 8px auto 0;
-  }
+  svg { color: $gold; }
 
   strong {
-    font-family: var(--ff-display);
-    font-size: 18px;
-    color: var(--gold-dark);
-    letter-spacing: 1px;
+    font-family: $ff-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: $gold-dim;
   }
+
+  @media (max-width: 600px) { margin: 6px auto 0; }
 }
 
-/* ═══════════════════════════════════════
-   SECTION
-═══════════════════════════════════════ */
+// ─── Section ─────────────────────────────────────────────────
 .section {
-  margin-top: 28px;
+  margin-top: 24px;
 }
 
 .sectionTitle {
-  font-family: var(--ff-display);
-  font-size: 13px;
-  letter-spacing: 3px;
-  color: var(--text-muted);
-  margin-bottom: 14px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: $gold-dim;
   text-transform: uppercase;
+  margin: 0 0 12px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 
   &::after {
     content: '';
     flex: 1;
-    height: 1.5px;
-    background: var(--border-sharp);
+    height: 1px;
+    background: rgba(0, 0, 0, 0.07);
   }
 }
 
 .desc {
-  background: var(--bg-muted);
-  padding: 18px 20px;
-  border-radius: 0;
-  border: 1.5px solid var(--border-sharp);
-  border-left: 3px solid var(--black);
+  background: $input-bg;
+  border: $border;
+  border-radius: $radius-md;
+  padding: 14px 16px;
   white-space: pre-wrap;
-  color: var(--text-secondary);
-  font-size: 14px;
-  line-height: 1.65;
+  color: #555;
+  font-size: 13px;
+  line-height: 1.7;
   margin: 0;
-  font-family: var(--ff-body);
+  font-family: inherit;
 }
 
-/* ═══════════════════════════════════════
-   FORM INPUTS
-═══════════════════════════════════════ */
+// ─── Edit Form ───────────────────────────────────────────────
 .editForm {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
+// ─── Inputs ──────────────────────────────────────────────────
 .input,
 .textarea {
   width: 100%;
-  background: var(--bg-muted);
-  border: 1.5px solid var(--border-sharp);
-  border-radius: 0;
-  padding: 11px 14px;
-  font-size: 14px;
-  color: var(--text-primary);
-  font-family: var(--ff-body);
-  transition: border-color 0.12s ease;
+  background: $input-bg;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: $radius-md;
+  padding: 8px 11px;
+  font-size: 13px;
+  color: $ink;
+  font-family: inherit;
   outline: none;
+  transition: border-color $transition, background $transition;
+  box-sizing: border-box;
 
   &:focus {
-    border-color: var(--black);
-    background: var(--bg-surface);
+    border-color: $gold;
+    background: $card-bg;
   }
 
-  &::placeholder {
-    color: var(--text-muted);
-  }
+  &::placeholder { color: #c0b8ae; }
 }
 
 .textarea {
   resize: vertical;
-  line-height: 1.55;
+  line-height: 1.6;
   min-height: 100px;
 }
 
 .disabled {
-  background: var(--bg-muted);
-  color: var(--text-muted);
+  background: $input-bg;
+  color: #aaa;
   cursor: not-allowed;
   opacity: 0.6;
 
   &:focus {
-    border-color: var(--border-sharp);
-    background: var(--bg-muted);
+    border-color: rgba(0, 0, 0, 0.1);
+    background: $input-bg;
   }
 }
 
 .inputError {
-  border-color: var(--error);
+  border-color: $danger !important;
 
-  &:focus {
-    border-color: var(--error);
-  }
+  &:focus { border-color: $danger !important; }
 }
 
 .errorText {
-  color: var(--error);
-  font-size: 12px;
+  color: $danger;
+  font-size: 11px;
   font-weight: 600;
-  margin: -6px 0 0 2px;
+  margin: -4px 0 0 2px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.05em;
 }
 
-/* ═══════════════════════════════════════
-   ACTIONS / BUTTONS
-═══════════════════════════════════════ */
+// ─── Actions ─────────────────────────────────────────────────
 .actions {
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
-  margin-top: 28px;
-  padding-top: 20px;
-  border-top: 1.5px solid var(--border-sharp);
+  gap: 8px;
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: $border;
 }
 
-.editBtn,
-.saveBtn,
-.cancelBtn {
-  display: flex;
+// Shared button base
+%btnBase {
+  display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 10px 22px;
-  border-radius: 0;
-  font-weight: 700;
-  font-size: 11px;
-  font-family: var(--ff-display);
+  gap: 6px;
+  padding: 8px 18px;
+  border-radius: $radius-md;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
   cursor: pointer;
-  transition: all 0.12s ease;
-  text-transform: uppercase;
-  letter-spacing: 2px;
+  transition: background $transition, color $transition, border-color $transition;
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
 }
 
+// "Chỉnh sửa hồ sơ" — btnGhost
 .editBtn {
-  background: var(--bg-surface);
-  color: var(--black);
-  border: 2px solid var(--black);
-
-  &:hover:not(:disabled) {
-    background: var(--black);
-    color: var(--gold-main);
-  }
-}
-
-.saveBtn {
-  background: var(--black);
-  color: var(--gold-main);
-  border: 2px solid var(--black);
-
-  &:hover:not(:disabled) {
-    background: var(--gold-main);
-    color: var(--black);
-    border-color: var(--gold-main);
-  }
-}
-
-.cancelBtn {
+  @extend %btnBase;
   background: transparent;
-  color: var(--text-muted);
-  border: 1.5px solid var(--border-sharp);
+  color: #666;
+  border: 1px solid rgba(0, 0, 0, 0.12);
 
   &:hover:not(:disabled) {
-    color: var(--text-primary);
-    border-color: var(--text-primary);
+    background: $input-bg;
+    color: $ink;
+    border-color: rgba(0, 0, 0, 0.2);
   }
 }
 
-.editBtn:disabled,
-.saveBtn:disabled,
-.cancelBtn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
+// "Lưu thay đổi" — btnGold
+.saveBtn {
+  @extend %btnBase;
+  background: $gold;
+  color: $ink;
+  border: none;
+
+  &:hover:not(:disabled) { background: $gold-hover; }
 }
 
+// "Hủy"
+.cancelBtn {
+  @extend %btnBase;
+  background: transparent;
+  color: #666;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+
+  &:hover:not(:disabled) {
+    background: $input-bg;
+    color: $ink;
+  }
+}
+
+// ─── Spin animation ──────────────────────────────────────────
 .spin {
   animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+// ─── Responsive ──────────────────────────────────────────────
+@media (max-width: 768px) {
+  .container {
+    padding: 20px 16px;
+  }
+
+  .actions {
+    flex-wrap: wrap;
+
+    button { flex: 1; justify-content: center; }
+  }
 }

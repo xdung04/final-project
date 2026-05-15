@@ -522,6 +522,7 @@ export const getBarberBookingsNext7Days = async (idBarber) => {
 export const getBookingsByBranchService = async (idBranch, date) => {
   const whereClause = {};
 
+  // Filter theo ngày nếu có
   if (date) {
     whereClause[Op.and] = [
       db.Sequelize.where(
@@ -579,19 +580,19 @@ export const getBookingsByBranchService = async (idBranch, date) => {
       {
         model: db.BookingTip,
         as: "BookingTip",
-        attributes: ["idTip", "tipAmount"],
+        attributes: ["tipAmount"],
       },
       {
         model: db.CustomerVoucher,
         as: "customerVoucher",
-        attributes: ["id", "status"],   // ← bảng customer_vouchers chỉ có: id, status, ...
         include: [
           {
             model: db.Voucher,
             as: "voucher",
-            attributes: ["id", "name", "discount_percent"], // ← bảng vouchers dùng: id, name, discount_percent
+            attributes: ["idVoucher", "title", "discountPercent"],
           },
         ],
+        attributes: ["id",, "status"],
       },
     ],
     order: [
@@ -604,19 +605,21 @@ export const getBookingsByBranchService = async (idBranch, date) => {
     const details = booking.BookingDetails || [];
 
     const serviceTotal = details.reduce(
-      (sum, item) => sum + parseFloat(item.price) * (item.quantity || 1),
+      (sum, item) =>
+        sum + parseFloat(item.price) * (item.quantity || 1),
       0
     );
 
     const tip = parseFloat(booking.BookingTip?.tipAmount || 0);
 
-    // Dùng đúng alias "customerVoucher" (chữ thường)
-    const voucher = booking.customerVoucher?.voucher;
+    const voucher = booking.CustomerVoucher?.voucher;
 
-    // Bảng vouchers dùng cột discount_percent (snake_case), không phải discountPercent
-    const discountPercent = parseFloat(voucher?.discount_percent || 0);
+    const discountPercent = parseFloat(
+      voucher?.discountPercent || 0
+    );
 
-    const discountAmount = (serviceTotal * discountPercent) / 100;
+    const discountAmount =
+      (serviceTotal * discountPercent) / 100;
 
     const total = serviceTotal + tip - discountAmount;
 
@@ -626,7 +629,6 @@ export const getBookingsByBranchService = async (idBranch, date) => {
       bookingTime: booking.bookingTime,
       status: booking.status || "Pending",
       isPaid: Boolean(booking.isPaid),
-      paymentMethod: booking.paymentMethod || null,
       description: booking.description || "",
 
       customer: booking.Customer
@@ -635,7 +637,11 @@ export const getBookingsByBranchService = async (idBranch, date) => {
             name: booking.Customer.user?.fullName || "Khách lẻ",
             phone: booking.Customer.user?.phoneNumber || "",
           }
-        : { id: 0, name: "Khách lẻ", phone: "" },
+        : {
+            id: 0,
+            name: "Khách lẻ",
+            phone: "",
+          },
 
       barber: booking.barber
         ? {
@@ -661,8 +667,7 @@ export const getBookingsByBranchService = async (idBranch, date) => {
 
       voucher: voucher
         ? {
-            id: voucher.id,
-            name: voucher.name,
+            title: voucher.title,
             discountPercent,
           }
         : null,

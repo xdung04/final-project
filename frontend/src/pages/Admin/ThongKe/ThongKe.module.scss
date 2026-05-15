@@ -1,53 +1,67 @@
 /* ThongKe.module.scss
-   Style: Ivory & Obsidian — đồng bộ Admin dashboard
-   Layout: KHÔNG có sidebar riêng, dùng horizontal tab bar
+   Style: Editorial · Luxury Barber · Dark-Gold
+   Đồng bộ NOULE Admin Design System Guideline
+   Layout: Horizontal tab bar, không có sidebar riêng
 ---------------------------------------------------------------- */
 
-:root {
-  --black:          #111111;
-  --black-soft:     #1E1E1E;
-  --bg-page:        #EFEFEB;
-  --bg-surface:     #FFFFFF;
-  --bg-muted:       #F7F7F5;
+// ─── Design Tokens ───────────────────────────────────────────
 
-  --gold-main:      #C9A84C;
-  --gold-dark:      #8B6914;
-  --gold-light:     #FEF6E4;
+// Gold scale
+$gold:         #C9A84C;
+$gold-hover:   #BA9A3E;
+$gold-dim:     #8A6A28;
+$gold-faint:   rgba(201, 168, 76, 0.15);
+$gold-border:  rgba(201, 168, 76, 0.3);
 
-  --text-primary:   #111111;
-  --text-secondary: #444444;
-  --text-muted:     #999999;
-  --text-hint:      #BBBBBB;
+// Ink (dark surface)
+$ink:          #1A1612;
+$ink-2:        #2C2720;
+$ink-text:     #F5F0E8;
+$ink-muted:    rgba(245, 240, 232, 0.5);
+$ink-subtle:   rgba(245, 240, 232, 0.25);
 
-  --border-sharp:   #DDDDDD;
-  --border-dark:    #2A2A2A;
+// Page / component surface
+$page-bg:      #F7F4EF;
+$card-bg:      #FFFFFF;
+$input-bg:     #F9F6F1;
 
-  --ff-serif:   'Playfair Display', serif;
-  --ff-display: 'Bebas Neue', sans-serif;
-  --ff-body:    'DM Sans', sans-serif;
-}
+// Border chuẩn
+$border:       1px solid rgba(0, 0, 0, 0.07);
+$border-hover: 1px solid rgba(201, 168, 76, 0.5);
 
-/* ═══════════════════════════════════════
-   WRAPPER — chiếm toàn bộ vùng content
-   (bên trong .contentArea của Admin)
-═══════════════════════════════════════ */
+// Typography
+$ff-serif: Georgia, 'Times New Roman', serif;
+$ff-mono:  'Courier New', monospace;
+
+// Border radius
+$radius-sm: 6px;
+$radius-md: 10px;
+$radius-lg: 14px;
+$radius-xl: 18px;
+
+// Transition
+$transition:    0.15s;
+
+
+// ─── Wrapper ─────────────────────────────────────────────────
+
 .wrapper {
   display: flex;
   flex-direction: column;
   min-height: 100%;
-  background: var(--bg-page);
-  font-family: var(--ff-body);
-  color: var(--text-primary);
+  background: $page-bg;
+  font-family: inherit;
+  color: $ink;
 }
 
-/* ═══════════════════════════════════════
-   TAB BAR — ngang, sát trên cùng
-═══════════════════════════════════════ */
+
+// ─── Tab Bar ─────────────────────────────────────────────────
+
 .tabBar {
-  background: var(--bg-surface);
-  border-bottom: 2px solid var(--black);
+  background: $ink;
+  border-bottom: 1px solid $gold-border;
   position: sticky;
-  top: 0;              /* sticky dưới header Admin (header Admin đã sticky) */
+  top: 0;
   z-index: 80;
   flex-shrink: 0;
 }
@@ -55,108 +69,160 @@
 .tabBarInner {
   display: flex;
   align-items: stretch;
-  gap: 0;
+  padding: 0 28px;
   overflow-x: auto;
   scrollbar-width: none;
 
-  &::-webkit-scrollbar { display: none; }
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 .tabBtn {
   display: flex;
   align-items: center;
   gap: 7px;
-  padding: 0 20px;
-  height: 44px;
+  padding: 0 18px;
+  height: 46px;
   background: transparent;
   border: none;
-  border-bottom: 3px solid transparent;
+  border-bottom: 2px solid transparent;
   border-radius: 0;
-  color: var(--text-muted);
-  font-family: var(--ff-display);
-  font-size: 12px;
-  font-weight: 400;
-  letter-spacing: 2px;
+  color: $ink-muted;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   cursor: pointer;
   white-space: nowrap;
-  transition: all 0.12s ease;
-  position: relative;
-  /* offset border-bottom của tabBar */
-  margin-bottom: -2px;
+  transition:
+    color $transition,
+    background $transition,
+    border-color $transition;
+  // bù trừ border-bottom của tabBar để active indicator flush với bottom
+  margin-bottom: -1px;
 
   .tabIcon {
     display: flex;
     align-items: center;
     color: inherit;
     flex-shrink: 0;
+    transition: color $transition;
   }
 
   &:hover {
-    color: var(--text-primary);
-    background: var(--bg-muted);
+    color: $ink-text;
+    background: rgba(245, 240, 232, 0.05);
   }
 
   &.active {
-    color: var(--black);
-    font-weight: 700;
-    border-bottom-color: var(--gold-main);
-    background: var(--bg-surface);
+    color: $gold;
+    border-bottom-color: $gold;
+    background: transparent;
 
     .tabIcon {
-      color: var(--gold-dark);
+      color: $gold;
     }
   }
 }
 
-/* ═══════════════════════════════════════
-   PAGE HEADER — tiêu đề tab đang active
-═══════════════════════════════════════ */
+
+// ─── Page Header ─────────────────────────────────────────────
+
 .pageHeader {
-  background: var(--bg-surface);
-  border-bottom: 1px solid var(--border-sharp);
+  background: $card-bg;
+  border-bottom: $border;
   flex-shrink: 0;
 }
 
 .pageHeaderInner {
-  padding: 18px 28px 16px;
+  padding: 20px 32px 18px;
+  max-width: 1280px;
+  margin: 0 auto;
 }
 
+// eyebrow
+.pageEyebrow {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: $gold-dim;
+  margin: 0 0 6px;
+}
+
+// Georgia serif title — giống pattern Page Heading trong guideline
 .pageTitle {
-  font-family: var(--ff-serif);
-  font-size: 22px;
-  font-weight: 900;
-  color: var(--text-primary);
-  margin: 0 0 3px;
-  line-height: 1;
-  letter-spacing: 0.2px;
+  font-family: $ff-serif;
+  font-size: 26px;
+  font-weight: 600;
+  color: $ink;
+  margin: 0 0 4px;
+  line-height: 1.15;
+  letter-spacing: 0.01em;
+
+  em {
+    color: $gold;
+    font-style: italic;
+  }
 }
 
 .pageSubtitle {
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 400;
+  color: #888;
   text-transform: uppercase;
-  letter-spacing: 1.5px;
+  letter-spacing: 0.06em;
   margin: 0;
 }
 
-/* ═══════════════════════════════════════
-   CONTENT BODY
-═══════════════════════════════════════ */
+
+// ─── Content Body ────────────────────────────────────────────
+
 .contentBody {
   flex: 1;
-  padding: 24px 28px;
-  animation: fadeIn 0.25s ease;
+  padding: 28px 32px 48px;
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+  animation: fadeSlideIn 0.2s ease;
 }
 
-@keyframes fadeIn {
+@keyframes fadeSlideIn {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+
+// ─── Responsive ──────────────────────────────────────────────
+
+@media (max-width: 768px) {
+  .tabBarInner {
+    padding: 0 16px;
+  }
+
+  .tabBtn {
+    padding: 0 14px;
+    font-size: 10px;
+    gap: 5px;
+  }
+
+  .pageHeaderInner {
+    padding: 16px 20px 14px;
+  }
+
+  .pageTitle {
+    font-size: 22px;
+  }
+
+  .contentBody {
+    padding: 20px 16px 36px;
   }
 }
