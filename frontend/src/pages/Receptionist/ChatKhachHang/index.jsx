@@ -1,11 +1,14 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { Search, ArrowLeft, Send, User, Camera } from "lucide-react";
+import classNames from "classnames/bind";
 import socket from "~/utils/socket";
 import * as chatLiveService from "~/services/chatLiveService";
 import { useAuth } from "~/context/AuthContext";
 import { useToast } from "~/context/ToastContext";
 import styles from "./ChatKhachHang.module.scss";
 import ConfirmModal from "../../../components/ComfirmModal/index";
+
+const cx = classNames.bind(styles);
 
 const ChatKhachHang = () => {
   const { user, accessToken } = useAuth();
@@ -44,7 +47,6 @@ const ChatKhachHang = () => {
   const closeConfirmModal = () =>
     setConfirmModal((prev) => ({ ...prev, isOpen: false }));
 
-  // Load conversations (waiting & inProgress)
   const loadConversations = useCallback(async () => {
     if (!receptionistId || !token) return;
     setLoading(true);
@@ -53,8 +55,6 @@ const ChatKhachHang = () => {
         chatLiveService.getWaitingConversations(token),
         chatLiveService.getActiveConversations(receptionistId, token),
       ]);
-
-      // 🔥 Patch unreadCount = 0 cho conversation đang mở
       const currentOpenId = activeConversationIdRef.current;
       const patchUnread = (list) =>
         (list || []).map((c) =>
@@ -62,7 +62,6 @@ const ChatKhachHang = () => {
             ? { ...c, unreadCount: 0 }
             : c,
         );
-
       setConversations((prev) => ({
         ...prev,
         waiting: patchUnread(waitingList),
@@ -76,22 +75,16 @@ const ChatKhachHang = () => {
     }
   }, [receptionistId, token, showToast]);
 
-  // Load closed conversations count (for badge)
   const loadClosedCount = useCallback(async () => {
     if (!token) return;
     try {
-      const data = await chatLiveService.searchConversations(
-        token,
-        "",
-        "closed",
-      );
+      const data = await chatLiveService.searchConversations(token, "", "closed");
       setConversations((prev) => ({ ...prev, closed: data || [] }));
     } catch (error) {
       console.error("Lỗi load closed count:", error);
     }
   }, [token]);
 
-  // Global search (all status)
   const handleSearch = useCallback(
     async (keyword) => {
       if (!token) return;
@@ -101,11 +94,7 @@ const ChatKhachHang = () => {
         return;
       }
       try {
-        const results = await chatLiveService.searchConversations(
-          token,
-          keyword,
-          null,
-        );
+        const results = await chatLiveService.searchConversations(token, keyword, null);
         setSearchResults(results || []);
         setIsSearching(true);
       } catch (error) {
@@ -116,22 +105,17 @@ const ChatKhachHang = () => {
     [token, showToast],
   );
 
-  // Load chat history + reset unread
   const loadChatHistory = useCallback(
     async (conversationId) => {
       if (!conversationId || !token) return;
       try {
-        const result = await chatLiveService.getChatHistory(
-          conversationId,
-          token,
-        );
+        const result = await chatLiveService.getChatHistory(conversationId, token);
         if (result.success) {
           setMessagesMap((prev) => ({
             ...prev,
             [conversationId]: result.data.messages,
           }));
           socket.emit("reset_unread", { conversationId, receptionistId });
-          // Reset unreadCount in UI
           setConversations((prev) => ({
             ...prev,
             inProgress: prev.inProgress.map((c) =>
@@ -160,14 +144,11 @@ const ChatKhachHang = () => {
     [token, receptionistId, isSearching, showToast],
   );
 
-  // Join conversation from waiting list
   const handleJoinConversation = useCallback(
     async (conversation) => {
       try {
         const result = await chatLiveService.receptionistJoin(
-          conversation.id,
-          receptionistId,
-          token,
+          conversation.id, receptionistId, token,
         );
         if (result.success) {
           await loadConversations();
@@ -177,36 +158,25 @@ const ChatKhachHang = () => {
           showToast({ text: "Đã tham gia cuộc trò chuyện", type: "success" });
         }
       } catch (error) {
-        showToast({
-          text: error.response?.data?.error || "Không thể join",
-          type: "error",
-        });
+        showToast({ text: error.response?.data?.error || "Không thể join", type: "error" });
       }
     },
     [receptionistId, token, loadConversations, loadChatHistory, showToast],
   );
 
-  // Leave conversation
   const handleLeaveConversation = useCallback(() => {
     if (!activeConversationId) return;
     setConfirmModal({
       isOpen: true,
       title: "Rời cuộc trò chuyện?",
-      message:
-        "Cuộc trò chuyện sẽ trở về hàng chờ và chưa có lễ tân tiếp nhận.",
+      message: "Cuộc trò chuyện sẽ trở về hàng chờ và chưa có lễ tân tiếp nhận.",
       confirmText: "Rời",
       confirmType: "warning",
       onConfirm: async () => {
         closeConfirmModal();
         try {
-          await chatLiveService.receptionistLeave(
-            activeConversationId,
-            receptionistId,
-            token,
-          );
-          socket.emit("leave_conversation", {
-            conversationId: activeConversationId,
-          });
+          await chatLiveService.receptionistLeave(activeConversationId, receptionistId, token);
+          socket.emit("leave_conversation", { conversationId: activeConversationId });
           await loadConversations();
           setActiveConversationId(null);
           showToast({ text: "Đã rời cuộc trò chuyện", type: "info" });
@@ -215,44 +185,28 @@ const ChatKhachHang = () => {
         }
       },
     });
-  }, [
-    activeConversationId,
-    receptionistId,
-    token,
-    loadConversations,
-    showToast,
-  ]);
+  }, [activeConversationId, receptionistId, token, loadConversations, showToast]);
 
-  // Transfer conversation
   const handleTransfer = useCallback(
     async (toReceptionistId) => {
       if (!activeConversationId) return;
       try {
         await chatLiveService.transferConversation(
-          activeConversationId,
-          receptionistId,
-          toReceptionistId,
-          token,
+          activeConversationId, receptionistId, toReceptionistId, token,
         );
-        socket.emit("leave_conversation", {
-          conversationId: activeConversationId,
-        }); // 🔥
+        socket.emit("leave_conversation", { conversationId: activeConversationId });
         await loadConversations();
         setActiveConversationId(null);
         setShowTransfer(false);
         setSelectedReceptionist("");
         showToast({ text: "Chuyển thành công", type: "success" });
       } catch (error) {
-        showToast({
-          text: error.response?.data?.error || "Chuyển thất bại",
-          type: "error",
-        });
+        showToast({ text: error.response?.data?.error || "Chuyển thất bại", type: "error" });
       }
     },
     [activeConversationId, receptionistId, token, loadConversations, showToast],
   );
 
-  // Close conversation
   const handleCloseConversation = useCallback(() => {
     if (!activeConversationId) return;
     setConfirmModal({
@@ -264,10 +218,7 @@ const ChatKhachHang = () => {
       onConfirm: async () => {
         closeConfirmModal();
         try {
-          await chatLiveService.closeCustomerConversation(
-            activeConversationId,
-            token,
-          );
+          await chatLiveService.closeCustomerConversation(activeConversationId, token);
           await loadConversations();
           setActiveConversationId(null);
           showToast({ text: "Đã đóng cuộc trò chuyện", type: "info" });
@@ -278,12 +229,8 @@ const ChatKhachHang = () => {
     });
   }, [activeConversationId, token, loadConversations, showToast]);
 
-  // Back button: reset active conversation
-  const handleBack = () => {
-    setActiveConversationId(null);
-  };
+  const handleBack = () => setActiveConversationId(null);
 
-  // Load receptionists list for transfer
   useEffect(() => {
     const loadReceptionists = async () => {
       const res = await chatLiveService.getAllReceptionists(token);
@@ -292,12 +239,9 @@ const ChatKhachHang = () => {
     if (token) loadReceptionists();
   }, [token]);
 
-  // Socket events
   useEffect(() => {
     const handleReceiveMessage = (msg) => {
       if (sentMessagesRef.current.has(msg.clientId)) return;
-
-      // Update messages map
       setMessagesMap((prev) => ({
         ...prev,
         [msg.conversationId]: [...(prev[msg.conversationId] || []), msg],
@@ -305,134 +249,84 @@ const ChatKhachHang = () => {
     };
 
     const handleConversationUpdated = () => {
-      // Luôn reload cả 3 danh sách để đồng bộ
-      loadConversations(); // waiting + inProgress
-      loadClosedCount(); // closed list (số lượng và dữ liệu)
-      if (isSearching && searchKeyword) {
-        handleSearch(searchKeyword);
-      }
+      loadConversations();
+      loadClosedCount();
+      if (isSearching && searchKeyword) handleSearch(searchKeyword);
     };
 
-    const handleTransferNotify = ({ toId, fromName, conversationId }) => {
+    const handleTransferNotify = ({ toId, fromName }) => {
       if (Number(toId) !== Number(receptionistId)) return;
-      showToast({
-        text: `🔔 Bạn được chuyển cuộc trò chuyện từ ${fromName}`,
-        type: "info",
-      });
+      showToast({ text: `🔔 Bạn được chuyển cuộc trò chuyện từ ${fromName}`, type: "info" });
       setActiveTab("inProgress");
       loadConversations();
     };
 
-    // 🔥 Handler mới: update sidebar lastMessage + unreadCount
-    const handleNewMessage = ({
-      conversationId,
-      lastMessage,
-      senderType,
-      clientId,
-    }) => {
+    const handleNewMessage = ({ conversationId, lastMessage, senderType, clientId }) => {
       if (sentMessagesRef.current.has(clientId)) return;
       if (senderType === "receptionist") return;
-
-      // 🔥 Ép kiểu để so sánh đúng
       const convId = Number(conversationId);
       const isCurrentlyOpen = activeConversationIdRef.current === convId;
-
-      // 🔥 Nếu đang mở conversation này → reset unread ngay trên server
       if (isCurrentlyOpen) {
-        socket.emit("reset_unread", {
-          conversationId: convId,
-          receptionistId,
-        });
+        socket.emit("reset_unread", { conversationId: convId, receptionistId });
       }
-
       const updateList = (list) =>
         list.map((conv) =>
           Number(conv.id) === convId
-            ? {
-                ...conv,
-                lastMessage,
-                unreadCount: isCurrentlyOpen ? 0 : (conv.unreadCount || 0) + 1,
-              }
+            ? { ...conv, lastMessage, unreadCount: isCurrentlyOpen ? 0 : (conv.unreadCount || 0) + 1 }
             : conv,
         );
-
       setConversations((prev) => ({
-        waiting: updateList(prev.waiting),
+        waiting:    updateList(prev.waiting),
         inProgress: updateList(prev.inProgress),
-        closed: updateList(prev.closed),
+        closed:     updateList(prev.closed),
       }));
-
-      if (isSearching) {
-        setSearchResults((prev) => updateList(prev));
-      }
+      if (isSearching) setSearchResults((prev) => updateList(prev));
     };
 
-    socket.on("conversation_new_message", handleNewMessage);
+    socket.on("conversation_new_message",   handleNewMessage);
     socket.on("conversation_transfer_notify", handleTransferNotify);
-    socket.on("receive_message", handleReceiveMessage);
-    socket.on("conversation_updated", handleConversationUpdated);
+    socket.on("receive_message",            handleReceiveMessage);
+    socket.on("conversation_updated",       handleConversationUpdated);
     socket.on("conversation_closed", ({ conversationId }) => {
-      if (activeConversationId === conversationId)
-        setActiveConversationId(null);
+      if (activeConversationId === conversationId) setActiveConversationId(null);
       handleConversationUpdated();
     });
 
     return () => {
-      socket.off("receive_message", handleReceiveMessage);
-      socket.off("conversation_updated", handleConversationUpdated);
+      socket.off("receive_message",             handleReceiveMessage);
+      socket.off("conversation_updated",        handleConversationUpdated);
       socket.off("conversation_closed");
       socket.off("conversation_transfer_notify", handleTransferNotify);
-      socket.off("conversation_new_message", handleNewMessage);
+      socket.off("conversation_new_message",    handleNewMessage);
     };
   }, [
-    activeConversationId,
-    receptionistId,
-    activeTab,
-    loadConversations,
-    loadClosedCount,
-    isSearching,
-    searchKeyword,
-    handleSearch,
-    showToast,
+    activeConversationId, receptionistId, activeTab,
+    loadConversations, loadClosedCount,
+    isSearching, searchKeyword, handleSearch, showToast,
   ]);
 
-  // Sync ref — ép về Number để đồng nhất
   useEffect(() => {
     activeConversationIdRef.current = activeConversationId
-      ? Number(activeConversationId)
-      : null;
+      ? Number(activeConversationId) : null;
   }, [activeConversationId]);
 
-  // Join room when conversation selected
   useEffect(() => {
     if (!activeConversationId) return;
     const joinRoom = () =>
-      socket.emit("join_conversation", {
-        conversationId: activeConversationId,
-      });
+      socket.emit("join_conversation", { conversationId: activeConversationId });
     if (socket.connected) joinRoom();
     else socket.once("connect", joinRoom);
     return () =>
-      socket.emit("leave_conversation", {
-        conversationId: activeConversationId,
-      });
+      socket.emit("leave_conversation", { conversationId: activeConversationId });
   }, [activeConversationId]);
 
-  // Initial loads
-  useEffect(() => {
-    loadConversations();
-    loadClosedCount();
-  }, [loadConversations, loadClosedCount]);
+  useEffect(() => { loadConversations(); loadClosedCount(); }, [loadConversations, loadClosedCount]);
 
-  // Debounced search
   useEffect(() => {
-    const delayDebounce = setTimeout(() => {
-      handleSearch(searchKeyword);
-    }, 500);
+    const delayDebounce = setTimeout(() => handleSearch(searchKeyword), 500);
     return () => clearTimeout(delayDebounce);
   }, [searchKeyword, handleSearch]);
 
-  // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messagesMap, activeConversationId]);
@@ -454,85 +348,70 @@ const ChatKhachHang = () => {
     socket.emit("send_message", messageData);
     setMessagesMap((prev) => ({
       ...prev,
-      [activeConversationId]: [
-        ...(prev[activeConversationId] || []),
-        messageData,
-      ],
+      [activeConversationId]: [...(prev[activeConversationId] || []), messageData],
     }));
     setInputMessage("");
   };
 
-  const formatTime = (dateStr) => {
-    const date = new Date(dateStr);
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  };
+  const formatTime = (dateStr) =>
+    new Date(dateStr).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
+  // ── Conversation Item ────────────────────────────────────────────────────
   const renderConversationItem = (conv, isWaiting = false) => (
     <div
       key={conv.id}
-      className={`${styles.conversationItem} ${activeConversationId === conv.id ? styles.active : ""}`}
+      className={cx("conversationItem", { active: activeConversationId === conv.id })}
       onClick={() => {
         if (isWaiting) {
           handleJoinConversation(conv);
         } else {
           if (activeConversationId !== conv.id) {
             setActiveConversationId(conv.id);
-            loadChatHistory(conv.id); // loadChatHistory đã có reset_unread emit
-
-            // 🔥 Reset unread ngay trên UI không cần chờ server
+            loadChatHistory(conv.id);
             setConversations((prev) => ({
               ...prev,
-              waiting: prev.waiting.map((c) =>
-                c.id === conv.id ? { ...c, unreadCount: 0 } : c,
-              ),
-              inProgress: prev.inProgress.map((c) =>
-                c.id === conv.id ? { ...c, unreadCount: 0 } : c,
-              ),
-              closed: prev.closed.map((c) =>
-                c.id === conv.id ? { ...c, unreadCount: 0 } : c,
-              ),
+              waiting:    prev.waiting.map((c)    => c.id === conv.id ? { ...c, unreadCount: 0 } : c),
+              inProgress: prev.inProgress.map((c) => c.id === conv.id ? { ...c, unreadCount: 0 } : c),
+              closed:     prev.closed.map((c)     => c.id === conv.id ? { ...c, unreadCount: 0 } : c),
             }));
-
             if (isSearching) {
               setSearchResults((prev) =>
-                prev.map((c) =>
-                  c.id === conv.id ? { ...c, unreadCount: 0 } : c,
-                ),
+                prev.map((c) => c.id === conv.id ? { ...c, unreadCount: 0 } : c),
               );
             }
           }
         }
       }}
     >
-      <div className={styles.avatar}>
-        <User size={20} />
-      </div>
-      <div className={styles.convInfo}>
-        <div className={styles.convHeader}>
-          <span className={styles.name}>{conv.customerName}</span>
-          <span className={styles.time}>
-            {formatTime(conv.lastUpdated || conv.createdAt)}
-          </span>
+      <div className={cx("avatar")}><User size={18} /></div>
+      <div className={cx("convInfo")}>
+        <div className={cx("convHeader")}>
+          <span className={cx("name")}>{conv.customerName}</span>
+          <span className={cx("time")}>{formatTime(conv.lastUpdated || conv.createdAt)}</span>
         </div>
-        <div className={styles.lastMsg}>
+        <div className={cx("lastMsg")}>
           {conv.lastMessage?.substring(0, 50) || "Chưa có tin nhắn"}
         </div>
       </div>
       {conv.unreadCount > 0 && (
-        <div className={styles.unreadBadge}>{conv.unreadCount}</div>
+        <div className={cx("unreadBadge")}>{conv.unreadCount}</div>
       )}
     </div>
   );
 
   if (loading && !activeConversationId)
-    return <div className={styles.loading}>Đang tải...</div>;
+    return <div className={cx("loading")}>Đang tải...</div>;
 
+  // ── Render ───────────────────────────────────────────────────────────────
   return (
-    <div className={styles.chatContainer}>
-      {/* Sidebar */}
-      <div className={styles.chatSidebar}>
-        <div className={styles.chatSearch}>
-          <Search size={18} />
+    <div className={cx("chatContainer")}>
+
+      {/* ── SIDEBAR ─────────────────────────────────────────────────────── */}
+      <div className={cx("chatSidebar")}>
+
+        {/* Search */}
+        <div className={cx("chatSearch")}>
+          <Search size={16} />
           <input
             type="text"
             placeholder="Tìm theo tên hoặc số điện thoại..."
@@ -540,16 +419,11 @@ const ChatKhachHang = () => {
             onChange={(e) => setSearchKeyword(e.target.value)}
           />
         </div>
-        <div className={styles.conversationList}>
+
+        <div className={cx("conversationList")}>
           {isSearching ? (
             <>
-              <div
-                style={{
-                  padding: "10px 20px",
-                  background: "#f9f9f9",
-                  fontWeight: 500,
-                }}
-              >
+              <div className={cx("searchResultsHeader")}>
                 Kết quả tìm kiếm ({searchResults.length})
               </div>
               {searchResults.map((conv) =>
@@ -558,173 +432,127 @@ const ChatKhachHang = () => {
             </>
           ) : (
             <>
-              <div style={{ display: "flex", borderBottom: "1px solid #eee" }}>
-                <button
-                  onClick={() => setActiveTab("waiting")}
-                  style={{
-                    flex: 1,
-                    padding: "12px",
-                    background:
-                      activeTab === "waiting" ? "#b8966a" : "transparent",
-                    color: activeTab === "waiting" ? "white" : "#333",
-                    border: "none",
-                    cursor: "pointer",
-                    fontWeight: 500,
-                  }}
-                >
-                  Chờ ({conversations.waiting.length})
-                </button>
-                <button
-                  onClick={() => setActiveTab("inProgress")}
-                  style={{
-                    flex: 1,
-                    padding: "12px",
-                    background:
-                      activeTab === "inProgress" ? "#b8966a" : "transparent",
-                    color: activeTab === "inProgress" ? "white" : "#333",
-                    border: "none",
-                    cursor: "pointer",
-                    fontWeight: 500,
-                  }}
-                >
-                  Đang xử lý ({conversations.inProgress.length})
-                </button>
-                <button
-                  onClick={() => setActiveTab("closed")}
-                  style={{
-                    flex: 1,
-                    padding: "12px",
-                    background:
-                      activeTab === "closed" ? "#b8966a" : "transparent",
-                    color: activeTab === "closed" ? "white" : "#333",
-                    border: "none",
-                    cursor: "pointer",
-                    fontWeight: 500,
-                  }}
-                >
-                  Đã đóng ({conversations.closed.length})
-                </button>
+              {/* Tab bar */}
+              <div className={cx("sidebarTabs")}>
+                {[
+                  { id: "waiting",    label: "Chờ",         count: conversations.waiting.length },
+                  { id: "inProgress", label: "Đang xử lý",  count: conversations.inProgress.length },
+                  { id: "closed",     label: "Đã đóng",      count: conversations.closed.length },
+                ].map((t) => (
+                  <button
+                    key={t.id}
+                    className={cx("sidebarTab", { active: activeTab === t.id })}
+                    onClick={() => setActiveTab(t.id)}
+                  >
+                    {t.label} ({t.count})
+                  </button>
+                ))}
               </div>
-              {activeTab === "waiting" &&
-                conversations.waiting.map((conv) =>
-                  renderConversationItem(conv, true),
-                )}
-              {activeTab === "inProgress" &&
-                conversations.inProgress.map((conv) =>
-                  renderConversationItem(conv, false),
-                )}
-              {activeTab === "closed" &&
-                conversations.closed.map((conv) =>
-                  renderConversationItem(conv, false),
-                )}
+
+              {activeTab === "waiting"    && conversations.waiting.map((conv)    => renderConversationItem(conv, true))}
+              {activeTab === "inProgress" && conversations.inProgress.map((conv) => renderConversationItem(conv, false))}
+              {activeTab === "closed"     && conversations.closed.map((conv)     => renderConversationItem(conv, false))}
             </>
           )}
         </div>
       </div>
 
-      {/* Chat Window */}
-      <div className={styles.chatWindow}>
+      {/* ── CHAT WINDOW ─────────────────────────────────────────────────── */}
+      <div className={cx("chatWindow")}>
         {activeConversationId ? (
           <>
-            <div className={styles.windowHeader}>
-              <button className={styles.backButton} onClick={handleBack}>
-                <ArrowLeft size={18} /> Quay lại
+            {/* Window Header */}
+            <div className={cx("windowHeader")}>
+              <button className={cx("backButton")} onClick={handleBack}>
+                <ArrowLeft size={16} /> Quay lại
               </button>
+
               <strong>
                 {[
                   ...conversations.waiting,
                   ...conversations.inProgress,
                   ...conversations.closed,
-                ].find((c) => c.id === activeConversationId)?.customerName ||
-                  "..."}
+                ].find((c) => c.id === activeConversationId)?.customerName || "..."}
               </strong>
-              <div>
+
+              <div className={cx("headerActions")}>
                 {showTransfer ? (
                   <>
                     <select
+                      className={cx("transferSelect")}
                       value={selectedReceptionist}
                       onChange={(e) => setSelectedReceptionist(e.target.value)}
-                      style={{ marginRight: 8 }}
                     >
                       <option value="">-- Chọn lễ tân --</option>
                       {receptionists
                         .filter((r) => r.id !== receptionistId)
                         .map((r) => (
-                          <option key={r.id} value={r.id}>
-                            {r.name}
-                          </option>
+                          <option key={r.id} value={r.id}>{r.name}</option>
                         ))}
                     </select>
                     <button
+                      className={cx("headerBtn")}
                       onClick={() => {
-                        if (selectedReceptionist)
-                          handleTransfer(Number(selectedReceptionist));
-                        else
-                          showToast({ text: "Chọn lễ tân", type: "warning" });
+                        if (selectedReceptionist) handleTransfer(Number(selectedReceptionist));
+                        else showToast({ text: "Chọn lễ tân", type: "warning" });
                       }}
                     >
                       Xác nhận
                     </button>
-                    <button onClick={() => setShowTransfer(false)}>Huỷ</button>
+                    <button className={cx("headerBtn")} onClick={() => setShowTransfer(false)}>
+                      Huỷ
+                    </button>
                   </>
                 ) : (
                   <>
-                    <button
-                      onClick={handleLeaveConversation}
-                      style={{ marginRight: 8 }}
-                    >
+                    <button className={cx("headerBtn")} onClick={handleLeaveConversation}>
                       Rời
                     </button>
-                    <button
-                      onClick={handleCloseConversation}
-                      style={{ marginRight: 8 }}
-                    >
+                    <button className={cx("headerBtn", "danger")} onClick={handleCloseConversation}>
                       Đóng
                     </button>
-                    <button onClick={() => setShowTransfer(true)}>
+                    <button className={cx("headerBtn")} onClick={() => setShowTransfer(true)}>
                       Chuyển
                     </button>
                   </>
                 )}
               </div>
             </div>
-            <div className={styles.messageArea}>
+
+            {/* Messages */}
+            <div className={cx("messageArea")}>
               {!messagesMap[activeConversationId] ? (
-                <div className={styles.loading}>Đang tải tin nhắn...</div>
+                <div className={cx("loading")}>Đang tải tin nhắn...</div>
               ) : (
-                messagesMap[activeConversationId].map((msg, idx) => {
-                  let msgClass = styles.msgRow;
-                  if (msg.senderType === "receptionist")
-                    msgClass += ` ${styles.sent}`;
-                  else if (msg.senderType === "customer")
-                    msgClass += ` ${styles.received}`;
-                  else if (msg.senderType === "system")
-                    msgClass += ` ${styles.system}`;
-                  return (
-                    <div key={idx} className={msgClass}>
-                      <div className={styles.msgBubble}>
-                        {msg.messageType === "system" ? (
-                          <>
-                            {msg.eventType === "join" &&
-                              `💼 ${msg.metadata?.name} đã tham gia`}
-                            {msg.eventType === "leave" &&
-                              `💼 ${msg.metadata?.name} đã rời`}
-                            {msg.eventType === "transfer" &&
-                              `🔄 Chuyển từ ${msg.metadata?.fromName} sang ${msg.metadata?.toName}`}
-                            {msg.eventType === "reopen" &&
-                              `🔄 Cuộc trò chuyện được mở lại`}
-                          </>
-                        ) : (
-                          msg.content
-                        )}
-                      </div>
+                messagesMap[activeConversationId].map((msg, idx) => (
+                  <div
+                    key={idx}
+                    className={cx("msgRow", {
+                      sent:     msg.senderType === "receptionist",
+                      received: msg.senderType === "customer",
+                      system:   msg.senderType === "system",
+                    })}
+                  >
+                    <div className={cx("msgBubble")}>
+                      {msg.messageType === "system" ? (
+                        <>
+                          {msg.eventType === "join"     && `💼 ${msg.metadata?.name} đã tham gia`}
+                          {msg.eventType === "leave"    && `💼 ${msg.metadata?.name} đã rời`}
+                          {msg.eventType === "transfer" && `🔄 Chuyển từ ${msg.metadata?.fromName} sang ${msg.metadata?.toName}`}
+                          {msg.eventType === "reopen"   && `🔄 Cuộc trò chuyện được mở lại`}
+                        </>
+                      ) : (
+                        msg.content
+                      )}
                     </div>
-                  );
-                })
+                  </div>
+                ))
               )}
               <div ref={messagesEndRef} />
             </div>
-            <div className={styles.inputArea}>
+
+            {/* Input */}
+            <div className={cx("inputArea")}>
               <input
                 type="text"
                 placeholder="Nhập tin nhắn..."
@@ -732,34 +560,22 @@ const ChatKhachHang = () => {
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyPress={(e) => e.key === "Enter" && handleSend()}
               />
-              <label className={styles.attachBtn}>
-                <Camera size={20} />
-                <input
-                  type="file"
-                  hidden
-                  accept="image/*"
-                  onChange={(e) => console.log(e)}
-                />
+              <label className={cx("attachBtn")}>
+                <Camera size={18} />
+                <input type="file" hidden accept="image/*" onChange={(e) => console.log(e)} />
               </label>
-              <button className={styles.sendBtn} onClick={handleSend}>
-                <Send size={18} />
+              <button className={cx("sendBtn")} onClick={handleSend}>
+                <Send size={16} />
               </button>
             </div>
           </>
         ) : (
-          <div
-            style={{
-              flex: 1,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#aaa",
-            }}
-          >
+          <div className={cx("emptyWindow")}>
             Chọn một cuộc trò chuyện để bắt đầu chat
           </div>
         )}
       </div>
+
       <ConfirmModal
         isOpen={confirmModal.isOpen}
         title={confirmModal.title}

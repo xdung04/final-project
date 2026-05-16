@@ -1,188 +1,330 @@
-/* ContractDocument.module.scss */
+/* HopDong.module.scss
+   NOULE Admin — Hợp đồng lao động
+   Design System: Editorial · Luxury Barber · Dark-Gold
+   Lưu ý: A4 paper giữ font Times New Roman (chuẩn hành chính VN)
+---------------------------------------------------------------- */
 
+// ─── Tokens ──────────────────────────────────────────────────
+$gold:        #C9A84C;
+$gold-hover:  #BA9A3E;
+$gold-dim:    #8A6A28;
+$gold-faint:  rgba(201, 168, 76, 0.15);
+$gold-border: rgba(201, 168, 76, 0.3);
+
+$ink:         #1A1612;
+$ink-text:    #F5F0E8;
+
+$card-bg:     #FFFFFF;
+$input-bg:    #F9F6F1;
+$page-bg:     #F7F4EF;
+
+$border:      1px solid rgba(0, 0, 0, 0.07);
+
+$radius-sm:   6px;
+$radius-md:   10px;
+$radius-lg:   14px;
+
+$danger:      #E24B4A;
+
+$transition:  0.15s;
+
+// ─── Page Shell ──────────────────────────────────────────────
 .contractPage {
-  background-color: #f1f5f9; /* Màu nền xám ngoài lề */
-  padding: 20px;
+  background: $page-bg;
+  padding: 28px 32px 48px;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  font-family: 'Times New Roman', Times, serif; /* Chuẩn văn bản hành chính */
+  font-family: inherit;
+
+  &.centered {
+    justify-content: center;
+    gap: 16px;
+  }
 }
 
+// ─── Error text ──────────────────────────────────────────────
+.error {
+  font-size: 13px;
+  color: $danger;
+}
+
+// ─── Toolbar ─────────────────────────────────────────────────
 .toolbar {
   width: 100%;
   max-width: 800px;
   display: flex;
   justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
-  font-family: sans-serif; /* Toolbar thì dùng font hiện đại */
 
   .actions {
     display: flex;
-    gap: 10px;
-  }
-
-  .btn {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-    border: none;
-
-    &.primary { background: #2563eb; color: white; }
-    &.outline { background: white; border: 1px solid #cbd5e1; color: #334155; }
-    &.ghost { background: transparent; color: #475569; }
+    gap: 8px;
   }
 }
 
-/* KHUNG GIẤY A4 */
+// ─── Buttons ─────────────────────────────────────────────────
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border-radius: $radius-md;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  border: none;
+  transition:
+    background $transition,
+    color $transition,
+    border-color $transition;
+
+  // "Xuất PDF" — btnNew/gold
+  &.primary {
+    background: $gold;
+    color: $ink;
+
+    &:hover { background: $gold-hover; }
+  }
+
+  // "In hợp đồng" — btnGhost
+  &.outline {
+    background: $card-bg;
+    border: $border;
+    color: #666;
+
+    &:hover {
+      background: $input-bg;
+      border-color: rgba(0, 0, 0, 0.15);
+      color: $ink;
+    }
+  }
+
+  // "Quay lại"
+  &.ghost {
+    background: transparent;
+    border: $border;
+    color: #666;
+
+    &:hover {
+      background: $input-bg;
+      color: $ink;
+    }
+  }
+}
+
+// ─── A4 Paper ────────────────────────────────────────────────
+// Giữ nguyên kích thước + font Times New Roman (chuẩn hành chính)
 .a4-paper {
-  background: white;
-  width: 210mm;      /* Kích thước chuẩn A4 */
+  background: $card-bg;
+  width: 210mm;
   min-height: 297mm;
-  padding: 20mm;     /* Căn lề chuẩn */
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  padding: 20mm;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+  border: $border;
+  border-radius: $radius-md;
   position: relative;
   overflow: hidden;
   color: #000;
-  line-height: 1.5;
+  line-height: 1.6;
+  font-family: 'Times New Roman', Times, serif;
 }
 
-/* Con dấu chìm trạng thái */
+// ─── Status Stamp ────────────────────────────────────────────
 .stamp {
   position: absolute;
   top: 150px;
   right: 50px;
-  font-size: 32px;
-  font-weight: bold;
-  border: 4px solid;
-  border-radius: 8px;
-  padding: 10px 20px;
+  font-size: 28px;
+  font-weight: 700;
+  border: 3px solid;
+  border-radius: $radius-sm;
+  padding: 8px 18px;
   transform: rotate(20deg);
-  opacity: 0.2; /* Mờ mờ giống đóng dấu */
-  font-family: sans-serif;
+  opacity: 0.18;
+  font-family: inherit;
   pointer-events: none;
+  letter-spacing: 0.05em;
 
-  &.active { color: #16a34a; border-color: #16a34a; }
-  &.expired { color: #dc2626; border-color: #dc2626; }
-  &.terminated { color: #475569; border-color: #475569; }
+  &.active     { color: #3B6D11; border-color: #3B6D11; }
+  &.expired    { color: $danger;  border-color: $danger; }
+  &.terminated { color: #777;     border-color: #777; }
 }
 
-/* Tiêu đề Quốc hiệu */
+// ─── Document Header ─────────────────────────────────────────
 .header {
   text-align: center;
-  margin-bottom: 30px;
-
-  .national-motto {
-    margin-bottom: 20px;
-    
-    h4 { margin: 0; font-size: 16px; font-weight: bold; }
-    p { margin: 5px 0 0; font-size: 15px; font-weight: bold; }
-    .line {
-      width: 150px;
-      height: 1px;
-      background: black;
-      margin: 5px auto 0;
-    }
-  }
-
-  .title {
-    font-size: 22px;
-    font-weight: bold;
-    margin: 0 0 5px;
-  }
-
-  .contract-number {
-    font-style: italic;
-    font-size: 14px;
-    margin: 0;
-  }
+  margin-bottom: 28px;
 }
 
-.content {
-  font-size: 15px;
-  text-align: justify;
+.national-motto {
+  margin-bottom: 18px;
 
-  .section-title {
+  h4 {
+    margin: 0;
     font-size: 15px;
-    font-weight: bold;
-    margin: 20px 0 10px;
+    font-weight: 700;
     text-transform: uppercase;
   }
 
-  .article-title {
-    font-size: 15px;
-    font-weight: bold;
-    margin: 20px 0 10px;
+  p {
+    margin: 4px 0 0;
+    font-size: 14px;
+    font-weight: 700;
   }
 
-  .info-list, .clause-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-
-    li { margin-bottom: 6px; }
-  }
-
-  .clause-list {
-    list-style: disc; /* Dùng dấu chấm đầu dòng cho điều khoản */
-    padding-left: 20px;
-  }
-
-  .highlight {
-    font-weight: bold;
+  .line {
+    width: 140px;
+    height: 1px;
+    background: #000;
+    margin: 6px auto 0;
   }
 }
 
-/* Chữ ký */
+.title {
+  font-size: 20px;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin: 0 0 6px;
+  letter-spacing: 0.02em;
+}
+
+.contract-number {
+  font-style: italic;
+  font-size: 13px;
+  margin: 0;
+  color: #444;
+}
+
+// ─── Document Content ────────────────────────────────────────
+.content {
+  font-size: 14px;
+  text-align: justify;
+
+  p { margin: 0 0 10px; }
+}
+
+.section-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 18px 0 8px;
+  text-transform: uppercase;
+}
+
+.article-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 18px 0 8px;
+}
+
+.sub-text {
+  font-size: 13px;
+  color: #444;
+  font-style: italic;
+  margin: 0 0 8px;
+}
+
+.info-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 10px;
+
+  li { margin-bottom: 5px; }
+}
+
+.clause-list {
+  list-style: disc;
+  padding-left: 20px;
+  margin: 0 0 10px;
+
+  li { margin-bottom: 8px; }
+}
+
+.highlight {
+  font-weight: 700;
+}
+
+// ─── Signatures ──────────────────────────────────────────────
 .signatures {
   display: flex;
   justify-content: space-between;
   margin-top: 40px;
   text-align: center;
+}
 
-  .sign-box {
-    width: 45%;
+.sign-box {
+  width: 45%;
 
-    h4 { margin: 0; font-size: 15px; font-weight: bold; }
-    p { margin: 5px 0 0; font-style: italic; font-size: 14px; }
-    
-    .space {
-      height: 100px; /* Khoảng trống để ký tên thật */
-    }
+  h4 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
 
-    .name {
-      font-weight: bold;
-      font-style: normal;
-      font-size: 16px;
-    }
+  p {
+    margin: 4px 0 0;
+    font-style: italic;
+    font-size: 13px;
+    color: #555;
+  }
+
+  .space {
+    height: 80px;
+  }
+
+  .name {
+    font-weight: 700;
+    font-style: normal;
+    font-size: 15px;
+    color: #000;
+    margin: 0;
   }
 }
 
-/* QUY TẮC KHI BẤM NÚT IN (Ctrl+P) */
+// ─── Print ───────────────────────────────────────────────────
 @media print {
-  body * {
-    visibility: hidden; /* Ẩn hết Menu, Sidebar của hệ thống */
-  }
-  .a4-paper, .a4-paper * {
+  body * { visibility: hidden; }
+
+  .a4-paper,
+  .a4-paper * {
     visibility: visible;
   }
+
   .a4-paper {
     position: absolute;
     left: 0;
     top: 0;
-    box-shadow: none; /* Bỏ bóng đổ */
+    box-shadow: none;
+    border: none;
+    border-radius: 0;
     width: 100%;
     margin: 0;
-    padding: 0;
+    padding: 15mm 20mm;
   }
-  .no-print {
-    display: none !important; /* Ẩn thanh công cụ khi in */
+
+  .no-print { display: none !important; }
+  .stamp    { display: none !important; }
+}
+
+// ─── Responsive ──────────────────────────────────────────────
+@media (max-width: 768px) {
+  .contractPage {
+    padding: 16px;
   }
-  /* Ẩn con dấu mờ để in ra giấy sạch sẽ cho thợ ký */
-  .stamp { display: none !important; } 
+
+  .a4-paper {
+    width: 100%;
+    min-height: unset;
+    padding: 20px 16px;
+  }
+
+  .toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
 }

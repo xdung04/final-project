@@ -1,34 +1,44 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap');
+/* Thuong.module.scss
+   NOULE Admin — Lương & Thưởng (Barber)
+   Design System: Editorial · Luxury Barber · Dark-Gold
+   Layout: Full-width, dễ quan sát, thông tin nổi bật
+---------------------------------------------------------------- */
 
-:root {
-  --black:      #111111;
-  --black-soft: #1E1E1E;
-  --bg-page:    #EFEFEB;
-  --bg-surface: #FFFFFF;
-  --bg-muted:   #F7F7F5;
+// ─── Tokens ──────────────────────────────────────────────────
+$gold:        #C9A84C;
+$gold-hover:  #BA9A3E;
+$gold-dim:    #8A6A28;
+$gold-faint:  rgba(201, 168, 76, 0.15);
+$gold-border: rgba(201, 168, 76, 0.3);
 
-  --gold-main:  #C9A84C;
-  --gold-dark:  #8B6914;
-  --gold-light: #FEF6E4;
+$ink:         #1A1612;
+$ink-2:       #2C2720;
+$ink-text:    #F5F0E8;
+$ink-muted:   rgba(245, 240, 232, 0.5);
+$ink-subtle:  rgba(245, 240, 232, 0.25);
 
-  --text-primary:   #111111;
-  --text-secondary: #444444;
-  --text-muted:     #999999;
-  --text-hint:      #BBBBBB;
+$card-bg:     #FFFFFF;
+$input-bg:    #F9F6F1;
+$page-bg:     #F7F4EF;
 
-  --border-sharp: #DDDDDD;
-  --border-dark:  #2A2A2A;
-  --success:      #2D6A2D;
-  --success-bg:   #EAF3EA;
+$border:      1px solid rgba(0, 0, 0, 0.07);
+$border-hover: 1px solid rgba(201, 168, 76, 0.5);
 
-  --ff-serif:   'Playfair Display', Georgia, serif;
-  --ff-display: 'Bebas Neue', sans-serif;
-  --ff-body:    'DM Sans', sans-serif;
-}
+// status
+$green:       #63C142;
+$green-bg:    #EAF3DE;
+$green-text:  #3B6D11;
 
-/* ═══════════════════════════════════════
-   LOADING / EMPTY
-═══════════════════════════════════════ */
+$ff-serif:    Georgia, 'Times New Roman', serif;
+
+$radius-sm:   6px;
+$radius-md:   10px;
+$radius-lg:   14px;
+$radius-xl:   18px;
+
+$transition:  0.15s;
+
+// ─── Loading / Empty ─────────────────────────────────────────
 .loadingContainer,
 .emptyContainer {
   display: flex;
@@ -36,389 +46,376 @@
   align-items: center;
   justify-content: center;
   padding: 80px 20px;
-  background: var(--bg-surface);
-  border: 1.5px solid var(--border-sharp);
-  border-top: 3px solid var(--black);
-  border-radius: 0;
-  font-family: var(--ff-body);
-  max-width: 800px;
+  background: $card-bg;
+  border: $border;
+  border-radius: $radius-lg;
+  gap: 12px;
   margin: 40px auto;
 
   .loadingIcon {
-    margin-bottom: 16px;
-    color: var(--gold-main);
+    color: $gold;
     animation: spin 0.9s linear infinite;
   }
 
-  .emptyIcon {
-    color: var(--text-hint);
-    margin-bottom: 16px;
-  }
+  .emptyIcon { color: #ccc; }
 
   p {
     font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 2px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: var(--text-muted);
+    color: #888;
+    margin: 0;
   }
 }
 
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
-
-/* ═══════════════════════════════════════
-   CONTAINER CHÍNH
-═══════════════════════════════════════ */
+// ─── Container — full width ───────────────────────────────────
 .container {
-  max-width: 800px;
-  margin: 32px auto;
-  background: var(--bg-surface);
-  border: 1.5px solid var(--border-sharp);
-  border-top: 3px solid var(--black);
-  border-radius: 0;
-  box-shadow: 4px 4px 0 var(--black);
-  padding: 32px 40px;
-  font-family: var(--ff-body);
-  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  color: $ink;
 }
 
-/* ═══════════════════════════════════════
-   HEADER
-═══════════════════════════════════════ */
+// ─── Header Info — dark hero card ────────────────────────────
 .headerInfo {
-  margin-bottom: 28px;
-  border-bottom: 1.5px solid var(--border-sharp);
-  padding-bottom: 20px;
+  background: $ink;
+  border: 1px solid $gold-border;
+  border-radius: $radius-lg;
+  padding: 28px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
 }
 
 .title {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-family: var(--ff-serif);
-  font-size: 26px;
-  font-weight: 900;
-  color: var(--text-primary);
+  font-family: $ff-serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: $ink-text;
   margin: 0 0 6px;
-  letter-spacing: 0.3px;
-}
 
-.titleIcon {
-  color: var(--gold-main);
+  .titleIcon { color: $gold; }
 }
 
 .subtitle {
-  font-size: 13px;
-  color: var(--text-muted);
-  margin: 0;
+  font-size: 11px;
+  color: $ink-muted;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.1em;
+  margin: 0 0 16px;
 }
 
-/* ═══════════════════════════════════════
-   SECTION
-═══════════════════════════════════════ */
+.totalIncome {
+  font-family: $ff-serif;
+  font-size: 38px;
+  font-weight: 700;
+  color: $gold;
+  line-height: 1;
+  letter-spacing: 0.01em;
+}
+
+.levelBadge {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: $gold-faint;
+  border: 1px solid $gold-border;
+  border-radius: $radius-md;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: $gold;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  align-self: flex-start;
+}
+
+// ─── Section ─────────────────────────────────────────────────
 .section {
-  margin-bottom: 32px;
+  background: $card-bg;
+  border: $border;
+  border-radius: $radius-lg;
+  overflow: hidden;
+  transition: border $transition;
+
+  &:hover { border: $border-hover; }
 }
 
 .headerRow {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 14px;
+  padding: 16px 22px;
+  border-bottom: $border;
 
   h3 {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 13px;
-    font-weight: 800;
-    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    color: $gold-dim;
     margin: 0;
     text-transform: uppercase;
-    letter-spacing: 2.5px;
+    letter-spacing: 0.14em;
+
+    svg { color: $gold; }
   }
 }
 
 .badge {
-  background: var(--black);
-  color: var(--gold-main);
-  padding: 4px 12px;
-  border-radius: 0;
-  font-family: var(--ff-display);
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 1.5px;
+  background: $ink;
+  color: $gold;
+  padding: 5px 13px;
+  border-radius: $radius-sm;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
 }
 
-/* ═══════════════════════════════════════
-   PROGRESS & STATS
-═══════════════════════════════════════ */
+// ─── Stats Grid ───────────────────────────────────────────────
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  padding: 20px 22px;
+  gap: 12px;
+}
+
+.statCard {
+  background: $input-bg;
+  border: $border;
+  border-radius: $radius-md;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border $transition;
+
+  &:hover { border: $border-hover; }
+}
+
+.statLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+
+  svg { color: $gold-dim; }
+}
+
+.statValue {
+  font-family: $ff-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: $ink;
+  line-height: 1;
+}
+
+// ─── Progress Box ─────────────────────────────────────────────
 .progressBox {
-  margin-top: 10px;
+  padding: 0 22px 20px;
+}
+
+.progressText {
+  font-size: 12px;
+  color: #888;
+  margin: 0 0 10px;
+  line-height: 1.5;
+
+  strong { color: $ink; font-weight: 600; }
 }
 
 .progressBar {
   width: 100%;
   height: 6px;
-  background: var(--bg-muted);
-  border-radius: 0;
+  background: $input-bg;
+  border-radius: 99px;
   overflow: hidden;
-  margin-bottom: 18px;
-  border: 1px solid var(--border-sharp);
+  border: $border;
 }
 
 .progressFill {
   height: 100%;
-  background: var(--black);
+  background: linear-gradient(90deg, $gold-dim, $gold);
+  border-radius: 99px;
   transition: width 0.7s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-
-  &::after {
-    content: '';
-    position: absolute;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    width: 3px;
-    background: var(--gold-main);
-  }
 }
 
-.statsGrid {
+// ─── KPI Grid ────────────────────────────────────────────────
+.kpiGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 12px;
+  padding: 20px 22px 0;
 }
 
-.statCard {
-  background: var(--bg-muted);
-  border: 1.5px solid var(--border-sharp);
-  border-top: 3px solid var(--black);
-  border-radius: 0;
-  padding: 14px 16px;
+.kpiCard {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  transition: box-shadow 0.12s;
+  align-items: center;
+  gap: 14px;
+  background: $input-bg;
+  border: $border;
+  border-radius: $radius-md;
+  padding: 16px 18px;
 
-  &:hover {
-    box-shadow: 3px 3px 0 var(--black);
-  }
-
-  .statLabel {
+  .kpiIcon {
+    color: $gold;
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    background: $gold-faint;
+    border-radius: $radius-md;
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 10px;
-    font-weight: 700;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-  }
-
-  .statValue {
-    font-family: var(--ff-display);
-    font-size: 22px;
-    color: var(--text-primary);
-    letter-spacing: 1px;
-    line-height: 1;
+    justify-content: center;
+    padding: 9px;
+    box-sizing: border-box;
   }
 }
 
-/* ═══════════════════════════════════════
-   REWARD BOX
-═══════════════════════════════════════ */
-.rewardBox {
-  position: relative;
-  background: var(--bg-surface);
-  border: 2px solid var(--black);
-  border-radius: 0;
-  padding: 24px;
-  margin-top: 24px;
-  box-shadow: 4px 4px 0 var(--black);
-  overflow: hidden;
-}
-
-.rewardContent {
-  position: relative;
-  z-index: 2;
-}
-
-.rewardBgIcon {
-  position: absolute;
-  right: 16px;
-  bottom: 8px;
-  color: var(--black);
-  opacity: 0.04;
-  transform: scale(2.5) rotate(-15deg);
-  z-index: 1;
-}
-
-.rewardLabel {
+.kpiLabel {
   font-size: 10px;
-  font-weight: 700;
-  color: var(--text-muted);
+  font-weight: 600;
+  color: #888;
   text-transform: uppercase;
-  letter-spacing: 2.5px;
-  margin: 0 0 10px;
+  letter-spacing: 0.08em;
+  margin: 0 0 4px;
 }
 
-.rewardValue {
-  font-family: var(--ff-serif);
-  font-size: 34px;
-  font-weight: 900;
-  color: var(--gold-dark);
-  margin: 0 0 14px;
-  line-height: 1;
-
-  .percent {
-    font-family: var(--ff-display);
-    font-size: 18px;
-    color: var(--success);
-    margin-left: 10px;
-    letter-spacing: 1px;
-  }
-}
-
-.nextMilestone {
-  font-size: 13px;
-  color: var(--text-muted);
+.kpiValue {
+  font-family: $ff-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: $ink;
   margin: 0;
-  border-top: 1px solid var(--border-sharp);
-  padding-top: 12px;
-
-  .highlight {
-    color: var(--text-primary);
-    font-weight: 700;
-  }
+  line-height: 1;
 }
 
-/* ═══════════════════════════════════════
-   BẢNG MỐC THƯỞNG
-═══════════════════════════════════════ */
-.tableSection {
-  margin-top: 36px;
-
-  h3 {
-    font-family: var(--ff-display);
-    font-size: 13px;
-    color: var(--text-muted);
-    letter-spacing: 3px;
-    margin-bottom: 14px;
-    text-transform: uppercase;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-
-    &::after {
-      content: '';
-      flex: 1;
-      height: 1.5px;
-      background: var(--border-sharp);
-    }
-  }
-}
-
+// ─── Table Wrapper ───────────────────────────────────────────
 .tableWrapper {
-  border: 1.5px solid var(--border-sharp);
-  border-top: 3px solid var(--black);
-  border-radius: 0;
-  overflow: hidden;
-  box-shadow: 4px 4px 0 var(--black);
+  padding: 16px 22px 22px;
+  overflow-x: auto;
 }
 
 .rewardTable {
   width: 100%;
   border-collapse: collapse;
-  background: var(--bg-surface);
-  font-family: var(--ff-body);
+  border: $border;
+  border-radius: $radius-md;
+  overflow: hidden;
 
   th {
-    background: var(--black);
-    color: var(--gold-main);
-    font-size: 9.5px;
-    font-weight: 800;
+    background: $ink;
+    color: $gold;
+    font-size: 10px;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 2px;
+    letter-spacing: 0.1em;
     padding: 12px 16px;
     text-align: left;
-    border-bottom: none;
+    white-space: nowrap;
   }
 
   td {
-    padding: 13px 16px;
-    border-bottom: 1px solid #F0F0EC;
-    font-size: 13.5px;
-    color: var(--text-secondary);
-    transition: background 0.1s;
+    padding: 14px 16px;
+    border-bottom: $border;
+    font-size: 13px;
+    color: #555;
+    transition: background $transition;
   }
 
-  tr:last-child td {
-    border-bottom: none;
-  }
+  tr:last-child td { border-bottom: none; }
 
-  tr:hover td {
-    background: var(--bg-muted);
-  }
+  tr:hover td { background: $input-bg; }
 
-  /* Trạng thái hàng */
+  // Đã đạt — gold highlight
   tr.reached td {
-    color: var(--text-primary);
+    color: $ink;
     font-weight: 600;
-    background: var(--gold-light);
+    background: $gold-faint;
   }
 
-  tr.next td {
-    color: var(--text-primary);
-    background: var(--bg-muted);
+  // Chưa đạt — mờ
+  tr.notYet td { opacity: 0.55; }
+}
+
+.statusReached {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: $green-text;
+  font-weight: 700;
+  background: $green-bg;
+  padding: 4px 10px;
+  border-radius: $radius-sm;
+  font-size: 12px;
+}
+
+.statusNotYet {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  color: #bbb;
+  padding-left: 4px;
+}
+
+.amountCol {
+  font-family: $ff-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: $gold-dim !important;
+}
+
+.emptyText {
+  text-align: center;
+  color: #bbb;
+  font-size: 12px;
+  padding: 24px !important;
+}
+
+// ─── Responsive ──────────────────────────────────────────────
+@media (max-width: 1024px) {
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .headerInfo {
+    flex-direction: column;
+    padding: 20px;
   }
 
-  tr.notYet td {
-    opacity: 0.5;
+  .totalIncome { font-size: 28px; }
+
+  .statsGrid {
+    grid-template-columns: 1fr 1fr;
+    padding: 14px 16px;
   }
 
-  .statusReached {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--gold-dark);
-    font-weight: 700;
+  .kpiGrid {
+    grid-template-columns: 1fr;
+    padding: 14px 16px 0;
   }
 
-  .statusNext {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--text-primary);
-    font-weight: 600;
-  }
+  .tableWrapper { padding: 12px 16px 16px; }
 
-  .statusNotYet {
-    color: var(--text-hint);
-    padding-left: 22px;
-  }
+  .headerRow { padding: 14px 16px; }
+}
 
-  .amountCol {
-    font-family: var(--ff-display);
-    font-size: 16px;
-    letter-spacing: 0.5px;
-    color: var(--text-primary);
-  }
-
-  .percentCol {
-    font-family: var(--ff-display);
-    font-size: 15px;
-    letter-spacing: 1px;
-    color: var(--success);
-    font-weight: 700;
-  }
-
-  tr.notYet .percentCol {
-    color: var(--text-hint);
-  }
+// ─── Animation ───────────────────────────────────────────────
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }

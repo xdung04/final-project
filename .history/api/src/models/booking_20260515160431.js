@@ -14,7 +14,6 @@ export default (sequelize, DataTypes) => {
       // Booking dùng voucher nào — FK nằm ở đây
       Booking.belongsTo(models.CustomerVoucher, {
         foreignKey: "idCustomerVoucher",
-        as: "customerVoucher",  // ✅ thêm alias
       });
       Booking.hasMany(models.BookingDetail, {
         foreignKey: "idBooking",
