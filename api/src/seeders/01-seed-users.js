@@ -3,319 +3,116 @@ import bcrypt from "bcrypt";
 
 export async function up(queryInterface, Sequelize) {
   const hashedPassword = await bcrypt.hash("123456", 10);
+  const now = new Date();
+  const users = [];
 
-  await queryInterface.bulkInsert("users", [
-    // ── ADMIN ──
-    {
-      idUser: 1,
-      email: "admin@example.com",
-      password: hashedPassword,
-      fullName: "System Admin",
-      phoneNumber: "0900000001",
-      authProvider: "local",
-      isStatus: true,
-      image: null,
-      role: "admin",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
+  // Admin ID 1
+  users.push({
+    idUser: 1,
+    email: "admin@example.com",
+    password: hashedPassword,
+    fullName: "System Admin",
+    phoneNumber: "0900000001",
+    authProvider: "local",
+    isStatus: true,
+    image: null,
+    role: "admin",
+    createdAt: now,
+    updatedAt: now,
+  });
 
-    // ── CUSTOMERS (idUser 2 → 11) ──
-    {
-      idUser: 2,
-      email: "customer1@example.com",
+  // 10 customers cũ (ID 2-11)
+  const oldNames = [
+    "Nguyen Van An", "Le Thi Bich", "Tran Van Cuong", "Pham Thi Dung",
+    "Hoang Van Em", "Vu Thi Phuong", "Do Van Giang", "Nguyen Thi Hoa",
+    "Tran Van Hung", "Le Van Kiet"
+  ];
+  for (let i = 0; i < 10; i++) {
+    const id = 2 + i;
+    users.push({
+      idUser: id,
+      email: `old_customer_${id}@example.com`,
       password: hashedPassword,
-      fullName: "Nguyen Van An",
-      phoneNumber: "0911000001",
+      fullName: oldNames[i],
+      phoneNumber: `091100000${id}`,
       authProvider: "local",
       isStatus: true,
       image: null,
       role: "customer",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-    {
-      idUser: 3,
-      email: "customer2@example.com",
-      password: hashedPassword,
-      fullName: "Le Thi Bich",
-      phoneNumber: "0911000002",
-      authProvider: "local",
-      isStatus: true,
-      image: null,
-      role: "customer",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-    {
-      idUser: 4,
-      email: "customer3@example.com",
-      password: hashedPassword,
-      fullName: "Tran Van Cuong",
-      phoneNumber: "0911000003",
-      authProvider: "local",
-      isStatus: true,
-      image: null,
-      role: "customer",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-    {
-      idUser: 5,
-      email: "customer4@example.com",
-      password: hashedPassword,
-      fullName: "Pham Thi Dung",
-      phoneNumber: "0911000004",
-      authProvider: "local",
-      isStatus: true,
-      image: null,
-      role: "customer",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-    {
-      idUser: 6,
-      email: "customer5@example.com",
-      password: hashedPassword,
-      fullName: "Hoang Van Em",
-      phoneNumber: "0911000005",
-      authProvider: "local",
-      isStatus: true,
-      image: null,
-      role: "customer",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-    {
-      idUser: 7,
-      email: "customer6@example.com",
-      password: hashedPassword,
-      fullName: "Vu Thi Phuong",
-      phoneNumber: "0911000006",
-      authProvider: "local",
-      isStatus: true,
-      image: null,
-      role: "customer",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-    {
-      idUser: 8,
-      email: "customer7@example.com",
-      password: hashedPassword,
-      fullName: "Do Van Giang",
-      phoneNumber: "0911000007",
-      authProvider: "local",
-      isStatus: true,
-      image: null,
-      role: "customer",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-    {
-      idUser: 9,
-      email: "customer8@example.com",
-      password: hashedPassword,
-      fullName: "Nguyen Thi Hoa",
-      phoneNumber: "0911000008",
-      authProvider: "local",
-      isStatus: true,
-      image: null,
-      role: "customer",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-    {
-      idUser: 10,
-      email: "customer9@example.com",
-      password: hashedPassword,
-      fullName: "Tran Van Hung",
-      phoneNumber: "0911000009",
-      authProvider: "local",
-      isStatus: true,
-      image: null,
-      role: "customer",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-    {
-      idUser: 11,
-      email: "customer10@example.com",
-      password: hashedPassword,
-      fullName: "Le Van Kiet",
-      phoneNumber: "0911000010",
-      authProvider: "local",
-      isStatus: true,
-      image: null,
-      role: "customer",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
 
-    // ── RECEPTIONISTS (idUser 12 → 14) ──
-    {
-      idUser: 12,
-      email: "receptionist1@example.com",
+  // 3 receptionists (ID 12,13,14)
+  for (let id = 12; id <= 14; id++) {
+    users.push({
+      idUser: id,
+      email: `receptionist${id}@example.com`,
       password: hashedPassword,
-      fullName: "Nguyen Thi Lan",
-      phoneNumber: "0922000001",
+      fullName: `Receptionist ${id}`,
+      phoneNumber: `092200000${id}`,
       authProvider: "local",
       isStatus: true,
       image: null,
       role: "receptionist",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-    {
-      idUser: 13,
-      email: "receptionist2@example.com",
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  // 9 barbers (ID 15-23)
+  const barberNames = [
+    "Nguyen Van Phong", "Tran Van Quan", "Le Thi Rung", "Pham Van Son",
+    "Hoang Thi Thu", "Vu Van Uyen", "Do Van Viet", "Nguyen Thi Xuan", "Tran Van Yen"
+  ];
+  const barberImages = [
+    "https://i.pinimg.com/1200x/35/b4/b9/35b4b917fbf4fd6a41c6034ec996dca3.jpg",
+    "https://i.pinimg.com/736x/61/84/f8/6184f814c0e45527e449f9a5ba8ad6d4.jpg",
+    "https://i.pinimg.com/1200x/96/0a/11/960a113e59d05914c0de85b3f21a2bc2.jpg",
+    "https://i.pinimg.com/736x/c2/6a/ea/c26aeabbdc52d070051c0992a5776ce8.jpg",
+    "https://i.pinimg.com/1200x/19/91/00/19910037265c053680b1c122a7d33b37.jpg",
+    "https://i.pinimg.com/1200x/35/b4/b9/35b4b917fbf4fd6a41c6034ec996dca3.jpg",
+    "https://i.pinimg.com/736x/61/84/f8/6184f814c0e45527e449f9a5ba8ad6d4.jpg",
+    "https://i.pinimg.com/1200x/96/0a/11/960a113e59d05914c0de85b3f21a2bc2.jpg",
+    "https://i.pinimg.com/736x/c2/6a/ea/c26aeabbdc52d070051c0992a5776ce8.jpg"
+  ];
+  for (let i = 0; i < 9; i++) {
+    const id = 15 + i;
+    users.push({
+      idUser: id,
+      email: `barber${id}@example.com`,
       password: hashedPassword,
-      fullName: "Tran Thi Mai",
-      phoneNumber: "0922000002",
+      fullName: barberNames[i],
+      phoneNumber: `093300000${id}`,
+      authProvider: "local",
+      isStatus: true,
+      image: barberImages[i],
+      role: "barber",
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  // Thêm 200 customers mới (ID 24 -> 223)
+  for (let id = 24; id <= 223; id++) {
+    users.push({
+      idUser: id,
+      email: `customer_new_${id}@example.com`,
+      password: hashedPassword,
+      fullName: `Khách Hàng ${id}`,
+      phoneNumber: `09${String(10000000 + id).slice(0, 9)}`,
       authProvider: "local",
       isStatus: true,
       image: null,
-      role: "receptionist",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-    {
-      idUser: 14,
-      email: "receptionist3@example.com",
-      password: hashedPassword,
-      fullName: "Le Thi Ngoc",
-      phoneNumber: "0922000003",
-      authProvider: "local",
-      isStatus: true,
-      image: null,
-      role: "receptionist",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
+      role: "customer",
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
 
-    // ── BARBERS Branch 1 (idUser 15 → 17) ──
-    {
-      idUser: 15,
-      email: "barber1@example.com",
-      password: hashedPassword,
-      fullName: "Nguyen Van Phong",
-      phoneNumber: "0933000001",
-      authProvider: "local",
-      isStatus: true,
-      image: "https://i.pinimg.com/1200x/35/b4/b9/35b4b917fbf4fd6a41c6034ec996dca3.jpg",
-      role: "barber",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-    {
-      idUser: 16,
-      email: "barber2@example.com",
-      password: hashedPassword,
-      fullName: "Tran Van Quan",
-      phoneNumber: "0933000002",
-      authProvider: "local",
-      isStatus: true,
-      image: "https://i.pinimg.com/736x/61/84/f8/6184f814c0e45527e449f9a5ba8ad6d4.jpg",
-      role: "barber",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-    {
-      idUser: 17,
-      email: "barber3@example.com",
-      password: hashedPassword,
-      fullName: "Le Thi Rung",
-      phoneNumber: "0933000003",
-      authProvider: "local",
-      isStatus: true,
-      image: "https://i.pinimg.com/1200x/96/0a/11/960a113e59d05914c0de85b3f21a2bc2.jpg",
-      role: "barber",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-
-    // ── BARBERS Branch 2 (idUser 18 → 20) ──
-    {
-      idUser: 18,
-      email: "barber4@example.com",
-      password: hashedPassword,
-      fullName: "Pham Van Son",
-      phoneNumber: "0933000004",
-      authProvider: "local",
-      isStatus: true,
-      image: "https://i.pinimg.com/736x/c2/6a/ea/c26aeabbdc52d070051c0992a5776ce8.jpg",
-      role: "barber",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-    {
-      idUser: 19,
-      email: "barber5@example.com",
-      password: hashedPassword,
-      fullName: "Hoang Thi Thu",
-      phoneNumber: "0933000005",
-      authProvider: "local",
-      isStatus: true,
-      image: "https://i.pinimg.com/1200x/19/91/00/19910037265c053680b1c122a7d33b37.jpg",
-      role: "barber",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-    {
-      idUser: 20,
-      email: "barber6@example.com",
-      password: hashedPassword,
-      fullName: "Vu Van Uyen",
-      phoneNumber: "0933000006",
-      authProvider: "local",
-      isStatus: true,
-      image: "https://i.pinimg.com/1200x/35/b4/b9/35b4b917fbf4fd6a41c6034ec996dca3.jpg",
-      role: "barber",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-
-    // ── BARBERS Branch 3 (idUser 21 → 23) ──
-    {
-      idUser: 21,
-      email: "barber7@example.com",
-      password: hashedPassword,
-      fullName: "Do Van Viet",
-      phoneNumber: "0933000007",
-      authProvider: "local",
-      isStatus: true,
-      image: "https://i.pinimg.com/736x/61/84/f8/6184f814c0e45527e449f9a5ba8ad6d4.jpg",
-      role: "barber",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-    {
-      idUser: 22,
-      email: "barber8@example.com",
-      password: hashedPassword,
-      fullName: "Nguyen Thi Xuan",
-      phoneNumber: "0933000008",
-      authProvider: "local",
-      isStatus: true,
-      image: "https://i.pinimg.com/1200x/96/0a/11/960a113e59d05914c0de85b3f21a2bc2.jpg",
-      role: "barber",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-    {
-      idUser: 23,
-      email: "barber9@example.com",
-      password: hashedPassword,
-      fullName: "Tran Van Yen",
-      phoneNumber: "0933000009",
-      authProvider: "local",
-      isStatus: true,
-      image: "https://i.pinimg.com/736x/c2/6a/ea/c26aeabbdc52d070051c0992a5776ce8.jpg",
-      role: "barber",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-  ]);
+  await queryInterface.bulkInsert("users", users);
+  console.log(`✅ Seeded ${users.length} users (1 admin, 10 old customers, 3 receptionists, 9 barbers, 200 new customers)`);
 }
 
 export async function down(queryInterface, Sequelize) {
