@@ -29,20 +29,20 @@ const updateRating = async (idBarber, newRate) => {
   return summary;
 };
 
-const getAllRatingsByBranch= async (idBranch) => {
+const getAllRatingsByBranch = async (idBranch) => {
   const barbers = await Barber.findAll({
     where: { idBranch },
-    attributes: ["idBarber"], // chỉ lấy id barber
+    attributes: ["idBarber"],
     include: [
       {
         model: User,
-        as: "user",          // theo alias trong Barber.associate
-        attributes: ["fullName"], // lấy tên barber
+        as: "user",
+        attributes: ["fullName"],
       },
       {
         model: BarberRatingSummary,
         as: "ratingSummary",
-        attributes: ["avgRate"], // lấy điểm trung bình
+        attributes: ["avgRate", "totalRate"], // ← thêm totalRate
       },
     ],
   });

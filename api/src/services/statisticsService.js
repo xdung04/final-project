@@ -10,16 +10,13 @@ import { Sequelize } from "sequelize";
 export const getBarberRevenue = async (filter = {}) => {
   const { month, year, branchId } = filter;
 
-  // Lọc theo tháng/năm
   const whereSalary = {};
   if (month) whereSalary.month = month;
   if (year) whereSalary.year = year;
 
-  // Lọc theo chi nhánh nếu có
   const whereBarber = {};
   if (branchId) whereBarber.idBranch = branchId;
 
-  // Query từ Salary kết hợp với Barber
   const salaries = await db.Salary.findAll({
     where: whereSalary,
     include: [
@@ -32,7 +29,7 @@ export const getBarberRevenue = async (filter = {}) => {
           {
             model: db.User,
             as: "user",
-            attributes: ["fullName"], // tên thợ nằm ở đây
+            attributes: ["fullName"],
           },
         ],
       },
@@ -45,6 +42,7 @@ export const getBarberRevenue = async (filter = {}) => {
   });
 
   return salaries.map((s) => ({
+    barberId: s.barber.idBarber,        // ← thêm để frontend merge năm ngoái
     barberName: s.barber.user.fullName,
     baseSalary: parseFloat(s.baseSalary),
     commission: parseFloat(s.commission),
@@ -53,13 +51,12 @@ export const getBarberRevenue = async (filter = {}) => {
     totalSalary: parseFloat(s.totalSalary),
   }));
 };
-
 /**
  * Thống kê doanh thu từng chi nhánh theo tháng
  * @param {Number} year - năm cần lấy
  * @returns {Array}
  */
-export const getBranchMonthlyBookingRevenue = async (year) => {
+export const getBranchMonthlyBookingRevenue = async (year, branchId = null) => {
   const revenue = await db.Booking.findAll({
     attributes: [
       [Sequelize.col("barber->branch.idBranch"), "branchId"],
@@ -69,7 +66,13 @@ export const getBranchMonthlyBookingRevenue = async (year) => {
     ],
     where: {
       isPaid: true,
-      [Sequelize.Op.and]: Sequelize.where(Sequelize.fn("YEAR", Sequelize.col("bookingDate")), year),
+      ...(branchId && {                  // ← thêm filter branchId
+        "$barber.branch.idBranch$": branchId,
+      }),
+      [Sequelize.Op.and]: Sequelize.where(
+        Sequelize.fn("YEAR", Sequelize.col("bookingDate")),
+        year
+      ),
     },
     include: [
       {
@@ -85,7 +88,11 @@ export const getBranchMonthlyBookingRevenue = async (year) => {
         ],
       },
     ],
-    group: ["barber->branch.idBranch", "barber->branch.name", Sequelize.literal("MONTH(`bookingDate`)")],
+    group: [
+      "barber->branch.idBranch",
+      "barber->branch.name",
+      Sequelize.literal("MONTH(`bookingDate`)"),
+    ],
     order: [
       ["barber", "branch", "idBranch", "ASC"],
       [Sequelize.literal("MONTH(`bookingDate`)"), "ASC"],
