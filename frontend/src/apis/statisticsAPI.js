@@ -9,7 +9,6 @@ export const StatisticsAPI = {
   getBarberRevenue: async (filter = {}) => {
     try {
       const res = await statisticsService.getBarberRevenue(filter);
-      console.log("StatisticsAPI.getBarberRevenue trả về:", res);
       return res;
     } catch (error) {
       console.error("Lỗi StatisticsAPI.getBarberRevenue:", error);
@@ -18,13 +17,12 @@ export const StatisticsAPI = {
   },
 
   /**
-   * Lấy tổng doanh thu từng tháng của các chi nhánh trong năm
-   * @param {number} year
+   * Lấy tổng doanh thu từng tháng của chi nhánh trong năm
+   * @param {Object} params - { year, branchId }
    */
-  getMonthlyBranchRevenue: async (year) => {
+  getMonthlyBranchRevenue: async ({ year, branchId = null }) => { // ← thêm branchId
     try {
-      const res = await statisticsService.getMonthlyBranchRevenue(year);
-      console.log("StatisticsAPI.getMonthlyBranchRevenue trả về:", res);
+      const res = await statisticsService.getMonthlyBranchRevenue(year, branchId);
       return res;
     } catch (error) {
       console.error("Lỗi StatisticsAPI.getMonthlyBranchRevenue:", error);
@@ -39,7 +37,6 @@ export const StatisticsAPI = {
   getDashboardOverview: async (params = {}) => {
     try {
       const res = await statisticsService.getDashboardOverview(params);
-      console.log("StatisticsAPI.getDashboardOverview trả về:", res);
       return res;
     } catch (error) {
       console.error("Lỗi StatisticsAPI.getDashboardOverview:", error);

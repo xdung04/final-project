@@ -1,8 +1,9 @@
 "use strict";
 
-export async function up(queryInterface, Sequelize) {
-  const branches = [1, 2, 3];
+export async function up(queryInterface) {
+  const branches = [1, 2, 3, 4];
   const services = [1, 2, 3, 4, 5, 6, 7, 8];
+
   const assignments = [];
 
   branches.forEach((idBranch) => {
@@ -16,9 +17,17 @@ export async function up(queryInterface, Sequelize) {
     });
   });
 
-  await queryInterface.bulkInsert("service_assignments", assignments);
+  await queryInterface.bulkInsert(
+    "service_assignments",
+    assignments,
+    { ignoreDuplicates: true }
+  );
 }
 
-export async function down(queryInterface, Sequelize) {
-  await queryInterface.bulkDelete("service_assignments", null, {});
+export async function down(queryInterface) {
+  await queryInterface.bulkDelete(
+    "service_assignments",
+    null,
+    {}
+  );
 }

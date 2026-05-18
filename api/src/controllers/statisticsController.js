@@ -26,11 +26,14 @@ const getBarberRevenue = async (req, res) => {
  */
 const getMonthlyBranchRevenue = async (req, res) => {
   try {
-    const { year } = req.query;
+    const { year, branchId } = req.query; // ← thêm branchId
     if (!year) {
       return res.status(400).json({ message: "Thiếu param year" });
     }
-    const data = await StatisticsService.getBranchMonthlyBookingRevenue(parseInt(year));
+    const data = await StatisticsService.getBranchMonthlyBookingRevenue(
+      parseInt(year),
+      branchId ? parseInt(branchId) : null // ← truyền vào
+    );
     return res.status(200).json(data);
   } catch (error) {
     console.error("Lỗi getMonthlyBranchRevenue:", error);
