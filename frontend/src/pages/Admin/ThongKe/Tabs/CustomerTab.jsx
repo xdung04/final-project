@@ -123,7 +123,7 @@ function SummaryBar({ summary }) {
           <span className={cx("pillDot")} style={{ background: "#C9A84C" }} />
           <strong>{verified.toLocaleString("vi-VN")}</strong>&nbsp;đã kích hoạt
         </div>
-        {walkIn > 0 && (
+        {walkIn >= 0 && (
           <div className={cx("summaryPill", "pillGray")}>
             <span className={cx("pillDot")} style={{ background: "#BBB" }} />
             <strong>{walkIn}</strong>&nbsp;chưa kích hoạt
@@ -469,6 +469,9 @@ Bỏ qua ${res.data.skipped.length} khách (đã có voucher)`,
 
   return (
     <div className={cx("wrapper")}>
+      {/* Summary bar - đưa lên đầu */}
+      {!loadingSegments && <SummaryBar summary={summary} />}
+
       {/* Biểu đồ */}
       <div className={cx("chartCard")}>
         <div className={cx("chartCardHead")}>
@@ -527,9 +530,6 @@ Bỏ qua ${res.data.skipped.length} khách (đã có voucher)`,
           </ResponsiveContainer>
         )}
       </div>
-
-      {/* Summary bar */}
-      {!loadingSegments && <SummaryBar summary={summary} />}
 
       {/* Segment cards */}
       {loadingSegments ? (
