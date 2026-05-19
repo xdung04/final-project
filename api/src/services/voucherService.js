@@ -8,13 +8,11 @@ class VoucherService {
     try {
       if (data.type === "POINTS_EXCHANGE") {
         if (!data.points_required || data.points_required <= 0)
+          throw new Error("points_required phải lớn hơn 0");
+        if (!data.discount_amount || data.discount_amount <= 0)
           throw new Error(
-            "points_required phải lớn hơn 0 với loại POINTS_EXCHANGE",
+            "discount_amount phải lớn hơn 0 với loại POINTS_EXCHANGE",
           );
-      }
-      if (data.type === "RETENTION") {
-        if (!data.valid_days || data.valid_days <= 0)
-          throw new Error("valid_days là bắt buộc với loại RETENTION");
       }
       if (data.type === "CAMPAIGN") {
         if (!data.start_date || !data.end_date)
@@ -439,12 +437,26 @@ class VoucherService {
       );
 
     // Tính tiền giảm
-    let discountAmount = invoiceAmount * (voucher.discount_percent / 100);
-    if (
-      voucher.max_discount_amount &&
-      discountAmount > voucher.max_discount_amount
-    ) {
-      discountAmount = voucher.max_discount_amount;
+    let discountAmount = 0;
+    if (voucher.discount_amount && voucher.discount_amount > 0) {
+      discountAmount = Math.min(voucher.discount_amount, invoiceAmount);
+      // nếu có max_discount_amount thì áp dụng (với POINTS_EXCHANGE thường không có)
+      if (
+        voucher.max_discount_amount &&
+        discountAmount > voucher.max_discount_amount
+      ) {
+        discountAmount = voucher.max_discount_amount;
+      }
+    } else if (voucher.discount_percent) {
+      discountAmount = invoiceAmount * (voucher.discount_percent / 100);
+      if (
+        voucher.max_discount_amount &&
+        discountAmount > voucher.max_discount_amount
+      ) {
+        discountAmount = voucher.max_discount_amount;
+      }
+    } else {
+      throw new Error("Voucher không có giá trị giảm giá hợp lệ");
     }
 
     // [ĐÃ SỬA] Chỉ update status + used_at, bỏ booking_id

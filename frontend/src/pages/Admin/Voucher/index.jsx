@@ -2,8 +2,13 @@ import { useState, useEffect } from "react";
 import classNames from "classnames/bind";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faPlus, faPenToSquare, faTrash,
-  faTicket, faTag, faUsers, faBullhorn,
+  faPlus,
+  faPenToSquare,
+  faTrash,
+  faTicket,
+  faTag,
+  faUsers,
+  faBullhorn,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAuth } from "~/context/AuthContext";
 import { useToast } from "~/context/ToastContext";
@@ -14,10 +19,10 @@ import styles from "./Voucher.module.scss";
 const cx = classNames.bind(styles);
 
 const TYPE_META = {
-  NEW_CUSTOMER:    { label: "Khách mới",        icon: faUsers,    color: "#4ade80" },
-  POINTS_EXCHANGE: { label: "Đổi điểm",         icon: faTag,      color: "#60a5fa" },
-  RETENTION:       { label: "Giữ chân KH",      icon: faTicket,   color: "#f59e0b" },
-  CAMPAIGN:        { label: "Chiến dịch",        icon: faBullhorn, color: "#c084fc" },
+  NEW_CUSTOMER: { label: "Khách mới", icon: faUsers, color: "#4ade80" },
+  POINTS_EXCHANGE: { label: "Đổi điểm", icon: faTag, color: "#60a5fa" },
+  RETENTION: { label: "Giữ chân KH", icon: faTicket, color: "#f59e0b" },
+  CAMPAIGN: { label: "Chiến dịch", icon: faBullhorn, color: "#c084fc" },
 };
 
 function formatMoney(amount) {
@@ -36,16 +41,31 @@ function VoucherRow({ voucher, onEdit, onDelete }) {
         )}
       </td>
       <td>
-        <span className={cx("type-badge")} style={{ color: meta.color, borderColor: meta.color }}>
+        <span
+          className={cx("type-badge")}
+          style={{ color: meta.color, borderColor: meta.color }}
+        >
           <FontAwesomeIcon icon={meta.icon} />
           {meta.label}
         </span>
       </td>
       <td className={cx("td-center")}>
-        <span className={cx("discount-val")}>{voucher.discount_percent}%</span>
+        {voucher.discount_amount ? (
+          <span className={cx("discount-val")}>
+            {formatMoney(voucher.discount_amount)}
+          </span>
+        ) : (
+          <span className={cx("discount-val")}>
+            {voucher.discount_percent}%
+          </span>
+        )}
       </td>
-      <td className={cx("td-right")}>{formatMoney(voucher.max_discount_amount)}</td>
-      <td className={cx("td-right")}>{formatMoney(voucher.min_invoice_amount)}</td>
+      <td className={cx("td-right")}>
+        {formatMoney(voucher.max_discount_amount)}
+      </td>
+      <td className={cx("td-right")}>
+        {formatMoney(voucher.min_invoice_amount)}
+      </td>
       <td className={cx("td-center")}>
         {voucher.type === "CAMPAIGN"
           ? `${voucher.issued_count}/${voucher.total_quantity ?? "∞"}`
@@ -55,8 +75,8 @@ function VoucherRow({ voucher, onEdit, onDelete }) {
         {voucher.type === "CAMPAIGN" && voucher.end_date
           ? new Date(voucher.end_date).toLocaleDateString("vi-VN")
           : voucher.valid_days
-          ? `${voucher.valid_days} ngày`
-          : "Không HH"}
+            ? `${voucher.valid_days} ngày`
+            : "Không HH"}
       </td>
       <td className={cx("td-center")}>
         <span className={cx("status-dot", { active: voucher.is_active })}>
@@ -65,10 +85,18 @@ function VoucherRow({ voucher, onEdit, onDelete }) {
       </td>
       <td>
         <div className={cx("row-actions")}>
-          <button className={cx("btn-edit")} onClick={() => onEdit(voucher)} title="Chỉnh sửa">
+          <button
+            className={cx("btn-edit")}
+            onClick={() => onEdit(voucher)}
+            title="Chỉnh sửa"
+          >
             <FontAwesomeIcon icon={faPenToSquare} />
           </button>
-          <button className={cx("btn-delete")} onClick={() => onDelete(voucher.id)} title="Xoá">
+          <button
+            className={cx("btn-delete")}
+            onClick={() => onDelete(voucher.id)}
+            title="Xoá"
+          >
             <FontAwesomeIcon icon={faTrash} />
           </button>
         </div>
@@ -79,14 +107,14 @@ function VoucherRow({ voucher, onEdit, onDelete }) {
 
 function Voucher() {
   const { accessToken } = useAuth();
-  const { showToast }   = useToast();
+  const { showToast } = useToast();
 
-  const [vouchers,       setVouchers]       = useState([]);
-  const [loading,        setLoading]        = useState(true);
-  const [showForm,       setShowForm]       = useState(false);
+  const [vouchers, setVouchers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
   const [editingVoucher, setEditingVoucher] = useState(null);
-  const [filterType,     setFilterType]     = useState("ALL");
-  const [confirmDelete,  setConfirmDelete]  = useState(null);
+  const [filterType, setFilterType] = useState("ALL");
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   const loadVouchers = async () => {
     setLoading(true);
@@ -95,13 +123,19 @@ function Voucher() {
       setVouchers(data);
     } catch (err) {
       console.error(err);
-      showToast({ text: "Lỗi tải danh sách voucher", type: "error", duration: 3000 });
+      showToast({
+        text: "Lỗi tải danh sách voucher",
+        type: "error",
+        duration: 3000,
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { loadVouchers(); }, [accessToken]);
+  useEffect(() => {
+    loadVouchers();
+  }, [accessToken]);
 
   const handleEdit = (voucher) => {
     setEditingVoucher(voucher);
@@ -124,16 +158,17 @@ function Voucher() {
     }
   };
 
-  const filtered = filterType === "ALL"
-    ? vouchers
-    : vouchers.filter((v) => v.type === filterType);
+  const filtered =
+    filterType === "ALL"
+      ? vouchers
+      : vouchers.filter((v) => v.type === filterType);
 
   const filterTabs = [
-    { key: "ALL",            label: "Tất cả"    },
-    { key: "NEW_CUSTOMER",   label: "Khách mới" },
-    { key: "POINTS_EXCHANGE",label: "Đổi điểm"  },
-    { key: "RETENTION",      label: "Giữ chân"  },
-    { key: "CAMPAIGN",       label: "Chiến dịch" },
+    { key: "ALL", label: "Tất cả" },
+    { key: "NEW_CUSTOMER", label: "Khách mới" },
+    { key: "POINTS_EXCHANGE", label: "Đổi điểm" },
+    { key: "RETENTION", label: "Giữ chân" },
+    { key: "CAMPAIGN", label: "Chiến dịch" },
   ];
 
   return (
@@ -142,7 +177,9 @@ function Voucher() {
       <div className={cx("header")}>
         <div>
           <h2 className={cx("header-title")}>Quản lý Voucher</h2>
-          <p className={cx("header-sub")}>Tạo và quản lý các chương trình ưu đãi</p>
+          <p className={cx("header-sub")}>
+            Tạo và quản lý các chương trình ưu đãi
+          </p>
         </div>
         <button className={cx("btn-create")} onClick={handleCreate}>
           <FontAwesomeIcon icon={faPlus} />
@@ -155,8 +192,15 @@ function Voucher() {
         {Object.entries(TYPE_META).map(([key, meta]) => {
           const count = vouchers.filter((v) => v.type === key).length;
           return (
-            <div key={key} className={cx("summary-card")} style={{ "--accent": meta.color }}>
-              <FontAwesomeIcon icon={meta.icon} className={cx("summary-icon")} />
+            <div
+              key={key}
+              className={cx("summary-card")}
+              style={{ "--accent": meta.color }}
+            >
+              <FontAwesomeIcon
+                icon={meta.icon}
+                className={cx("summary-icon")}
+              />
               <div className={cx("summary-count")}>{count}</div>
               <div className={cx("summary-label")}>{meta.label}</div>
             </div>
@@ -217,13 +261,31 @@ function Voucher() {
 
       {/* Delete confirm */}
       {confirmDelete && (
-        <div className={cx("confirm-overlay")} onClick={() => setConfirmDelete(null)}>
-          <div className={cx("confirm-box")} onClick={(e) => e.stopPropagation()}>
+        <div
+          className={cx("confirm-overlay")}
+          onClick={() => setConfirmDelete(null)}
+        >
+          <div
+            className={cx("confirm-box")}
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className={cx("confirm-title")}>Xác nhận xoá</div>
-            <p className={cx("confirm-text")}>Voucher sẽ bị vô hiệu hoá và không thể phát thêm. Tiếp tục?</p>
+            <p className={cx("confirm-text")}>
+              Voucher sẽ bị vô hiệu hoá và không thể phát thêm. Tiếp tục?
+            </p>
             <div className={cx("confirm-actions")}>
-              <button className={cx("confirm-cancel")} onClick={() => setConfirmDelete(null)}>Huỷ</button>
-              <button className={cx("confirm-ok")} onClick={() => handleDelete(confirmDelete)}>Xoá</button>
+              <button
+                className={cx("confirm-cancel")}
+                onClick={() => setConfirmDelete(null)}
+              >
+                Huỷ
+              </button>
+              <button
+                className={cx("confirm-ok")}
+                onClick={() => handleDelete(confirmDelete)}
+              >
+                Xoá
+              </button>
             </div>
           </div>
         </div>
@@ -234,7 +296,10 @@ function Voucher() {
         <VoucherForm
           voucher={editingVoucher}
           onClose={() => setShowForm(false)}
-          onSuccess={() => { setShowForm(false); loadVouchers(); }}
+          onSuccess={() => {
+            setShowForm(false);
+            loadVouchers();
+          }}
         />
       )}
     </div>

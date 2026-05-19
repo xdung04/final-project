@@ -12,7 +12,12 @@ export async function up(queryInterface, Sequelize) {
       allowNull: false,
     },
     type: {
-      type: Sequelize.ENUM("NEW_CUSTOMER", "POINTS_EXCHANGE", "RETENTION", "CAMPAIGN"),
+      type: Sequelize.ENUM(
+        "NEW_CUSTOMER",
+        "POINTS_EXCHANGE",
+        "RETENTION",
+        "CAMPAIGN",
+      ),
       allowNull: false,
     },
     description: {
@@ -21,11 +26,18 @@ export async function up(queryInterface, Sequelize) {
     },
     discount_percent: {
       type: Sequelize.DECIMAL(5, 2),
-      allowNull: false,
+      allowNull: true,
+    },
+    discount_amount: {
+      type: Sequelize.DECIMAL(12, 2),
+      allowNull: true,
+      validate: {
+        min: 0,
+      },
     },
     max_discount_amount: {
       type: Sequelize.DECIMAL(12, 2),
-      allowNull: false,
+      allowNull: true,
     },
     min_invoice_amount: {
       type: Sequelize.DECIMAL(12, 2),
@@ -74,7 +86,9 @@ export async function up(queryInterface, Sequelize) {
     updated_at: {
       type: Sequelize.DATE,
       allowNull: false,
-      defaultValue: Sequelize.literal("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"),
+      defaultValue: Sequelize.literal(
+        "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
+      ),
     },
   });
 }
