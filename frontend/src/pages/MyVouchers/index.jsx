@@ -17,7 +17,7 @@ const cx = classNames.bind(styles);
 const TYPE_LABEL = {
   NEW_CUSTOMER: "Khách mới",
   POINTS_EXCHANGE: "Đổi điểm",
-  RETENTION: "Khách thân thiết",
+  RETENTION: "Quà tặng khách hàng",
   CAMPAIGN: "Khuyến mãi",
 };
 
@@ -163,6 +163,7 @@ function ExchangeCard({ voucher, points, onExchange, exchanging }) {
     if (!canExchange) {
       if (reason === "not_enough_points") return "Không đủ điểm";
       if (reason === "max_exchanged") return "Đã đủ số lần";
+      if (reason === "has_available") return "Đang có voucher chưa dùng";
       return "Không thể đổi";
     }
     return exchanging === voucher.id ? "Đang đổi..." : "Đổi ngay";

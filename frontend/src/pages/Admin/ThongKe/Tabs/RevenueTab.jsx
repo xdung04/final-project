@@ -14,7 +14,6 @@ import { SummaryAPI } from "~/apis/summaryAPI";
 
 const cx = classNames.bind(styles);
 
-// ─── Design Tokens (đồng bộ với SCSS) ────────────────────────
 const COLOR = {
   gold:      "#C9A84C",
   goldDim:   "#A8893A",
@@ -30,20 +29,16 @@ const COLOR = {
   axisText:  "#7A7068",
 };
 
-// ─── Helpers ─────────────────────────────────────────────────
-const fullMonths = Array.from({ length: 12 }, (_, i) => `T${i + 1}`);
-const currentYear  = new Date().getFullYear();
-const currentMonth = new Date().getMonth() + 1;
-const availableYears = Array.from(
-  { length: currentYear - 2024 + 1 },
-  (_, i) => 2024 + i
-);
+const fullMonths    = Array.from({ length: 12 }, (_, i) => `T${i + 1}`);
+const currentYear   = new Date().getFullYear();
+const currentMonth  = new Date().getMonth() + 1;
+const availableYears = Array.from({ length: currentYear - 2024 + 1 }, (_, i) => 2024 + i);
 
 const shortName = (name = "") => {
   const parts = name.trim().split(" ");
   if (parts.length <= 1) return name;
   const initials = parts.slice(0, -1).map((p) => p[0] + ".").join("");
-  return `${initials}${parts[parts.length - 1]}`;
+  return `${initials} ${parts[parts.length - 1]}`;
 };
 
 const calcGrowth = (current, last) => {
@@ -59,7 +54,7 @@ const getRatingColor = (score) => {
 
 const buildBranchChartData = (dataNamNay, dataNamNgoai) =>
   fullMonths.map((m, index) => {
-    const mn = index + 1;
+    const mn      = index + 1;
     const nowItem  = dataNamNay.find((d)  => d.month === mn);
     const lastItem = dataNamNgoai.find((d) => d.month === mn);
     return {
@@ -76,14 +71,7 @@ function exportToExcel(data, fileName) {
   XLSX.writeFile(wb, `${fileName}.xlsx`);
 }
 
-// ─── Custom Axis Tick ────────────────────────────────────────
-const CustomXTick = ({ x, y, payload }) => (
-  <text x={x} y={y + 12} textAnchor="middle" fill={COLOR.axisText} fontSize={11}>
-    {payload.value}
-  </text>
-);
-
-// ─── Custom Tooltips ─────────────────────────────────────────
+// ─── Tooltips ─────────────────────────────────────────────────────────────
 const tooltipBase = {
   background: "#fff",
   border: "1px solid #E8E4DC",
@@ -91,40 +79,41 @@ const tooltipBase = {
   padding: "12px 16px",
   fontSize: 12.5,
   boxShadow: "0 6px 24px rgba(0,0,0,0.10)",
-  minWidth: 200,
+  minWidth: 210,
 };
+
+const Row = ({ label, val, color }) => (
+  <p style={{ margin: "2px 0", color: "#555" }}>
+    {label}: <b style={{ color }}>{val?.toLocaleString("vi-VN")}đ</b>
+  </p>
+);
 
 const BarberTooltip = ({ active, payload }) => {
   if (!active || !payload?.length) return null;
-  const d = payload[0]?.payload;
-  const total  = (d.baseSalary||0) + (d.tips||0) + (d.commission||0) + (d.bonus||0);
-  const growth = d.growth;
+  const d         = payload[0]?.payload;
+  const total     = (d.baseSalary||0) + (d.tips||0) + (d.commission||0) + (d.bonus||0);
+  const growth    = d.growth;
   return (
     <div style={tooltipBase}>
       <p style={{ fontWeight: 700, marginBottom: 8, color: COLOR.ink, fontSize: 13 }}>
         {d.barberName}
       </p>
-      <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-        <Row label="Lương cố định" val={d.baseSalary} color={COLOR.ink} />
-        <Row label="Tiền tip"      val={d.tips}       color={COLOR.brown1} />
-        <Row label="Hoa hồng"      val={d.commission} color={COLOR.brown2} />
-        <Row label="Thưởng"        val={d.bonus}      color={COLOR.gold} />
-      </div>
+      <Row label="Lương cố định" val={d.baseSalary} color={COLOR.ink}    />
+      <Row label="Hoa hồng"      val={d.commission} color={COLOR.brown2} />
+      <Row label="Tiền tip"      val={d.tips}       color={COLOR.brown1} />
+      <Row label="Thưởng"        val={d.bonus}      color={COLOR.gold}   />
       <hr style={{ margin: "8px 0", borderColor: "#EDEBE6", borderWidth: "1px 0 0" }} />
       <p style={{ fontWeight: 700, color: COLOR.ink }}>
         Tháng này: {total.toLocaleString("vi-VN")}đ
       </p>
       <p style={{ color: "#AAA", marginTop: 2 }}>
-        Cùng kỳ năm ngoái: {d.lastYearTotal?.toLocaleString("vi-VN")}đ
+        Cùng kỳ: {d.lastYearTotal?.toLocaleString("vi-VN") ?? "—"}đ
       </p>
       {growth !== null && growth !== undefined && (
         <p style={{
           fontWeight: 700,
           color: parseFloat(growth) >= 0 ? "#1E7F4E" : "#C62828",
           marginTop: 5,
-          display: "flex",
-          alignItems: "center",
-          gap: 4,
         }}>
           {parseFloat(growth) >= 0 ? "▲" : "▼"} {Math.abs(growth)}% so với cùng kỳ
         </p>
@@ -132,12 +121,6 @@ const BarberTooltip = ({ active, payload }) => {
     </div>
   );
 };
-
-const Row = ({ label, val, color }) => (
-  <p style={{ margin: 0, color: "#555" }}>
-    {label}: <b style={{ color }}>{val?.toLocaleString("vi-VN")}đ</b>
-  </p>
-);
 
 const BranchTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
@@ -147,18 +130,10 @@ const BranchTooltip = ({ active, payload, label }) => {
   return (
     <div style={tooltipBase}>
       <p style={{ fontWeight: 700, marginBottom: 8, color: COLOR.ink }}>{label}</p>
-      <p style={{ color: COLOR.teal }}>
-        Năm nay: <b>{namNay.toLocaleString("vi-VN")}đ</b>
-      </p>
-      <p style={{ color: "#AAA", marginTop: 3 }}>
-        Năm ngoái: <b>{namNgoai.toLocaleString("vi-VN")}đ</b>
-      </p>
+      <p style={{ color: COLOR.teal }}>Năm nay: <b>{namNay.toLocaleString("vi-VN")}đ</b></p>
+      <p style={{ color: "#AAA", marginTop: 3 }}>Năm ngoái: <b>{namNgoai.toLocaleString("vi-VN")}đ</b></p>
       {growth !== null && (
-        <p style={{
-          fontWeight: 700,
-          marginTop: 6,
-          color: parseFloat(growth) >= 0 ? "#1E7F4E" : "#C62828",
-        }}>
+        <p style={{ fontWeight: 700, marginTop: 6, color: parseFloat(growth) >= 0 ? "#1E7F4E" : "#C62828" }}>
           {parseFloat(growth) >= 0 ? "▲" : "▼"} {Math.abs(growth)}% so với cùng kỳ
         </p>
       )}
@@ -183,7 +158,26 @@ const RatingTooltip = ({ active, payload }) => {
   );
 };
 
-// ─── Component ───────────────────────────────────────────────
+// ─── Growth badge label (hiện trên đỉnh bar) ──────────────────────────────
+const GrowthLabel = ({ x, y, width, index, data }) => {
+  const d = data?.[index];
+  if (!d || d.growth === null || d.growth === undefined) return null;
+  const isPos = parseFloat(d.growth) >= 0;
+  return (
+    <text
+      x={x + width / 2}
+      y={y - 6}
+      textAnchor="middle"
+      fill={isPos ? "#1E7F4E" : "#C62828"}
+      fontSize={10}
+      fontWeight={700}
+    >
+      {isPos ? "+" : ""}{d.growth}%
+    </text>
+  );
+};
+
+// ─── Component ─────────────────────────────────────────────────────────────
 function RevenueTab() {
   const [branchList,   setBranchList]   = useState([]);
   const [branchLuong,  setBranchLuong]  = useState(null);
@@ -193,11 +187,11 @@ function RevenueTab() {
   const [filterLuong,    setFilterLuong]    = useState({ year: currentYear, month: currentMonth });
   const [filterChiNhanh, setFilterChiNhanh] = useState({ year: currentYear });
 
-  const [dataLuong,         setDataLuong]        = useState([]);
-  const [dataLuongLastYear, setDataLuongLastYear] = useState([]);
-  const [dataChiNhanh,      setDataChiNhanh]      = useState([]);
-  const [dataChiNhanhLast,  setDataChiNhanhLast]  = useState([]);
-  const [satisfactionData,  setSatisfactionData]  = useState([]);
+  const [dataLuong,         setDataLuong]         = useState([]);
+  const [dataLuongLastYear, setDataLuongLastYear]  = useState([]);
+  const [dataChiNhanh,      setDataChiNhanh]       = useState([]);
+  const [dataChiNhanhLast,  setDataChiNhanhLast]   = useState([]);
+  const [satisfactionData,  setSatisfactionData]   = useState([]);
 
   const [aiSummaries, setAiSummaries] = useState({
     barberRevenue: "Chọn bộ lọc để AI phân tích...",
@@ -211,7 +205,6 @@ function RevenueTab() {
   const [loadingChiNhanh,     setLoadingChiNhanh]     = useState(false);
   const [loadingSatisfaction, setLoadingSatisfaction] = useState(false);
 
-  // === Fetch Branches ===
   useEffect(() => {
     BranchAPI.getAll()
       .then((res) => {
@@ -222,26 +215,21 @@ function RevenueTab() {
           setBranchChart2(res[0]);
         }
       })
-      .catch((err) => console.error("Lỗi load chi nhánh:", err));
+      .catch(console.error);
   }, []);
 
-  // === Fetch Barber Revenue ===
   const fetchBarberRevenue = useCallback(async () => {
     if (!branchLuong) return;
     setLoadingLuong(true);
     try {
       const [dataNow, dataLast] = await Promise.all([
-        StatisticsAPI.getBarberRevenue({
-          year: filterLuong.year, month: filterLuong.month, branchId: branchLuong.idBranch,
-        }),
-        StatisticsAPI.getBarberRevenue({
-          year: filterLuong.year - 1, month: filterLuong.month, branchId: branchLuong.idBranch,
-        }),
+        StatisticsAPI.getBarberRevenue({ year: filterLuong.year, month: filterLuong.month, branchId: branchLuong.idBranch }),
+        StatisticsAPI.getBarberRevenue({ year: filterLuong.year - 1, month: filterLuong.month, branchId: branchLuong.idBranch }),
       ]);
       setDataLuong(dataNow);
       setDataLuongLastYear(dataLast);
     } catch (err) {
-      console.error("Lỗi load doanh thu thợ:", err);
+      console.error(err);
       setDataLuong([]);
       setDataLuongLastYear([]);
     } finally {
@@ -249,23 +237,18 @@ function RevenueTab() {
     }
   }, [branchLuong, filterLuong]);
 
-  // === Fetch Branch Revenue ===
   const fetchBranchRevenue = useCallback(async () => {
     if (!branchChart2) return;
     setLoadingChiNhanh(true);
     try {
       const [dataNow, dataLast] = await Promise.all([
-        StatisticsAPI.getMonthlyBranchRevenue({
-          year: filterChiNhanh.year, branchId: branchChart2.idBranch,
-        }),
-        StatisticsAPI.getMonthlyBranchRevenue({
-          year: filterChiNhanh.year - 1, branchId: branchChart2.idBranch,
-        }),
+        StatisticsAPI.getMonthlyBranchRevenue({ year: filterChiNhanh.year, branchId: branchChart2.idBranch }),
+        StatisticsAPI.getMonthlyBranchRevenue({ year: filterChiNhanh.year - 1, branchId: branchChart2.idBranch }),
       ]);
       setDataChiNhanh(dataNow);
       setDataChiNhanhLast(dataLast);
     } catch (err) {
-      console.error("Lỗi load doanh thu chi nhánh:", err);
+      console.error(err);
       setDataChiNhanh([]);
       setDataChiNhanhLast([]);
     } finally {
@@ -273,7 +256,6 @@ function RevenueTab() {
     }
   }, [branchChart2, filterChiNhanh.year]);
 
-  // === Fetch Ratings ===
   const fetchRatings = useCallback(async () => {
     if (!branchRating) return;
     setLoadingSatisfaction(true);
@@ -287,44 +269,28 @@ function RevenueTab() {
         }))
       );
     } catch (err) {
-      console.error("Lỗi load đánh giá:", err);
+      console.error(err);
       setSatisfactionData([]);
     } finally {
       setLoadingSatisfaction(false);
     }
   }, [branchRating]);
 
-  // === Fetch AI Summary ===
   const fetchAiSummary = useCallback(async () => {
     if (!branchLuong || !branchRating || !branchChart2) return;
     setLoadingSummary(true);
-    setAiSummaries({
-      barberRevenue: "AI đang phân tích...",
-      branchRevenue: "AI đang phân tích...",
-      ratings:       "AI đang phân tích...",
-      crossInsight:  "AI đang phân tích...",
-    });
+    setAiSummaries({ barberRevenue: "AI đang phân tích...", branchRevenue: "AI đang phân tích...", ratings: "AI đang phân tích...", crossInsight: "AI đang phân tích..." });
     try {
       const res = await SummaryAPI.getSummary({
-        branchIdLuong:    branchLuong.idBranch,
-        branchNameLuong:  branchLuong.name,
-        branchIdRating:   branchRating.idBranch,
-        branchNameRating: branchRating.name,
-        branchIdChart2:   branchChart2.idBranch,
-        branchNameChart2: branchChart2.name,
-        yearLuong:        filterLuong.year,
-        monthLuong:       filterLuong.month,
-        yearChiNhanh:     filterChiNhanh.year,
+        branchIdLuong: branchLuong.idBranch, branchNameLuong: branchLuong.name,
+        branchIdRating: branchRating.idBranch, branchNameRating: branchRating.name,
+        branchIdChart2: branchChart2.idBranch, branchNameChart2: branchChart2.name,
+        yearLuong: filterLuong.year, monthLuong: filterLuong.month,
+        yearChiNhanh: filterChiNhanh.year,
       });
       setAiSummaries(res);
-    } catch (err) {
-      console.error("Lỗi AI summary:", err);
-      setAiSummaries({
-        barberRevenue: "Lỗi khi phân tích. Vui lòng thử lại.",
-        branchRevenue: "Lỗi khi phân tích. Vui lòng thử lại.",
-        ratings:       "Lỗi khi phân tích. Vui lòng thử lại.",
-        crossInsight:  "Lỗi khi phân tích. Vui lòng thử lại.",
-      });
+    } catch {
+      setAiSummaries({ barberRevenue: "Lỗi khi phân tích.", branchRevenue: "Lỗi khi phân tích.", ratings: "Lỗi khi phân tích.", crossInsight: "Lỗi khi phân tích." });
     } finally {
       setLoadingSummary(false);
     }
@@ -341,95 +307,54 @@ function RevenueTab() {
     if (branchLuong && branchRating && branchChart2) handleFetchAllData();
   }, [handleFetchAllData]);
 
-  // === Merge data biểu đồ 1 ===
+  // ── Merge barber data ────────────────────────────────────────────────────
   const mergedBarberData = dataLuong.map((d) => {
     const last      = dataLuongLastYear.find((l) => l.barberId === d.barberId);
     const total     = (d.baseSalary||0) + (d.tips||0) + (d.commission||0) + (d.bonus||0);
-    const lastTotal = last
-      ? (last.baseSalary||0) + (last.tips||0) + (last.commission||0) + (last.bonus||0)
-      : 0;
-    return {
-      ...d,
-      shortName:     shortName(d.barberName),
-      total,
-      lastYearTotal: lastTotal,
-      growth:        calcGrowth(total, lastTotal),
-    };
+    const lastTotal = last ? (last.baseSalary||0)+(last.tips||0)+(last.commission||0)+(last.bonus||0) : 0;
+    return { ...d, shortName: shortName(d.barberName), total, lastYearTotal: lastTotal, growth: calcGrowth(total, lastTotal) };
   });
 
   const avgBarberRevenue = mergedBarberData.length
-    ? mergedBarberData.reduce((sum, d) => sum + d.total, 0) / mergedBarberData.length
+    ? mergedBarberData.reduce((s, d) => s + d.total, 0) / mergedBarberData.length
     : 0;
 
   const chart2Data = buildBranchChartData(dataChiNhanh, dataChiNhanhLast);
 
-  // Label % tăng trưởng — biểu đồ 1
-  const GrowthLabel = (props) => {
-    const { x, y, width, index } = props;
-    const d = mergedBarberData[index];
-    if (!d || d.growth === null || d.growth === undefined) return null;
-    const isPos = parseFloat(d.growth) >= 0;
-    return (
-      <text
-        x={x + width + 7}
-        y={y + 14}
-        fill={isPos ? "#1E7F4E" : "#C62828"}
-        fontSize={11}
-        fontWeight={700}
-      >
-        {isPos ? "+" : ""}{d.growth}%
-      </text>
-    );
-  };
+  // ── Chart height: đủ cao để bar rộng & thoáng, tối thiểu 380px ──────────
+  const barberChartHeight = Math.max(380, mergedBarberData.length * 60);
 
-  // ─── Render ───────────────────────────────────────────────
+  // ── Bar size tự động: tối đa 48px, tối thiểu 20px ───────────────────────
+  const barSize = mergedBarberData.length
+    ? Math.min(48, Math.max(20, Math.floor((barberChartHeight - 80) / mergedBarberData.length * 0.55)))
+    : 40;
+
   return (
     <div className={cx("thongke")}>
 
-      {/* ══════════════════════════════
-          BIỂU ĐỒ 1 — Doanh thu theo thợ
-      ══════════════════════════════ */}
+      {/* ══ BIỂU ĐỒ 1 — Doanh thu theo thợ ══════════════════════════════ */}
       <div className={cx("chartBox")}>
         <div className={cx("boxHeader")}>
           <h3 className={cx("chartTitle")}>Doanh thu theo thợ</h3>
           <div className={cx("filterBox")}>
-            <select
-              value={filterLuong.year}
-              onChange={(e) => setFilterLuong({ ...filterLuong, year: parseInt(e.target.value) })}
-            >
+            <select value={filterLuong.year} onChange={(e) => setFilterLuong({ ...filterLuong, year: parseInt(e.target.value) })}>
               {availableYears.map((y) => <option key={y} value={y}>{y}</option>)}
             </select>
-            <select
-              value={filterLuong.month}
-              onChange={(e) => setFilterLuong({ ...filterLuong, month: parseInt(e.target.value) })}
-            >
+            <select value={filterLuong.month} onChange={(e) => setFilterLuong({ ...filterLuong, month: parseInt(e.target.value) })}>
               {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
                 <option key={m} value={m}>Tháng {m}</option>
               ))}
             </select>
-            <select
-              value={branchLuong?.idBranch || ""}
-              onChange={(e) => {
-                const s = branchList.find((b) => b.idBranch === parseInt(e.target.value));
-                if (s) setBranchLuong(s);
-              }}
-            >
-              {branchList.map((b) => (
-                <option key={b.idBranch} value={b.idBranch}>{b.name}</option>
-              ))}
+            <select value={branchLuong?.idBranch || ""} onChange={(e) => {
+              const s = branchList.find((b) => b.idBranch === parseInt(e.target.value));
+              if (s) setBranchLuong(s);
+            }}>
+              {branchList.map((b) => <option key={b.idBranch} value={b.idBranch}>{b.name}</option>)}
             </select>
-            <button
-              className={cx("update")}
-              onClick={handleFetchAllData}
-              disabled={loadingLuong || loadingSummary}
-            >
+            <button className={cx("update")} onClick={handleFetchAllData} disabled={loadingLuong || loadingSummary}>
               {loadingLuong || loadingSummary ? "Đang tải..." : "Xem & Phân tích"}
             </button>
-            <button
-              className={cx("excel")}
-              onClick={() => exportToExcel(dataLuong, "DoanhThuTheoTho")}
-              disabled={loadingLuong}
-            >
+            <button className={cx("excel")} onClick={() => exportToExcel(dataLuong, "DoanhThuTheoTho")} disabled={loadingLuong}>
               Xuất Excel
             </button>
           </div>
@@ -437,99 +362,95 @@ function RevenueTab() {
 
         <div className={cx("chartContent")}>
           <div className={cx("chartWrapper")}>
-            <ResponsiveContainer
-              width="100%"
-              height={Math.max(360, mergedBarberData.length * 72)}
-            >
+            <ResponsiveContainer width="100%" height={barberChartHeight}>
               <BarChart
                 data={mergedBarberData}
-                margin={{ top: 20, right: 100, left: 10, bottom: 40 }}
-                barCategoryGap="45%"
-                maxBarSize={56}
+                layout="vertical"               /* ← ĐỔI SANG HORIZONTAL */
+                margin={{ top: 8, right: 110, left: 8, bottom: 8 }}
+                barCategoryGap="30%"
+                maxBarSize={barSize}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke={COLOR.gridLine} vertical={false} />
-                <XAxis
+                <CartesianGrid strokeDasharray="3 3" stroke={COLOR.gridLine} horizontal={false} />
+
+                {/* Y-axis = tên thợ (label trục dọc) */}
+                <YAxis
+                  type="category"
                   dataKey="shortName"
+                  width={90}
+                  tick={{ fontSize: 12, fill: COLOR.ink2, fontWeight: 500 }}
+                  axisLine={false}
+                  tickLine={false}
                   interval={0}
-                  tick={<CustomXTick />}
+                />
+
+                {/* X-axis = giá trị tiền (trục ngang) */}
+                <XAxis
+                  type="number"
+                  stroke={COLOR.axisText}
+                  tick={{ fontSize: 10, fill: COLOR.axisText }}
+                  tickFormatter={(v) => `${(v / 1_000_000).toFixed(0)}M`}
                   axisLine={{ stroke: COLOR.gridLine }}
                   tickLine={false}
                 />
-                <YAxis
-                  stroke={COLOR.axisText}
-                  tick={{ fontSize: 11, fill: COLOR.axisText }}
-                  tickFormatter={(v) => `${(v / 1_000_000).toFixed(0)}M`}
-                  axisLine={false}
-                  tickLine={false}
-                  width={36}
-                />
+
                 <Tooltip content={<BarberTooltip />} cursor={{ fill: "rgba(201,168,76,0.06)" }} />
                 <Legend
-                  wrapperStyle={{ fontSize: 11, paddingTop: 16, color: COLOR.axisText }}
+                  wrapperStyle={{ fontSize: 11, paddingTop: 12, color: COLOR.axisText }}
                   iconType="circle"
                   iconSize={8}
                 />
+
+                {/* Đường TB */}
                 <ReferenceLine
-                  y={avgBarberRevenue}
+                  x={avgBarberRevenue}
                   stroke={COLOR.gold}
                   strokeDasharray="5 4"
                   strokeWidth={1.5}
                   label={{
                     value: `TB: ${(avgBarberRevenue / 1_000_000).toFixed(1)}M`,
-                    position: "insideTopRight",
+                    position: "top",
                     fill: COLOR.gold,
                     fontSize: 10,
                     fontWeight: 600,
                   }}
                 />
-                {/* Stack từ dưới lên: đen → nâu đậm → nâu nhạt → gold */}
-                <Bar dataKey="baseSalary" stackId="a" fill="#2C2420"    name="Lương cố định" radius={[0,0,4,4]} />
-                <Bar dataKey="tips"       stackId="a" fill="#7B5C52"    name="Tiền tip" />
-                <Bar dataKey="commission" stackId="a" fill="#B08878"    name="Hoa hồng" />
-                <Bar dataKey="bonus"      stackId="a" fill={COLOR.gold} name="Thưởng" radius={[4,4,0,0]}>
-                  <LabelList content={<GrowthLabel />} />
+
+                {/* Stack từ trái sang: đen → nâu đậm → nâu nhạt → gold */}
+                <Bar dataKey="baseSalary" stackId="a" fill="#2C2420"    name="Lương cố định" radius={[4,0,0,4]} />
+                <Bar dataKey="tips"       stackId="a" fill="#7B5C52"    name="Tiền tip"      />
+                <Bar dataKey="commission" stackId="a" fill="#B08878"    name="Hoa hồng"      />
+                <Bar dataKey="bonus"      stackId="a" fill={COLOR.gold} name="Thưởng"        radius={[0,4,4,0]}>
+                  {/* Growth % hiện ở đầu mỗi bar */}
+                  <LabelList
+                    content={(props) => <GrowthLabel {...props} data={mergedBarberData} />}
+                  />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
+
           <div className={cx("aiAnalysis")}>
             <h4>AI Phân tích</h4>
-            <p className={cx({ "loading-text": loadingSummary })}>
-              {aiSummaries.barberRevenue}
-            </p>
+            <p className={cx({ "loading-text": loadingSummary })}>{aiSummaries.barberRevenue}</p>
           </div>
         </div>
       </div>
 
-      {/* ══════════════════════════════
-          BIỂU ĐỒ 2 — Doanh thu chi nhánh
-      ══════════════════════════════ */}
+      {/* ══ BIỂU ĐỒ 2 — Doanh thu chi nhánh theo năm ═══════════════════ */}
       <div className={cx("chartBox")}>
         <div className={cx("boxHeader")}>
           <h3 className={cx("chartTitle")}>Doanh thu chi nhánh theo năm</h3>
           <div className={cx("filterBox")}>
-            <select
-              value={branchChart2?.idBranch || ""}
-              onChange={(e) => {
-                const s = branchList.find((b) => b.idBranch === parseInt(e.target.value));
-                if (s) setBranchChart2(s);
-              }}
-            >
-              {branchList.map((b) => (
-                <option key={b.idBranch} value={b.idBranch}>{b.name}</option>
-              ))}
+            <select value={branchChart2?.idBranch || ""} onChange={(e) => {
+              const s = branchList.find((b) => b.idBranch === parseInt(e.target.value));
+              if (s) setBranchChart2(s);
+            }}>
+              {branchList.map((b) => <option key={b.idBranch} value={b.idBranch}>{b.name}</option>)}
             </select>
-            <select
-              value={filterChiNhanh.year}
-              onChange={(e) => setFilterChiNhanh({ year: parseInt(e.target.value) })}
-            >
+            <select value={filterChiNhanh.year} onChange={(e) => setFilterChiNhanh({ year: parseInt(e.target.value) })}>
               {availableYears.map((y) => <option key={y} value={y}>{y}</option>)}
             </select>
-            <button
-              className={cx("excel")}
-              onClick={() => exportToExcel(chart2Data, `DoanhThu_${branchChart2?.name}`)}
-              disabled={loadingChiNhanh}
-            >
+            <button className={cx("excel")} onClick={() => exportToExcel(chart2Data, `DoanhThu_${branchChart2?.name}`)} disabled={loadingChiNhanh}>
               Xuất Excel
             </button>
           </div>
@@ -540,83 +461,34 @@ function RevenueTab() {
             <ResponsiveContainer width="100%" height={340}>
               <ComposedChart data={chart2Data} margin={{ top: 16, right: 30, left: 10, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={COLOR.gridLine} vertical={false} />
-                <XAxis
-                  dataKey="month"
-                  stroke={COLOR.axisText}
-                  tick={{ fontSize: 11, fill: COLOR.axisText }}
-                  axisLine={{ stroke: COLOR.gridLine }}
-                  tickLine={false}
-                />
-                <YAxis
-                  stroke={COLOR.axisText}
-                  tick={{ fontSize: 11, fill: COLOR.axisText }}
-                  tickFormatter={(v) => `${(v / 1_000_000).toFixed(0)}M`}
-                  axisLine={false}
-                  tickLine={false}
-                />
+                <XAxis dataKey="month" stroke={COLOR.axisText} tick={{ fontSize: 11, fill: COLOR.axisText }} axisLine={{ stroke: COLOR.gridLine }} tickLine={false} />
+                <YAxis stroke={COLOR.axisText} tick={{ fontSize: 11, fill: COLOR.axisText }} tickFormatter={(v) => `${(v / 1_000_000).toFixed(0)}M`} axisLine={false} tickLine={false} />
                 <Tooltip content={<BranchTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)" }} />
-                <Legend
-                  wrapperStyle={{ fontSize: 11, paddingTop: 12, color: COLOR.axisText }}
-                  formatter={(value) =>
-                    value === "namNay"
-                      ? `Năm ${filterChiNhanh.year}`
-                      : `Năm ${filterChiNhanh.year - 1}`
-                  }
-                />
-                {/* Bar năm nay — teal */}
-                <Bar
-                  dataKey="namNay"
-                  fill={COLOR.teal}
-                  name="namNay"
-                  radius={[4, 4, 0, 0]}
-                  maxBarSize={40}
-                />
-                {/* Line năm ngoái — gold dashed */}
-                <Line
-                  type="monotone"
-                  dataKey="namNgoai"
-                  stroke={COLOR.gold}
-                  strokeWidth={2}
-                  strokeDasharray="5 4"
-                  dot={{ r: 3.5, fill: COLOR.gold, strokeWidth: 0 }}
-                  activeDot={{ r: 5, fill: COLOR.gold }}
-                  name="namNgoai"
-                />
+                <Legend wrapperStyle={{ fontSize: 11, paddingTop: 12, color: COLOR.axisText }} formatter={(value) => value === "namNay" ? `Năm ${filterChiNhanh.year}` : `Năm ${filterChiNhanh.year - 1}`} />
+                <Bar dataKey="namNay" fill={COLOR.teal} name="namNay" radius={[4,4,0,0]} maxBarSize={40} />
+                <Line type="monotone" dataKey="namNgoai" stroke={COLOR.gold} strokeWidth={2} strokeDasharray="5 4" dot={{ r: 3.5, fill: COLOR.gold, strokeWidth: 0 }} activeDot={{ r: 5 }} name="namNgoai" />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
           <div className={cx("aiAnalysis")}>
             <h4>AI Phân tích</h4>
-            <p className={cx({ "loading-text": loadingSummary })}>
-              {aiSummaries.branchRevenue}
-            </p>
+            <p className={cx({ "loading-text": loadingSummary })}>{aiSummaries.branchRevenue}</p>
           </div>
         </div>
       </div>
 
-      {/* ══════════════════════════════
-          BIỂU ĐỒ 3 — Đánh giá thợ
-      ══════════════════════════════ */}
+      {/* ══ BIỂU ĐỒ 3 — Đánh giá thợ ══════════════════════════════════ */}
       <div className={cx("chartBox")}>
         <div className={cx("boxHeader")}>
           <h3 className={cx("chartTitle")}>Đánh giá thợ từ khách hàng</h3>
           <div className={cx("filterBox")}>
-            <select
-              value={branchRating?.idBranch || ""}
-              onChange={(e) => {
-                const s = branchList.find((b) => b.idBranch === parseInt(e.target.value));
-                if (s) setBranchRating(s);
-              }}
-            >
-              {branchList.map((b) => (
-                <option key={b.idBranch} value={b.idBranch}>{b.name}</option>
-              ))}
+            <select value={branchRating?.idBranch || ""} onChange={(e) => {
+              const s = branchList.find((b) => b.idBranch === parseInt(e.target.value));
+              if (s) setBranchRating(s);
+            }}>
+              {branchList.map((b) => <option key={b.idBranch} value={b.idBranch}>{b.name}</option>)}
             </select>
-            <button
-              className={cx("excel")}
-              onClick={() => exportToExcel(satisfactionData, `DanhGia_${branchRating?.name}`)}
-              disabled={loadingSatisfaction}
-            >
+            <button className={cx("excel")} onClick={() => exportToExcel(satisfactionData, `DanhGia_${branchRating?.name}`)} disabled={loadingSatisfaction}>
               Xuất Excel
             </button>
           </div>
@@ -624,53 +496,51 @@ function RevenueTab() {
 
         <div className={cx("chartContent")}>
           <div className={cx("chartWrapper")}>
-            <ResponsiveContainer width="100%" height={360}>
+            <ResponsiveContainer width="100%" height={Math.max(340, satisfactionData.length * 44)}>
               <BarChart
                 data={satisfactionData}
-                margin={{ top: 28, right: 30, left: 10, bottom: 50 }}
+                layout="vertical"              /* ← ĐỔI SANG HORIZONTAL */
+                margin={{ top: 8, right: 80, left: 8, bottom: 8 }}
+                barCategoryGap="30%"
               >
-                <CartesianGrid strokeDasharray="3 3" stroke={COLOR.gridLine} vertical={false} />
-                <XAxis
-                  dataKey="name"
-                  interval={0}
-                  tick={{ fontSize: 11, fill: COLOR.axisText }}
-                  tickFormatter={shortName}
-                  axisLine={{ stroke: COLOR.gridLine }}
-                  tickLine={false}
-                />
+                <CartesianGrid strokeDasharray="3 3" stroke={COLOR.gridLine} horizontal={false} />
                 <YAxis
-                  domain={[0, 5]}
-                  stroke={COLOR.axisText}
-                  tick={{ fontSize: 11, fill: COLOR.axisText }}
-                  ticks={[0, 1, 2, 3, 4, 5]}
+                  type="category"
+                  dataKey="name"
+                  width={100}
+                  tick={{ fontSize: 12, fill: COLOR.ink2, fontWeight: 500 }}
+                  tickFormatter={shortName}
                   axisLine={false}
+                  tickLine={false}
+                  interval={0}
+                />
+                <XAxis
+                  type="number"
+                  domain={[0, 5]}
+                  ticks={[0, 1, 2, 3, 4, 5]}
+                  stroke={COLOR.axisText}
+                  tick={{ fontSize: 10, fill: COLOR.axisText }}
+                  axisLine={{ stroke: COLOR.gridLine }}
                   tickLine={false}
                 />
                 <Tooltip content={<RatingTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)" }} />
                 <Legend wrapperStyle={{ fontSize: 11, paddingTop: 12, color: COLOR.axisText }} />
-                {/* Ngưỡng 4.0 */}
                 <ReferenceLine
-                  y={4.0}
+                  x={4.0}
                   stroke={COLOR.red}
                   strokeDasharray="5 4"
                   strokeWidth={1.5}
-                  label={{
-                    value: "Ngưỡng 4.0",
-                    position: "insideTopRight",
-                    fill: COLOR.red,
-                    fontSize: 10,
-                    fontWeight: 600,
-                  }}
+                  label={{ value: "Ngưỡng 4.0", position: "top", fill: COLOR.red, fontSize: 10, fontWeight: 600 }}
                 />
-                <Bar dataKey="score" name="Điểm hài lòng" maxBarSize={52} radius={[6,6,0,0]}>
+                <Bar dataKey="score" name="Điểm hài lòng" maxBarSize={36} radius={[0,6,6,0]}>
                   {satisfactionData.map((entry, index) => (
                     <Cell key={index} fill={getRatingColor(entry.score)} />
                   ))}
                   <LabelList
-                    dataKey="totalRatings"
-                    position="top"
-                    formatter={(v) => `${v} lượt`}
-                    style={{ fontSize: 10, fill: COLOR.axisText, fontWeight: 600 }}
+                    dataKey="score"
+                    position="right"
+                    formatter={(v) => `${v}/5`}
+                    style={{ fontSize: 11, fill: COLOR.ink2, fontWeight: 700 }}
                   />
                 </Bar>
               </BarChart>
@@ -678,25 +548,19 @@ function RevenueTab() {
           </div>
           <div className={cx("aiAnalysis")}>
             <h4>AI Phân tích</h4>
-            <p className={cx({ "loading-text": loadingSatisfaction })}>
-              {aiSummaries.ratings}
-            </p>
+            <p className={cx({ "loading-text": loadingSatisfaction })}>{aiSummaries.ratings}</p>
           </div>
         </div>
       </div>
 
-      {/* ══════════════════════════════
-          CROSS INSIGHT
-      ══════════════════════════════ */}
+      {/* ══ CROSS INSIGHT ═══════════════════════════════════════════════ */}
       <div className={cx("chartBox")}>
         <div className={cx("boxHeader")}>
           <h3 className={cx("chartTitle")}>Phân tích tổng hợp</h3>
         </div>
         <div className={cx("aiAnalysis", "crossInsight")}>
           <h4>AI Cross Insight</h4>
-          <p className={cx({ "loading-text": loadingSummary })}>
-            {aiSummaries.crossInsight}
-          </p>
+          <p className={cx({ "loading-text": loadingSummary })}>{aiSummaries.crossInsight}</p>
         </div>
       </div>
 

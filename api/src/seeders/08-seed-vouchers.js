@@ -30,11 +30,12 @@ export async function up(queryInterface, Sequelize) {
     },
     // 2. POINTS_EXCHANGE (đổi điểm, valid_days = 90)
     {
-      name: "Đổi điểm nhận ưu đãi 15%",
+      name: "Đổi điểm nhận ưu đãi 50.000đ",
       type: "POINTS_EXCHANGE",
-      description: "Giảm 15% tối đa 100k, áp dụng hóa đơn từ 200k",
-      discount_percent: 15.0,
-      max_discount_amount: 100000,
+      description: "Giảm 50.000đ cho hóa đơn từ 200.000đ",
+      discount_percent: null, // không dùng %
+      discount_amount: 50000, // số tiền giảm cố định
+      max_discount_amount: null, // không cần max
       min_invoice_amount: 200000,
       total_quantity: null,
       issued_count: 0,
