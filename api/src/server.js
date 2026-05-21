@@ -27,7 +27,7 @@ import bookingDirectRoutes from "./routes/bookingDirect.js";
 import hashtagRoutes from "./routes/hashtag.js";
 import hairConsultRoutes from "./routes/hairConsult.js";
 import transactionRoutes from "./routes/transaction.js";
-
+import hairstyleRoutes from "./routes/hairStyle.js";
 import startBranchStatusCron from "./cron/branchStatusCron.js";
 import startSalaryCron from "./cron/salaryCron.js"
 
@@ -67,6 +67,7 @@ app.use("/api/barbers", barberRoutes);
 app.use("/api/branches", branchRoutes);
 app.use("/api/ratings", ratingRoutes);
 
+app.use("/api/hairstyles", hairstyleRoutes);
 app.use("/api/bookings", bookingRoute);
 app.use("/api/payment", paymentRoute);
 app.use("/api/reels", reelRoute);
