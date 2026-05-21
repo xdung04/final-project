@@ -1,13 +1,60 @@
 // services/summaryStatisticService.js
-import Groq from "groq-sdk";
 import { getBarberRevenue, getBranchMonthlyBookingRevenue } from "./statisticsService.js";
 import ratingService from "./ratingService.js";
+import { getSeasonContext } from "../utils/seasonContext.js";
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+// ─── Gemini client (native fetch — không cần SDK) ─────────────────────────────
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const GEMINI_MODEL   = "gemini-2.5-flash";
+const GEMINI_URL     = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+const callGemini = async (prompt) => {
+  const res = await fetch(GEMINI_URL, {
+    method:  "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [
+        {
+          parts: [{ text: prompt }],
+        },
+      ],
+      systemInstruction: {
+        parts: [
+          {
+            text: [
+              "You are a JSON-only responder.",
+              "Output must be a single valid JSON object — no markdown, no backticks, no prose outside JSON, no newlines inside string values.",
+              "You are a senior barbershop business consultant in Vietnam with deep domain expertise.",
+              "Analyze data like a real expert: compare to industry benchmarks, name specific barbers,",
+              "give concrete numbers, and end every section with a direct actionable recommendation.",
+              "Never give vague advice. Always be specific. All string values MUST be in Vietnamese.",
+            ].join(" "),
+          },
+        ],
+      },
+      generationConfig: {
+        temperature:      0.4,
+        maxOutputTokens:  2000,
+        responseMimeType: "application/json", // ép Gemini trả JSON thuần, không có markdown
+        thinkingConfig: {
+          thinkingBudget: 0, // tắt thinking — tiết kiệm 88% token, không ảnh hưởng chất lượng task này
+        },
+      },
+    }),
+  });
 
-const trimData = (arr = [], n = 10) => arr.slice(0, n);
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Gemini API error ${res.status}: ${err}`);
+  }
+
+  const data = await res.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "{}";
+};
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const trimData = (arr = [], n) => arr.slice(0, n ?? arr.length);
 
 const pctChange = (now, last) => {
   if (!last || last === 0) return null;
@@ -19,47 +66,24 @@ const fmtVND = (n) => {
   return `${(n / 1_000_000).toFixed(1)}M`;
 };
 
-// ─── Barbershop domain context ────────────────────────────────────────────────
+// ─── Industry benchmarks ──────────────────────────────────────────────────────
 
-/**
- * Trả về context mùa vụ ngành barbershop Nam Việt Nam theo tháng
- * Giúp AI có thêm benchmark để phân tích thay vì chỉ nhìn số thuần
- */
-const getSeasonContext = (month) => {
-  const seasons = {
-    1:  "Tháng 1: Sau Tết — khách cắt tóc tất niên đã qua, lượng đặt lịch thường thấp hơn 20-30% so với tháng 12.",
-    2:  "Tháng 2: Tháng Tết — biến động lớn nhất năm. Tuần trước Tết đạt đỉnh, sau Tết (nếu rơi vào tháng 2) sụt mạnh. Cần tách 2 giai đoạn khi đánh giá.",
-    3:  "Tháng 3: Phục hồi sau Tết — khách quay lại dần, doanh thu ổn định hơn nhưng chưa đạt đỉnh.",
-    4:  "Tháng 4: Mùa thấp điểm nhẹ — thời tiết chuyển mùa, khách ít chủ động đặt lịch hơn.",
-    5:  "Tháng 5: Ổn định — không có yếu tố mùa vụ đặc biệt, phản ánh trung thực năng lực thực của shop.",
-    6:  "Tháng 6: Nghỉ hè bắt đầu — học sinh, sinh viên cắt tóc nhiều hơn. Nhu cầu tạo kiểu mới tăng.",
-    7:  "Tháng 7: Cao điểm hè — lượng khách trẻ cao, các dịch vụ tạo kiểu và uốn duỗi có xu hướng tăng.",
-    8:  "Tháng 8: Cuối hè — chuẩn bị năm học mới, nhu cầu cắt tóc gọn gàng tăng mạnh cuối tháng.",
-    9:  "Tháng 9: Đầu năm học — khách ổn định, ít dao động. Tháng phản ánh rõ nhất chất lượng vận hành.",
-    10: "Tháng 10: Bình thường — không có yếu tố kích thích đặc biệt, cạnh tranh giữ chân khách quen.",
-    11: "Tháng 11: Chuẩn bị cuối năm — khách bắt đầu chú ý diện mạo cho mùa tiệc tùng, doanh thu nhích dần.",
-    12: "Tháng 12: Đỉnh năm — nhu cầu làm tóc trước Tết dương lịch và chuẩn bị Tết âm lịch đẩy doanh thu lên cao nhất năm.",
-  };
-  return seasons[month] || "";
-};
-
-/**
- * Benchmark ngành barbershop Nam phổ thông–trung cấp tại Việt Nam
- * Dùng làm chuẩn để AI đánh giá tốt/xấu có cơ sở
- */
 const INDUSTRY_BENCHMARKS = `
 INDUSTRY BENCHMARKS (men's barbershop, Vietnam mid-range segment):
 - Healthy barber monthly revenue: 15M–30M VND
 - Top performer: >30M/month; Underperformer: <10M/month
-- Tips as % of total: healthy = 10–20%; very high tips = barber has loyal clientele
-- Commission ratio: >50% of total income = barber heavily reliant on volume, risk if bookings dip
-- Avg rating benchmark: excellent ≥ 4.5 (≥20 ratings); acceptable 4.0–4.49; needs action < 4.0
+- Healthy customer volume: 80–150 visits/barber/month
+- High volume (>150): barber is a traffic driver, likely lower avg ticket
+- Low volume (<50): barber needs booking support or is new
+- Tips as % of total: healthy = 10–20%; >20% = strong loyal clientele
+- Commission ratio: >60% of total income = heavily volume-dependent, vulnerable if bookings dip
+- Avg rating benchmark: excellent ≥ 4.5 (≥10 ratings); acceptable 4.0–4.49; needs action < 4.0
 - Barber with < 10 ratings: insufficient data — do NOT draw conclusions from score alone
 - YoY branch revenue growth: strong >15%; stable 5–15%; concerning <0%
-- Peak months (Vietnam): Dec > Jul > Jun > Aug > Feb(pre-Tet); Low: Jan(post-Tet), Apr
-`;
+- Peak months (Vietnam): Dec > Jul > Jun > Aug > pre-Tet; Low: post-Tet, Apr
+`.trim();
 
-// ─── Fetch & Transform data ───────────────────────────────────────────────────
+// ─── Fetch & Transform ────────────────────────────────────────────────────────
 
 const fetchBarberData = async ({ branchId, year, month }) => {
   const [dataNow, dataLast] = await Promise.all([
@@ -71,13 +95,13 @@ const fetchBarberData = async ({ branchId, year, month }) => {
     dataNow.map((d) => {
       const last      = dataLast.find((l) => l.barberId === d.barberId);
       const total     = d.baseSalary + d.tips + d.commission + d.bonus;
-      const lastTotal = last
-        ? last.baseSalary + last.tips + last.commission + last.bonus
-        : 0;
+      const lastTotal = last ? last.baseSalary + last.tips + last.commission + last.bonus : 0;
 
-      // Tính tỉ lệ cơ cấu thu nhập — giúp AI phân tích nguồn lực tạo ra doanh thu
-      const commissionRatio = total > 0 ? ((d.commission / total) * 100).toFixed(0) : 0;
-      const tipsRatio       = total > 0 ? ((d.tips       / total) * 100).toFixed(0) : 0;
+      const commissionRatio = total > 0 ? ((d.commission / total) * 100).toFixed(0) : "0";
+      const tipsRatio       = total > 0 ? ((d.tips       / total) * 100).toFixed(0) : "0";
+
+      const customerCount     = d.customerCount     ?? null;
+      const lastCustomerCount = last?.customerCount ?? null;
 
       return {
         name:            d.barberName,
@@ -86,28 +110,34 @@ const fetchBarberData = async ({ branchId, year, month }) => {
         growth:          pctChange(total, lastTotal),
         baseSalary:      fmtVND(d.baseSalary),
         commission:      fmtVND(d.commission),
-        commissionRatio: `${commissionRatio}%`,   // % hoa hồng / tổng
+        commissionRatio: `${commissionRatio}%`,
         tips:            fmtVND(d.tips),
-        tipsRatio:       `${tipsRatio}%`,          // % tips / tổng — đo độ trung thành khách
+        tipsRatio:       `${tipsRatio}%`,
         bonus:           fmtVND(d.bonus),
+        customerCount,
+        customerGrowth:  pctChange(customerCount, lastCustomerCount),
       };
-    }),
-    10
+    })
   );
 };
 
 const fetchBranchData = async ({ branchId, year }) => {
+  const bid = Number(branchId);
+
   const [dataNow, dataLast] = await Promise.all([
-    getBranchMonthlyBookingRevenue(year,     branchId),
-    getBranchMonthlyBookingRevenue(year - 1, branchId),
+    getBranchMonthlyBookingRevenue(year,     bid),
+    getBranchMonthlyBookingRevenue(year - 1, bid),
   ]);
 
   return Array.from({ length: 12 }, (_, i) => {
-    const m       = i + 1;
-    const nowItem = dataNow.find((d)  => d.month === m && d.branchId === branchId);
-    const lstItem = dataLast.find((d) => d.month === m && d.branchId === branchId);
-    const nowRev  = nowItem?.totalRevenue || 0;
-    const lstRev  = lstItem?.totalRevenue || 0;
+    const m = i + 1;
+
+    const nowItem = dataNow.find((d)  => Number(d.month) === m && Number(d.branchId) === bid);
+    const lstItem = dataLast.find((d) => Number(d.month) === m && Number(d.branchId) === bid);
+
+    const nowRev = nowItem?.totalRevenue ? Number(nowItem.totalRevenue) : 0;
+    const lstRev = lstItem?.totalRevenue ? Number(lstItem.totalRevenue) : 0;
+
     return {
       month:    `M${m}`,
       current:  fmtVND(nowRev),
@@ -122,49 +152,35 @@ const fetchRatingData = async ({ branchId }) => {
 
   return trimData(
     barbers.map((b) => {
-      const avg          = parseFloat(b.ratingSummary?.avgRate || 0);
-      const totalRatings = parseInt(b.ratingSummary?.totalRate || 0);
+      const avg          = parseFloat(b.ratingSummary?.avgRate  || 0);
+      const totalRatings = parseInt(b.ratingSummary?.totalRate  || 0, 10);
 
-      // Phân tier rõ ràng hơn — có cả flag thiếu dữ liệu
       const tier =
-        totalRatings < 10    ? "insufficient_data" :
-        avg >= 4.5           ? "excellent" :
-        avg >= 4.0           ? "good" :
-        avg >= 3.5           ? "needs_improvement" :
-                               "critical";
+        totalRatings < 10 ? "insufficient_data" :
+        avg >= 4.5        ? "excellent"          :
+        avg >= 4.0        ? "good"               :
+        avg >= 3.5        ? "needs_improvement"  :
+                            "critical";
 
       return {
         name:         b.user?.fullName || "—",
         avgRate:      avg.toFixed(2),
         totalRatings,
-        tier,                                        // AI dùng tier thay vì tự tính lại
-        dataReliable: totalRatings >= 10,            // flag rõ ràng cho AI
+        tier,
+        dataReliable: totalRatings >= 10,
       };
-    }),
-    10
+    })
   );
 };
 
 // ─── Prompt Builder ───────────────────────────────────────────────────────────
 
 const buildPrompt = ({
-  branchNameLuong,
-  branchNameRating,
-  branchNameChart2,
-  year,
-  month,
-  yearChiNhanh,
-  barberData,
-  branchData,
-  ratingData,
-}) => {
-  const seasonCtx = getSeasonContext(month);
-
-  return `
-You are a senior business consultant specializing in men's grooming and barbershop chains in Vietnam.
-You think in numbers, spot patterns others miss, and give advice that managers can act on immediately.
-You have 10+ years advising barbershop chains on staff performance, revenue optimization, and customer retention.
-
+  branchNameLuong, branchNameRating, branchNameChart2,
+  year, month, yearChiNhanh,
+  barberData, branchData, ratingData,
+  seasonCtx,
+}) => `
 ${INDUSTRY_BENCHMARKS}
 
 OUTPUT: Return ONE valid JSON object with exactly 4 fields.
@@ -175,135 +191,144 @@ LANGUAGE: All values MUST be in Vietnamese. Write naturally, like a confident ma
 FORMAT per field: 3–5 sentences of fluent prose. No bullet lists. No line breaks inside strings.
 
 ═══════════════════════════════════════
+SEASONAL CONTEXT — tính từ âm lịch thật, không hardcode
+═══════════════════════════════════════
+${seasonCtx}
+
+Đối chiếu số liệu với seasonal context:
+- Tháng cao điểm mà doanh thu thấp → đáng lo, phân tích nguyên nhân.
+- Tháng thấp điểm hoặc có lễ giải thích được → ghi nhận, không đánh giá tiêu cực.
+
+═══════════════════════════════════════
 ANALYSIS INSTRUCTIONS
 ═══════════════════════════════════════
 
 [barberRevenue] → Chi nhánh: ${branchNameLuong} | Kỳ: ${month}/${year}
-Seasonal context for this month: ${seasonCtx}
 
-Step 1 — Income structure: Look at commissionRatio and tipsRatio for each barber.
-  • High tipsRatio (>15%) = barber has loyal returning clients — strong signal of client ownership.
-  • High commissionRatio (>60%) = barber depends heavily on volume — vulnerable if bookings drop.
-  • Low commission + high bonus = management rewarding a specific barber for non-revenue reasons — worth noting.
+Step 1 — Volume vs ticket: Nếu có customerCount, phân tích revenue/lượt khách (avg ticket).
+  Lượt khách cao + doanh thu trung bình = đang làm giá thấp hoặc upsell kém.
+  Lượt khách thấp + doanh thu cao = khách chất lượng, loyal clientele.
+  Nếu customerCount = null, bỏ qua bước này.
 
-Step 2 — Performance gap: What is the revenue gap between #1 and the weakest? Is it a normal spread or a red flag?
-  Compare to industry benchmark: top performer >30M, underperformer <10M.
+Step 2 — Income structure: commissionRatio và tipsRatio nói lên gì?
+  tipsRatio >15% = tệp khách trung thành rõ rệt.
+  commissionRatio >60% = phụ thuộc volume, dễ bị ảnh hưởng nếu booking giảm.
 
-Step 3 — YoY: Only mention YoY growth if lastYear ≠ "0.0M". If lastYear is "0.0M", that barber is new — say so, don't compare.
+Step 3 — Performance gap: Khoảng cách #1 và barber yếu nhất có bình thường không?
+  Benchmark: top >30M, underperformer <10M.
 
-Step 4 — Closing insight: End with ONE specific action the branch manager should take (e.g., adjust commission tier, mentor a specific barber, review booking allocation).
+Step 4 — YoY: Chỉ so sánh nếu lastYear ≠ "0.0M". Nếu "0.0M" → barber mới, nói rõ vậy.
+
+Step 5 — Action: Kết bằng 1 hành động cụ thể (tên barber + chỉ số + deadline).
 
 [branchRevenue] → Chi nhánh: ${branchNameChart2} | Năm: ${yearChiNhanh} vs ${yearChiNhanh - 1}
 
-Step 1 — Annual shape: Describe the revenue curve in 1 sentence. Is it V-shaped, flat, declining, or seasonal-spiked?
+Step 1 — Annual shape: Mô tả đường cong doanh thu năm trong 1 câu.
 
-Step 2 — Standout months: Pick exactly 2–3 months that MOST DEVIATE from expected seasonal norms (use INDUSTRY BENCHMARKS peaks/lows above as the norm). Explain why the deviation matters — is it underperformance vs the industry, or overperformance?
+Step 2 — Standout months: Chọn đúng 2–3 tháng lệch nhiều nhất so với kỳ vọng mùa vụ.
+  Dùng seasonal context và benchmark làm chuẩn. Giải thích tại sao lệch.
 
-Step 3 — YoY verdict: Is the business growing, stagnating, or losing ground vs last year? Give a percentage or ratio if the data supports it. Be direct.
+Step 3 — YoY verdict: Tăng trưởng, đi ngang hay sụt? Đưa % cụ thể nếu data hỗ trợ.
 
-Step 4 — Closing: One sentence on what the trend implies for the next 3 months if nothing changes.
+Step 4 — Closing: 1 câu về hệ quả nếu xu hướng tiếp tục 3 tháng tới.
 
 [ratings] → Chi nhánh: ${branchNameRating}
 
-Step 1 — Reliability filter first: Any barber with dataReliable=false has <10 ratings — mention them briefly as "chưa đủ dữ liệu", do not analyze their score.
+Step 1 — Reliability filter: dataReliable=false → "chưa đủ dữ liệu", không phân tích điểm.
 
-Step 2 — Top talent: Who has the highest avgRate with the most ratings? Name them. Calculate trust score mentally = avgRate × log(totalRatings) — the barber with the best combination of score + volume is the strongest asset.
+Step 2 — Top talent: Ai có avgRate cao nhất kết hợp totalRatings nhiều nhất? Đặt tên cụ thể.
 
-Step 3 — Risk flag: Any barber with tier="critical" (avgRate < 3.5) or tier="needs_improvement" with high totalRatings is a reputational risk — name them, state the score, flag the risk.
+Step 3 — Risk flag: Ai có tier="critical" hoặc "needs_improvement" với totalRatings cao?
+  Đặt tên, nêu điểm số, giải thích rủi ro.
 
-Step 4 — Closing: One specific action (e.g., feature the top-rated barber in marketing, put the critical barber on a 30-day improvement plan with supervisor review).
+Step 4 — Action: 1 hành động cụ thể (feature top-rated, kế hoạch cải thiện 30 ngày...).
 
-[crossInsight] → Cross-chart correlation
+[crossInsight] → Tổng hợp 3 chart
 
-Step 1 — Revenue vs ratings alignment: Do the highest-earning barbers in Chart 1 also have strong ratings in Chart 3? If yes, that's healthy. If the top earner has weak ratings — that's a churn risk (high revenue now, client flight later).
+Step 1 — Revenue vs ratings: Top earner có rating tương xứng không?
+  Top earner rating thấp → rủi ro mất khách sau khi đạt đỉnh doanh thu.
 
-Step 2 — Branch trend vs individual performance: Does the branch revenue trend in Chart 2 reflect what the individual barber data in Chart 1 suggests about this period? Look for disconnects.
+Step 2 — Branch trend vs individual: Xu hướng chi nhánh có phản ánh đúng hiệu suất cá nhân?
+  Tìm điểm mâu thuẫn.
 
-Step 3 — Biggest risk: State the single most concerning pattern you see across all 3 charts combined. Be specific and direct.
+Step 3 — Biggest risk: 1 rủi ro lớn nhất xuyên suốt 3 chart. Cụ thể, thẳng thắn.
 
-Step 4 — TWO concrete actions: End with exactly 2 actions the admin should execute THIS WEEK. Make them specific (name a barber, name a metric, name a deadline) — not generic advice.
+Step 4 — TWO actions: Đúng 2 hành động admin cần thực hiện TUẦN NÀY.
+  Mỗi action: tên barber hoặc chỉ số cụ thể + deadline.
 
 ═══════════════════════════════════════
 DATA
 ═══════════════════════════════════════
 
 CHART1 — Barber revenue | Branch: ${branchNameLuong} | Period: ${month}/${year}
-${JSON.stringify(barberData, null, 0)}
+${JSON.stringify(barberData)}
 
 CHART2 — Branch monthly revenue | Branch: ${branchNameChart2} | ${yearChiNhanh} vs ${yearChiNhanh - 1}
-${JSON.stringify(branchData, null, 0)}
+${JSON.stringify(branchData)}
 
 CHART3 — Barber ratings | Branch: ${branchNameRating}
-${JSON.stringify(ratingData, null, 0)}
+${JSON.stringify(ratingData)}
 `.trim();
-};
 
 // ─── Main Export ──────────────────────────────────────────────────────────────
 
-/**
- * Lấy tổng hợp phân tích AI cho 3 biểu đồ thống kê
- *
- * @param {Object} params
- *  - branchIdLuong, branchNameLuong   : chi nhánh biểu đồ 1
- *  - branchIdRating, branchNameRating : chi nhánh biểu đồ 3
- *  - branchIdChart2, branchNameChart2 : chi nhánh biểu đồ 2
- *  - yearLuong, monthLuong            : filter biểu đồ 1
- *  - yearChiNhanh                     : filter biểu đồ 2
- *
- * @returns {{ barberRevenue, branchRevenue, ratings, crossInsight }}
- */
 export const getSummary = async (params = {}) => {
   const {
-    branchIdLuong,  branchNameLuong  = `Branch ${branchIdLuong}`,
-    branchIdRating, branchNameRating = `Branch ${branchIdRating}`,
-    branchIdChart2, branchNameChart2 = `Branch ${branchIdChart2}`,
+    branchIdLuong,  branchNameLuong  = `Branch ${params.branchIdLuong}`,
+    branchIdRating, branchNameRating = `Branch ${params.branchIdRating}`,
+    branchIdChart2, branchNameChart2 = `Branch ${params.branchIdChart2}`,
     yearLuong    = new Date().getFullYear(),
     monthLuong   = new Date().getMonth() + 1,
     yearChiNhanh = new Date().getFullYear(),
   } = params;
 
+  const _branchIdLuong  = parseInt(branchIdLuong,  10);
+  const _branchIdRating = parseInt(branchIdRating, 10);
+  const _branchIdChart2 = parseInt(branchIdChart2, 10);
+  const _yearLuong      = parseInt(yearLuong,      10);
+  const _monthLuong     = parseInt(monthLuong,     10);
+  const _yearChiNhanh   = parseInt(yearChiNhanh,   10);
+
+  if (isNaN(_branchIdLuong) || isNaN(_branchIdChart2) || isNaN(_branchIdRating)) {
+    console.warn("[getSummary] branchId không hợp lệ:", params);
+    return {
+      barberRevenue: "Thiếu thông tin chi nhánh.",
+      branchRevenue: "Thiếu thông tin chi nhánh.",
+      ratings:       "Thiếu thông tin chi nhánh.",
+      crossInsight:  "Thiếu thông tin chi nhánh.",
+    };
+  }
+
+  // ── Season context âm lịch thật — sync, không cần await ──────────────────
+  const seasonCtx = getSeasonContext(_monthLuong, _yearLuong);
+
   const [barberData, branchData, ratingData] = await Promise.all([
-    fetchBarberData({ branchId: branchIdLuong,  year: yearLuong,    month: monthLuong }),
-    fetchBranchData({ branchId: branchIdChart2, year: yearChiNhanh }),
-    fetchRatingData({ branchId: branchIdRating }),
+    fetchBarberData({ branchId: _branchIdLuong,  year: _yearLuong,    month: _monthLuong }),
+    fetchBranchData({ branchId: _branchIdChart2, year: _yearChiNhanh }),
+    fetchRatingData({ branchId: _branchIdRating }),
   ]);
+
+  if (process.env.NODE_ENV !== "production") {
+    console.log("[getSummary] seasonCtx:", seasonCtx);
+    console.log("[getSummary] barberData:", barberData.length, "barbers");
+    console.log("[getSummary] branchData sample:", branchData.slice(0, 3));
+    console.log("[getSummary] ratingData:", ratingData.length, "barbers");
+  }
 
   const prompt = buildPrompt({
     branchNameLuong,
     branchNameRating,
     branchNameChart2,
-    year:        yearLuong,
-    month:       monthLuong,
-    yearChiNhanh,
+    year:         _yearLuong,
+    month:        _monthLuong,
+    yearChiNhanh: _yearChiNhanh,
     barberData,
     branchData,
     ratingData,
+    seasonCtx,
   });
 
-  const response = await groq.chat.completions.create({
-    model:       "llama-3.3-70b-versatile",
-    max_tokens:  1500,    // tăng lên để cho phép phân tích sâu hơn
-    temperature: 0.25,    // thấp hơn nữa → nhất quán, ít hallucinate
-    messages: [
-      {
-        role:    "system",
-        content: [
-          "You are a JSON-only responder. Output must be a single valid JSON object.",
-          "No markdown, no prose outside the JSON, no backticks, no newlines inside string values.",
-          "You are a senior barbershop business consultant in Vietnam with deep domain expertise.",
-          "You analyze data like a real expert: you compare to industry benchmarks, name specific barbers,",
-          "give concrete numbers, and end every section with a direct, actionable recommendation.",
-          "Never give vague advice. Always be specific. All string values MUST be in Vietnamese.",
-        ].join(" "),
-      },
-      {
-        role:    "user",
-        content: prompt,
-      },
-    ],
-  });
-
-  const raw = response.choices[0]?.message?.content?.trim() || "{}";
+  const raw = await callGemini(prompt);
 
   try {
     const clean  = raw.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
@@ -316,9 +341,8 @@ export const getSummary = async (params = {}) => {
       crossInsight:  parsed.crossInsight  || "Không có dữ liệu.",
     };
   } catch (parseErr) {
-    console.error("Groq JSON parse error:", parseErr.message);
-    console.error("Raw response:", raw);
-
+    console.error("[getSummary] Gemini JSON parse error:", parseErr.message);
+    console.error("[getSummary] Raw response:", raw);
     return {
       barberRevenue: "Lỗi phân tích dữ liệu.",
       branchRevenue: "Lỗi phân tích dữ liệu.",

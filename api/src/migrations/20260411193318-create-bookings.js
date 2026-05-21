@@ -74,7 +74,13 @@ export async function up(queryInterface, Sequelize) {
       defaultValue: Sequelize.literal("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"),
     },
   });
+  // Thêm vào cuối hàm up(), sau createTable
+await queryInterface.addIndex("bookings", ["idCustomer"]);  // xem lịch sử khách
+await queryInterface.addIndex("bookings", ["idBarber"]);    // xem lịch thợ
+await queryInterface.addIndex("bookings", ["status"]);      // filter Pending/Completed
+await queryInterface.addIndex("bookings", ["bookingDate"]);
 }
+ // query theo ngày — quan trọng nhất
 
 export async function down(queryInterface) {
   await queryInterface.dropTable("bookings");
