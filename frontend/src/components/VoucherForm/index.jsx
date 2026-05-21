@@ -76,7 +76,7 @@ const FIELD_CONFIG = {
     hint: "Phải > 0",
   },
   max_usage_per_customer: {
-    label: "Lượt đổi tối đa / KH",
+    label: "Lượt dùng tối đa/KH",
     type: "number",
     placeholder: "3",
   },
@@ -225,6 +225,20 @@ function VoucherForm({ voucher, onClose, onSuccess }) {
     if (!unlimitedValidDays) {
       if (!form.valid_days || Number(form.valid_days) <= 0)
         err.valid_days = "Phải lớn hơn 0";
+    }
+
+    const hasMaxUsageField = ["POINTS_EXCHANGE", "RETENTION"].includes(
+      form.type,
+    );
+    if (hasMaxUsageField && !unlimitedMaxUsage) {
+      if (
+        !form.max_usage_per_customer ||
+        Number(form.max_usage_per_customer) <= 0
+      ) {
+        err.max_usage_per_customer = "Phải lớn hơn 0";
+      } else if (!Number.isInteger(Number(form.max_usage_per_customer))) {
+        err.max_usage_per_customer = "Phải là số nguyên";
+      }
     }
 
     if (form.type === "CAMPAIGN") {
