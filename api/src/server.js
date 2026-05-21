@@ -30,6 +30,7 @@ import transactionRoutes from "./routes/transaction.js";
 
 import startBranchStatusCron from "./cron/branchStatusCron.js";
 import startSalaryCron from "./cron/salaryCron.js"
+import startExpireVouchersCron from "./cron/expireVouchersCron.js";
 
 import { authenticate, authorize } from "./middlewares/authMiddleware.js";
 import notificationRoute from "./routes/notification.js";
@@ -104,6 +105,7 @@ authRoutes(app);
 connectDB();
 startBranchStatusCron();
 startSalaryCron();
+startExpireVouchersCron(); 
 const PORT = process.env.PORT || 8088;
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`Backend Node.js & Socket is running on http://0.0.0.0:${PORT}`);

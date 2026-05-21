@@ -38,28 +38,30 @@ const cx = classNames.bind(styles);
 const SEGMENT_CONFIG = {
   new: {
     label: "Khách mới",
-    desc: "Lần đầu trong tháng",
+    desc: "Đặt lịch lần đầu trong tháng",
     icon: UserPlus,
     color: "#185FA5",
     bg: "#E6F1FB",
   },
-  occasional: {
-    label: "Thỉnh thoảng",
-    desc: "Quay lại không đều",
-    icon: Clock,
-    color: "#854F0B",
-    bg: "#FAEEDA",
-  },
   regular: {
     label: "Thường xuyên",
-    desc: "Khách trung thành",
+    desc: "Khách trung thành, quay lại đều đặn",
     icon: Star,
     color: "#0F6E56",
     bg: "#E1F5EE",
   },
+  occasional: {
+    label: "Tiềm năng",
+    desc: "Khách quay lại không đều \n" +
+     "Khách mới tạo tài khoản chưa đặt lịch",
+    icon: Clock,
+    color: "#854F0B",
+    bg: "#FAEEDA",
+  },
   inactive: {
     label: "Không hoạt động",
-    desc: "Vắng trên 90 ngày",
+    desc: "Khách vắng trên 90 ngày \n" +
+     "Khách đăng ký >30 ngày chưa đặt lịch",
     icon: UserX,
     color: "#A32D2D",
     bg: "#FCEBEB",
@@ -212,6 +214,7 @@ function SegmentTable({ customers, segKey, onSendSingle }) {
             {segKey === "new" && <th>Tham gia</th>}
             {segKey !== "new" && <th>Lần cuối</th>}
             {isV && <th>Vắng</th>}
+            {isV && <th>Ngày tạo</th>}
             {segKey !== "new" && <th>Lượt</th>}
             <th>Chi tiêu</th>
             {isV && <th>Voucher</th>}
@@ -260,6 +263,13 @@ function SegmentTable({ customers, segKey, onSendSingle }) {
                     </span>
                   </td>
                 )}
+                {isV && (
+                  <td className={cx("tdDate")}>
+                    {c.joinedAt
+                      ? new Date(c.joinedAt).toLocaleDateString("vi-VN")
+                      : "—"}
+                  </td>
+                )}
                 {segKey !== "new" && (
                   <td className={cx("tdCenter")}>{c.totalBookings}</td>
                 )}
@@ -282,7 +292,7 @@ function SegmentTable({ customers, segKey, onSendSingle }) {
                   </td>
                 )}
                 {isV && (
-                  <tr>
+                  <td>
                     {!isA && (
                       <button
                         className={cx("sendRowBtn")}
@@ -291,7 +301,7 @@ function SegmentTable({ customers, segKey, onSendSingle }) {
                         <Send size={11} /> Gửi
                       </button>
                     )}
-                  </tr>
+                  </td>
                 )}
               </tr>
             );
@@ -320,6 +330,8 @@ export default function CustomerTab() {
 
   const [occasionalMinDays, setOccasionalMinDays] = useState(60);
   const [inactiveMaxDays, setInactiveMaxDays] = useState(null);
+  const [showNoBooking, setShowNoBooking] = useState(false);
+  //  "no_booking" | "has_booking"
 
   useEffect(() => {
     loadMonthly();
@@ -361,14 +373,24 @@ export default function CustomerTab() {
     let list = segmentsData?.segments?.[segKey] || [];
 
     if (segKey === "occasional") {
-      const min = occasionalMinDays;
       list = list.filter((c) => {
+        // Nếu checkbox bật: chỉ lấy khách chưa có booking
+        if (showNoBooking) {
+          return c.totalBookings === 0;
+        }
+        // Nếu checkbox tắt: lấy tất cả nhưng phải có booking (có daysAgo) và thỏa khoảng ngày
+        if (c.totalBookings === 0) return false; // bỏ qua khách không booking
         if (c.daysAgo === null) return false;
-        return c.daysAgo >= min && c.daysAgo <= 90;
+        return c.daysAgo >= occasionalMinDays && c.daysAgo <= 90;
       });
     } else if (segKey === "inactive") {
       list = list.filter((c) => {
-        if (c.daysAgo === null) return true;
+        if (showNoBooking) {
+          return c.totalBookings === 0;
+        }
+        // Không bật checkbox: lấy khách có booking và thỏa điều kiện inactive
+        if (c.totalBookings === 0) return false;
+        if (c.daysAgo === null) return false;
         if (c.daysAgo < 90) return false;
         if (inactiveMaxDays !== null && c.daysAgo > inactiveMaxDays)
           return false;
@@ -395,11 +417,30 @@ export default function CustomerTab() {
         selectedVoucherId,
         ids,
       );
+      const issuedCount = res.data.issued;
+      const skipped = res.data.skipped || [];
+      const alreadyHasCount = skipped.filter(
+        (s) => s.reason === "already_has_available",
+      ).length;
+      const maxUsageCount = skipped.filter(
+        (s) => s.reason === "max_usage_reached",
+      ).length;
+
+      let message = `Đã gửi: ${issuedCount} khách\n`;
+      if (alreadyHasCount > 0) {
+        message += `Bỏ qua: ${alreadyHasCount} khách (Đã có voucher) \n`;
+      }
+      if (maxUsageCount > 0) {
+        message += `Bỏ qua: ${maxUsageCount} khách (Đạt giới hạn sử dụng)\n`;
+      }
+      if (skipped.length > 0 && alreadyHasCount === 0 && maxUsageCount === 0) {
+        message += `❓ Lý do khác: ${skipped.length} khách\n`;
+      }
+
       showToast({
-        text: `Đã gửi ${res.data.issued.length} khách.
-Bỏ qua ${res.data.skipped.length} khách (đã có voucher)`,
+        text: message.trim(),
         type: "success",
-        duration: 4000,
+        duration: 5000,
       });
       loadSegments();
     } catch (err) {
@@ -465,6 +506,7 @@ Bỏ qua ${res.data.skipped.length} khách (đã có voucher)`,
     filterStatus,
     occasionalMinDays,
     inactiveMaxDays,
+    showNoBooking,
   ]);
 
   return (
@@ -577,7 +619,8 @@ Bỏ qua ${res.data.skipped.length} khách (đã có voucher)`,
             {/* Voucher toolbar */}
             {isVoucherSeg && (
               <div className={cx("vToolbar")}>
-                <div className={cx("vFilters")}>
+                {/* HÀNG NGANG 1: Các bộ lọc tìm kiếm */}
+                <div className={cx("vRow", "vFiltersRow")}>
                   {activeSegment === "occasional" && (
                     <div className={cx("fGroup")}>
                       <label className={cx("fLabel")}>Vắng từ (ngày)</label>
@@ -630,9 +673,7 @@ Bỏ qua ${res.data.skipped.length} khách (đã có voucher)`,
                     <select
                       className={cx("fSelect")}
                       value={filterStatus}
-                      onChange={(e) => {
-                        setFilterStatus(e.target.value);
-                      }}
+                      onChange={(e) => setFilterStatus(e.target.value)}
                     >
                       <option value="all">Tất cả</option>
                       <option value="ready">Chưa nhận</option>
@@ -642,6 +683,24 @@ Bỏ qua ${res.data.skipped.length} khách (đã có voucher)`,
                   </div>
 
                   <div className={cx("fGroup")}>
+                    {/* Thêm label caps nhỏ phía trên cho đồng bộ cấu trúc nếu cần, hoặc để trống */}
+                    <label className={cx("fLabel")}>
+                      Khách chưa có đơn hàng
+                    </label>
+
+                    <label className={cx("fCheckLabel")}>
+                      <input
+                        type="checkbox"
+                        checked={showNoBooking}
+                        onChange={(e) => setShowNoBooking(e.target.checked)}
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                {/* HÀNG NGANG 2: Chọn Voucher & Nút gửi */}
+                <div className={cx("vRow", "vActionsRow")}>
+                  <div className={cx("fGroup", "vSelectGroup")}>
                     <label className={cx("fLabel")}>Voucher gửi</label>
                     {!vouchers.length ? (
                       <span className={cx("noVoucher")}>
@@ -649,7 +708,7 @@ Bỏ qua ${res.data.skipped.length} khách (đã có voucher)`,
                       </span>
                     ) : (
                       <select
-                        className={cx("fSelect")}
+                        className={cx("fSelect", "voucherSelect")}
                         value={selectedVoucherId}
                         onChange={(e) => setSelectedVoucherId(e.target.value)}
                       >
@@ -662,28 +721,28 @@ Bỏ qua ${res.data.skipped.length} khách (đã có voucher)`,
                       </select>
                     )}
                   </div>
-                </div>
 
-                {(filterStatus === "ready" || filterStatus === "used") && (
-                  <div className={cx("vActions")}>
-                    <button
-                      className={cx("btnSend")}
-                      onClick={() =>
-                        doSend(displayedCustomers.map((c) => c.id))
-                      }
-                      disabled={
-                        sending ||
-                        !displayedCustomers.length ||
-                        !selectedVoucherId
-                      }
-                    >
-                      <Send size={13} />
-                      {sending
-                        ? "Đang gửi..."
-                        : `Gửi voucher (${displayedCustomers.length} khách)`}
-                    </button>
-                  </div>
-                )}
+                  {(filterStatus === "ready" || filterStatus === "used") && (
+                    <div className={cx("vActions")}>
+                      <button
+                        className={cx("btnSend")}
+                        onClick={() =>
+                          doSend(displayedCustomers.map((c) => c.id))
+                        }
+                        disabled={
+                          sending ||
+                          !displayedCustomers.length ||
+                          !selectedVoucherId
+                        }
+                      >
+                        <Send size={13} />
+                        {sending
+                          ? "Đang gửi..."
+                          : `Gửi voucher (${displayedCustomers.length} khách)`}
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 

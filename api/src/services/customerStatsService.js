@@ -41,8 +41,15 @@ function computeAvgGap(bookings) {
  * Không giới hạn tổng booking = 1. Khách có 2+ booking vẫn là New nếu
  * booking đầu tiên (sorted[0]) nằm trong tháng này.
  */
-function classifyCustomerFull(bookings) {
-  if (!bookings || bookings.length === 0) return null;
+function classifyCustomerFull(bookings, joinedAt) {
+  const now = new Date();
+  const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  if (!bookings || bookings.length === 0) {
+    if (!joinedAt) return "inactive";
+    const daysSinceJoined = Math.floor((now - new Date(joinedAt)) / (1000 * 3600 * 24));
+    return daysSinceJoined >= 30 ? "inactive" : "occasional";
+  }
 
   const sorted = [...bookings].sort(
     (a, b) => new Date(a.bookingDate) - new Date(b.bookingDate)
@@ -50,21 +57,11 @@ function classifyCustomerFull(bookings) {
   const total = sorted.length;
   const firstDate = new Date(sorted[0].bookingDate);
   const lastDate  = new Date(sorted[total - 1].bookingDate);
-
-  const now = new Date();
   const daysSinceLast = Math.floor((now - lastDate) / (1000 * 3600 * 24));
-  const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  // 1. New: booking ĐẦU TIÊN nằm trong tháng hiện tại
   if (firstDate >= currentMonthStart) return "new";
-
-  // 2. Regular: >= 4 booking VÀ lần cuối <= 45 ngày
   if (total >= 4 && daysSinceLast <= 45) return "regular";
-
-  // 3. Inactive: lần cuối > 90 ngày
   if (daysSinceLast > 90) return "inactive";
-
-  // 4. Occasional: còn lại (lần cuối <= 90 ngày, không thỏa Regular/New)
   return "occasional";
 }
 
@@ -75,8 +72,14 @@ function classifyCustomerFull(bookings) {
  * [BUG FIX 2] Nhất quán với classifyCustomerFull:
  * New = booking đầu tiên nằm trong tháng của atDate (không giới hạn total = 1).
  */
-function classifyCustomerFullAt(bookings, atDate) {
-  if (!bookings || bookings.length === 0) return null;
+function classifyCustomerFullAt(bookings, atDate, joinedAt) {
+  if (!bookings || bookings.length === 0) {
+    if (!joinedAt) return "inactive";
+    const joinedDate = new Date(joinedAt);
+    if (joinedDate > atDate) return null; // chưa tạo tài khoản tại thời điểm snapshot
+    const daysSinceJoined = Math.floor((atDate - joinedDate) / (1000 * 3600 * 24));
+    return daysSinceJoined >= 30 ? "inactive" : "occasional";
+  }
 
   const sorted = [...bookings].sort(
     (a, b) => new Date(a.bookingDate) - new Date(b.bookingDate)
@@ -84,23 +87,14 @@ function classifyCustomerFullAt(bookings, atDate) {
   const total = sorted.length;
   const firstDate = new Date(sorted[0].bookingDate);
   const lastDate  = new Date(sorted[total - 1].bookingDate);
-
   const daysSinceLast = Math.floor((atDate - lastDate) / (1000 * 3600 * 24));
   const monthStart = new Date(atDate.getFullYear(), atDate.getMonth(), 1);
 
-  // 1. New: booking đầu tiên trong tháng của atDate
   if (firstDate >= monthStart) return "new";
-
-  // 2. Regular
   if (total >= 4 && daysSinceLast <= 45) return "regular";
-
-  // 3. Inactive
   if (daysSinceLast > 90) return "inactive";
-
-  // 4. Occasional
   return "occasional";
 }
-
 // ========================= Biểu đồ 6 tháng =========================
 export const getMonthlyCustomerStats = async (months = 6) => {
   const periods = getLastNMonths(months);
@@ -278,7 +272,7 @@ export const getCustomerSegments = async () => {
 
     // [BUG FIX 3] Khách 0 booking → Inactive (theo spec)
     // Code cũ: `if (!segment) continue` → bỏ qua hoàn toàn
-    const segment = classifyCustomerFull(bookings) ?? "inactive";
+    const segment = classifyCustomerFull(bookings, cust.user.createdAt) ?? "inactive";
 
     const custData = buildCustData(cust, bookings, segment);
     allClassified.push(custData);
@@ -307,7 +301,7 @@ export const getCustomerSegments = async () => {
       (b) => new Date(b.bookingDate) <= prevEnd
     );
     // [BUG FIX 3 kết hợp] Khách 0 booking tại tháng trước → inactive snapshot
-    const segPrev = classifyCustomerFullAt(bookingsUpToPrev, prevEnd) ?? "inactive";
+    const segPrev = classifyCustomerFullAt(bookingsUpToPrev, prevEnd, cust.user.createdAt) ?? "inactive";
     if (prevCounts.hasOwnProperty(segPrev)) prevCounts[segPrev]++;
   }
 
@@ -334,7 +328,7 @@ export const getCustomerSegments = async () => {
     const bookingsUpToPrev = (bookingMap[custId] || []).filter(
       (b) => new Date(b.bookingDate) <= prevEnd
     );
-    if (classifyCustomerFullAt(bookingsUpToPrev, prevEnd) === "new") {
+    if (classifyCustomerFullAt(bookingsUpToPrev, prevEnd, cust.user.createdAt) === "new") {
       newPrevIds.push(custId);
     }
   }
