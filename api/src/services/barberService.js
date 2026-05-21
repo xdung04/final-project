@@ -3,6 +3,7 @@ import { upsertBarbers } from "./pineconeService.js";
 import { fn, col, Op } from "sequelize";
 import ratingService from "./ratingService.js";
 const Barber = db.Barber;
+const Booking = db.Booking;
 export const getAllBarbers = async () => {
   try {
     const barbers = await db.Barber.findAll({
@@ -40,7 +41,7 @@ export const getAllBarbers = async () => {
         rating: Number(b.ratingSummary?.avgRate || 0).toFixed(1),
         customers: totalCustomers,
         isLocked: b.isLocked,
-        isApproved: b.isApproved,
+        lockDate: b.lockDate,
       };
     });
 
@@ -219,10 +220,21 @@ export const lockBarber = async (idBarber) => {
 
 export const unlockBarber = async (idBarber) => {
   const barber = await Barber.findByPk(idBarber);
-  if (!barber) throw new Error("Khong tìm thấy barber");
+
+  if (!barber) {
+    throw new Error("Không tìm thấy barber");
+  }
+
   barber.isLocked = false;
+  barber.lockDate = null;
+
   await barber.save();
-  return barber;
+
+  return {
+    success: true,
+    message: "Mở khóa barber thành công!",
+    barber,
+  };
 };
 
 export const calculateBarberReward = async (idBarber) => {
@@ -242,9 +254,9 @@ export const calculateBarberReward = async (idBarber) => {
     },
     attributes: [
       [fn("COALESCE", fn("SUM", col("total")), 0), "serviceRevenue"],
-      [fn("COUNT", col("idBooking")), "customerCount"] // Đếm số lượng bill = số khách
+      [fn("COUNT", col("idBooking")), "customerCount"], // Đếm số lượng bill = số khách
     ],
-    raw: true
+    raw: true,
   });
 
   const serviceRevenue = parseFloat(bookingStats?.serviceRevenue || 0);
@@ -252,36 +264,40 @@ export const calculateBarberReward = async (idBarber) => {
 
   // 2️⃣ Thống kê Tổng tiền Tip
   const tipAmountResult = await db.BookingTip.sum("tipAmount", {
-    include: [{
-      model: db.Booking,
-      as: "booking",
-      where: {
-        idBarber,
-        isPaid: true,
-        bookingDate: { [Op.gte]: startOfMonth, [Op.lt]: endOfMonth },
+    include: [
+      {
+        model: db.Booking,
+        as: "booking",
+        where: {
+          idBarber,
+          isPaid: true,
+          bookingDate: { [Op.gte]: startOfMonth, [Op.lt]: endOfMonth },
+        },
+        attributes: [],
       },
-      attributes: [],
-    }],
+    ],
   });
   const tipAmount = parseFloat(tipAmountResult || 0);
 
   // 3️⃣ Lấy Đánh giá (Rating) trung bình hiện tại của thợ
   const ratingSummary = await db.BarberRatingSummary.findOne({
-    where: { idBarber }
+    where: { idBarber },
   });
   const averageRating = parseFloat(ratingSummary?.avgRate || 0);
 
   // 4️⃣ Lấy Hợp đồng đang Active + Cấu hình Cấp bậc & Luật của thợ đó
   const activeContract = await db.SalaryContract.findOne({
     where: { idBarber, status: "active" },
-    include: [{
-      model: db.CompensationPlan,
-      as: "plan",
-      include: [
-        { model: db.CommissionRule, as: "commissionRules" },
-        { model: db.BonusRule, as: "bonusRules" }
-      ]
-    }]
+    include: [
+      {
+        model: db.CompensationPlan,
+        as: "plan",
+        include: [
+          { model: db.CommissionRule, as: "commissionRules" },
+          { model: db.BonusRule, as: "bonusRules" },
+        ],
+      },
+    ],
   });
 
   // 5️⃣ Tự động tính toán lương thưởng theo luật mới
@@ -298,17 +314,17 @@ export const calculateBarberReward = async (idBarber) => {
 
     if (plan) {
       planName = plan.displayName;
-      
+
       // Sắp xếp rules theo mốc doanh thu tăng dần để FE hiển thị bảng cho chuẩn
-      commissionRules = (plan.commissionRules || []).sort((a, b) => parseFloat(a.minRevenueStep) - parseFloat(b.minRevenueStep));
+      commissionRules = (plan.commissionRules || []).sort(
+        (a, b) => parseFloat(a.minRevenueStep) - parseFloat(b.minRevenueStep),
+      );
       bonusRules = plan.bonusRules || [];
 
       // ── TÍNH HOA HỒNG BẬC THANG ──
       if (commissionRules.length > 0) {
         // Tìm bậc cao nhất mà thợ đã đạt được (đi từ trên xuống dưới)
-        const matchedRule = [...commissionRules].reverse().find(r => 
-          serviceRevenue >= parseFloat(r.minRevenueStep)
-        );
+        const matchedRule = [...commissionRules].reverse().find((r) => serviceRevenue >= parseFloat(r.minRevenueStep));
 
         if (matchedRule) {
           commissionAmount = serviceRevenue * (parseFloat(matchedRule.commissionRate) / 100);
@@ -317,12 +333,9 @@ export const calculateBarberReward = async (idBarber) => {
 
       // ── TÍNH THƯỞNG KPI KÉP ──
       if (bonusRules.length > 0) {
-        bonusRules.forEach(rule => {
+        bonusRules.forEach((rule) => {
           // Thoả mãn CẢ 2 điều kiện: Lượt khách VÀ Rating
-          if (
-            customerCount >= parseInt(rule.minCustomerCount) &&
-            averageRating >= parseFloat(rule.minAverageRating)
-          ) {
+          if (customerCount >= parseInt(rule.minCustomerCount) && averageRating >= parseFloat(rule.minAverageRating)) {
             bonusAmount += parseFloat(rule.rewardAmount);
           }
         });
@@ -343,8 +356,8 @@ export const calculateBarberReward = async (idBarber) => {
     customerCount,
     averageRating,
     // Trả luôn mảng luật về cho Frontend để nó vẽ Bảng lộ trình & Thanh tiến độ
-    commissionRules, 
-    bonusRules
+    commissionRules,
+    bonusRules,
   };
 };
 
@@ -532,6 +545,8 @@ export const getProfile = async (idBarber) => {
     profileDescription: barber.profileDescription || "",
     avgRate: ratingSummary?.avgRate || 0,
     totalRate: ratingSummary?.totalRate || 0,
+    lockDate: barber.lockDate,
+    isLocked: barber.isLocked,
   };
 };
 
@@ -561,7 +576,7 @@ export const updateProfile = async (idBarber, payload) => {
   return { message: "Cập nhật hồ sơ thành công." };
 };
 
-const { Reel, ReelView, Booking, BarberRatingSummary } = db;
+const { Reel, ReelView, BarberRatingSummary } = db;
 // Hàm tính toán % thay đổi
 const calculateChange = (current, previous) => {
   if (previous === 0) return current > 0 ? 100 : 0;
@@ -774,3 +789,85 @@ export const getHotBarbers = async (page = 1, limit = 4) => {
     })),
   };
 };
+
+export const setLockDate = async (idBarber, lockDate) => {
+  const barber = await Barber.findByPk(idBarber);
+  if (!barber) return { success: false, message: "Không tìm thấy thợ cắt tóc!" };
+
+  const lockDay = parseDateSafe(lockDate);
+  if (!lockDay) return { success: false, message: "Ngày khóa không hợp lệ!" };
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  lockDay.setHours(0, 0, 0, 0);
+
+  if (lockDay <= today) {
+    return {
+      success: false,
+      message: "Ngày khóa phải lớn hơn ngày hiện tại ít nhất 1 ngày!",
+    };
+  }
+
+  // Check for future bookings on or after lockDate
+  const conflictBooking = await Booking.findOne({
+    where: {
+      idBarber,
+      bookingDate: { [Op.gte]: lockDay },
+      status: { [Op.in]: ["Pending", "InProgress"] },
+    },
+    order: [["bookingDate", "ASC"]],
+  });
+
+  if (conflictBooking) {
+    const dateStr = new Date(conflictBooking.bookingDate).toISOString().split("T")[0];
+    return {
+      success: false,
+      hasBooking: true,
+      lastBookingDate: conflictBooking.bookingDate,
+      message: `Không thể khóa vì còn lịch hẹn vào ngày ${formatDDMMYYYY(conflictBooking.bookingDate)}.`,
+    };
+  }
+
+  barber.lockDate = lockDay;
+  await barber.save();
+
+  return {
+    success: true,
+    hasBooking: false,
+    message: `Đã cài đặt ngày khóa tài khoản thành công! Tài khoản sẽ bị khóa từ ${formatDDMMYYYY(lockDay)}.`,
+    lockDate: barber.lockDate,
+  };
+};
+
+/**
+ * Cancel a scheduled lock (set lockDate back to null).
+ */
+export const cancelLockDate = async (idBarber) => {
+  const barber = await Barber.findByPk(idBarber);
+  if (!barber) throw new Error("Không tìm thấy thợ cắt tóc!");
+  if (!barber.lockDate) throw new Error("Thợ này chưa có ngày khóa được cài đặt!");
+
+  barber.lockDate = null;
+  await barber.save();
+
+  return { success: true, message: "Đã hủy lịch khóa tài khoản thành công!" };
+};
+
+// ── helpers ──────────────────────────────────────────────────────────────────
+
+function parseDateSafe(input) {
+  if (!input) return null;
+  const d = new Date(input);
+  if (!isNaN(d.getTime())) return d;
+  const parts = String(input).split("-");
+  if (parts.length === 3) {
+    const [y, m, day] = parts.map(Number);
+    return new Date(y, m - 1, day);
+  }
+  return null;
+}
+
+function formatDDMMYYYY(d) {
+  if (!d) return "";
+  return new Date(d).toLocaleDateString("vi-VN");
+}

@@ -29,4 +29,8 @@ router.put(
 router.get("/stats/:idBarber", authenticate, barberController.getDashboardStats);
 router.get("/hot", barberController.getHotBarbers);
 router.get("/home", barberController.getBarbersForHome);
+
+router.patch("/:idBarber/lock-date", barberController.setLockDate);
+router.delete("/:idBarber/lock-date", barberController.cancelLockDate);
+
 export default router;
