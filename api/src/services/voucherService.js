@@ -1,20 +1,32 @@
 import db from "../models/index.js";
 import { Op } from "sequelize";
+import * as notificationService from "./notificationService.js";
 
 class VoucherService {
   // ======================== ADMIN: CRUD VOUCHER ========================
 
   async createVoucher(data) {
     try {
+      if (
+        data.max_usage_per_customer !== undefined &&
+        data.max_usage_per_customer !== null
+      ) {
+        if (
+          !Number.isInteger(data.max_usage_per_customer) ||
+          data.max_usage_per_customer <= 0
+        ) {
+          throw new Error(
+            "max_usage_per_customer phải là số nguyên dương lớn hơn 0, hoặc để trống (không giới hạn)",
+          );
+        }
+      }
       if (data.type === "POINTS_EXCHANGE") {
         if (!data.points_required || data.points_required <= 0)
+          throw new Error("points_required phải lớn hơn 0");
+        if (!data.discount_amount || data.discount_amount <= 0)
           throw new Error(
-            "points_required phải lớn hơn 0 với loại POINTS_EXCHANGE",
+            "discount_amount phải lớn hơn 0 với loại POINTS_EXCHANGE",
           );
-      }
-      if (data.type === "RETENTION") {
-        if (!data.valid_days || data.valid_days <= 0)
-          throw new Error("valid_days là bắt buộc với loại RETENTION");
       }
       if (data.type === "CAMPAIGN") {
         if (!data.start_date || !data.end_date)
@@ -42,6 +54,55 @@ class VoucherService {
   async updateVoucher(id, data) {
     const voucher = await db.Voucher.findByPk(id);
     if (!voucher) throw new Error("Voucher không tồn tại");
+
+    // Không cho phép thay đổi type (vì đã có các ràng buộc dữ liệu liên quan)
+    if (data.type && data.type !== voucher.type) {
+      throw new Error("Không thể thay đổi loại voucher sau khi đã tạo");
+    }
+
+    // ========== VALIDATION max_usage_per_customer ==========
+    if (
+      data.max_usage_per_customer !== undefined &&
+      data.max_usage_per_customer !== null
+    ) {
+      if (
+        !Number.isInteger(data.max_usage_per_customer) ||
+        data.max_usage_per_customer <= 0
+      ) {
+        throw new Error(
+          "max_usage_per_customer phải là số nguyên dương lớn hơn 0, hoặc để trống (không giới hạn)",
+        );
+      }
+    }
+
+    // ========== VALIDATION RIÊNG THEO TYPE ==========
+    const type = data.type || voucher.type;
+
+    if (type === "POINTS_EXCHANGE") {
+      // Nếu có cập nhật points_required
+      if (
+        data.points_required !== undefined &&
+        (data.points_required <= 0 || !data.points_required)
+      ) {
+        throw new Error("points_required phải lớn hơn 0");
+      }
+      // Nếu có cập nhật discount_amount
+      if (data.discount_amount !== undefined && data.discount_amount <= 0) {
+        throw new Error(
+          "discount_amount phải lớn hơn 0 với loại POINTS_EXCHANGE",
+        );
+      }
+    }
+
+    if (type === "CAMPAIGN") {
+      const start_date = data.start_date ?? voucher.start_date;
+      const end_date = data.end_date ?? voucher.end_date;
+      if (start_date && end_date && new Date(start_date) > new Date(end_date)) {
+        throw new Error("start_date phải trước end_date");
+      }
+    }
+
+    // ========== THỰC HIỆN UPDATE ==========
     await voucher.update(data);
     return voucher;
   }
@@ -96,11 +157,14 @@ class VoucherService {
    * - Tìm tất cả template NEW_CUSTOMER đang active
    * - Mỗi khách chỉ nhận 1 lần mỗi template (hardcode max = 1)
    * - expires_at = issued_at + valid_days (null nếu valid_days = null)
+   * - Sau khi phát thành công (ít nhất 1 voucher), gửi thông báo cho khách
    */
   async issueNewCustomerVoucher(customerId) {
     const vouchers = await db.Voucher.findAll({
       where: { type: "NEW_CUSTOMER", is_active: true },
     });
+
+    let issuedCount = 0;
 
     for (const voucher of vouchers) {
       const existing = await db.CustomerVoucher.findOne({
@@ -122,6 +186,20 @@ class VoucherService {
         issued_at: issuedAt,
         expires_at: expiresAt,
         source_note: "new_customer_welcome",
+      });
+      issuedCount++;
+    }
+
+    // Nếu có ít nhất 1 voucher được phát, gửi thông báo
+    if (issuedCount > 0) {
+      await notificationService.createNotification({
+        type: "SYSTEM",
+        title: "🎉 Chúc mừng bạn đã trở thành khách hàng của chúng tôi!",
+        content:
+          "Bạn vừa nhận được voucher khách mới. Hãy vào mục Voucher của tôi để xem chi tiết và sử dụng ngay.",
+        targetRole: "customer",
+        targetId: customerId,
+        referenceId: null,
       });
     }
   }
@@ -148,17 +226,27 @@ class VoucherService {
         where: {
           customer_id: customerId,
           voucher_id: voucher.id,
-          status: { [Op.in]: ["AVAILABLE", "USED", "EXPIRED"] },
+          status: { [Op.in]: ["AVAILABLE", "USED"] },
         },
       });
+
+      const hasAvailable =
+        (await db.CustomerVoucher.findOne({
+          where: {
+            customer_id: customerId,
+            voucher_id: voucher.id,
+            status: "AVAILABLE",
+          },
+        })) !== null;
 
       const max = voucher.max_usage_per_customer ?? 1;
       const isPointEnough = customerPoints >= voucher.points_required;
       const isUnderLimit = totalExchanged < max;
-      const canExchange = isPointEnough && isUnderLimit;
+      const canExchange = isPointEnough && isUnderLimit && !hasAvailable;
 
       let reason = null;
       if (!isPointEnough) reason = "not_enough_points";
+      else if (hasAvailable) reason = "has_available";
       else if (!isUnderLimit) reason = "max_exchanged";
 
       result.push({
@@ -167,6 +255,7 @@ class VoucherService {
         reason: reason,
         exchanged_count: totalExchanged,
         max_exchange: max,
+        has_available: hasAvailable,
       });
     }
     return result;
@@ -193,11 +282,26 @@ class VoucherService {
     if (customer.loyaltyPoint < voucher.points_required)
       throw new Error("Không đủ điểm để đổi voucher này");
 
+    // Kiểm tra có voucher AVAILABLE đang giữ không
+    const existingAvailable = await db.CustomerVoucher.findOne({
+      where: {
+        customer_id: customerId,
+        voucher_id: voucherId,
+        status: "AVAILABLE",
+      },
+      transaction,
+    });
+    if (existingAvailable) {
+      throw new Error(
+        "Bạn đã có voucher này chưa sử dụng. Vui lòng dùng hết trước khi đổi tiếp.",
+      );
+    }
+
     const totalExchanged = await db.CustomerVoucher.count({
       where: {
         customer_id: customerId,
         voucher_id: voucherId,
-        status: { [Op.in]: ["AVAILABLE", "USED", "EXPIRED"] },
+        status: { [Op.in]: ["AVAILABLE", "USED"] },
       },
       transaction,
     });
@@ -241,70 +345,102 @@ class VoucherService {
    *   1. Khách không có voucher AVAILABLE cùng template (tránh gửi khi chưa dùng)
    *   2. Số lần USED < max_usage_per_customer
    *      → Chỉ đếm USED, không đếm EXPIRED (khách nhận mà không dùng không bị thiệt)
-   * expires_at = issued_at(ngày admin gửi) + valid_days
+   * expires_at = issued_at(ngày admin gửi) + valid_days (có thể có hoặc không) , nếu không có thì không giới hạn
    */
+
   async issueRetentionVouchers(customerIds, voucherId, transaction) {
     const voucher = await db.Voucher.findByPk(voucherId, { transaction });
-    if (!voucher || voucher.type !== "RETENTION")
+    if (!voucher || voucher.type !== "RETENTION" || !voucher.is_active)
       throw new Error("Voucher RETENTION không hợp lệ");
-    if (!voucher.valid_days)
-      throw new Error("Voucher RETENTION phải có valid_days");
 
-    const results = [];
+    const existingRecords = await db.CustomerVoucher.findAll({
+      where: {
+        customer_id: { [Op.in]: customerIds },
+        voucher_id: voucherId,
+        status: { [Op.in]: ["AVAILABLE", "USED"] },
+      },
+      attributes: ["customer_id", "status"],
+      transaction,
+      raw: true,
+    });
+
+    const availableSet = new Set();
+    const usedCountMap = new Map();
+
+    for (const record of existingRecords) {
+      const cid = record.customer_id;
+      if (record.status === "AVAILABLE") {
+        availableSet.add(cid);
+      } else if (record.status === "USED") {
+        usedCountMap.set(cid, (usedCountMap.get(cid) ?? 0) + 1);
+      }
+    }
+
     const skipped = [];
+    const toCreate = [];
+    const issuedAt = new Date();
+
+    const expiresAt = voucher.valid_days
+      ? new Date(issuedAt.getTime() + voucher.valid_days * 24 * 60 * 60 * 1000)
+      : null;
 
     for (const customerId of customerIds) {
-      // Điều kiện 1: không có voucher AVAILABLE cùng template
-      const existing = await db.CustomerVoucher.findOne({
-        where: {
-          customer_id: customerId,
-          voucher_id: voucherId,
-          status: "AVAILABLE",
-        },
-        transaction,
-      });
-      if (existing) {
+      if (availableSet.has(customerId)) {
         skipped.push({ customerId, reason: "already_has_available" });
         continue;
       }
-
-      // Điều kiện 2: chưa vượt max số lần DÙNG (chỉ đếm USED)
-      if (voucher.max_usage_per_customer !== null) {
-        const usedCount = await db.CustomerVoucher.count({
-          where: {
-            customer_id: customerId,
-            voucher_id: voucherId,
-            status: "USED",
-          },
-          transaction,
-        });
-        if (usedCount >= voucher.max_usage_per_customer) {
-          skipped.push({ customerId, reason: "max_usage_reached" });
-          continue;
-        }
+      if (
+        voucher.max_usage_per_customer !== null &&
+        (usedCountMap.get(customerId) ?? 0) >= voucher.max_usage_per_customer
+      ) {
+        skipped.push({ customerId, reason: "max_usage_reached" });
+        continue;
       }
-
-      const issuedAt = new Date();
-      const expiresAt = new Date(
-        issuedAt.getTime() + voucher.valid_days * 24 * 60 * 60 * 1000,
-      );
-
-      const cv = await db.CustomerVoucher.create(
-        {
-          voucher_id: voucherId,
-          customer_id: customerId,
-          status: "AVAILABLE",
-          issued_at: issuedAt,
-          expires_at: expiresAt,
-          source_note: "retention_gift",
-        },
-        { transaction },
-      );
-
-      results.push(cv);
+      toCreate.push({
+        voucher_id: voucherId,
+        customer_id: customerId,
+        status: "AVAILABLE",
+        issued_at: issuedAt,
+        expires_at: expiresAt, // null = không hết hạn
+        source_note: "retention_gift",
+      });
     }
 
-    return { issued: results, skipped };
+    if (toCreate.length > 0) {
+      await db.CustomerVoucher.bulkCreate(toCreate, { transaction });
+    }
+
+    const sendNotifications = () =>
+      Promise.allSettled(
+        toCreate.map(({ customer_id, expires_at }) =>
+          notificationService
+            .createNotification({
+              type: "SYSTEM",
+              title: "🎁 Bạn nhận được voucher tri ân!",
+              // ✅ Nội dung thông báo thay đổi theo có/không có hạn
+              content: expires_at
+                ? `Chúng tôi rất trân trọng bạn! Bạn vừa được tặng voucher "${voucher.name}". Hãy sử dụng trước ngày ${expires_at.toLocaleDateString("vi-VN")}.`
+                : `Chúng tôi rất trân trọng bạn! Bạn vừa được tặng voucher "${voucher.name}". Voucher không giới hạn thời gian sử dụng.`,
+              targetRole: "customer",
+              targetId: customer_id,
+              referenceId: voucherId,
+            })
+            .catch((err) =>
+              console.error(
+                `Lỗi gửi thông báo retention cho customer ${customer_id}:`,
+                err,
+              ),
+            ),
+        ),
+      );
+
+    if (transaction?.afterCommit) {
+      transaction.afterCommit(sendNotifications);
+    } else {
+      await sendNotifications();
+    }
+
+    return { issued: toCreate.length, skipped };
   }
 
   // ======================== CAMPAIGN ========================
@@ -439,12 +575,26 @@ class VoucherService {
       );
 
     // Tính tiền giảm
-    let discountAmount = invoiceAmount * (voucher.discount_percent / 100);
-    if (
-      voucher.max_discount_amount &&
-      discountAmount > voucher.max_discount_amount
-    ) {
-      discountAmount = voucher.max_discount_amount;
+    let discountAmount = 0;
+    if (voucher.discount_amount && voucher.discount_amount > 0) {
+      discountAmount = Math.min(voucher.discount_amount, invoiceAmount);
+      // nếu có max_discount_amount thì áp dụng (với POINTS_EXCHANGE thường không có)
+      if (
+        voucher.max_discount_amount &&
+        discountAmount > voucher.max_discount_amount
+      ) {
+        discountAmount = voucher.max_discount_amount;
+      }
+    } else if (voucher.discount_percent) {
+      discountAmount = invoiceAmount * (voucher.discount_percent / 100);
+      if (
+        voucher.max_discount_amount &&
+        discountAmount > voucher.max_discount_amount
+      ) {
+        discountAmount = voucher.max_discount_amount;
+      }
+    } else {
+      throw new Error("Voucher không có giá trị giảm giá hợp lệ");
     }
 
     // [ĐÃ SỬA] Chỉ update status + used_at, bỏ booking_id

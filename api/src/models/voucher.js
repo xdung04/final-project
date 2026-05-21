@@ -37,11 +37,18 @@ export default (sequelize, DataTypes) => {
       },
       discount_percent: {
         type: DataTypes.DECIMAL(5, 2),
-        allowNull: false,
+        allowNull: true,
+      },
+      discount_amount: {
+        type: DataTypes.DECIMAL(12, 2),
+        allowNull: true,
+        validate: {
+          min: 0,
+        },
       },
       max_discount_amount: {
         type: DataTypes.DECIMAL(12, 2),
-        allowNull: false,
+        allowNull: true,
       },
       min_invoice_amount: {
         type: DataTypes.DECIMAL(12, 2),

@@ -2,6 +2,7 @@
 import bcrypt from "bcryptjs";
 import db from "../models/index.js";
 import { sendOtpEmail } from "./mailService.js";
+import VoucherService from "./voucherService.js";
 
 const salt = bcrypt.genSaltSync(10);
 const otpStore = {}; // In-memory OTP store (key = email)
@@ -164,6 +165,11 @@ export async function verifyOtpAndCreateUser(email, otp) {
     await createCustomerIfNotExists(user.idUser, t);
 
     await t.commit();
+    try {
+      await VoucherService.issueNewCustomerVoucher(user.idUser);
+    } catch (err) {
+      console.error("Lỗi khi tặng voucher new customer:", err);
+    }
     delete otpStore[email];
     return user;
   } catch (error) {
