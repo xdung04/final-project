@@ -26,6 +26,7 @@ import {
   BookOpen,
   Heart,
   Clock,
+  CalendarOff,
 } from "lucide-react";
 
 import { BarberAPI } from "~/apis/barberAPI";
@@ -81,6 +82,7 @@ function ThoCatToc() {
 
   const [newBranchId, setNewBranchId] = useState("");
 
+  // ── Fetch ────────────────────────────────────────────────────────────────
   const fetchBarbers = async () => {
     try {
       const barberList = await BarberAPI.getAll();
@@ -89,8 +91,8 @@ function ThoCatToc() {
       if (barberList.length > 0 && !selectedBarber) {
         setSelectedBarber(barberList[0]);
       } else if (selectedBarber) {
-        const updatedSelected = barberList.find((b) => b.idBarber === selectedBarber.idBarber);
-        if (updatedSelected) setSelectedBarber(updatedSelected);
+        const updated = barberList.find((b) => b.idBarber === selectedBarber.idBarber);
+        if (updated) setSelectedBarber(updated);
       }
     } catch (error) {
       showToast("error", error?.message || "Không thể tải danh sách barber!");
@@ -139,6 +141,7 @@ function ThoCatToc() {
     });
   }, [barbers, searchQuery, filterBranch]);
 
+  // ── Actions ──────────────────────────────────────────────────────────────
   const handleToggleAccount = async (barber) => {
     const isLocked = barber.isLocked;
     const action = isLocked ? "mở" : "khóa";
@@ -158,6 +161,7 @@ function ThoCatToc() {
   };
 
   const handleAddChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleEditChange = (e) => setEditData({ ...editData, [e.target.name]: e.target.value });
 
   const handleAddSubmit = async (e) => {
     e.preventDefault();
@@ -172,25 +176,21 @@ function ThoCatToc() {
   };
 
   const openEditModal = () => {
-    if (currentProfile) {
-      setEditData({
-        fullName: currentProfile.fullName || "",
-        phoneNumber: currentProfile.phoneNumber || "",
-        email: currentProfile.email || "",
-        idBranch: currentProfile.idBranch || "",
-        profileDescription: currentProfile.profileDescription?.trim() || "",
-        // ── 5 trường mới ──
-        experienceYears: currentProfile.experienceYears ?? "",
-        specialty: currentProfile.specialty || "",
-        style: currentProfile.style || "",
-        certificates: currentProfile.certificates || "",
-        philosophy: currentProfile.philosophy || "",
-      });
-      setShowEditModal(true);
-    }
+    if (!currentProfile) return;
+    setEditData({
+      fullName: currentProfile.fullName || "",
+      phoneNumber: currentProfile.phoneNumber || "",
+      email: currentProfile.email || "",
+      idBranch: currentProfile.idBranch || "",
+      profileDescription: currentProfile.profileDescription?.trim() || "",
+      experienceYears: currentProfile.experienceYears ?? "",
+      specialty: currentProfile.specialty || "",
+      style: currentProfile.style || "",
+      certificates: currentProfile.certificates || "",
+      philosophy: currentProfile.philosophy || "",
+    });
+    setShowEditModal(true);
   };
-
-  const handleEditChange = (e) => setEditData({ ...editData, [e.target.name]: e.target.value });
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
@@ -252,26 +252,46 @@ function ThoCatToc() {
     return new Date(d).toLocaleDateString("vi-VN");
   };
 
+  const getStatusBadgeClass = () => {
+    if (currentProfile?.isLocked) return "locked";
+    if (currentProfile?.lockDate) return "scheduled";
+    return "";
+  };
+
+  const getStatusLabel = () => {
+    if (currentProfile?.isLocked) return "Đã khóa";
+    if (currentProfile?.lockDate) return `Khóa lúc ${formatDate(currentProfile.lockDate)}`;
+    return "Đang làm việc";
+  };
+
   if (loading) return <div className={cx("loading")}>Đang tải dữ liệu...</div>;
 
   return (
     <div className={cx("container")}>
+      {/* ── HEADER ──────────────────────────────────────────────────────── */}
       <div className={cx("headerArea")}>
         <div className={cx("titleBox")}>
-          <Scissors size={28} strokeWidth={1.5} className={cx("titleIcon")} />
-          <h2>Quản lý Thợ Cắt Tóc</h2>
+          <Scissors size={26} strokeWidth={1.5} className={cx("titleIcon")} />
+          <div>
+            <h2>
+              Quản lý <em>Thợ Cắt Tóc</em>
+            </h2>
+            <p className={cx("titleMeta")}>{barbers.length} thợ trong hệ thống</p>
+          </div>
         </div>
         <button className={cx("addBtn")} onClick={() => setShowAddModal(true)}>
-          <Plus size={18} strokeWidth={2} /> Thêm thợ mới
+          <Plus size={16} strokeWidth={2.5} />
+          Thêm thợ mới
         </button>
       </div>
 
+      {/* ── MAIN LAYOUT ─────────────────────────────────────────────────── */}
       <div className={cx("mainLayout")}>
-        {/* SIDEBAR */}
+        {/* ── SIDEBAR ─────────────────────────────────────────────── */}
         <div className={cx("sidebar")}>
           <div className={cx("filterBox")}>
             <div className={cx("searchWrapper")}>
-              <Search size={18} className={cx("icon")} />
+              <Search size={15} className={cx("icon")} />
               <input
                 type="text"
                 placeholder="Tìm tên thợ..."
@@ -280,7 +300,7 @@ function ThoCatToc() {
               />
             </div>
             <div className={cx("filterWrapper")}>
-              <Filter size={18} className={cx("icon")} />
+              <Filter size={15} className={cx("icon")} />
               <select value={filterBranch} onChange={(e) => setFilterBranch(e.target.value)}>
                 <option value="">Tất cả chi nhánh</option>
                 {branches.map((br) => (
@@ -316,24 +336,24 @@ function ThoCatToc() {
                     <h4>{b.fullName || "Chưa có tên"}</h4>
                     <span>{b.branchName || "Chưa phân bổ"}</span>
                   </div>
-                  {b.isLocked && <Lock size={14} className={cx("lockIcon")} />}
+                  {b.isLocked && <Lock size={13} className={cx("lockIcon")} />}
                 </div>
               ))
             )}
           </div>
         </div>
 
-        {/* PROFILE AREA */}
+        {/* ── PROFILE AREA ────────────────────────────────────────── */}
         <div className={cx("profileArea")}>
           {!currentProfile ? (
             <div className={cx("placeholder")}>
-              <User size={48} strokeWidth={1} />
+              <User size={56} strokeWidth={1} />
               <p>Chọn một thợ cắt tóc để xem hồ sơ chi tiết</p>
             </div>
           ) : isLoadingDetail ? (
             <div className={cx("placeholder")}>
-              <Loader2 size={40} className={cx("spinIcon")} strokeWidth={1.5} color="var(--gold)" />
-              <p>Đang tải thông tin hồ sơ...</p>
+              <Loader2 size={40} className={cx("spinIcon")} strokeWidth={1.5} color="#C9A84C" />
+              <p>Đang tải hồ sơ...</p>
             </div>
           ) : (
             <div className={cx("profileCard")}>
@@ -343,38 +363,39 @@ function ThoCatToc() {
                   {currentProfile.image ? (
                     <img src={currentProfile.image} alt={currentProfile.fullName} className={cx("avatarImg")} />
                   ) : (
-                    currentProfile.fullName?.charAt(0) || <User size={40} />
+                    currentProfile.fullName?.charAt(0) || <User size={36} />
                   )}
                 </div>
                 <div className={cx("headerInfo")}>
                   <div className={cx("nameRow")}>
                     <h3>{currentProfile.fullName || "Chưa có tên"}</h3>
-                    <span
-                      className={cx("statusBadge", {
-                        locked: currentProfile.isLocked,
-                      })}
-                    >
-                      {currentProfile.isLocked
-                        ? "Đã khóa"
-                        : currentProfile.lockDate
-                          ? `Sẽ khóa vào ${formatDate(currentProfile.lockDate)}`
-                          : "Đang làm việc"}
-                    </span>
+                    <span className={cx("statusBadge", getStatusBadgeClass())}>{getStatusLabel()}</span>
                   </div>
                   <div className={cx("statsRow")}>
                     <span className={cx("stat")}>
-                      <Star size={16} className={cx("star")} fill="currentColor" />{" "}
-                      {currentProfile.rating || currentProfile.avgRate || "0.0"} Đánh giá
+                      <Star size={14} className={cx("star")} fill="currentColor" />
+                      {currentProfile.rating || currentProfile.avgRate || "0.0"}
                     </span>
-                    <span className={cx("divider")}>•</span>
+                    <span className={cx("divider")}>·</span>
                     <span className={cx("stat")}>
-                      <Users size={16} /> {currentProfile.customers || 0} Khách hàng
+                      <Users size={14} />
+                      {currentProfile.customers || 0} khách
                     </span>
                     {currentProfile.experienceYears > 0 && (
                       <>
-                        <span className={cx("divider")}>•</span>
+                        <span className={cx("divider")}>·</span>
                         <span className={cx("stat")}>
-                          <Clock size={16} /> {currentProfile.experienceYears} năm kinh nghiệm
+                          <Clock size={14} />
+                          {currentProfile.experienceYears} năm kinh nghiệm
+                        </span>
+                      </>
+                    )}
+                    {currentProfile.branchName && (
+                      <>
+                        <span className={cx("divider")}>·</span>
+                        <span className={cx("stat")}>
+                          <MapPin size={14} />
+                          {currentProfile.branchName}
                         </span>
                       </>
                     )}
@@ -382,80 +403,90 @@ function ThoCatToc() {
                 </div>
               </div>
 
-              {/* Details grid */}
+              {/* KPI Strip */}
+              <div className={cx("kpiStrip")}>
+                <div className={cx("kpiItem")}>
+                  <label>Đánh giá</label>
+                  <strong>{currentProfile.rating || currentProfile.avgRate || "—"}</strong>
+                  <span>/ 5.0 sao</span>
+                </div>
+                <div className={cx("kpiItem")}>
+                  <label>Khách đã phục vụ</label>
+                  <strong>{currentProfile.customers || 0}</strong>
+                  <span>lượt</span>
+                </div>
+                <div className={cx("kpiItem")}>
+                  <label>Kinh nghiệm</label>
+                  <strong>{currentProfile.experienceYears || "—"}</strong>
+                  <span>năm</span>
+                </div>
+              </div>
+
+              {/* Details */}
               <div className={cx("profileDetails")}>
-                {/* Hàng 1 */}
                 <div className={cx("infoGroup")}>
-                  <Mail size={18} className={cx("infoIcon")} />
+                  <Mail size={16} className={cx("infoIcon")} />
                   <div>
                     <label>Email liên hệ</label>
-                    <p>{currentProfile.email || "Chưa cập nhật"}</p>
+                    <p className={!currentProfile.email ? "empty" : ""}>{currentProfile.email || "Chưa cập nhật"}</p>
                   </div>
                 </div>
+
                 <div className={cx("infoGroup")}>
-                  <Phone size={18} className={cx("infoIcon")} />
+                  <Phone size={16} className={cx("infoIcon")} />
                   <div>
                     <label>Số điện thoại</label>
-                    <p>{currentProfile.phoneNumber || "Chưa cập nhật"}</p>
+                    <p className={!currentProfile.phoneNumber ? "empty" : ""}>
+                      {currentProfile.phoneNumber || "Chưa cập nhật"}
+                    </p>
                   </div>
                 </div>
 
-                {/* Hàng 2 */}
                 <div className={cx("infoGroup")}>
-                  <Clock size={18} className={cx("infoIcon")} />
-                  <div>
-                    <label>Kinh nghiệm</label>
-                    <p>{currentProfile.experienceYears ? `${currentProfile.experienceYears} năm` : "Chưa cập nhật"}</p>
-                  </div>
-                </div>
-                <div className={cx("infoGroup")}>
-                  <MapPin size={18} className={cx("infoIcon")} />
-                  <div>
-                    <label>Chi nhánh làm việc</label>
-                    <p>{currentProfile.branchName || "Chưa phân bổ"}</p>
-                  </div>
-                </div>
-
-                {/* Hàng 3 — specialty & style */}
-                <div className={cx("infoGroup")}>
-                  <Award size={18} className={cx("infoIcon")} />
+                  <Award size={16} className={cx("infoIcon")} />
                   <div>
                     <label>Chuyên môn</label>
-                    <p>{currentProfile.specialty || "Chưa cập nhật"}</p>
+                    <p className={cx(!currentProfile.specialty ? "empty" : "")}>
+                      {currentProfile.specialty || "Chưa cập nhật"}
+                    </p>
                   </div>
                 </div>
+
                 <div className={cx("infoGroup")}>
-                  <Sparkles size={18} className={cx("infoIcon")} />
+                  <Sparkles size={16} className={cx("infoIcon")} />
                   <div>
                     <label>Phong cách</label>
-                    <p>{currentProfile.style || "Chưa cập nhật"}</p>
+                    <p className={cx(!currentProfile.style ? "empty" : "")}>
+                      {currentProfile.style || "Chưa cập nhật"}
+                    </p>
                   </div>
                 </div>
 
-                {/* Hàng 4 — certificates full width */}
                 <div className={cx("infoGroup", "fullWidth")}>
-                  <BookOpen size={18} className={cx("infoIcon")} />
+                  <BookOpen size={16} className={cx("infoIcon")} />
                   <div>
                     <label>Chứng chỉ / Bằng cấp</label>
-                    <p className={cx("desc")}>{currentProfile.certificates || "Chưa cập nhật"}</p>
+                    <p className={cx("desc", !currentProfile.certificates ? "empty" : "")}>
+                      {currentProfile.certificates || "Chưa cập nhật"}
+                    </p>
                   </div>
                 </div>
 
-                {/* Hàng 5 — philosophy full width */}
                 <div className={cx("infoGroup", "fullWidth")}>
-                  <Heart size={18} className={cx("infoIcon")} />
+                  <Heart size={16} className={cx("infoIcon")} />
                   <div>
                     <label>Triết lý nghề nghiệp</label>
-                    <p className={cx("desc")}>{currentProfile.philosophy || "Chưa cập nhật"}</p>
+                    <p className={cx("desc", !currentProfile.philosophy ? "empty" : "")}>
+                      {currentProfile.philosophy || "Chưa cập nhật"}
+                    </p>
                   </div>
                 </div>
 
-                {/* Hàng 6 — profileDescription full width */}
                 <div className={cx("infoGroup", "fullWidth")}>
-                  <FileText size={18} className={cx("infoIcon")} />
+                  <FileText size={16} className={cx("infoIcon")} />
                   <div>
                     <label>Mô tả kỹ năng / Hồ sơ</label>
-                    <p className={cx("desc")}>
+                    <p className={cx("desc", !currentProfile.profileDescription ? "empty" : "")}>
                       {currentProfile.profileDescription || "Thợ cắt tóc chưa cập nhật mô tả kỹ năng làm việc."}
                     </p>
                   </div>
@@ -465,7 +496,7 @@ function ThoCatToc() {
               {/* Actions */}
               <div className={cx("profileActions")}>
                 <button className={cx("actionBtn", "edit")} onClick={openEditModal}>
-                  <Edit2 size={16} /> Chỉnh sửa thông tin
+                  <Edit2 size={14} /> Chỉnh sửa
                 </button>
 
                 <button
@@ -475,25 +506,25 @@ function ThoCatToc() {
                     setShowChangeBranch(true);
                   }}
                 >
-                  <ArrowRightLeft size={16} /> Đổi chi nhánh
+                  <ArrowRightLeft size={14} /> Đổi chi nhánh
                 </button>
 
-                {!currentProfile.isLocked && (
-                  <button className={cx("actionBtn", "lock")} onClick={() => setShowLockModal(true)}>
-                    <Lock size={16} />
-                    {currentProfile?.lockDate ? `Sẽ khóa ${formatDate(currentProfile.lockDate)}` : "Lên lịch khóa"}
+                {!currentProfile.isLocked && currentProfile?.lockDate && (
+                  <button className={cx("actionBtn", "cancel")} onClick={handleCancelLockDate}>
+                    <CalendarOff size={14} /> Hủy lịch khóa
                   </button>
                 )}
 
-                {!currentProfile.isLocked && currentProfile?.lockDate && (
-                  <button className={cx("actionBtn", "branch")} onClick={handleCancelLockDate}>
-                    <X size={16} /> Hủy lịch khóa
+                {!currentProfile.isLocked && (
+                  <button className={cx("actionBtn", "lock")} onClick={() => setShowLockModal(true)}>
+                    <Lock size={14} />
+                    {currentProfile?.lockDate ? `Sẽ khóa ${formatDate(currentProfile.lockDate)}` : "Lên lịch khóa"}
                   </button>
                 )}
 
                 {currentProfile.isLocked && (
                   <button className={cx("actionBtn", "unlock")} onClick={() => handleToggleAccount(currentProfile)}>
-                    <Unlock size={16} /> Mở khóa tài khoản
+                    <Unlock size={14} /> Mở khóa tài khoản
                   </button>
                 )}
               </div>
@@ -502,215 +533,280 @@ function ThoCatToc() {
         </div>
       </div>
 
-      {/* =============== MODAL THÊM THỢ =============== */}
+      {/* ════════════════════════════════════════════════════════════
+          MODAL THÊM THỢ
+      ════════════════════════════════════════════════════════════ */}
       {showAddModal && (
         <div className={cx("modalOverlay")}>
           <div className={cx("modal")}>
             <h3>Thêm thợ cắt tóc mới</h3>
-            <form onSubmit={handleAddSubmit}>
-              <div className={cx("formGrid")}>
-                <div className={cx("formGroup")}>
-                  <label>Họ và tên</label>
-                  <input type="text" name="fullName" value={formData.fullName} onChange={handleAddChange} required />
+            <div className={cx("modalBody")}>
+              <form id="add-form" onSubmit={handleAddSubmit}>
+                <div className={cx("modalSection")}>
+                  <p className={cx("sectionLabel")}>Thông tin cơ bản</p>
+                  <div className={cx("formGrid")}>
+                    <div className={cx("formGroup")}>
+                      <label>Họ và tên *</label>
+                      <input
+                        type="text"
+                        name="fullName"
+                        value={formData.fullName}
+                        onChange={handleAddChange}
+                        placeholder="Nguyễn Văn A"
+                        required
+                      />
+                    </div>
+                    <div className={cx("formGroup")}>
+                      <label>Số điện thoại *</label>
+                      <input
+                        type="text"
+                        name="phoneNumber"
+                        value={formData.phoneNumber}
+                        onChange={handleAddChange}
+                        placeholder="09xxxxxxxxx"
+                        required
+                      />
+                    </div>
+                    <div className={cx("formGroup")}>
+                      <label>Email *</label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleAddChange}
+                        placeholder="tho@barber.com"
+                        required
+                      />
+                    </div>
+                    <div className={cx("formGroup")}>
+                      <label>Mật khẩu *</label>
+                      <input
+                        type="password"
+                        name="password"
+                        value={formData.password}
+                        onChange={handleAddChange}
+                        placeholder="Nhập mật khẩu..."
+                        required
+                      />
+                    </div>
+                    <div className={cx("formGroup", "fullWidth")}>
+                      <label>Chi nhánh làm việc</label>
+                      <select name="idBranch" value={formData.idBranch} onChange={handleAddChange}>
+                        <option value="">-- Không chọn --</option>
+                        {branches.map((br) => (
+                          <option key={br.idBranch} value={br.idBranch}>
+                            {br.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className={cx("formGroup", "fullWidth")}>
+                      <label>Mô tả hồ sơ</label>
+                      <textarea
+                        name="profileDescription"
+                        value={formData.profileDescription}
+                        onChange={handleAddChange}
+                        rows="3"
+                        placeholder="Mô tả kỹ năng, kinh nghiệm..."
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className={cx("formGroup")}>
-                  <label>Số điện thoại</label>
-                  <input
-                    type="text"
-                    name="phoneNumber"
-                    value={formData.phoneNumber}
-                    onChange={handleAddChange}
-                    required
-                  />
-                </div>
-                <div className={cx("formGroup")}>
-                  <label>Email</label>
-                  <input type="email" name="email" value={formData.email} onChange={handleAddChange} required />
-                </div>
-                <div className={cx("formGroup")}>
-                  <label>Mật khẩu</label>
-                  <input
-                    type="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleAddChange}
-                    required
-                  />
-                </div>
-              </div>
-              <div className={cx("formGroup")}>
-                <label>Chi nhánh làm việc</label>
-                <select name="idBranch" value={formData.idBranch} onChange={handleAddChange}>
-                  <option value="">-- Không chọn --</option>
-                  {branches.map((br) => (
-                    <option key={br.idBranch} value={br.idBranch}>
-                      {br.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className={cx("formGroup")}>
-                <label>Mô tả hồ sơ</label>
-                <textarea
-                  name="profileDescription"
-                  value={formData.profileDescription}
-                  onChange={handleAddChange}
-                  rows="3"
-                />
-              </div>
-              <div className={cx("modalActions")}>
-                <button type="button" className={cx("cancelBtn")} onClick={() => setShowAddModal(false)}>
-                  Hủy
-                </button>
-                <button type="submit" className={cx("saveBtn")}>
-                  Thêm thợ
-                </button>
-              </div>
-            </form>
+              </form>
+            </div>
+            <div className={cx("modalActions")}>
+              <button type="button" className={cx("cancelBtn")} onClick={() => setShowAddModal(false)}>
+                <X size={14} /> Hủy
+              </button>
+              <button type="submit" form="add-form" className={cx("saveBtn")}>
+                <Plus size={14} /> Thêm thợ
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* =============== MODAL SỬA THỢ (đã thêm 5 trường mới) =============== */}
+      {/* ════════════════════════════════════════════════════════════
+          MODAL SỬA HỒ SƠ THỢ — có cuộn nội dung
+      ════════════════════════════════════════════════════════════ */}
       {showEditModal && (
         <div className={cx("modalOverlay")}>
           <div className={cx("modal")}>
+            {/* Header cố định */}
             <h3>Cập nhật hồ sơ thợ</h3>
-            <form onSubmit={handleEditSubmit}>
-              {/* --- Thông tin cơ bản --- */}
-              <div className={cx("formGrid")}>
-                <div className={cx("formGroup")}>
-                  <label>Họ và tên</label>
-                  <input type="text" name="fullName" value={editData.fullName} onChange={handleEditChange} required />
-                </div>
-                <div className={cx("formGroup")}>
-                  <label>Số điện thoại</label>
-                  <input type="text" name="phoneNumber" value={editData.phoneNumber} onChange={handleEditChange} />
-                </div>
-                <div className={cx("formGroup")}>
-                  <label>Email</label>
-                  <input type="email" name="email" value={editData.email} onChange={handleEditChange} />
-                </div>
-                <div className={cx("formGroup")}>
-                  <label>Số năm kinh nghiệm</label>
-                  <input
-                    type="number"
-                    name="experienceYears"
-                    min="0"
-                    max="50"
-                    value={editData.experienceYears}
-                    onChange={handleEditChange}
-                    placeholder="VD: 5"
-                  />
-                </div>
-              </div>
 
-              {/* --- Chuyên môn & Phong cách --- */}
-              <div className={cx("formGrid")}>
-                <div className={cx("formGroup")}>
-                  <label>Chuyên môn</label>
-                  <input
-                    type="text"
-                    name="specialty"
-                    value={editData.specialty}
-                    onChange={handleEditChange}
-                    placeholder="VD: Cắt undercut, fade..."
-                  />
+            {/* Body có thể cuộn */}
+            <div className={cx("modalBody")}>
+              <form id="edit-form" onSubmit={handleEditSubmit}>
+                {/* Thông tin cơ bản */}
+                <div className={cx("modalSection")}>
+                  <p className={cx("sectionLabel")}>Thông tin cơ bản</p>
+                  <div className={cx("formGrid")}>
+                    <div className={cx("formGroup")}>
+                      <label>Họ và tên *</label>
+                      <input
+                        type="text"
+                        name="fullName"
+                        value={editData.fullName}
+                        onChange={handleEditChange}
+                        placeholder="Nguyễn Văn A"
+                        required
+                      />
+                    </div>
+                    <div className={cx("formGroup")}>
+                      <label>Số điện thoại</label>
+                      <input
+                        type="text"
+                        name="phoneNumber"
+                        value={editData.phoneNumber}
+                        onChange={handleEditChange}
+                        placeholder="09xxxxxxxxx"
+                      />
+                    </div>
+                    <div className={cx("formGroup")}>
+                      <label>Email</label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={editData.email}
+                        onChange={handleEditChange}
+                        placeholder="tho@barber.com"
+                      />
+                    </div>
+                    <div className={cx("formGroup")}>
+                      <label>Số năm kinh nghiệm</label>
+                      <input
+                        type="number"
+                        name="experienceYears"
+                        min="0"
+                        max="50"
+                        value={editData.experienceYears}
+                        onChange={handleEditChange}
+                        placeholder="VD: 5"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className={cx("formGroup")}>
-                  <label>Phong cách</label>
-                  <input
-                    type="text"
-                    name="style"
-                    value={editData.style}
-                    onChange={handleEditChange}
-                    placeholder="VD: Classic, Modern, Korean..."
-                  />
+
+                {/* Chuyên môn & Phong cách */}
+                <div className={cx("modalSection")}>
+                  <p className={cx("sectionLabel")}>Chuyên môn & Phong cách</p>
+                  <div className={cx("formGrid")}>
+                    <div className={cx("formGroup")}>
+                      <label>Chuyên môn</label>
+                      <input
+                        type="text"
+                        name="specialty"
+                        value={editData.specialty}
+                        onChange={handleEditChange}
+                        placeholder="VD: Cắt undercut, fade..."
+                      />
+                    </div>
+                    <div className={cx("formGroup")}>
+                      <label>Phong cách</label>
+                      <input
+                        type="text"
+                        name="style"
+                        value={editData.style}
+                        onChange={handleEditChange}
+                        placeholder="VD: Classic, Modern, Korean..."
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              {/* --- Chứng chỉ --- */}
-              <div className={cx("formGroup")}>
-                <label>Chứng chỉ / Bằng cấp</label>
-                <textarea
-                  name="certificates"
-                  value={editData.certificates}
-                  onChange={handleEditChange}
-                  rows="2"
-                  placeholder="VD: Chứng chỉ nghề Hàn Quốc, Bằng kỹ thuật viên tóc..."
-                />
-              </div>
+                {/* Văn bản chi tiết */}
+                <div className={cx("modalSection")}>
+                  <p className={cx("sectionLabel")}>Chi tiết hồ sơ</p>
+                  <div className={cx("formGrid", "singleCol")}>
+                    <div className={cx("formGroup")}>
+                      <label>Chứng chỉ / Bằng cấp</label>
+                      <textarea
+                        name="certificates"
+                        value={editData.certificates}
+                        onChange={handleEditChange}
+                        rows="3"
+                        placeholder="VD: Chứng chỉ nghề Hàn Quốc, Bằng kỹ thuật viên tóc..."
+                      />
+                    </div>
+                    <div className={cx("formGroup")}>
+                      <label>Triết lý nghề nghiệp</label>
+                      <textarea
+                        name="philosophy"
+                        value={editData.philosophy}
+                        onChange={handleEditChange}
+                        rows="3"
+                        placeholder="VD: Mỗi mái tóc là một tác phẩm nghệ thuật..."
+                      />
+                    </div>
+                    <div className={cx("formGroup")}>
+                      <label>Mô tả kỹ năng / Hồ sơ tổng quát</label>
+                      <textarea
+                        name="profileDescription"
+                        value={editData.profileDescription}
+                        onChange={handleEditChange}
+                        rows="4"
+                        placeholder="Mô tả chung về kỹ năng, kinh nghiệm làm việc..."
+                      />
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
 
-              {/* --- Triết lý nghề nghiệp --- */}
-              <div className={cx("formGroup")}>
-                <label>Triết lý nghề nghiệp</label>
-                <textarea
-                  name="philosophy"
-                  value={editData.philosophy}
-                  onChange={handleEditChange}
-                  rows="2"
-                  placeholder="VD: Mỗi mái tóc là một tác phẩm nghệ thuật..."
-                />
-              </div>
-
-              {/* --- Mô tả hồ sơ --- */}
-              <div className={cx("formGroup")}>
-                <label>Mô tả kỹ năng / Hồ sơ</label>
-                <textarea
-                  name="profileDescription"
-                  value={editData.profileDescription}
-                  onChange={handleEditChange}
-                  rows="3"
-                  placeholder="Mô tả chung về kỹ năng, kinh nghiệm..."
-                />
-              </div>
-
-              <div className={cx("modalActions")}>
-                <button type="button" className={cx("cancelBtn")} onClick={() => setShowEditModal(false)}>
-                  Hủy
-                </button>
-                <button type="submit" className={cx("saveBtn")}>
-                  Lưu thay đổi
-                </button>
-              </div>
-            </form>
+            {/* Actions cố định */}
+            <div className={cx("modalActions")}>
+              <button type="button" className={cx("cancelBtn")} onClick={() => setShowEditModal(false)}>
+                <X size={14} /> Hủy
+              </button>
+              <button type="submit" form="edit-form" className={cx("saveBtn")}>
+                <Edit2 size={14} /> Lưu thay đổi
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* =============== MODAL ĐỔI CHI NHÁNH =============== */}
+      {/* ════════════════════════════════════════════════════════════
+          MODAL ĐỔI CHI NHÁNH
+      ════════════════════════════════════════════════════════════ */}
       {showChangeBranch && (
         <div className={cx("modalOverlay")}>
           <div className={cx("modal", "smallModal")}>
             <h3>Đổi chi nhánh</h3>
-            <p className={cx("subTitle")}>
-              Chọn chi nhánh mới cho <strong>{currentProfile?.fullName}</strong>
-            </p>
-            <form onSubmit={handleChangeBranch}>
-              <div className={cx("formGroup")}>
-                <select value={newBranchId} onChange={(e) => setNewBranchId(e.target.value)} required>
-                  <option value="">-- Chọn chi nhánh --</option>
-                  {branches.map((br) => (
-                    <option key={br.idBranch} value={br.idBranch}>
-                      {br.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className={cx("modalActions")}>
-                <button type="button" className={cx("cancelBtn")} onClick={() => setShowChangeBranch(false)}>
-                  Hủy
-                </button>
-                <button type="submit" className={cx("saveBtn")}>
-                  Cập nhật
-                </button>
-              </div>
-            </form>
+            <div className={cx("modalBody")}>
+              <p className={cx("subTitle")}>
+                Chọn chi nhánh mới cho <strong>{currentProfile?.fullName}</strong>
+              </p>
+              <form id="branch-form" onSubmit={handleChangeBranch}>
+                <div className={cx("formGroup")}>
+                  <label>Chi nhánh *</label>
+                  <select value={newBranchId} onChange={(e) => setNewBranchId(e.target.value)} required>
+                    <option value="">-- Chọn chi nhánh --</option>
+                    {branches.map((br) => (
+                      <option key={br.idBranch} value={br.idBranch}>
+                        {br.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </form>
+            </div>
+            <div className={cx("modalActions")}>
+              <button type="button" className={cx("cancelBtn")} onClick={() => setShowChangeBranch(false)}>
+                <X size={14} /> Hủy
+              </button>
+              <button type="submit" form="branch-form" className={cx("saveBtn")}>
+                <ArrowRightLeft size={14} /> Cập nhật
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* =============== MODAL LOCK DATE =============== */}
+      {/* ════════════════════════════════════════════════════════════
+          MODAL LOCK DATE
+      ════════════════════════════════════════════════════════════ */}
       {showLockModal && currentProfile && (
         <LockDateModal
           barber={currentProfile}
@@ -719,16 +815,16 @@ function ThoCatToc() {
             await fetchBarbers();
             const updatedDetail = await BarberAPI.getProfile(selectedBarber.idBarber);
             setBarberDetail(updatedDetail);
-            const updatedBarberList = await BarberAPI.getAll();
-            const updatedSelected = updatedBarberList.find((b) => b.idBarber === selectedBarber.idBarber);
-            if (updatedSelected) setSelectedBarber(updatedSelected);
+            const updatedList = await BarberAPI.getAll();
+            const updatedSel = updatedList.find((b) => b.idBarber === selectedBarber.idBarber);
+            if (updatedSel) setSelectedBarber(updatedSel);
             setShowLockModal(false);
           }}
           showToast={showToast}
         />
       )}
 
-      {/* Toasts */}
+      {/* ── Toasts ─────────────────────────────────────────────────────── */}
       <div className={cx("toastContainer")}>
         {toastList.map((t) => (
           <Toast

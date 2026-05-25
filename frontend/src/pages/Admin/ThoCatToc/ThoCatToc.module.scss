@@ -1,11 +1,12 @@
 // ThoCatToc.module.scss
 // Admin — Thợ Cắt Tóc | NOULE Barber
-// Design: NOULE gold/dark system
+// Design: Editorial · Luxury Barber — Gold / Dark Ink system
 
+// ── Tokens ────────────────────────────────────────────────────────────────────
 $gold:        #C9A84C;
 $gold-hover:  #BA9A3E;
 $gold-dim:    #8A6A28;
-$gold-faint:  rgba(201, 168, 76, 0.15);
+$gold-faint:  rgba(201, 168, 76, 0.14);
 $gold-border: rgba(201, 168, 76, 0.3);
 
 $ink:         #1A1612;
@@ -13,13 +14,13 @@ $ink-2:       #2C2720;
 $ink-text:    #F5F0E8;
 $ink-muted:   rgba(245, 240, 232, 0.5);
 
-$page-bg:     #F7F4EF;
+$page-bg:     #F4F1EB;
 $card-bg:     #FFFFFF;
 $surface-2:   #F9F6F1;
 $surface-3:   #F2EFE8;
 
 $border:      rgba(0, 0, 0, 0.07);
-$border-md:   rgba(0, 0, 0, 0.1);
+$border-md:   rgba(0, 0, 0, 0.10);
 
 $green:       #3B6D11;
 $green-bg:    #EAF3DE;
@@ -38,16 +39,18 @@ $radius-md:   10px;
 $radius-lg:   14px;
 $radius-xl:   18px;
 
+$transition:  0.18s ease;
+
 // ── Container ─────────────────────────────────────────────────────────────────
 .container {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 100px);
-  padding-bottom: 0;
+  height: calc(100vh - 60px);
   background: $page-bg;
   color: $ink;
   font-family: inherit;
-  animation: fadeIn 0.4s ease forwards;
+  animation: fadeIn 0.35s ease forwards;
+  overflow: hidden;
 }
 
 @keyframes fadeIn {
@@ -55,44 +58,46 @@ $radius-xl:   18px;
   to   { opacity: 1; transform: translateY(0); }
 }
 
-// ── Header (khớp TongQuan .pageHead) ─────────────────────────────────────────
+// ── Header Area ───────────────────────────────────────────────────────────────
 .headerArea {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
-  flex-wrap: wrap;
-  gap: 16px;
-  margin-bottom: 20px;
-  padding-bottom: 22px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  align-items: center;
+  padding: 20px 24px 18px;
+  border-bottom: 1px solid $border;
+  background: $card-bg;
   flex-shrink: 0;
 }
 
 .titleBox {
   display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.titleEyebrow {
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: $gold-dim;
-  font-weight: 500;
+  align-items: center;
+  gap: 12px;
 }
 
 .titleIcon { color: $gold; }
 
 .titleBox h2 {
-  font-size: 28px;
-  font-weight: 600;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 24px;
+  font-weight: 700;
   color: $ink;
   margin: 0;
-  line-height: 1.1;
-  font-family: Georgia, 'Times New Roman', serif;
+  letter-spacing: -0.01em;
 
-  em { color: $gold; font-style: italic; }
+  em {
+    color: $gold;
+    font-style: italic;
+  }
+}
+
+.titleMeta {
+  font-size: 11px;
+  color: #aaa;
+  margin: 0;
+  margin-top: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 // ── Add Button ────────────────────────────────────────────────────────────────
@@ -109,36 +114,41 @@ $radius-xl:   18px;
   border-radius: $radius-md;
   cursor: pointer;
   font-family: inherit;
-  transition: background 0.15s;
+  letter-spacing: 0.02em;
+  box-shadow: 0 2px 8px rgba(201, 168, 76, 0.3);
+  transition: background $transition, box-shadow $transition, transform $transition;
 
-  &:hover { background: $gold-hover; }
+  &:hover {
+    background: $gold-hover;
+    box-shadow: 0 4px 14px rgba(201, 168, 76, 0.4);
+    transform: translateY(-1px);
+  }
 }
 
 // ── Main Layout ───────────────────────────────────────────────────────────────
 .mainLayout {
   display: flex;
   flex: 1;
-  gap: 18px;
+  gap: 0;
   min-height: 0;
+  overflow: hidden;
 }
 
 // ── Sidebar ───────────────────────────────────────────────────────────────────
 .sidebar {
-  width: 300px;
+  width: 288px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  background: $card-bg;
-  border: 1px solid $border-md;
-  border-radius: $radius-lg;
+  background: $ink;
+  border-right: 1px solid $gold-border;
   overflow: hidden;
 }
 
-// ── Filter Box (dark — giống chatSearch) ──────────────────────────────────────
+// ── Filter Box ────────────────────────────────────────────────────────────────
 .filterBox {
   padding: 14px;
-  background: $ink;
-  border-bottom: 1px solid $gold-border;
+  border-bottom: 1px solid rgba(201, 168, 76, 0.15);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -159,21 +169,25 @@ $radius-xl:   18px;
     flex-shrink: 0;
   }
 
-  input, select {
+  input,
+  select {
     width: 100%;
-    padding: 7px 10px 7px 32px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 8px 10px 8px 34px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: $radius-sm;
     font-size: 12px;
     font-family: inherit;
     outline: none;
     background: rgba(255, 255, 255, 0.06);
     color: $ink-text;
-    transition: border-color 0.15s;
+    transition: border-color $transition, background $transition;
 
-    &:focus { border-color: $gold-border; background: rgba(255, 255, 255, 0.1); }
+    &:focus {
+      border-color: $gold-border;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
     &::placeholder { color: $ink-muted; }
-
     option { background: $ink-2; color: $ink-text; }
   }
 }
@@ -182,21 +196,24 @@ $radius-xl:   18px;
 .barberList {
   flex: 1;
   overflow-y: auto;
-  padding: 10px;
+  padding: 8px;
 
-  &::-webkit-scrollbar       { width: 3px; }
-  &::-webkit-scrollbar-thumb { background: $border-md; border-radius: 10px; }
+  &::-webkit-scrollbar { width: 3px; }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(201, 168, 76, 0.2);
+    border-radius: 10px;
+  }
 }
 
 .noData {
   text-align: center;
-  color: #bbb;
-  padding: 24px;
-  font-size: 13px;
+  color: $ink-muted;
+  padding: 28px 16px;
+  font-size: 12px;
   font-style: italic;
 }
 
-// ── Barber Card (list item) ───────────────────────────────────────────────────
+// ── Barber Card ───────────────────────────────────────────────────────────────
 .barberCard {
   display: flex;
   align-items: center;
@@ -204,33 +221,33 @@ $radius-xl:   18px;
   padding: 10px 12px;
   border-radius: $radius-md;
   cursor: pointer;
-  transition: background 0.12s, border-color 0.12s;
   border: 1px solid transparent;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
+  transition: background $transition, border-color $transition;
 
-  &:hover { background: $surface-2; }
+  &:hover { background: rgba(255, 255, 255, 0.05); }
 
   &.active {
     background: $gold-faint;
     border-color: $gold-border;
   }
 
-  &.locked { opacity: 0.55; }
+  &.locked { opacity: 0.5; }
 }
 
 .avatarSmall {
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
-  background: $gold-faint;
+  background: rgba(201, 168, 76, 0.12);
   border: 1px solid $gold-border;
-  color: $gold-dim;
+  color: $gold;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
-  font-weight: 600;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: Georgia, serif;
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -251,7 +268,7 @@ $radius-xl:   18px;
     margin: 0 0 2px;
     font-size: 13px;
     font-weight: 600;
-    color: $ink;
+    color: $ink-text;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -259,7 +276,11 @@ $radius-xl:   18px;
 
   span {
     font-size: 11px;
-    color: #aaa;
+    color: $ink-muted;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
   }
 }
 
@@ -272,6 +293,10 @@ $radius-xl:   18px;
   flex-direction: column;
   min-width: 0;
   min-height: 0;
+  overflow: hidden;
+  background: $page-bg;
+  padding: 20px;
+  gap: 0;
 }
 
 // ── Placeholder ───────────────────────────────────────────────────────────────
@@ -283,15 +308,16 @@ $radius-xl:   18px;
   justify-content: center;
   color: #ccc;
   background: $card-bg;
-  border: 1px solid $border-md;
-  border-radius: $radius-lg;
-  gap: 12px;
+  border: 1px solid $border;
+  border-radius: $radius-xl;
+  gap: 14px;
 
+  svg { opacity: 0.3; }
   p { font-size: 13px; color: #bbb; margin: 0; font-style: italic; }
 }
 
 // ── Spin ──────────────────────────────────────────────────────────────────────
-.spinIcon { animation: spin 1s linear infinite; }
+.spinIcon { animation: spin 0.9s linear infinite; }
 
 @keyframes spin {
   from { transform: rotate(0deg); }
@@ -302,59 +328,59 @@ $radius-xl:   18px;
 .profileCard {
   flex: 1;
   background: $card-bg;
-  border: 1px solid $border-md;
-  border-radius: $radius-lg;
+  border: 1px solid $border;
+  border-radius: $radius-xl;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
 }
 
-// ── Profile Header (dark — giống sectionHead TongQuan) ────────────────────────
+// ── Profile Header ────────────────────────────────────────────────────────────
 .profileHeader {
   background: $ink;
   border-bottom: 1px solid $gold-border;
-  padding: 20px 24px;
+  padding: 22px 28px;
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 22px;
   flex-shrink: 0;
 }
 
 .avatarLarge {
-  width: 72px;
-  height: 72px;
+  width: 76px;
+  height: 76px;
   border-radius: 50%;
   background: $ink-2;
   border: 2px solid $gold-border;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
-  font-weight: 600;
+  font-size: 30px;
+  font-weight: 700;
   color: $gold;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: Georgia, serif;
   overflow: hidden;
   flex-shrink: 0;
+  box-shadow: 0 0 0 4px rgba(201, 168, 76, 0.1);
 }
 
-.headerInfo {
-  flex: 1;
-  min-width: 0;
-}
+.headerInfo { flex: 1; min-width: 0; }
 
 .nameRow {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   flex-wrap: wrap;
 
   h3 {
     margin: 0;
-    font-size: 20px;
-    font-weight: 600;
+    font-family: Georgia, serif;
+    font-size: 22px;
+    font-weight: 700;
     color: $ink-text;
-    font-family: Georgia, 'Times New Roman', serif;
+    letter-spacing: -0.01em;
   }
 }
 
@@ -365,7 +391,7 @@ $radius-xl:   18px;
   padding: 3px 10px;
   border-radius: 20px;
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
   background: $green-bg;
   border: 1px solid $green-bd;
   color: $green;
@@ -377,21 +403,39 @@ $radius-xl:   18px;
     border-radius: 50%;
     background: #63C142;
     flex-shrink: 0;
+    animation: pulse 2s ease-in-out infinite;
   }
 
   &.locked {
     background: $red-bg;
     border-color: $red-bd;
     color: $red;
-
-    &::before { background: #E24B4A; }
+    &::before {
+      background: #E24B4A;
+      animation: none;
+    }
   }
+
+  &.scheduled {
+    background: $amber-bg;
+    border-color: $amber-bd;
+    color: $amber;
+    &::before {
+      background: #E8A020;
+      animation: none;
+    }
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
 }
 
 .statsRow {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
@@ -401,48 +445,92 @@ $radius-xl:   18px;
   gap: 5px;
   font-size: 12px;
   color: $ink-muted;
+  font-weight: 500;
 }
 
 .star  { color: $gold; }
-.divider { color: rgba(255, 255, 255, 0.15); }
+.divider { color: rgba(255, 255, 255, 0.12); font-size: 14px; }
+
+// ── KPI Strip ─────────────────────────────────────────────────────────────────
+.kpiStrip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-bottom: 1px solid $border;
+  flex-shrink: 0;
+}
+
+.kpiItem {
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border-right: 1px solid $border;
+
+  &:last-child { border-right: none; }
+
+  label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #aaa;
+  }
+
+  strong {
+    font-family: Georgia, serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: $gold;
+  }
+
+  span {
+    font-size: 11px;
+    color: #bbb;
+  }
+}
 
 // ── Profile Details ───────────────────────────────────────────────────────────
 .profileDetails {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0;
   flex: 1;
   overflow-y: auto;
-  padding: 0;
 
-  &::-webkit-scrollbar       { width: 3px; }
-  &::-webkit-scrollbar-thumb { background: $border-md; border-radius: 10px; }
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+  }
 }
 
 .infoGroup {
   display: flex;
   gap: 14px;
-  padding: 18px 24px;
-  border-bottom: 1px solid $border-md;
-  border-right: 1px solid $border-md;
+  padding: 16px 22px;
+  border-bottom: 1px solid $border;
+  border-right: 1px solid $border;
 
   &.fullWidth {
     grid-column: span 2;
     border-right: none;
   }
 
-  &:last-child  { border-bottom: none; }
-  &:nth-last-child(2):not(.fullWidth) { border-bottom: none; }
+  &:nth-last-child(1):not(.fullWidth),
+  &:nth-last-child(2):not(.fullWidth) {
+    border-bottom: none;
+  }
+
+  &:last-child { border-bottom: none; }
 }
 
-.infoIcon { color: $gold; flex-shrink: 0; margin-top: 1px; }
+.infoIcon { color: $gold; flex-shrink: 0; margin-top: 2px; }
 
 .infoGroup label {
   display: block;
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.09em;
+  letter-spacing: 0.1em;
   color: #aaa;
   margin-bottom: 5px;
 }
@@ -456,8 +544,15 @@ $radius-xl:   18px;
 
   &.desc {
     font-weight: 400;
-    color: #666;
-    line-height: 1.65;
+    color: #555;
+    line-height: 1.7;
+    white-space: pre-line;
+  }
+
+  &.empty {
+    color: #ccc;
+    font-style: italic;
+    font-weight: 400;
   }
 }
 
@@ -465,9 +560,9 @@ $radius-xl:   18px;
 .profileActions {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 14px 20px;
-  border-top: 1px solid $border-md;
+  gap: 8px;
+  padding: 14px 22px;
+  border-top: 1px solid $border;
   background: $surface-2;
   flex-shrink: 0;
   flex-wrap: wrap;
@@ -476,15 +571,16 @@ $radius-xl:   18px;
 .actionBtn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
   padding: 8px 16px;
   border-radius: $radius-md;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
-  transition: all 0.15s;
+  transition: all $transition;
   border: 1px solid transparent;
+  letter-spacing: 0.02em;
 
   &.edit {
     background: $gold-faint;
@@ -498,6 +594,13 @@ $radius-xl:   18px;
     border-color: $border-md;
     color: #666;
     &:hover { border-color: $gold-border; color: $ink; background: $gold-faint; }
+  }
+
+  &.cancel {
+    background: $amber-bg;
+    border-color: $amber-bd;
+    color: $amber;
+    &:hover { background: lighten($amber-bg, 3%); }
   }
 
   &.lock {
@@ -517,11 +620,12 @@ $radius-xl:   18px;
   }
 }
 
-// ── Modal ─────────────────────────────────────────────────────────────────────
+// ── Modal Overlay ─────────────────────────────────────────────────────────────
 .modalOverlay {
   position: fixed;
   inset: 0;
   background: rgba(15, 12, 10, 0.65);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -529,77 +633,114 @@ $radius-xl:   18px;
   padding: 20px;
 }
 
+// ── Modal ─────────────────────────────────────────────────────────────────────
 .modal {
   background: $card-bg;
   border-radius: $radius-xl;
-  width: 560px;
+  width: 580px;
   max-width: 100%;
+
+  /* KEY FIX: giới hạn chiều cao + cuộn bên trong */
   max-height: 90vh;
   display: flex;
   flex-direction: column;
+
   overflow: hidden;
   border: 1px solid rgba(0, 0, 0, 0.08);
-  animation: modalIn 0.2s ease;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+  animation: modalIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 
   &.smallModal { width: 420px; }
 
-  h3 {
+  // Header cố định không cuộn
+  > h3 {
     background: $ink;
-    padding: 18px 22px;
+    padding: 18px 24px;
     margin: 0;
     font-size: 16px;
     font-weight: 600;
     color: $ink-text;
-    font-family: Georgia, 'Times New Roman', serif;
+    font-family: Georgia, serif;
     border-bottom: 1px solid $gold-border;
     flex-shrink: 0;
+    letter-spacing: 0.01em;
   }
 }
 
 @keyframes modalIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
+// ── Modal Body (scrollable) ───────────────────────────────────────────────────
 .modalBody {
-  padding: 20px 22px;
-  overflow-y: auto;
   flex: 1;
+  overflow-y: auto;
+  padding: 22px 24px;
+
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+  }
+}
+
+// ── Modal Section ─────────────────────────────────────────────────────────────
+.modalSection {
+  margin-bottom: 20px;
+
+  &:last-child { margin-bottom: 0; }
+}
+
+.sectionLabel {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: $gold-dim;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(201, 168, 76, 0.15);
 }
 
 .subTitle {
   font-size: 13px;
   color: #777;
-  margin: 0 0 16px;
-  padding: 14px 22px 0;
+  margin: 0 0 18px;
+  line-height: 1.5;
 }
 
+// ── Form Grid ─────────────────────────────────────────────────────────────────
 .formGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  padding: 20px 22px 0;
+  gap: 14px;
+
+  &.singleCol {
+    grid-template-columns: 1fr;
+  }
 }
 
 .formGroup {
-  margin-bottom: 14px;
-  padding: 0 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
 
-  &:first-child { padding-top: 20px; }
+  &.fullWidth { grid-column: span 2; }
 
   label {
-    display: block;
     font-size: 10px;
-    font-weight: 600;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.09em;
+    letter-spacing: 0.1em;
     color: #888;
-    margin-bottom: 5px;
   }
 
-  input, textarea, select {
+  input,
+  textarea,
+  select {
     width: 100%;
-    padding: 8px 11px;
+    padding: 9px 12px;
     border: 1px solid $border-md;
     border-radius: $radius-md;
     font-size: 13px;
@@ -607,22 +748,33 @@ $radius-xl:   18px;
     background: $surface-2;
     color: $ink;
     outline: none;
-    transition: border-color 0.15s, background 0.15s;
+    transition: border-color $transition, background $transition, box-shadow $transition;
     box-sizing: border-box;
 
-    &:focus     { border-color: $gold; background: $card-bg; }
+    &:focus {
+      border-color: $gold;
+      background: $card-bg;
+      box-shadow: 0 0 0 3px $gold-faint;
+    }
+
     &::placeholder { color: #c0b8ae; }
   }
 
-  textarea { resize: vertical; line-height: 1.6; }
+  textarea {
+    resize: vertical;
+    line-height: 1.65;
+    min-height: 72px;
+  }
 }
 
+// ── Modal Actions (fixed bottom) ──────────────────────────────────────────────
 .modalActions {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
-  padding: 13px 22px;
-  border-top: 1px solid $border-md;
+  gap: 10px;
+  padding: 14px 24px;
+  border-top: 1px solid $border;
+  background: $surface-2;
   flex-shrink: 0;
 }
 
@@ -630,8 +782,8 @@ $radius-xl:   18px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 18px;
-  font-size: 12px;
+  padding: 9px 22px;
+  font-size: 13px;
   font-weight: 600;
   background: $gold;
   color: $ink;
@@ -639,17 +791,23 @@ $radius-xl:   18px;
   border-radius: $radius-md;
   cursor: pointer;
   font-family: inherit;
-  transition: background 0.15s;
+  box-shadow: 0 2px 8px rgba(201, 168, 76, 0.3);
+  transition: all $transition;
+  letter-spacing: 0.02em;
 
-  &:hover { background: $gold-hover; }
+  &:hover {
+    background: $gold-hover;
+    box-shadow: 0 4px 14px rgba(201, 168, 76, 0.4);
+    transform: translateY(-1px);
+  }
 }
 
 .cancelBtn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 16px;
-  font-size: 12px;
+  padding: 9px 18px;
+  font-size: 13px;
   font-weight: 500;
   background: transparent;
   border: 1px solid $border-md;
@@ -657,9 +815,13 @@ $radius-xl:   18px;
   color: #666;
   cursor: pointer;
   font-family: inherit;
-  transition: all 0.15s;
+  transition: all $transition;
 
-  &:hover { border-color: $gold-border; color: $ink; background: $gold-faint; }
+  &:hover {
+    border-color: rgba(0, 0, 0, 0.2);
+    color: $ink;
+    background: $surface-3;
+  }
 }
 
 // ── Loading ───────────────────────────────────────────────────────────────────
@@ -667,16 +829,32 @@ $radius-xl:   18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 60px;
+  padding: 80px;
   font-size: 13px;
   color: #bbb;
   font-style: italic;
 }
 
-// ── Toast container ───────────────────────────────────────────────────────────
+// ── Toast Container ───────────────────────────────────────────────────────────
 .toastContainer {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
+  bottom: 24px;
+  right: 24px;
   z-index: 3000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+// ── Responsive ────────────────────────────────────────────────────────────────
+@media (max-width: 900px) {
+  .mainLayout { flex-direction: column; }
+  .sidebar { width: 100%; height: 200px; }
+  .profileArea { padding: 14px; }
+}
+
+@media (max-width: 640px) {
+  .formGrid { grid-template-columns: 1fr; }
+  .formGroup.fullWidth { grid-column: span 1; }
+  .kpiStrip { grid-template-columns: 1fr; }
 }
