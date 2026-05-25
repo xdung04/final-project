@@ -11,6 +11,7 @@ $text-muted: #888888;
 
 .listWrapper {
   width: 100%;
+  max-width: 100%; // Ép căng hết không gian màn hình lớn
   animation: fadeIn 0.4s ease-in-out;
 }
 
@@ -18,7 +19,7 @@ $text-muted: #888888;
   color: $charcoal-dark;
   font-size: 1.4rem;
   font-weight: 700;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   text-transform: uppercase;
   letter-spacing: 1px;
 }
@@ -33,38 +34,44 @@ $text-muted: #888888;
 
 .tableContainer {
   background: $bg-white;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
   border: 1px solid $border-color;
-  overflow-x: auto;
+  width: 100%;
+  overflow-x: auto; /* Phòng hờ màn hình quá bé, còn lại sẽ tự fit */
 
   table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 14px;
+    font-size: 13.5px; // Giảm nhẹ 0.5px để chữ gom gọn lại
     text-align: left;
-    white-space: nowrap;
+    table-layout: auto; /* Để trình duyệt tự tính toán phân bổ độ rộng cột */
+    
+    // ❌ BỎ white-space: nowrap toàn cục ở đây để chống tràn dòng
   }
 
   th {
-    padding: 16px;
+    // 👇 Giảm padding ngang từ 16px xuống 10px để tiết kiệm hàng trăm pixel bề ngang
+    padding: 12px 10px; 
     background-color: $bg-cream;
     color: $text-muted;
     font-weight: 600;
     text-transform: uppercase;
-    font-size: 12px;
+    font-size: 11.5px;
     letter-spacing: 0.5px;
     border-bottom: 1px solid $border-color;
 
     .thContent {
-      display: flex;
+      display: inline-flex;
       align-items: center;
       gap: 6px;
+      white-space: nowrap; // Tiêu đề th thì giữ nguyên dòng cho đẹp
     }
   }
 
   td {
-    padding: 16px;
+    // 👇 Gom gọn khoảng cách các ô dữ liệu
+    padding: 10px; 
     border-bottom: 1px solid #F5F5F5;
     color: $text-main;
     vertical-align: middle;
@@ -75,27 +82,36 @@ $text-muted: #888888;
   }
 
   tr:hover {
-    background-color: rgba(212, 175, 55, 0.03); // Hover lên màu vàng cực nhạt
-    transition: background-color 0.2s ease;
+    background-color: rgba(212, 175, 55, 0.02);
+    transition: background-color 0.15s ease;
   }
 }
 
-// Typograpy trong bảng
+// ── Định hình độ rộng/kiểu hiển thị từng cột để triệt tiêu scroll ngang ──
+
 .timeCell {
   font-weight: 700;
   color: $charcoal-dark;
-  font-size: 15px;
+  font-size: 14px;
+  white-space: nowrap; // Giờ giấc bắt buộc thẳng hàng
 }
 
 .boldCell {
   font-weight: 600;
   color: $charcoal-dark;
+  white-space: nowrap; // Tên khách không cho xuống dòng bừa bãi
+}
+
+// Cột thợ cắt tóc
+td:nth-child(3) {
+  white-space: nowrap;
 }
 
 .truncateCell {
-  max-width: 180px;
+  max-width: 160px; // Thu hẹp độ rộng cột dịch vụ lại một chút
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap; // Nếu dài quá tự động sinh dấu ba chấm (...)
   color: $text-muted;
 }
 
@@ -114,40 +130,42 @@ $text-muted: #888888;
 .billDetails {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  font-size: 13px;
-  min-width: 160px;
-
+  gap: 2px; // Ép khít khoảng cách dòng bill
+  font-size: 12px;
+  min-width: 145px; // Bóp nhỏ chiều rộng tối thiểu cột bill
+  
   .billRow {
     display: flex;
     justify-content: space-between;
     color: $text-muted;
+    white-space: nowrap;
 
     &.discount { color: #E67E22; }
     
     &.total {
-      margin-top: 4px;
-      padding-top: 4px;
-      border-top: 1px dashed #ddd;
+      margin-top: 2px;
+      padding-top: 2px;
+      border-top: 1px dashed #eee;
       font-weight: 700;
       color: $charcoal-dark;
-      font-size: 14px;
+      font-size: 13.5px;
     }
   }
 }
 
 // Huy hiệu (Badges) mềm mại
 .badge {
-  padding: 6px 12px;
+  padding: 4px 10px; // Thu nhỏ badge lại chút cho thanh thoát
   border-radius: 50px;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 600;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  white-space: nowrap; // Chữ trong badge không được gãy dòng
 }
 
-// Trạng thái (Status) - Màu nhạt, chữ đậm
+// Trạng thái (Status)
 .status_Completed { background: #E8F5E9; color: #2E7D32; }
 .status_Pending { background: #FFF3E0; color: #E65100; }
 .status_InProgress { background: #E3F2FD; color: #1565C0; }
@@ -160,6 +178,7 @@ $text-muted: #888888;
 // Thao tác (Buttons)
 .actionCell {
   text-align: right;
+  width: 1%; // Kỹ thuật ép cột Action vừa khít theo độ rộng của button bên trong
 }
 
 .alignRight {
@@ -169,13 +188,14 @@ $text-muted: #888888;
 .actionButtons {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  gap: 6px;
+  white-space: nowrap; // Giữ các nút thao tác luôn nằm trên một dòng ngang
 
   button {
-    padding: 8px 16px;
-    border-radius: 8px;
+    padding: 6px 12px; // Bóp nhỏ nút bấm lại một chút
+    border-radius: 6px;
     font-weight: 600;
-    font-size: 13px;
+    font-size: 12.5px;
     cursor: pointer;
     transition: all 0.2s;
     border: 1px solid transparent;
@@ -188,7 +208,7 @@ $text-muted: #888888;
     color: #fff;
     &:hover {
       background: $gold-primary;
-      box-shadow: 0 4px 10px rgba(212, 175, 55, 0.3);
+      box-shadow: 0 4px 8px rgba(212, 175, 55, 0.25);
     }
   }
 
@@ -208,6 +228,6 @@ $text-muted: #888888;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }

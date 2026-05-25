@@ -495,7 +495,20 @@ export const getBookedSlotsByBarber = async (
 
 
 export const getBookingsByBranchService = async (idBranch, date) => {
-  const whereClause = {};
+  // Bước 1: lấy danh sách idBarber thuộc branch
+  const barbers = await db.Barber.findAll({
+    where: { idBranch },
+    attributes: ["idBarber"],
+    raw: true,
+  });
+  console.log("✅ barberIds:", barbers);
+  const barberIds = barbers.map((b) => b.idBarber);
+  if (!barberIds.length) return [];
+
+  // Bước 2: build whereClause lọc theo barberIds
+  const whereClause = {
+    idBarber: { [Op.in]: barberIds },
+  };
 
   if (date) {
     whereClause[Op.and] = [
@@ -505,15 +518,15 @@ export const getBookingsByBranchService = async (idBranch, date) => {
       ),
     ];
   }
-
+ console.log("✅ whereClause:", JSON.stringify(whereClause, null, 2));
   const bookings = await db.Booking.findAll({
+    logging: (sql) => console.log("🔍 SQL:", sql),
     where: whereClause,
     include: [
       {
         model: db.Barber,
         as: "barber",
-        required: true,
-        where: { idBranch },
+        required: false, // ✅ LEFT JOIN
         include: [
           {
             model: db.User,
@@ -530,6 +543,7 @@ export const getBookingsByBranchService = async (idBranch, date) => {
       },
       {
         model: db.Customer,
+        required: false, // ✅ LEFT JOIN
         include: [
           {
             model: db.User,
@@ -542,6 +556,7 @@ export const getBookingsByBranchService = async (idBranch, date) => {
       {
         model: db.BookingDetail,
         as: "BookingDetails",
+        required: false,
         include: [
           {
             model: db.Service,
@@ -554,6 +569,7 @@ export const getBookingsByBranchService = async (idBranch, date) => {
       {
         model: db.BookingTip,
         as: "BookingTip",
+        required: false,
         attributes: ["idTip", "tipAmount"],
       },
       {
@@ -585,6 +601,7 @@ export const getBookingsByBranchService = async (idBranch, date) => {
   });
 
   return bookings.map((booking) => {
+  try {
     const details = booking.BookingDetails || [];
 
     const serviceTotal = details.reduce(
@@ -681,5 +698,9 @@ export const getBookingsByBranchService = async (idBranch, date) => {
       discountFixed,
       total:          total.toFixed(0),
     };
-  });
+  } catch (err) {
+    console.error("❌ Lỗi map booking:", booking.idBooking, err.message);
+    return null;
+  }
+}).filter(Boolean);
 };

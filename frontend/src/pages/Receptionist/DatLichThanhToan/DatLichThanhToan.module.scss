@@ -1,6 +1,6 @@
 // DatLichThanhToan.module.scss
 // Admin — Đặt Lịch & Thanh Toán | NOULE Barber
-// Design: NOULE gold/dark system
+// Fix: responsive cho MacBook / màn hình nhỏ — không còn overflow + scroll
 
 $gold:        #C9A84C;
 $gold-hover:  #BA9A3E;
@@ -25,16 +25,20 @@ $radius-lg:   14px;
 $radius-xl:   50px;
 
 // ── Page ──────────────────────────────────────────────────────────────────────
+// FIX: dùng height 100vh với overflow hidden ở page
+// → nội dung bên trong tự scroll, không bị tràn ra ngoài
 .page {
-  padding: 28px 32px 48px;
+  padding: 20px 24px 0;          // bỏ padding-bottom, để container tự fill
   background: $page-bg;
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
   font-family: inherit;
   color: $ink;
+  overflow: hidden;              // chặn scroll toàn trang
   animation: fadeInPage 0.4s ease forwards;
+  box-sizing: border-box;
 }
 
 @keyframes fadeInPage {
@@ -47,8 +51,9 @@ $radius-xl:   50px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 22px;
+  padding-bottom: 16px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;                // header không bị co lại
 }
 
 // ── Date Selector (pill) ──────────────────────────────────────────────────────
@@ -68,8 +73,8 @@ $radius-xl:   50px;
   background: transparent;
   color: #aaa;
   border: none;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -93,14 +98,14 @@ $radius-xl:   50px;
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 20px;
-  min-width: 150px;
+  padding: 0 16px;
+  min-width: 140px;
   justify-content: center;
 
   .calendarIcon { color: $gold; }
 
   span {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     color: $ink;
     text-transform: uppercase;
@@ -112,13 +117,13 @@ $radius-xl:   50px;
 .bookingButton {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 22px;
+  gap: 7px;
+  padding: 8px 18px;
   background: $ink;
   border: 1px solid $ink;
   color: $gold;
   border-radius: $radius-md;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -134,9 +139,15 @@ $radius-xl:   50px;
 }
 
 // ── Container ─────────────────────────────────────────────────────────────────
+// FIX: flex: 1 + overflow hidden → fill phần còn lại của trang
+// BookingList bên trong tự scroll nội bộ
 .container {
-  width: 100%;
+  flex: 1;
+  overflow: hidden;              // con tự scroll, container không tràn
+  position: relative;
   animation: fadeIn 0.3s ease;
+  padding-bottom: 20px;
+  box-sizing: border-box;
 }
 
 @keyframes fadeIn {

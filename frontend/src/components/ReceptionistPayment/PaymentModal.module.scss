@@ -1,64 +1,82 @@
-// 🎨 Màu chủ đạo
-// 🎨 Màu chủ đạo (phiên bản dễ đọc)
-$accent: #ffffff;
-$bg-dark: #181818;
-$bg-box: #262626;
-$text: #f5f5f5;
+// ReceptionistPayment.module.scss
+// Fix: overlay dùng createPortal → luôn căn giữa viewport
+// Fix: width/size dùng clamp → scale theo màn hình
+
+$accent:    #ffffff;
+$bg-dark:   #181818;
+$bg-box:    #262626;
+$text:      #f5f5f5;
 $highlight: #ffb84d;
 
-
-// 🩵 Lớp phủ modal (đè toàn trang)
+// ── Overlay ───────────────────────────────────────────────────────────────────
+// position: fixed + inset: 0 hoạt động đúng KHI dùng createPortal render vào document.body
+// Nếu chưa dùng portal → đổi sang portal (xem ghi chú trong JSX)
+// ── Overlay ───────────────────────────────────────────────────────────────────
 .overlay {
   position: fixed;
   inset: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.75);
+  background: rgba(0, 0, 0, 0.6); // Lớp đen mờ vừa phải để nổi bật modal trắng
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: center;        
   z-index: 9999;
-  backdrop-filter: blur(6px);
-  animation: fadeIn 0.3s ease;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease;
+  padding: 1rem;              
+  box-sizing: border-box;
 }
 
-// 💬 Hộp modal chính
+// ── Modal ─────────────────────────────────────────────────────────────────────
 .modal {
   position: relative;
-  background-color: $bg-dark; // hoặc màu gì tùy ông đang set
-  border-radius: 20px;
   
-  /* 👉 SỬA DÒNG NÀY (Cũ là 440px) */
-  width: 600px; 
-  max-width: 95vw; /* Để không bị tràn màn hình điện thoại */
-  
+  // 👉 1. BIẾN NỀN ĐEN THÀNH TRONG SUỐT để hiện hoàn toàn khối trắng của component con
+  background-color: transparent; 
+  border: none;
+  box-shadow: none;
+
+  // Giữ nguyên logic clamp tính toán độ rộng thông minh của ông
+  width: clamp(340px, 38vw, 560px);
+
+  // 👉 2. ÉP CHIỀU CAO TỐI ĐA & KHÔNG CHO SCROLL Ở ĐÂY (Để component con tự scroll nội bộ nếu quá dài)
   max-height: 90vh;
-  overflow-y: auto;
-  // ... các CSS khác giữ nguyên
+  overflow: hidden; 
+
+  // 👉 3. XOÁ PADDING để khối trắng con tràn sát ra viền modal cha, không bị lộ rìa đen
+  padding: 0; 
+
+  animation: slideUp 0.25s ease;
+  box-sizing: border-box;
 }
 
-// ❌ Nút đóng
+// ── Close Button ──────────────────────────────────────────────────────────────
 .closeBtn {
   position: absolute;
-  top: 12px;
-  right: 16px;
+  
+  // 👉 Đẩy nút X dịch vào một chút để nó lọt đẹp vào trong góc phải của khối trắng con
+  top: 20px;
+  right: 20px;
+  
   background: transparent;
   border: none;
   font-size: 22px;
-  color: $text;
+  
+  // 👉 ĐỔI MÀU CHỮ THÀNH MÀU TỐI vì bây giờ nền phía dưới nút X đã là màu trắng của đơn hàng
+  color: #555555; 
+  
   cursor: pointer;
-  transition: 0.25s;
+  transition: 0.2s;
+  line-height: 1;
+  padding: 4px;
+  z-index: 1000; // Đảm bảo luôn nổi lên trên cùng
 
   &:hover {
-    color: $highlight;
+    color: #111111; // Hover vào thì đen đậm sắc sảo
     transform: scale(1.1);
   }
 }
 
-// =============================
-//   STEP 1 - Booking Info
-// =============================
-
+// ── Step 1 - Booking Info ─────────────────────────────────────────────────────
 .step1Container {
   color: $text;
   text-align: left;
@@ -66,70 +84,84 @@ $highlight: #ffb84d;
 
 .title {
   text-align: center;
-  font-size: 22px;
+  font-size: clamp(16px, 1.25rem, 22px);
   color: $accent;
-  margin-bottom: 20px;
+  margin-bottom: 1.25rem;
   font-weight: 600;
 }
 
 .infoBox {
   background-color: $bg-box;
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 18px;
-  box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: clamp(12px, 1rem, 16px);
+  margin-bottom: 1rem;
+  box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.04);
 }
 
 .row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 6px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 
   label {
     color: $highlight;
     font-weight: 600;
+    font-size: clamp(12px, 0.85rem, 14px);
   }
 
   span {
     color: $text;
     font-weight: 500;
+    font-size: clamp(12px, 0.85rem, 14px);
   }
 }
 
 .section {
-  margin-top: 16px;
+  margin-top: 1rem;
 
   label {
     color: $highlight;
     font-weight: 600;
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: 0.5rem;
+    font-size: clamp(12px, 0.85rem, 14px);
   }
 }
 
-// =============================
-//   Service List
-// =============================
-
+// ── Service List ──────────────────────────────────────────────────────────────
 .serviceList {
   list-style: none;
   padding: 0;
   margin: 0;
+
+  li {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+    font-size: clamp(12px, 0.85rem, 14px);
+
+    span:last-child {
+      color: $highlight;
+      font-weight: 600;
+    }
+  }
 }
 
 .serviceItem {
   background: $bg-box;
-  margin-bottom: 8px;
-  padding: 10px 12px;
-  border-radius: 10px;
+  margin-bottom: 6px;
+  padding: 8px 12px;
+  border-radius: 8px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  transition: 0.25s;
+  transition: 0.2s;
   cursor: pointer;
   border: 1px solid transparent;
+  font-size: clamp(12px, 0.85rem, 14px);
 
   &:hover {
     border-color: $highlight;
@@ -151,24 +183,18 @@ $highlight: #ffb84d;
   border-color: $highlight;
   background-color: lighten($bg-box, 3%);
 }
+
+// ── Voucher ───────────────────────────────────────────────────────────────────
 .voucherBox {
-  background: rgba(212, 163, 115, 0.08); /* ánh highlight nhẹ */
+  background: rgba(212, 163, 115, 0.08);
   border: 1px dashed $highlight;
-  padding: 14px 16px;
+  padding: 12px 14px;
   border-radius: 10px;
-  margin-top: 1.2rem;
+  margin-top: 1rem;
   color: $text;
   display: flex;
   flex-direction: column;
   gap: 4px;
-  box-shadow: 0 0 12px rgba(212, 163, 115, 0.15);
-  transition: 0.3s ease;
-
-  &:hover {
-    background: rgba(212, 163, 115, 0.12);
-    transform: translateY(-2px);
-    box-shadow: 0 0 18px rgba(212, 163, 115, 0.25);
-  }
 
   .voucherHeader {
     display: flex;
@@ -176,96 +202,77 @@ $highlight: #ffb84d;
     justify-content: space-between;
     font-weight: 600;
     color: $highlight;
+    font-size: clamp(12px, 0.85rem, 14px);
 
     .code {
       background: rgba(255, 255, 255, 0.08);
-      padding: 4px 8px;
-      border-radius: 6px;
+      padding: 3px 7px;
+      border-radius: 5px;
       font-family: monospace;
     }
   }
 
   .voucherDetail {
-    font-size: 15px;
+    font-size: clamp(12px, 0.8125rem, 14px);
     color: lighten($text, 5%);
-    margin-top: 4px;
+    margin-top: 3px;
   }
 }
 
 .voucherBoxEmpty {
   background: rgba(255, 255, 255, 0.05);
   border: 1px dashed rgba(255, 255, 255, 0.2);
-  padding: 14px 16px;
+  padding: 12px 14px;
   border-radius: 10px;
-  margin-top: 1.2rem;
-  color: rgba(255, 255, 255, 0.6);
+  margin-top: 1rem;
+  color: rgba(255, 255, 255, 0.5);
   font-style: italic;
   text-align: center;
-  transition: 0.25s;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.08);
-  }
+  font-size: clamp(12px, 0.85rem, 14px);
 }
 
-// =============================
-//   Tổng tiền
-// =============================
-
+// ── Total Box ─────────────────────────────────────────────────────────────────
 .totalBox {
-  margin-top: 20px;
-  font-size: 18px;
+  margin-top: 1.25rem;
   text-align: right;
+  font-size: clamp(14px, 1rem, 18px);
 
-  span {
-    color: $text;
-    margin-right: 8px;
-  }
-
-  strong {
-    color: $highlight;
-    font-size: 20px;
-  }
+  span  { color: $text; margin-right: 8px; }
+  strong { color: $highlight; font-size: clamp(15px, 1.1rem, 20px); }
 }
 
-// =============================
-//   Nút tiếp tục
-// =============================
-
+// ── Next Button ───────────────────────────────────────────────────────────────
 .nextBtn {
   background-color: $accent;
   color: $bg-dark;
   width: 100%;
-  padding: 12px;
+  padding: clamp(10px, 0.875rem, 14px);
   border: none;
   border-radius: 10px;
-  font-weight: bold;
-  margin-top: 24px;
+  font-weight: 700;
+  margin-top: 1.25rem;
   cursor: pointer;
-  font-size: 16px;
-  transition: 0.3s;
-  box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+  font-size: clamp(13px, 0.9375rem, 16px);
+  transition: 0.25s;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 0 25px rgba(255, 255, 255, 0.5);
+    box-shadow: 0 0 22px rgba(255, 255, 255, 0.4);
   }
 }
 
-// =============================
-//   Đánh giá bằng khuôn mặt 😍
-// =============================
-
+// ── Face Rating ───────────────────────────────────────────────────────────────
 .faceRow {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
-  margin-top: 16px;
+  gap: 10px;
+  margin-top: 1rem;
 }
 
 .face {
-  font-size: 36px;
+  font-size: clamp(26px, 2rem, 36px);
   cursor: pointer;
   transition: transform 0.2s ease, filter 0.2s ease;
   opacity: 0.6;
@@ -282,30 +289,28 @@ $highlight: #ffb84d;
   transform: scale(1.3);
   filter: drop-shadow(0 0 12px $highlight);
 }
-// =============================
-//   Step 3 - Tipping 💰
-// =============================
 
+// ── Step 3 - Tipping ──────────────────────────────────────────────────────────
 .tipGrid {
   display: flex;
   justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 16px;
+  gap: 8px;
+  margin-bottom: 1rem;
 
   button {
     flex: 1;
-    padding: 10px 0;
-    border-radius: 10px;
+    padding: 8px 0;
+    border-radius: 8px;
     background-color: $bg-box;
     color: $text;
     border: 1px solid rgba(255, 255, 255, 0.1);
     cursor: pointer;
     font-weight: 600;
-    transition: 0.25s;
+    font-size: clamp(12px, 0.85rem, 14px);
+    transition: 0.2s;
 
     &:hover {
       border-color: $highlight;
-      background-color: darken($bg-box, 4%);
       transform: translateY(-2px);
     }
   }
@@ -324,143 +329,123 @@ $highlight: #ffb84d;
 
   .tipInput {
     width: 100%;
-    padding: 10px;
+    padding: 8px;
     border-radius: 8px;
     border: 1px solid rgba(255, 255, 255, 0.2);
     background-color: $bg-box;
     color: $text;
-    font-size: 16px;
+    font-size: clamp(13px, 0.9375rem, 16px);
     text-align: center;
-    transition: 0.25s;
+    transition: 0.2s;
 
     &:focus {
       outline: none;
       border-color: $highlight;
-      box-shadow: 0 0 10px rgba(212, 163, 115, 0.3);
+      box-shadow: 0 0 8px rgba(212, 163, 115, 0.3);
     }
   }
 }
 
-// =============================
-//   Step 4 - Invoice 🧾
-// =============================
-
+// ── Step 4 - Invoice ──────────────────────────────────────────────────────────
 .invoiceContainer {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 1.5rem;
+  padding: 1rem;
 }
 
 .invoiceCard {
   background-color: $bg-box;
-  border-radius: 18px;
-  padding: 2rem;
-  width: 420px;
-  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.4);
-  animation: fadeIn 0.4s ease;
+  border-radius: 14px;
+  padding: clamp(16px, 1.5rem, 28px);
+  width: 100%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  animation: fadeIn 0.3s ease;
   color: $text;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .invoiceTitle {
   text-align: center;
-  font-size: 1.5rem;
+  font-size: clamp(16px, 1.25rem, 22px);
   font-weight: 600;
   color: $highlight;
-  margin-bottom: 1.4rem;
+  margin-bottom: 1.2rem;
 }
 
-.section {
-  margin-bottom: 1.4rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  padding-top: 1rem;
-
-  h3 {
-    font-size: 1rem;
-    color: lighten($highlight, 10%);
-    margin-bottom: 0.6rem;
-  }
-
-  p {
-    font-size: 0.95rem;
-    margin: 4px 0;
-    color: $text;
-
-    strong {
-      color: $highlight;
-    }
-  }
-}
-
-.serviceList {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-
-  li {
-    display: flex;
-    justify-content: space-between;
-    padding: 6px 0;
-    border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
-
-    span:first-child {
-      color: $text;
-    }
-
-    span:last-child {
-      color: $highlight;
-      font-weight: 600;
-    }
-  }
-}
-
-.empty {
-  font-style: italic;
-  color: rgba(255, 255, 255, 0.5);
-}
-
+// ── Summary Rows ──────────────────────────────────────────────────────────────
+.voucherRow,
+.discountRow,
 .tipRow,
 .totalRow {
   display: flex;
   justify-content: space-between;
-  font-size: 1rem;
-  margin-top: 8px;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin: 6px 0;
+  font-size: clamp(12px, 0.85rem, 15px);
+  transition: all 0.2s ease;
+  background: #1e1e1e;
+  color: #eaeaea;
 }
 
-.tipRow span:first-child {
-  color: $highlight;
+.voucherRow {
+  border: 1px dashed #b8860b;
+  background: #2b2b2b;
+  color: #d2b48c;
+  span:first-child { font-weight: 600; }
+}
+
+.discountRow {
+  border: 1px dashed #a0522d;
+  background: #2a1f1a;
+  color: #f2c5a0;
+  span:first-child { font-weight: 600; }
+}
+
+.tipRow {
+  border: 1px solid #3b3b3b;
+  background: #262626;
+  color: #ddd;
+  span:first-child { font-weight: 600; }
 }
 
 .totalRow {
-  margin-top: 12px;
+  background: linear-gradient(90deg, #3b2f2f, #c49a6c);
+  color: #fff;
+  font-size: clamp(13px, 0.9375rem, 16px);
+  font-weight: 700;
+  border: none;
+  box-shadow: 0 2px 6px rgba(196, 154, 108, 0.3);
 
-  span {
-    font-weight: 600;
-  }
-
-  strong {
-    font-size: 1.2rem;
-    color: $accent;
-    text-shadow: 0 0 6px rgba(255, 255, 255, 0.4);
-  }
+  span:first-child { text-transform: uppercase; }
+  strong { font-size: clamp(14px, 1rem, 17px); color: #ffe8c2; }
 }
 
+.voucherRow:hover,
+.discountRow:hover,
+.tipRow:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(255, 228, 196, 0.08);
+}
+
+// ── Button Group ──────────────────────────────────────────────────────────────
 .btnGroup {
   display: flex;
   justify-content: space-between;
-  margin-top: 1.5rem;
-  gap: 12px;
+  margin-top: 1.25rem;
+  gap: 10px;
 
   button {
     flex: 1;
-    padding: 10px 16px;
+    padding: clamp(8px, 0.7rem, 12px) 14px;
     border-radius: 10px;
     border: none;
     cursor: pointer;
-    font-size: 0.95rem;
+    font-size: clamp(12px, 0.875rem, 15px);
     font-weight: 600;
-    transition: 0.25s;
+    transition: 0.2s;
   }
 }
 
@@ -468,20 +453,17 @@ $highlight: #ffb84d;
   background-color: rgba(255, 255, 255, 0.1);
   color: $text;
 
-  &:hover {
-    background-color: rgba(255, 255, 255, 0.2);
-    transform: translateY(-1px);
-  }
+  &:hover { background-color: rgba(255, 255, 255, 0.18); transform: translateY(-1px); }
 }
 
 .confirmBtn {
   background-color: $highlight;
   color: $bg-dark;
-  box-shadow: 0 0 10px rgba($highlight, 0.4);
+  box-shadow: 0 0 10px rgba($highlight, 0.35);
 
   &:hover {
     background-color: lighten($highlight, 8%);
-    box-shadow: 0 0 15px rgba($highlight, 0.6);
+    box-shadow: 0 0 15px rgba($highlight, 0.55);
     transform: translateY(-1px);
   }
 }
@@ -492,105 +474,13 @@ $highlight: #ffb84d;
   font-weight: 600;
   text-align: center;
   padding: 1rem;
-  border-radius: 12px;
-  animation: popIn 0.3s ease;
-  border: 1px solid rgba(124, 252, 0, 0.3);
-}
-.voucherRow,
-.discountRow,
-.tipRow,
-.totalRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 14px;
   border-radius: 10px;
-  margin: 8px 0;
-  font-size: 15px;
-  transition: all 0.3s ease;
-  background: #1e1e1e; /* nền đen nhẹ */
-  color: #eaeaea; /* chữ sáng */
+  animation: popIn 0.3s ease;
+  border: 1px solid rgba(124, 252, 0, 0.25);
+  font-size: clamp(13px, 0.9375rem, 16px);
 }
 
-/* Voucher áp dụng */
-.voucherRow {
-  border: 1px dashed #b8860b; /* viền nâu đồng */
-  background: #2b2b2b;
-  color: #d2b48c; /* chữ nâu vàng nhẹ */
-  span:first-child {
-    font-weight: 600;
-  }
-}
-
-/* Giảm giá */
-.discountRow {
-  border: 1px dashed #a0522d;
-  background: #2a1f1a;
-  color: #f2c5a0; /* nâu sáng pha vàng */
-  span:first-child {
-    font-weight: 600;
-  }
-}
-
-/* Tiền tip */
-.tipRow {
-  border: 1px solid #3b3b3b;
-  background: #262626;
-  color: #ddd;
-  span:first-child {
-    font-weight: 600;
-  }
-}
-
-/* Tổng cộng */
-.totalRow {
-  background: linear-gradient(90deg, #3b2f2f, #c49a6c);
-  color: #fff;
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  border: none;
-  box-shadow: 0 2px 6px rgba(196, 154, 108, 0.3);
-
-  span:first-child {
-    text-transform: uppercase;
-  }
-
-  strong {
-    font-size: 17px;
-    color: #ffe8c2;
-  }
-}
-
-/* Hover hiệu ứng nhẹ */
-.voucherRow:hover,
-.discountRow:hover,
-.tipRow:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(255, 228, 196, 0.08);
-}
-
-// =============================
-//   Hiệu ứng animation
-// =============================
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-//
+// ── Section Header ────────────────────────────────────────────────────────────
 .sectionHeader {
   display: flex;
   justify-content: space-between;
@@ -599,102 +489,67 @@ $highlight: #ffb84d;
 }
 
 .toggleBtn {
-  background: #f3f4f6;
+  background: rgba(255,255,255,0.08);
   border: none;
-  border-radius: 8px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   gap: 4px;
   padding: 4px 10px;
-  font-size: 14px;
+  font-size: clamp(11px, 0.8125rem, 14px);
+  color: $text;
   cursor: pointer;
-  transition: all 0.2s ease;
-}
+  transition: 0.2s;
 
-.toggleBtn:hover {
-  background: #e5e7eb;
-}
-
-.activeService {
-  background-color: #e6f7e9;
+  &:hover { background: rgba(255,255,255,0.14); }
 }
 
 .emptyText {
-  color: #777;
+  color: rgba(255,255,255,0.4);
   font-style: italic;
-  margin-left: 8px;
+  font-size: clamp(11px, 0.8125rem, 13px);
 }
 
+// ── Payment Summary ───────────────────────────────────────────────────────────
 .paymentSummary {
-  margin-top: 1.2rem;
-  background: #fdfdfd;
+  margin-top: 1rem;
+  background: rgba(255,255,255,0.04);
   border-radius: 10px;
-  padding: 14px 16px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  padding: 12px 14px;
 
   .row {
     display: flex;
     justify-content: space-between;
     padding: 4px 0;
-    font-size: 15px;
+    font-size: clamp(12px, 0.85rem, 15px);
 
-    .label {
-      font-weight: 500;
-      color: #444;
-    }
-    .value {
-      font-weight: 500;
-      color: #111;
-    }
+    .label { font-weight: 500; color: rgba(255,255,255,0.6); }
+    .value { font-weight: 500; color: $text; }
   }
 
   .finalPrice {
     margin-top: 6px;
-    border-top: 1px dashed #ccc;
+    border-top: 1px dashed rgba(255,255,255,0.15);
     padding-top: 8px;
-    font-size: 17px;
-    color: #0a7f25;
+    font-size: clamp(13px, 0.9375rem, 17px);
+    color: $highlight;
 
-    .totalValue {
-      color: #0a7f25;
-      font-weight: 700;
-    }
+    .totalValue { color: $highlight; font-weight: 700; }
   }
+}
 
-  .voucherBox {
-    margin: 10px 0;
-    background: #fff6e5;
-    border: 1px dashed #f1b441;
-    border-radius: 8px;
-    padding: 10px 12px;
+// ── Animations ────────────────────────────────────────────────────────────────
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
 
-    .voucherHeader {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 14px;
-    }
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 
-    .discountText {
-      color: #e67e22;
-      font-weight: 600;
-    }
-
-    .voucherExpiry {
-      font-size: 13px;
-      color: #777;
-      margin-top: 4px;
-      text-align: right;
-    }
-  }
-
-  .voucherBoxEmpty {
-    margin: 10px 0;
-    font-size: 14px;
-    color: #888;
-    text-align: center;
-    background: #f5f5f5;
-    border-radius: 8px;
-    padding: 8px;
-  }
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
 }

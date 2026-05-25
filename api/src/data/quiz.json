@@ -1,4 +1,10 @@
 {
+  "meta": {
+    "version": "2.1",
+    "description": "Barbershop AI Quiz — 2 luồng tư vấn kiểu tóc",
+    "updated": "2025"
+  },
+
   "startQuestion": {
     "id": "start",
     "question": "Bạn đã có mẫu tóc cụ thể muốn cắt chưa?",
@@ -6,16 +12,19 @@
     "options": [
       {
         "label": "Rồi, tôi đã có ảnh mẫu/kiểu muốn cắt",
+        "value": "has_reference",
         "nextFlow": "flowA",
         "requires_custom_input": false
       },
       {
         "label": "Chưa, tôi cần Barber tư vấn kiểu phù hợp",
+        "value": "needs_advice",
         "nextFlow": "flowB",
         "requires_custom_input": false
       }
     ]
   },
+
   "flows": {
     "flowA": {
       "title": "Luồng A – Khách đã có mẫu (Kiểm tra độ khả thi)",
@@ -25,50 +34,56 @@
           "id": "A1",
           "question": "Tên kiểu tóc bạn muốn cắt (hoặc mô tả ngắn gọn):",
           "type": "text",
+          "value_key": "desired_style_text",
+          "placeholder": "VD: Two Block Hàn Quốc, Undercut Side Part, Quiff...",
           "options": []
         },
         {
           "id": "A2",
           "question": "Đặc điểm chất tóc hiện tại của bạn là gì?",
           "type": "single_choice",
+          "value_key": "hair_texture",
           "options": [
-            { "label": "Rễ tre, cứng, 2 bên mai hay bung chĩa lỉa chỉa", "requires_custom_input": false },
-            { "label": "Tóc tơ, sợi mảnh, dễ bị dính xẹp vào da đầu", "requires_custom_input": false },
-            { "label": "Tóc xoăn hoặc bông xù tự nhiên", "requires_custom_input": false },
-            { "label": "Tóc trung bình, dễ bảo ban và vào nếp", "requires_custom_input": false },
-            { "label": "Chất tóc khác (Vui lòng tự nhập...)", "requires_custom_input": true }
+            { "label": "Rễ tre, cứng, 2 bên mai hay bung chĩa lỉa chỉa", "value": "coarse_thick", "requires_custom_input": false },
+            { "label": "Tóc tơ, sợi mảnh, dễ bị dính xẹp vào da đầu", "value": "fine_flat", "requires_custom_input": false },
+            { "label": "Tóc xoăn hoặc bông xù tự nhiên", "value": "curly_wavy", "requires_custom_input": false },
+            { "label": "Tóc trung bình, dễ bảo ban và vào nếp", "value": "normal", "requires_custom_input": false },
+            { "label": "Chất tóc khác (Vui lòng tự nhập...)", "value": "custom", "requires_custom_input": true }
           ]
         },
         {
           "id": "A3",
           "question": "Bạn đánh giá thế nào về vùng trán của mình?",
           "type": "single_choice",
+          "value_key": "forehead_type",
           "options": [
-            { "label": "Trán cân đối, đường chân tóc bình thường", "requires_custom_input": false },
-            { "label": "Trán cao / Trán sân bay", "requires_custom_input": false },
-            { "label": "Bò liếm hoặc Hói chữ M (bị lẹm 2 bên góc trán)", "requires_custom_input": false },
-            { "label": "Tình trạng trán khác (Vui lòng tự nhập...)", "requires_custom_input": true }
+            { "label": "Trán cân đối, đường chân tóc bình thường", "value": "normal_forehead", "requires_custom_input": false },
+            { "label": "Trán cao / Trán sân bay", "value": "high_forehead", "requires_custom_input": false },
+            { "label": "Bò liếm hoặc Hói chữ M (bị lẹm 2 bên góc trán)", "value": "receding_hairline", "requires_custom_input": false },
+            { "label": "Tình trạng trán khác (Vui lòng tự nhập...)", "value": "custom", "requires_custom_input": true }
           ]
         },
         {
           "id": "A4",
           "question": "Thói quen vuốt sáp/tạo kiểu mỗi sáng của bạn?",
           "type": "single_choice",
+          "value_key": "styling_habit",
           "options": [
-            { "label": "0 phút: Chỉ thích gội xong để khô tự nhiên", "requires_custom_input": false },
-            { "label": "2-3 phút: Thỉnh thoảng vuốt khi đi chơi/tiệc", "requires_custom_input": false },
-            { "label": "5-10 phút: Ngày nào cũng vuốt sáp chỉn chu", "requires_custom_input": false }
+            { "label": "0 phút: Chỉ thích gội xong để khô tự nhiên", "value": "no_styling", "requires_custom_input": false },
+            { "label": "2-3 phút: Thỉnh thoảng vuốt khi đi chơi/tiệc", "value": "occasional_styling", "requires_custom_input": false },
+            { "label": "5-10 phút: Ngày nào cũng vuốt sáp chỉn chu", "value": "daily_styling", "requires_custom_input": false }
           ]
         },
         {
           "id": "A5",
           "question": "Để kiểu tóc lên form giống mẫu nhất, bạn sẵn sàng làm những gì?",
           "type": "single_choice",
+          "value_key": "treatment_willingness",
           "options": [
-            { "label": "Chỉ cắt kỹ thuật (Fade/Tỉa đuổi), xấu đẹp tùy chất tóc", "requires_custom_input": false },
-            { "label": "Sẵn sàng dùng hóa chất cơ bản (Ép Side 2 bên / Uốn phồng nhẹ)", "requires_custom_input": false },
-            { "label": "Chơi tới bến (Uốn, Nhuộm, Tẩy) để giống mẫu 100%", "requires_custom_input": false },
-            { "label": "Yêu cầu khác (Nhập thông tin...)", "requires_custom_input": true }
+            { "label": "Chỉ cắt kỹ thuật (Fade/Tỉa đuổi), xấu đẹp tùy chất tóc", "value": "cut_only", "requires_custom_input": false },
+            { "label": "Sẵn sàng dùng hóa chất cơ bản (Ép Side 2 bên / Uốn phồng nhẹ)", "value": "basic_treatment", "requires_custom_input": false },
+            { "label": "Chơi tới bến (Uốn, Nhuộm, Tẩy) để giống mẫu 100%", "value": "full_treatment", "requires_custom_input": false },
+            { "label": "Yêu cầu khác (Nhập thông tin...)", "value": "custom", "requires_custom_input": true }
           ]
         }
       ],
@@ -79,6 +94,7 @@
       },
       "outro": "Đã nhận thông tin! Hệ thống đang phân tích form đầu và chất tóc của bạn để xem kiểu này có khả thi không. Chờ chút nhé!"
     },
+
     "flowB": {
       "title": "Luồng B – Khách cần tư vấn từ A-Z (Makeover)",
       "intro": "Chào bạn! Chưa biết cắt gì cũng không sao. Trả lời vài câu hỏi dưới đây để Barber tìm ra kiểu tóc 'chân ái' giúp bạn tút lại vẻ đẹp trai nhé.",
@@ -87,51 +103,72 @@
           "id": "B1",
           "question": "Điều gì ở mái tóc/khuôn mặt hiện tại làm bạn thiếu tự tin nhất?",
           "type": "single_choice",
+          "value_key": "main_concern",
           "options": [
-            { "label": "Trán cao / Hói chữ M / Bò liếm", "requires_custom_input": false },
-            { "label": "Tóc quá thưa / Dính xẹp vào da đầu", "requires_custom_input": false },
-            { "label": "Tóc rễ tre / Bung chĩa lỉa chỉa 2 bên", "requires_custom_input": false },
-            { "label": "Tóc dài vướng víu, nóng bức, không có form nét", "requires_custom_input": false },
-            { "label": "Vấn đề khác (Nhập thông tin...)", "requires_custom_input": true }
+            { "label": "Trán cao / Hói chữ M / Bò liếm", "value": "high_forehead_or_receding", "requires_custom_input": false },
+            { "label": "Tóc quá thưa / Dính xẹp vào da đầu", "value": "thin_flat_hair", "requires_custom_input": false },
+            { "label": "Tóc rễ tre / Bung chĩa lỉa chỉa 2 bên", "value": "coarse_unruly_hair", "requires_custom_input": false },
+            { "label": "Tóc dài vướng víu, nóng bức, không có form nét", "value": "overgrown_no_shape", "requires_custom_input": false },
+            { "label": "Vấn đề khác (Nhập thông tin...)", "value": "custom", "requires_custom_input": true }
           ]
         },
         {
           "id": "B2",
           "question": "Bạn muốn hình ảnh mới của mình trông như thế nào?",
           "type": "single_choice",
+          "value_key": "desired_style_vibe",
           "options": [
-            { "label": "Lịch lãm, trưởng thành (Công sở / Quý ông)", "requires_custom_input": false },
-            { "label": "Thư sinh, nhẹ nhàng (Học sinh / Kiểu Hàn Quốc)", "requires_custom_input": false },
-            { "label": "Ngầu, cá tính, nổi bật (Nghệ thuật / Bụi bặm)", "requires_custom_input": false },
-            { "label": "Siêu ngắn, mát mẻ, nam tính (Thể thao / Quân đội)", "requires_custom_input": false },
-            { "label": "Phong cách khác (Nhập thông tin...)", "requires_custom_input": true }
+            { "label": "Lịch lãm, trưởng thành (Công sở / Quý ông)", "value": "professional_gentleman", "requires_custom_input": false },
+            { "label": "Thư sinh, nhẹ nhàng (Học sinh / Kiểu Hàn Quốc)", "value": "soft_kpop", "requires_custom_input": false },
+            { "label": "Ngầu, cá tính, nổi bật (Nghệ thuật / Bụi bặm)", "value": "edgy_artistic", "requires_custom_input": false },
+            { "label": "Siêu ngắn, mát mẻ, nam tính (Thể thao / Quân đội)", "value": "sporty_military", "requires_custom_input": false },
+            { "label": "Phong cách khác (Nhập thông tin...)", "value": "custom", "requires_custom_input": true }
           ]
         },
         {
           "id": "B3",
           "question": "Buổi sáng bạn có bao nhiêu thời gian cho tóc tai?",
           "type": "single_choice",
+          "value_key": "morning_time",
           "options": [
-            { "label": "0 phút: Dậy là đi, không sấy không vuốt", "requires_custom_input": false },
-            { "label": "2-3 phút: Sấy khô qua loa là được", "requires_custom_input": false },
-            { "label": "5-10 phút: Sẵn sàng sấy tạo phồng và vuốt sáp chuẩn form", "requires_custom_input": false }
+            { "label": "0 phút: Dậy là đi, không sấy không vuốt", "value": "zero_maintenance", "requires_custom_input": false },
+            { "label": "2-3 phút: Sấy khô qua loa là được", "value": "low_maintenance", "requires_custom_input": false },
+            { "label": "5-10 phút: Sẵn sàng sấy tạo phồng và vuốt sáp chuẩn form", "value": "high_maintenance", "requires_custom_input": false }
           ]
         },
         {
           "id": "B4",
           "question": "Bạn có muốn AI phân tích màu da và gợi ý thêm màu nhuộm (uốn) để lột xác diện mạo không?",
           "type": "single_choice",
+          "value_key": "color_treatment_interest",
           "options": [
-            { "label": "Không, tôi chỉ muốn cắt đen nguyên bản", "requires_custom_input": false },
-            { "label": "Có, uốn xoăn nhẹ tạo nếp hoặc ép side phần mai", "requires_custom_input": false },
-            { "label": "Có, nhờ AI scan màu da để tìm màu nhuộm 'chân ái' luôn!", "requires_custom_input": false }
+            { "label": "Không, tôi chỉ muốn cắt đen nguyên bản", "value": "cut_only", "triggers_skin_scan": false, "requires_custom_input": false },
+            { "label": "Có, uốn xoăn nhẹ tạo nếp hoặc ép side phần mai", "value": "perm_or_press", "triggers_skin_scan": false, "requires_custom_input": false },
+            { "label": "Có, nhờ AI scan màu da để tìm màu nhuộm 'chân ái' luôn!", "value": "ai_color_scan", "triggers_skin_scan": true, "requires_custom_input": false }
+          ]
+        },
+        {
+          "id": "B5",
+          "question": "Chất tóc hiện tại của bạn như thế nào?",
+          "type": "single_choice",
+          "value_key": "hair_texture",
+          "options": [
+            { "label": "Rễ tre, cứng, hay bung chĩa 2 bên", "value": "coarse_thick", "requires_custom_input": false },
+            { "label": "Tóc tơ, mảnh, dễ xẹp vào da đầu", "value": "fine_flat", "requires_custom_input": false },
+            { "label": "Xoăn hoặc bông tự nhiên", "value": "curly_wavy", "requires_custom_input": false },
+            { "label": "Trung bình, dễ vào nếp", "value": "normal", "requires_custom_input": false },
+            { "label": "Chất tóc khác (Vui lòng tự nhập...)", "value": "custom", "requires_custom_input": true }
           ]
         }
       ],
       "faceRecognition": {
         "id": "face_recog_B",
         "question": "Cho phép AI nhận diện khuôn mặt và màu da (nếu có yêu cầu) để chọn kiểu tóc che khuyết điểm tốt nhất cho bạn.",
-        "type": "camera_upload"
+        "type": "camera_upload",
+        "conditional_skin_scan": {
+          "trigger_question": "B4",
+          "trigger_value": "ai_color_scan"
+        }
       },
       "outro": "Cảm ơn người anh em! Dựa trên phong cách và chất tóc của bạn, Barber sẽ đề xuất các kiểu tóc phù hợp nhất ngay sau đây."
     }

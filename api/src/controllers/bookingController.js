@@ -317,7 +317,6 @@ export const getBookedSlotsByBarber = async (req, res) => {
 export const getBookingsByBranch = async (req, res) => {
   try {
     const { idBranch } = req.params;
-    const { date } = req.query;
 
     if (!idBranch) {
       return res.status(400).json({
@@ -326,18 +325,37 @@ export const getBookingsByBranch = async (req, res) => {
       });
     }
 
+    // Admin xem được tất cả, receptionist chỉ xem chi nhánh mình
+    const isAdmin = req.user.role === "admin";
+    if (!isAdmin && parseInt(idBranch) !== req.user.idBranch) {
+      return res.status(403).json({
+        success: false,
+        message: "Bạn chỉ được xem booking của chi nhánh mình.",
+      });
+    }
+
+    const { date } = req.query;
+
+    // Validate format date nếu có truyền vào
+    if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return res.status(400).json({
+        success: false,
+        message: "Định dạng date không hợp lệ. Dùng YYYY-MM-DD",
+      });
+    }
+
     const result = await bookingService.getBookingsByBranchService(
       parseInt(idBranch),
-      date
+      date || null
     );
 
     return res.status(200).json({
       success: true,
+      total: result.length,
       data: result,
     });
   } catch (error) {
     console.error("Lỗi getBookingsByBranch:", error);
-
     return res.status(500).json({
       success: false,
       message: "Lỗi khi lấy danh sách booking theo chi nhánh",

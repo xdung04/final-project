@@ -1,6 +1,9 @@
 // LuongThuong.jsx — FULLY WIRED
+// Fix: createPortal (modal luôn căn giữa viewport)
+// Fix: Toast thay alert(), ConfirmModal thay window.confirm()
 
 import React, { useEffect, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import classNames from "classnames/bind";
 import styles from "./LuongThuong.module.scss";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -11,20 +14,21 @@ import {
   faBan, faChevronDown, faArrowsRotate, faCircleInfo,
 } from "@fortawesome/free-solid-svg-icons";
 import { SalaryAPI } from "~/apis/salaryAPI";
+import Toast from "~/components/Toast";
 
 const cx = classNames.bind(styles);
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const STATUS_META = {
-  Realtime:     { label: "Xem trực tiếp",  cls: "realtime",      icon: "📡" },
-  Draft:        { label: "Bản nháp",       cls: "draft",         icon: "📝" },
-  Pending:      { label: "Chờ xác nhận",   cls: "pending",       icon: "🕐" },
-  Disputed:     { label: "Có khiếu nại",   cls: "disputed",      icon: "⚠️" },
-  Confirmed:    { label: "Đã xác nhận",    cls: "confirmed",     icon: "✅" },
-  AutoConfirmed:{ label: "Tự xác nhận",    cls: "autoconfirmed", icon: "⏱"  },
-  Paid:         { label: "Đã thanh toán",  cls: "paid",          icon: "💸" },
-  Locked:       { label: "Đã khóa",        cls: "locked",        icon: "🔒" },
-  Cancelled:    { label: "Đã huỷ",         cls: "cancelled",     icon: "🚫" },
+  Realtime:      { label: "Xem trực tiếp",  cls: "realtime",      icon: "📡" },
+  Draft:         { label: "Bản nháp",       cls: "draft",         icon: "📝" },
+  Pending:       { label: "Chờ xác nhận",   cls: "pending",       icon: "🕐" },
+  Disputed:      { label: "Có khiếu nại",   cls: "disputed",      icon: "⚠️" },
+  Confirmed:     { label: "Đã xác nhận",    cls: "confirmed",     icon: "✅" },
+  AutoConfirmed: { label: "Tự xác nhận",    cls: "autoconfirmed", icon: "⏱"  },
+  Paid:          { label: "Đã thanh toán",  cls: "paid",          icon: "💸" },
+  Locked:        { label: "Đã khóa",        cls: "locked",        icon: "🔒" },
+  Cancelled:     { label: "Đã huỷ",         cls: "cancelled",     icon: "🚫" },
 };
 
 const fmt = (n) => Number(n || 0).toLocaleString("vi-VN") + "đ";
@@ -32,6 +36,92 @@ const fmt = (n) => Number(n || 0).toLocaleString("vi-VN") + "đ";
 const calcNet = (s) =>
   (s.baseSalary || 0) + (s.commission || 0) + (s.tip || 0) + (s.bonus || 0)
   - (s.advance || 0) - (s.deduction || 0);
+
+// ─── Toast hook ───────────────────────────────────────────────────────────────
+function useToast() {
+  const [toasts, setToasts] = useState([]);
+
+  const showToast = useCallback((type, message) => {
+    const id = Date.now();
+    setToasts((prev) => [...prev, { id, type, message }]);
+    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3500);
+  }, []);
+
+  const ToastContainer = () =>
+    toasts.length > 0
+      ? createPortal(
+          <div style={{ position: "fixed", top: 16, right: 16, zIndex: 9999, display: "flex", flexDirection: "column", gap: 8 }}>
+            {toasts.map((t) => (
+              <Toast key={t.id} type={t.type} message={t.message} />
+            ))}
+          </div>,
+          document.body
+        )
+      : null;
+
+  return { showToast, ToastContainer };
+}
+
+// ─── ConfirmModal ─────────────────────────────────────────────────────────────
+// Thay thế window.confirm() — render qua portal
+function ConfirmModal({ open, title, message, onConfirm, onCancel, confirmLabel = "Xác nhận", danger = false }) {
+  if (!open) return null;
+  return createPortal(
+    <div
+      className={cx("overlay")}
+      onClick={(e) => e.target === e.currentTarget && onCancel()}
+      style={{ zIndex: 500 }}
+    >
+      <div className={cx("modal")} style={{ width: 420 }} role="alertdialog" aria-modal="true">
+        <div className={cx("modalTitle")}>{title}</div>
+        <div className={cx("modalSub")} style={{ paddingBottom: 20 }}>{message}</div>
+        <div className={cx("modalActions")}>
+          <button className={cx("btn", "btn-ghost")} onClick={onCancel}>Huỷ</button>
+          <button
+            className={cx("btn", danger ? "btn-danger" : "btn-send")}
+            onClick={onConfirm}
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+// ─── useConfirm hook ──────────────────────────────────────────────────────────
+function useConfirm() {
+  const [state, setState] = useState({ open: false, title: "", message: "", resolve: null, danger: false, confirmLabel: "Xác nhận" });
+
+  const confirm = useCallback(({ title, message, confirmLabel, danger }) =>
+    new Promise((resolve) => {
+      setState({ open: true, title, message, confirmLabel: confirmLabel || "Xác nhận", danger: !!danger, resolve });
+    }), []);
+
+  const handleConfirm = () => {
+    state.resolve(true);
+    setState((s) => ({ ...s, open: false }));
+  };
+  const handleCancel = () => {
+    state.resolve(false);
+    setState((s) => ({ ...s, open: false }));
+  };
+
+  const ConfirmContainer = () => (
+    <ConfirmModal
+      open={state.open}
+      title={state.title}
+      message={state.message}
+      confirmLabel={state.confirmLabel}
+      danger={state.danger}
+      onConfirm={handleConfirm}
+      onCancel={handleCancel}
+    />
+  );
+
+  return { confirm, ConfirmContainer };
+}
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 function StatCard({ label, value, sub, variant, pulse }) {
@@ -75,9 +165,11 @@ function SourceBanner({ source, isCurrentMonth, canCalculate, message }) {
 }
 
 // ─── Modal wrapper ────────────────────────────────────────────────────────────
+// FIX: dùng createPortal → overlay render thẳng vào document.body
+// → position: fixed luôn căn giữa viewport, không bị trap bởi parent transform
 function Modal({ open, onClose, children }) {
   if (!open) return null;
-  return (
+  return createPortal(
     <div
       className={cx("overlay")}
       onClick={(e) => e.target === e.currentTarget && onClose()}
@@ -88,65 +180,72 @@ function Modal({ open, onClose, children }) {
         </button>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body  // ← thoát hoàn toàn khỏi DOM tree của trang
   );
 }
 
 // ─── Deduction Modal ──────────────────────────────────────────────────────────
-// THAY ĐỔI: Bỏ prefill, form nhập khoản mới, hiện list từng khoản + soft delete
-function DeductionModal({ data, onClose, onAdd, onRemove, loading }) {
+function DeductionModal({ data, onClose, onAdd, onRemove, loading, showToast }) {
   const [amount,        setAmount]        = useState("");
   const [reason,        setReason]        = useState("");
-  const [violationDate, setViolationDate] = useState(""); // 🆕
+  const [violationDate, setViolationDate] = useState("");
   const [removeReason,  setRemoveReason]  = useState("");
   const [removingId,    setRemovingId]    = useState(null);
- 
+
   useEffect(() => {
     if (data) {
       setAmount("");
       setReason("");
-      setViolationDate(""); // 🆕 reset
+      setViolationDate("");
       setRemoveReason("");
       setRemovingId(null);
     }
   }, [data?.idSalary]);
- 
+
   const deductions = data?.DeductionsList || [];
- 
+
   const previewNet =
     (data?.baseSalary || 0) + (data?.commission || 0) +
     (data?.tip || 0)        + (data?.bonus || 0) -
     (data?.deductions || 0);
- 
+
   const handleAdd = () => {
-    if (!amount || Number(amount) <= 0) return alert("Số tiền phải lớn hơn 0");
-    if (!reason.trim())                  return alert("Vui lòng nhập lý do");
- 
+    if (!amount || Number(amount) <= 0) {
+      showToast("error", "Số tiền phải lớn hơn 0");
+      return;
+    }
+    if (!reason.trim()) {
+      showToast("error", "Vui lòng nhập lý do khấu trừ");
+      return;
+    }
     onAdd(data.idSalary, {
       amount:        Number(amount),
       reason:        reason.trim(),
-      violationDate: violationDate || null, // 🆕 nullable
+      violationDate: violationDate || null,
     });
- 
     setAmount("");
     setReason("");
-    setViolationDate(""); // 🆕 reset
+    setViolationDate("");
   };
- 
+
   const handleRemoveConfirm = (idDeduction) => {
-    if (!removeReason.trim()) return alert("Vui lòng nhập lý do xóa");
+    if (!removeReason.trim()) {
+      showToast("error", "Vui lòng nhập lý do xóa");
+      return;
+    }
     onRemove(idDeduction, removeReason.trim());
     setRemovingId(null);
     setRemoveReason("");
   };
- 
+
   return (
     <Modal open={!!data} onClose={onClose}>
       <div className={cx("modalTitle")}>✏️ Quản lý khấu trừ</div>
       <div className={cx("modalSub")}>
         {data?.barberName} &nbsp;·&nbsp; Tháng {data?.month}/{data?.year}
       </div>
- 
+
       {/* ── Danh sách khoản đã có ── */}
       <div className={cx("deductionListSection")}>
         <div className={cx("deductionListTitle")}>
@@ -155,7 +254,7 @@ function DeductionModal({ data, onClose, onAdd, onRemove, loading }) {
             <span className={cx("deductionTotal")}>Tổng: {fmt(data?.deductions || 0)}</span>
           )}
         </div>
- 
+
         {deductions.length === 0 ? (
           <div className={cx("deductionEmpty")}>Chưa có khoản khấu trừ nào</div>
         ) : (
@@ -165,17 +264,16 @@ function DeductionModal({ data, onClose, onAdd, onRemove, loading }) {
                 <div className={cx("deductionItemLeft")}>
                   <span className={cx("deductionAmount")}>−{fmt(d.amount)}</span>
                   <span className={cx("deductionReason")}>{d.reason}</span>
-                  {/* 🆕 Hiển thị ngày vi phạm nếu có */}
-                {d.violationDate && (
-                <span className={cx("deductionViolationDate")}>
-                  📅 Vi phạm: {new Date(d.violationDate).toLocaleDateString("vi-VN")}
-                </span>
-              )}
+                  {d.violationDate && (
+                    <span className={cx("deductionViolationDate")}>
+                      📅 Vi phạm: {new Date(d.violationDate).toLocaleDateString("vi-VN")}
+                    </span>
+                  )}
                   <span className={cx("deductionDate")}>
                     Nhập ngày: {new Date(d.createdAt).toLocaleDateString("vi-VN")}
                   </span>
                 </div>
- 
+
                 {removingId === d.idDeduction ? (
                   <div className={cx("removeForm")}>
                     <input
@@ -215,12 +313,12 @@ function DeductionModal({ data, onClose, onAdd, onRemove, loading }) {
           </div>
         )}
       </div>
- 
+
       <div className={cx("deductionDivider")} />
- 
+
       {/* ── Form thêm khoản mới ── */}
       <div className={cx("deductionListTitle")}>Thêm khoản khấu trừ mới</div>
- 
+
       <div className={cx("formRow")}>
         <div className={cx("formGroup", "formGroupAmount")}>
           <label className={cx("formLabel")}>Số tiền (đ)</label>
@@ -239,8 +337,7 @@ function DeductionModal({ data, onClose, onAdd, onRemove, loading }) {
           />
         </div>
       </div>
- 
-      {/* 🆕 Ngày vi phạm — không bắt buộc */}
+
       <div className={cx("formGroup")}>
         <label className={cx("formLabel")}>
           Ngày vi phạm
@@ -249,16 +346,16 @@ function DeductionModal({ data, onClose, onAdd, onRemove, loading }) {
         <input
           type="date" className={cx("formInput")}
           value={violationDate}
-          max={new Date().toISOString().split("T")[0]} // không chọn ngày tương lai
+          max={new Date().toISOString().split("T")[0]}
           onChange={(e) => setViolationDate(e.target.value)}
         />
       </div>
- 
+
       <div className={cx("previewBox")}>
         <span>Thực nhận hiện tại</span>
         <span className={cx("previewVal")}>{fmt(previewNet)}</span>
       </div>
- 
+
       <div className={cx("modalActions")}>
         <button className={cx("btn", "btn-ghost")} onClick={onClose}>Đóng</button>
         <button
@@ -273,12 +370,19 @@ function DeductionModal({ data, onClose, onAdd, onRemove, loading }) {
   );
 }
 
-
 // ─── Dispute View Modal ───────────────────────────────────────────────────────
-function DisputeViewModal({ data, onClose, onForceClose, onEditAndResend, loading }) {
+function DisputeViewModal({ data, onClose, onForceClose, onEditAndResend, loading, showToast }) {
   const [reason, setReason] = useState("");
 
   useEffect(() => { if (data) setReason(""); }, [data]);
+
+  const handleForceClose = () => {
+    if (!reason.trim()) {
+      showToast("error", "Vui lòng nhập lý do từ chối trước khi Force-close");
+      return;
+    }
+    onForceClose(reason);
+  };
 
   return (
     <Modal open={!!data} onClose={onClose}>
@@ -308,7 +412,7 @@ function DisputeViewModal({ data, onClose, onForceClose, onEditAndResend, loadin
         <button className={cx("btn", "btn-ghost")} onClick={onClose}>Đóng</button>
         <button
           className={cx("btn", "btn-danger", "btn-sm")}
-          onClick={() => onForceClose(reason)}
+          onClick={handleForceClose}
           disabled={loading || !reason.trim()}
         >
           <FontAwesomeIcon icon={faBan} /> Force-close
@@ -331,7 +435,6 @@ function PayslipModal({ data, onClose }) {
   const totalIncome =
     (data.baseSalary || 0) + (data.commission || 0) +
     (data.tip || 0) + (data.bonus || 0);
-  // THAY ĐỔI: dùng data.deductions thay vì advance + deduction riêng lẻ
   const totalDeduct = data.deductions || 0;
   const net = totalIncome - totalDeduct;
 
@@ -365,7 +468,6 @@ function PayslipModal({ data, onClose }) {
         <span className={cx("mono", "cRed")}>−{fmt(totalDeduct)}</span>
       </div>
 
-      {/* THAY ĐỔI: Hiện danh sách từng khoản thay vì adjustmentNote */}
       {data.DeductionsList?.length > 0 && (
         <div className={cx("deductionBreakdown")}>
           {data.DeductionsList.map((d) => (
@@ -392,7 +494,7 @@ function PayslipModal({ data, onClose }) {
 }
 
 // ─── Payment Modal ────────────────────────────────────────────────────────────
-function PaymentModal({ data, onClose, onConfirm, loading }) {
+function PaymentModal({ data, onClose, onConfirm, loading, showToast }) {
   const [paidAmount, setPaidAmount] = useState(0);
   const [proofUrl, setProofUrl]     = useState("");
 
@@ -405,6 +507,14 @@ function PaymentModal({ data, onClose, onConfirm, loading }) {
 
   const net       = data ? calcNet(data) : 0;
   const isPartial = Number(paidAmount) < net && Number(paidAmount) > 0;
+
+  const handleConfirm = () => {
+    if (!paidAmount || Number(paidAmount) <= 0) {
+      showToast("error", "Số tiền thanh toán phải lớn hơn 0");
+      return;
+    }
+    onConfirm({ paidAmount: Number(paidAmount), paymentProofUrl: proofUrl });
+  };
 
   return (
     <Modal open={!!data} onClose={onClose}>
@@ -443,7 +553,7 @@ function PaymentModal({ data, onClose, onConfirm, loading }) {
         <button className={cx("btn", "btn-ghost")} onClick={onClose}>Huỷ</button>
         <button
           className={cx("btn", "btn-success")}
-          onClick={() => onConfirm({ paidAmount: Number(paidAmount), paymentProofUrl: proofUrl })}
+          onClick={handleConfirm}
           disabled={loading || !paidAmount || Number(paidAmount) <= 0}
         >
           {loading ? "Đang xử lý..." : "✅ Xác nhận & Khóa sổ"}
@@ -459,23 +569,27 @@ function PaymentModal({ data, onClose, onConfirm, loading }) {
 function LuongThuong() {
   const today = new Date();
 
-  const [month, setMonth] = useState(today.getMonth() + 1);
-  const [year, setYear]   = useState(today.getFullYear());
+  const [month, setMonth]   = useState(today.getMonth() + 1);
+  const [year, setYear]     = useState(today.getFullYear());
   const [search, setSearch] = useState("");
 
   const [salaries, setSalaries]           = useState([]);
   const [loading, setLoading]             = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
-  const [dataSource, setDataSource]       = useState("realtime");
-  const [canCalculate, setCanCalculate]   = useState(false);
+  const [dataSource, setDataSource]     = useState("realtime");
+  const [canCalculate, setCanCalculate] = useState(false);
   const [sourceMessage, setSourceMessage] = useState("");
 
   // Modal states
-  const [editingRow,  setEditingRow]  = useState(null);
-  const [disputeRow,  setDisputeRow]  = useState(null);
-  const [payslipRow,  setPayslipRow]  = useState(null);
-  const [paymentRow,  setPaymentRow]  = useState(null);
+  const [editingRow, setEditingRow] = useState(null);
+  const [disputeRow, setDisputeRow] = useState(null);
+  const [payslipRow, setPayslipRow] = useState(null);
+  const [paymentRow, setPaymentRow] = useState(null);
+
+  // Toast + Confirm
+  const { showToast, ToastContainer } = useToast();
+  const { confirm, ConfirmContainer } = useConfirm();
 
   // ── Fetch data ───────────────────────────────────────────────────────────
   const fetchData = useCallback(async (m, y) => {
@@ -488,6 +602,7 @@ function LuongThuong() {
       setSalaries(Array.isArray(res.salaries) ? res.salaries : []);
     } catch (err) {
       console.error("Lỗi tải dữ liệu lương:", err);
+      showToast("error", "Không thể tải dữ liệu lương. Vui lòng thử lại!");
       setSalaries([]);
       setCanCalculate(false);
     } finally {
@@ -523,7 +638,7 @@ function LuongThuong() {
       await fn();
     } catch (err) {
       console.error(err);
-      alert(err?.response?.data?.error || err.message || "Có lỗi xảy ra!");
+      showToast("error", err?.response?.data?.error || err.message || "Có lỗi xảy ra!");
     } finally {
       setActionLoading(false);
     }
@@ -534,22 +649,30 @@ function LuongThuong() {
     withLoading(async () => {
       await SalaryAPI.createDraftSalaries(month, year);
       await fetchData(month, year);
+      showToast("success", `Đã tính lương nháp tháng ${month}/${year} thành công!`);
     });
 
   // ── Action: Gửi tất cả phiếu Draft ──────────────────────────────────────
-  const handleSendAll = () => {
+  const handleSendAll = async () => {
     const drafts = salaries.filter((s) => s.status === "Draft");
     if (!drafts.length) {
-      alert("Không có phiếu nào ở trạng thái Bản nháp để gửi!");
+      showToast("error", "Không có phiếu nào ở trạng thái Bản nháp để gửi!");
       return;
     }
-    if (!window.confirm(`Gửi phiếu lương cho ${drafts.length} thợ tháng ${month}/${year}?`)) return;
+
+    const ok = await confirm({
+      title: "📤 Gửi tất cả phiếu lương",
+      message: `Xác nhận gửi phiếu lương cho ${drafts.length} thợ tháng ${month}/${year}?`,
+      confirmLabel: "Gửi tất cả",
+    });
+    if (!ok) return;
 
     withLoading(async () => {
       for (const s of drafts) {
         await SalaryAPI.sendPayslip(s.idSalary);
       }
       await fetchData(month, year);
+      showToast("success", `Đã gửi phiếu lương cho ${drafts.length} thợ!`);
     });
   };
 
@@ -558,43 +681,40 @@ function LuongThuong() {
     withLoading(async () => {
       await SalaryAPI.sendPayslip(s.idSalary);
       await fetchData(month, year);
+      showToast("success", `Đã gửi phiếu lương cho ${s.barberName}!`);
     });
 
-  // ── Action: Thêm khoản khấu trừ mới (ACCUMULATE) ────────────────────────
-  // THAY ĐỔI: Không còn adjustSalary — giờ dùng addDeduction
-const handleAddDeduction = (idSalary, { amount, reason, violationDate }) =>
-  withLoading(async () => {
-    await SalaryAPI.addDeduction(idSalary, { amount, reason, violationDate }); // ✅
-    const res = await SalaryAPI.getSalaries(month, year);
-    setSalaries(Array.isArray(res.salaries) ? res.salaries : []);
-    const updated = res.salaries?.find((s) => s.idSalary === idSalary);
-    if (updated) setEditingRow(updated);
-  });
+  // ── Action: Thêm khoản khấu trừ ─────────────────────────────────────────
+  const handleAddDeduction = (idSalary, { amount, reason, violationDate }) =>
+    withLoading(async () => {
+      await SalaryAPI.addDeduction(idSalary, { amount, reason, violationDate });
+      const res = await SalaryAPI.getSalaries(month, year);
+      setSalaries(Array.isArray(res.salaries) ? res.salaries : []);
+      const updated = res.salaries?.find((s) => s.idSalary === idSalary);
+      if (updated) setEditingRow(updated);
+      showToast("success", `Đã thêm khấu trừ ${fmt(amount)}!`);
+    });
 
   // ── Action: Xóa mềm một khoản khấu trừ ─────────────────────────────────
-  // THAY ĐỔI: Mới hoàn toàn — soft delete với lý do
   const handleRemoveDeduction = (idDeduction, deleteReason) =>
     withLoading(async () => {
       await SalaryAPI.removeDeduction(idDeduction, deleteReason);
-      // Reload và đồng bộ editingRow
       const res = await SalaryAPI.getSalaries(month, year);
       setSalaries(Array.isArray(res.salaries) ? res.salaries : []);
       if (editingRow) {
         const updated = res.salaries?.find((s) => s.idSalary === editingRow.idSalary);
         if (updated) setEditingRow(updated);
       }
+      showToast("success", "Đã xóa khoản khấu trừ!");
     });
 
   // ── Action: Force-close khiếu nại ───────────────────────────────────────
   const handleForceClose = (reason) =>
     withLoading(async () => {
-      if (!reason.trim()) {
-        alert("Vui lòng nhập lý do từ chối!");
-        return;
-      }
       await SalaryAPI.forceCloseDispute(disputeRow.idSalary, reason);
       setDisputeRow(null);
       await fetchData(month, year);
+      showToast("success", "Đã đóng khiếu nại thành công!");
     });
 
   // ── Action: Mở form sửa từ dispute ──────────────────────────────────────
@@ -610,18 +730,26 @@ const handleAddDeduction = (idSalary, { amount, reason, violationDate }) =>
       await SalaryAPI.markAsPaid(paymentRow.idSalary, payload);
       setPaymentRow(null);
       await fetchData(month, year);
+      showToast("success", `Đã thanh toán và khóa sổ cho ${paymentRow.barberName}!`);
     });
 
   // ── Action: Đánh dấu tất cả Confirmed → Paid ────────────────────────────
-  const handleMarkAllPaid = () => {
+  const handleMarkAllPaid = async () => {
     const confirmed = salaries.filter((s) =>
       ["Confirmed", "AutoConfirmed"].includes(s.status)
     );
     if (!confirmed.length) {
-      alert("Chưa có thợ nào ở trạng thái Đã xác nhận!");
+      showToast("error", "Chưa có thợ nào ở trạng thái Đã xác nhận!");
       return;
     }
-    if (!window.confirm(`Đánh dấu đã thanh toán cho ${confirmed.length} thợ?`)) return;
+
+    const ok = await confirm({
+      title: "💸 Thanh toán tất cả",
+      message: `Đánh dấu đã thanh toán cho ${confirmed.length} thợ? Hành động này sẽ khóa tất cả phiếu.`,
+      confirmLabel: "Xác nhận thanh toán",
+      danger: true,
+    });
+    if (!ok) return;
 
     withLoading(async () => {
       for (const s of confirmed) {
@@ -631,6 +759,7 @@ const handleAddDeduction = (idSalary, { amount, reason, violationDate }) =>
         });
       }
       await fetchData(month, year);
+      showToast("success", `Đã thanh toán cho ${confirmed.length} thợ!`);
     });
   };
 
@@ -886,7 +1015,6 @@ const handleAddDeduction = (idSalary, { amount, reason, violationDate }) =>
                     const totalIncome =
                       (s.baseSalary || 0) + (s.commission || 0) +
                       (s.tip || 0) + (s.bonus || 0);
-                    // THAY ĐỔI: dùng s.deductions thay vì advance + deduction
                     const totalDeduct = s.deductions || 0;
                     const net = totalIncome - totalDeduct;
 
@@ -952,13 +1080,13 @@ const handleAddDeduction = (idSalary, { amount, reason, violationDate }) =>
       </div>
 
       {/* ── Modals ── */}
-      {/* THAY ĐỔI: onSave → onAdd + onRemove */}
       <DeductionModal
         data={editingRow}
         onClose={() => setEditingRow(null)}
         onAdd={handleAddDeduction}
         onRemove={handleRemoveDeduction}
         loading={actionLoading}
+        showToast={showToast}
       />
       <DisputeViewModal
         data={disputeRow}
@@ -966,6 +1094,7 @@ const handleAddDeduction = (idSalary, { amount, reason, violationDate }) =>
         onForceClose={handleForceClose}
         onEditAndResend={handleEditAndResend}
         loading={actionLoading}
+        showToast={showToast}
       />
       <PayslipModal
         data={payslipRow}
@@ -976,7 +1105,12 @@ const handleAddDeduction = (idSalary, { amount, reason, violationDate }) =>
         onClose={() => setPaymentRow(null)}
         onConfirm={handlePayment}
         loading={actionLoading}
+        showToast={showToast}
       />
+
+      {/* ── Global portals (toast + confirm) ── */}
+      <ToastContainer />
+      <ConfirmContainer />
     </div>
   );
 }
