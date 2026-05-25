@@ -444,6 +444,11 @@ export const updateBarber = async (idBarber, data) => {
     // 🔹 Cập nhật thông tin Barber
     if (data.idBranch !== undefined) barber.idBranch = data.idBranch || null;
     if (data.profileDescription !== undefined) barber.profileDescription = data.profileDescription;
+    if (data.experienceYears !== undefined) barber.experienceYears = data.experienceYears;
+    if (data.specialty !== undefined) barber.specialty = data.specialty;
+    if (data.style !== undefined) barber.style = data.style;
+    if (data.certificates !== undefined) barber.certificates = data.certificates;
+    if (data.philosophy !== undefined) barber.philosophy = data.philosophy;
     await barber.save({ transaction: t });
 
     await t.commit();
@@ -543,6 +548,11 @@ export const getProfile = async (idBarber) => {
     branchName: barber.branch?.name || "Chưa có chi nhánh",
     branchAddress: barber.branch?.address || "",
     profileDescription: barber.profileDescription || "",
+    experienceYears: barber.experienceYears ?? 0,
+    specialty: barber.specialty || "",
+    style: barber.style || "",
+    certificates: barber.certificates || "",
+    philosophy: barber.philosophy || "",
     avgRate: ratingSummary?.avgRate || 0,
     totalRate: ratingSummary?.totalRate || 0,
     lockDate: barber.lockDate,
@@ -550,6 +560,7 @@ export const getProfile = async (idBarber) => {
   };
 };
 
+// SAU
 export const updateProfile = async (idBarber, payload) => {
   const barber = await Barber.findByPk(idBarber, {
     include: [{ model: db.User, as: "user" }],
@@ -557,7 +568,19 @@ export const updateProfile = async (idBarber, payload) => {
 
   if (!barber) throw new Error("Không tìm thấy thợ.");
 
-  const { fullName, image, phoneNumber, email, idBranch, profileDescription } = payload;
+  const {
+    fullName,
+    image,
+    phoneNumber,
+    email,
+    idBranch,
+    profileDescription,
+    experienceYears,
+    specialty,
+    style,
+    certificates,
+    philosophy,
+  } = payload;
 
   if (barber.user) {
     await barber.user.update({
@@ -571,6 +594,11 @@ export const updateProfile = async (idBarber, payload) => {
   await barber.update({
     idBranch: idBranch ?? barber.idBranch,
     profileDescription: profileDescription ?? barber.profileDescription,
+    experienceYears: experienceYears !== undefined ? experienceYears : barber.experienceYears,
+    specialty: specialty !== undefined ? specialty : barber.specialty,
+    style: style !== undefined ? style : barber.style,
+    certificates: certificates !== undefined ? certificates : barber.certificates,
+    philosophy: philosophy !== undefined ? philosophy : barber.philosophy,
   });
 
   return { message: "Cập nhật hồ sơ thành công." };
