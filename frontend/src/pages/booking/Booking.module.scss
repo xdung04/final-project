@@ -285,21 +285,6 @@
   border-color: #b8966a80;
 }
 
-/* Badge "Gần nhất" */
-.nearestBadge {
-  position: absolute;
-  top: -9px;
-  left: 10px;
-  background: var(--gold);
-  color: #ffffff;
-  font-size: 10px;
-  font-weight: 600;
-  font-family: var(--ff-display);
-  letter-spacing: 0.8px;
-  padding: 2px 9px;
-  border-radius: 20px;
-  text-transform: uppercase;
-}
 
 /* Badge "✓ Đã chọn" */
 .selectedBadge {

@@ -22,11 +22,10 @@ export const createPayment = async (req, res) => {
       );
       await t.commit();
 
-      // ✅ FIX BUG 1: Bỏ comment, bắn socket báo lễ tân khi CASH thành công
       if (req.io) {
         req.io.emit("receive_customer_progress", {
           bookingId: idBooking,
-          step: 5,
+          step: 6,
           isPaid: true,
           method: "CASH",
           message: `Booking #${idBooking} đã thanh toán tiền mặt xong!`,
