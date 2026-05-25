@@ -91,11 +91,16 @@ const lockBarber = async (req, res) => {
 const unlockBarber = async (req, res) => {
   try {
     const { idBarber } = req.body;
-    const barber = await BarberService.unlockBarber(idBarber);
-    res.json({ message: "Barber unlocked", barber });
+    const result = await BarberService.unlockBarber(idBarber);
+
+    return res.status(200).json(result);
   } catch (error) {
     console.error("Lỗi unlockBarber:", error);
-    res.status(404).json({ error: error.message });
+
+    return res.status(404).json({
+      success: false,
+      error: error.message,
+    });
   }
 };
 
@@ -255,6 +260,35 @@ export const getHotBarbers = async (req, res) => {
   }
 };
 
+export const setLockDate = async (req, res) => {
+  try {
+    const { idBarber } = req.params;
+    const { lockDate } = req.body;
+
+    if (!lockDate) {
+      return res.status(400).json({ success: false, message: "Thiếu ngày khóa!" });
+    }
+
+    const result = await BarberService.setLockDate(idBarber, lockDate);
+    return res.status(result.success ? 200 : 400).json(result);
+  } catch (error) {
+    console.error("setLockDate controller error:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/** DELETE /api/barbers/:idBarber/lock-date */
+export const cancelLockDate = async (req, res) => {
+  try {
+    const { idBarber } = req.params;
+    const result = await BarberService.cancelLockDate(idBarber);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error("cancelLockDate controller error:", error);
+    return res.status(400).json({ success: false, message: error.message });
+  }
+};
+
 export default {
   getAllBarbers,
   syncBarbers,
@@ -274,4 +308,6 @@ export default {
   getDashboardStats,
   getBarbersForHome,
   getHotBarbers,
+  setLockDate,
+  cancelLockDate,
 };

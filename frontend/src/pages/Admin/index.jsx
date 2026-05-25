@@ -27,6 +27,7 @@ import ChiNhanh from "./ChiNhanh";
 import DichVu from "./DichVu";
 import ChinhSach from "./ChinhSach";
 import TinTuc from "./TinTuc";
+import KieuToc from "./KieuToc";
 
 import { fetchMyNotifications, markNotificationAsRead } from "~/services/notificationService";
 import { useAuth } from "~/context/AuthContext";
@@ -43,6 +44,7 @@ const menuItems = [
   { id: "luong", label: "Lương Thưởng", path: "/admin/payroll", icon: <Wallet size={20} strokeWidth={1.5} />, category: "finance" },
   { id: "hr-policy", label: "Chính Sách Thợ", path: "/admin/hr-policy", icon: <Briefcase size={20} strokeWidth={1.5} />, category: "finance" },
   { id: "loyalty", label: "Điểm Khách Hàng", path: "/admin/loyalty", icon: <Award size={20} strokeWidth={1.5} />, category: "management" },
+  { id: "hairStyle", label: "Kiểu Tóc", path: "/admin/hair-style", icon: <Award size={20} strokeWidth={1.5} />, category: "management" },
   {
   id: "tintuc",
   label: "Tin Tức",
@@ -228,6 +230,7 @@ function Admin() {
           {activeId === "hr-policy" && <ChinhSach />}
           {activeId === "loyalty" && <QuanLyDiem />}
           {activeId === "tintuc" && <TinTuc />}
+          {activeId === "hairStyle" && <KieuToc />}
         </main>
       </div>
 

@@ -5,13 +5,11 @@ export async function up(queryInterface, Sequelize) {
     idBarber: {
       type: Sequelize.INTEGER,
       primaryKey: true,
-
-      // 🔥 đây là cái QUAN TRỌNG NHẤT
+      allowNull: false,
       references: {
         model: "users",
         key: "idUser",
       },
-
       onUpdate: "CASCADE",
       onDelete: "CASCADE",
     },
@@ -34,29 +32,54 @@ export async function up(queryInterface, Sequelize) {
 
     experienceYears: {
       type: Sequelize.INTEGER,
+      allowNull: true,
       defaultValue: 0,
     },
 
-    specialty: Sequelize.STRING(255),
-    style: Sequelize.STRING(255),
-    certificates: Sequelize.TEXT,
-    philosophy: Sequelize.TEXT,
+    specialty: {
+      type: Sequelize.STRING(255),
+      allowNull: true,
+    },
+
+    style: {
+      type: Sequelize.STRING(255),
+      allowNull: true,
+    },
+
+    certificates: {
+      type: Sequelize.TEXT,
+      allowNull: true,
+    },
+
+    philosophy: {
+      type: Sequelize.TEXT,
+      allowNull: true,
+    },
 
     isLocked: {
       type: Sequelize.BOOLEAN,
+      allowNull: false,
       defaultValue: false,
+    },
+
+    // NEW FIELD
+    lockDate: {
+      type: Sequelize.DATEONLY,
+      allowNull: true,
+      defaultValue: null,
+      comment: "Scheduled lock date. Cron sets isLocked=true when today >= lockDate.",
     },
 
     createdAt: {
       type: Sequelize.DATE,
+      allowNull: false,
       defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
     },
 
     updatedAt: {
       type: Sequelize.DATE,
-      defaultValue: Sequelize.literal(
-        "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
-      ),
+      allowNull: false,
+      defaultValue: Sequelize.literal("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"),
     },
   });
 }

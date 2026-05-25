@@ -185,3 +185,34 @@ export const fetchHotBarbersPaged = async (page = 1, limit = 4) => {
     throw error.response?.data || error;
   }
 };
+
+/**
+ * Set a scheduled lock date for a barber.
+ * @param {number|string} idBarber
+ * @param {string} lockDate - "YYYY-MM-DD"
+ */
+export const setBarberLockDate = async (idBarber, lockDate) => {
+  try {
+    const res = await request.patch(`/barbers/${idBarber}/lock-date`, { lockDate });
+    console.log("API setBarberLockDate:", res);
+    return res;
+  } catch (error) {
+    console.error("Lỗi setBarberLockDate:", error.response?.data || error);
+    throw error.response?.data || error;
+  }
+};
+
+/**
+ * Cancel the scheduled lock date for a barber.
+ * @param {number|string} idBarber
+ */
+export const cancelBarberLockDate = async (idBarber) => {
+  try {
+    const res = await request.del(`/barbers/${idBarber}/lock-date`);
+    console.log("API cancelBarberLockDate:", res);
+    return res;
+  } catch (error) {
+    console.error("Lỗi cancelBarberLockDate:", error.response?.data || error);
+    throw error.response?.data || error;
+  }
+};

@@ -27,9 +27,10 @@ import bookingDirectRoutes from "./routes/bookingDirect.js";
 import hashtagRoutes from "./routes/hashtag.js";
 import hairConsultRoutes from "./routes/hairConsult.js";
 import transactionRoutes from "./routes/transaction.js";
-
+import hairstyleRoutes from "./routes/hairStyle.js";
 import startBranchStatusCron from "./cron/branchStatusCron.js";
-import startSalaryCron from "./cron/salaryCron.js"
+import startSalaryCron from "./cron/salaryCron.js";
+import startBarberLockCron from "./cron/barberStatusCron.js";
 import startExpireVouchersCron from "./cron/expireVouchersCron.js";
 
 import { authenticate, authorize } from "./middlewares/authMiddleware.js";
@@ -42,18 +43,20 @@ import chatLiveRoute from "./routes/chatLive.js";
 import receptionistRouter from "./routes/receptionist.js";
 import contractRoute from "./routes/contract.js";
 import calendarRoutes from "./routes/calendarRoutes.js";
-import customerStatsRoutes from "./routes/customerStats.js";  
+import customerStatsRoutes from "./routes/customerStats.js";
 dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
 const io = initSocket(server);
 
-app.use(cors({
-  origin: '*', // Cho phép tất cả các nguồn
-  methods: ['GET', 'POST', 'PUT', 'DELETE',"PATCH", 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+app.use(
+  cors({
+    origin: "*", // Cho phép tất cả các nguồn
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  }),
+);
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use((req, res, next) => {
@@ -68,6 +71,7 @@ app.use("/api/barbers", barberRoutes);
 app.use("/api/branches", branchRoutes);
 app.use("/api/ratings", ratingRoutes);
 
+app.use("/api/hairstyles", hairstyleRoutes);
 app.use("/api/bookings", bookingRoute);
 app.use("/api/payment", paymentRoute);
 app.use("/api/reels", reelRoute);
@@ -80,8 +84,8 @@ app.use("/api/salary", authenticate, salaryRoute);
 app.use("/api/statistics", authenticate, authorize(["admin"]), statisticRoute);
 app.use("/api/bonus", authenticate, authorize(["admin"]), bonusRoutes);
 app.use("/api/statistics/summary", authenticate, authorize(["admin"]), summaryRoutes);
-app.use("/api/hr-policy",authenticate, hrPolicyRoutes);
-app.use("/api/contracts", authenticate ,contractRoute);
+app.use("/api/hr-policy", authenticate, hrPolicyRoutes);
+app.use("/api/contracts", authenticate, contractRoute);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/booking-direct", bookingDirectRoutes);
 app.use("/api/hashtags", hashtagRoutes);
@@ -95,8 +99,6 @@ app.use("/api/calendar", calendarRoutes);
 
 app.use("/api/customer-stats", customerStatsRoutes);
 
-
-
 // View engine & auth routes
 viewEngine(app);
 authRoutes(app);
@@ -105,8 +107,10 @@ authRoutes(app);
 connectDB();
 startBranchStatusCron();
 startSalaryCron();
-startExpireVouchersCron(); 
+startBarberLockCron();
+startExpireVouchersCron();
+
 const PORT = process.env.PORT || 8088;
-server.listen(PORT, '0.0.0.0', () => {
+server.listen(PORT, "0.0.0.0", () => {
   console.log(`Backend Node.js & Socket is running on http://0.0.0.0:${PORT}`);
 });
