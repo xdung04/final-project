@@ -1,4 +1,4 @@
-// Bảng màu chuẩn Luxury Salon (Giữ nguyên)
+// Bảng màu chuẩn Luxury Salon
 $gold-primary: #D4AF37; 
 $gold-dark: #997A2E;
 $gold-light: rgba(212, 175, 55, 0.12);
@@ -11,42 +11,40 @@ $text-main: #222222;
 $text-muted: #555555;
 $danger-color: #D35400;
 
-// 👉 THÊM CLASS NÀY ĐỂ LÀM OVERLAY (Bỏ nền đen cũ của bạn đi và dùng cái này)
+// Màu sắc cho phần Voucher & Tích chọn
+$green-success: #2ECC71;
+$green-dark: #27AE60;
+
 .modalOverlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.65); // Chỉ giữ lại overlay mờ
+  background: rgba(0, 0, 0, 0.65); 
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 9999;
-  padding: 16px; // Khoảng cách an toàn để modal không dính mép màn hình
+  padding: 16px; 
   box-sizing: border-box;
 }
 
-// 👉 CẬP NHẬT LẠI CONTAINER
 .container {
   display: flex;
   flex-direction: column;
-  gap: 16px; // Giảm từ 20px xuống 16px để gọn chiều dọc hơn
+  gap: 16px; 
   font-family: 'Inter', sans-serif;
-  
-  /* Đã sửa để chống scroll ngang dọc */
   width: 100%;
-  max-width: 550px; // Dùng max-width thay vì min-width
-  max-height: 90vh; // Ép modal không bao giờ vượt quá 90% chiều cao màn hình
+  max-width: 550px; 
+  max-height: 90vh; 
   margin: 0 auto;
-  
   background-color: $bg-white;
-  padding: 24px; // Giảm từ 28px xuống 24px cho vừa vặn
+  padding: 24px; 
   border-radius: 16px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15); // Đổ bóng nổi bật hơn trên overlay
-
-  /* Nếu nội dung thêm dịch vụ quá dài, chỉ scroll phần bên trong, không scroll cả trang */
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
   overflow-y: auto; 
+  
   &::-webkit-scrollbar { width: 4px; }
   &::-webkit-scrollbar-track { background: transparent; }
   &::-webkit-scrollbar-thumb { background: #CCC; border-radius: 4px; }
@@ -54,7 +52,7 @@ $danger-color: #D35400;
 
 .header {
   text-align: center;
-  padding-bottom: 8px; // Ép gọn lại
+  padding-bottom: 8px;
 
   .iconGold {
     color: $gold-primary;
@@ -62,7 +60,7 @@ $danger-color: #D35400;
   }
 
   h2 {
-    font-size: 1.3rem; // Thu nhỏ font một chút xíu
+    font-size: 1.3rem; 
     color: $charcoal-dark;
     margin-bottom: 4px;
     text-transform: uppercase;
@@ -76,21 +74,20 @@ $danger-color: #D35400;
   }
 }
 
-// Thẻ thông tin khách hàng
 .card {
   background: $bg-cream;
   border-radius: 12px;
-  padding: 14px 18px; // Thu nhỏ padding
+  padding: 14px 18px; 
   border: 1px solid $border-color;
   display: flex;
   flex-direction: column;
-  gap: 10px; // Thu nhỏ gap
+  gap: 10px;
 
   .infoRow {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 13px; // Hạ font size xuống 1px để gọn hơn
+    font-size: 13px;
 
     .label {
       display: flex;
@@ -108,7 +105,6 @@ $danger-color: #D35400;
   }
 }
 
-// Phân vùng danh sách
 .section {
   .sectionHeader {
     display: flex;
@@ -126,7 +122,6 @@ $danger-color: #D35400;
   }
 }
 
-// Dịch vụ đã chọn
 .serviceList {
   list-style: none;
   padding: 0;
@@ -153,7 +148,6 @@ $danger-color: #D35400;
   }
 }
 
-// Thêm dịch vụ (Toggle Button)
 .toggleBtn {
   background: $bg-white;
   border: 1px solid $border-color;
@@ -176,7 +170,6 @@ $danger-color: #D35400;
   }
 }
 
-// List dịch vụ mở rộng (Có checkbox)
 .serviceListExpand {
   list-style: none;
   padding: 0;
@@ -184,7 +177,7 @@ $danger-color: #D35400;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: 150px; // Giảm max-height để không đẩy form quá dài
+  max-height: 180px; /* Tăng nhẹ không gian hiển thị danh sách */
   overflow-y: auto;
   padding-right: 6px;
 
@@ -204,9 +197,10 @@ $danger-color: #D35400;
     background: $bg-white;
 
     &:hover { border-color: $gold-primary; }
+    
     &.selected {
-      background: $gold-light;
-      border-color: $gold-primary;
+      background: rgba(212, 175, 55, 0.04);
+      border-color: rgba(212, 175, 55, 0.4);
     }
 
     .checkboxWrapper {
@@ -216,23 +210,74 @@ $danger-color: #D35400;
       font-size: 13px;
       color: $text-main;
       font-weight: 500;
+      flex: 1; /* Để phần chữ tự động giãn rộng ra */
+
+      span {
+        white-space: nowrap; /* Đảm bảo tên dịch vụ nằm trên 1 hàng thẳng tắp */
+      }
+
+      /* ── KHÓA CỨNG Ô TÍCH NHỎ, XANH LÁ, KHÔNG NỀN (CHỐNG BUG GLOBAL) ── */
+      input[type="checkbox"] {
+        appearance: none !important;
+        -webkit-appearance: none !important;
+        -moz-appearance: none !important;
+        
+        /* Đập tan mọi loại thuộc tính width: 100% từ file css khác đè vào */
+        width: 16px !important;
+        height: 16px !important;
+        min-width: 16px !important;
+        max-width: 16px !important;
+        min-height: 16px !important;
+        max-height: 16px !important;
+        
+        border: 1.5px solid #A0A0A0 !important;
+        border-radius: 4px !important;
+        outline: none !important;
+        cursor: pointer !important;
+        background: transparent !important; // Giữ nền rỗng suốt
+        
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-shrink: 0 !important; /* Tuyệt đối không cho flexbox bóp dẹt */
+        margin: 0 !important;
+        padding: 0 !important;
+        position: relative !important;
+
+        &:checked {
+          border-color: $green-success !important; // Chỉ đổi màu viền sang xanh lá
+
+          /* Vẽ dấu tích bằng border-after để căn giữa tuyệt đối */
+          &::after {
+            content: "" !important;
+            position: absolute !important;
+            width: 8px !important;
+            height: 4px !important;
+            border-left: 2px solid $green-success !important;  // Nét tích xanh lá
+            border-bottom: 2px solid $green-success !important; // Nét tích xanh lá
+            transform: rotate(-45deg) translateY(-1px) translateX(0.5px) !important;
+            background: transparent !important;
+          }
+        }
+      }
     }
 
     .price {
       font-weight: 600;
       color: $charcoal-dark;
       font-size: 13px;
+      flex-shrink: 0;
+      margin-left: 12px;
     }
   }
 }
 
-// Khối Tổng tiền (Summary)
 .summaryCard {
   background: $bg-cream;
   border-radius: 12px;
-  padding: 16px; // Giảm padding
+  padding: 16px; 
   border: 1px solid $border-color;
-  margin-top: auto; // Tự động đẩy xuống dưới cùng nếu bên trên có khoảng trống
+  margin-top: auto; 
 
   .summaryRow {
     display: flex;
@@ -245,6 +290,69 @@ $danger-color: #D35400;
     span:last-child {
       color: $charcoal-dark;
       font-weight: 700;
+    }
+  }
+
+  /* ── HIỂN THỊ VOUCHER APPLIED ── */
+  .voucherBox {
+    background: rgba(46, 204, 113, 0.05); 
+    border: 1px dashed $green-success; 
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    .voucherTop {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      .voucherTitle {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        font-weight: 700;
+        color: $green-dark;
+        
+        svg {
+          color: $green-dark;
+        }
+      }
+
+      .discountValue {
+        font-size: 13px;
+        font-weight: 700;
+        color: $green-dark;
+      }
+    }
+
+    .voucherBottom {
+      font-size: 11px;
+      color: $text-muted;
+      padding-left: 20px;
+    }
+  }
+
+  /* ── CẢNH BÁO VOUCHER KHÔNG ĐỦ ĐIỀU KIỆN ── */
+  .voucherWarning {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    background: rgba(211, 84, 0, 0.06);
+    border: 1px solid rgba(211, 84, 0, 0.2);
+    color: $danger-color;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    margin-bottom: 12px;
+    line-height: 1.4;
+
+    svg {
+      flex-shrink: 0;
+      margin-top: 1px;
     }
   }
 
@@ -281,13 +389,12 @@ $danger-color: #D35400;
   }
 }
 
-// Nút bấm chính
 .btnPrimary {
   background: linear-gradient(135deg, $charcoal-dark, $charcoal-light);
   color: #FFF;
   border: none;
   width: 100%;
-  padding: 14px; // Giảm padding
+  padding: 14px; 
   border-radius: 50px;
   font-size: 14px;
   font-weight: 600;
