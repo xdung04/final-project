@@ -652,6 +652,24 @@ class VoucherService {
       },
     };
   }
+
+  async revertVoucher(customerVoucherId, transaction = null) {
+    const customerVoucher = await db.CustomerVoucher.findOne({
+      where: { id: customerVoucherId, status: "USED" },
+      transaction,
+    });
+    if (!customerVoucher) {
+      console.warn(
+        `revertVoucher: CustomerVoucher ${customerVoucherId} không ở USED`,
+      );
+      return null;
+    }
+    await customerVoucher.update(
+      { status: "AVAILABLE", used_at: null },
+      { transaction },
+    );
+    return customerVoucher;
+  }
 }
 
 export default new VoucherService();

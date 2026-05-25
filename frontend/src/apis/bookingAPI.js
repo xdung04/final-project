@@ -23,8 +23,12 @@ const bookingApi = {
     axios.get(`${API_URL}/barbers/${idBarber}/booked-slots?branchId=${branchId}&date=${date}`),
 
   // Tạo booking mới
-  createBooking: (bookingData) =>
-    axios.post(`${API_URL}`, bookingData),
+   createBooking: (data) => {
+    const token = localStorage.getItem("accessToken");
+    return axios.post(`${API_URL}/create`, data, {
+      headers: { Authorization: `Bearer ${token}` }
+    });  
+  },
 };
 
 export default bookingApi;
