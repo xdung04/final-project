@@ -520,7 +520,20 @@ export const getBarberBookingsNext7Days = async (idBarber) => {
   return { isLocked: false, bookings };
 };
 export const getBookingsByBranchService = async (idBranch, date) => {
-  const whereClause = {};
+  // Bước 1: lấy danh sách idBarber thuộc branch
+  const barbers = await db.Barber.findAll({
+    where: { idBranch },
+    attributes: ["idBarber"],
+    raw: true,
+  });
+  console.log("✅ barberIds:", barbers);
+  const barberIds = barbers.map((b) => b.idBarber);
+  if (!barberIds.length) return [];
+
+  // Bước 2: build whereClause lọc theo barberIds
+  const whereClause = {
+    idBarber: { [Op.in]: barberIds },
+  };
 
   if (date) {
     whereClause[Op.and] = [
@@ -530,15 +543,15 @@ export const getBookingsByBranchService = async (idBranch, date) => {
       ),
     ];
   }
-
+ console.log("✅ whereClause:", JSON.stringify(whereClause, null, 2));
   const bookings = await db.Booking.findAll({
+    logging: (sql) => console.log("🔍 SQL:", sql),
     where: whereClause,
     include: [
       {
         model: db.Barber,
         as: "barber",
-        required: true,
-        where: { idBranch },
+        required: false, // ✅ LEFT JOIN
         include: [
           {
             model: db.User,
@@ -555,6 +568,7 @@ export const getBookingsByBranchService = async (idBranch, date) => {
       },
       {
         model: db.Customer,
+        required: false, // ✅ LEFT JOIN
         include: [
           {
             model: db.User,
@@ -567,6 +581,7 @@ export const getBookingsByBranchService = async (idBranch, date) => {
       {
         model: db.BookingDetail,
         as: "BookingDetails",
+        required: false,
         include: [
           {
             model: db.Service,
@@ -579,17 +594,19 @@ export const getBookingsByBranchService = async (idBranch, date) => {
       {
         model: db.BookingTip,
         as: "BookingTip",
+        required: false,
         attributes: ["idTip", "tipAmount"],
       },
       {
         model: db.CustomerVoucher,
         as: "customerVoucher",
-        attributes: ["id", "status"],   // ← bảng customer_vouchers chỉ có: id, status, ...
+        required: false,
+        attributes: ["id", "status"],
         include: [
           {
             model: db.Voucher,
             as: "voucher",
-            attributes: ["id", "name", "discount_percent"], // ← bảng vouchers dùng: id, name, discount_percent
+            attributes: ["id", "name", "discount_percent"],
           },
         ],
       },
@@ -601,6 +618,7 @@ export const getBookingsByBranchService = async (idBranch, date) => {
   });
 
   return bookings.map((booking) => {
+  try {
     const details = booking.BookingDetails || [];
 
     const serviceTotal = details.reduce(
@@ -609,15 +627,9 @@ export const getBookingsByBranchService = async (idBranch, date) => {
     );
 
     const tip = parseFloat(booking.BookingTip?.tipAmount || 0);
-
-    // Dùng đúng alias "customerVoucher" (chữ thường)
     const voucher = booking.customerVoucher?.voucher;
-
-    // Bảng vouchers dùng cột discount_percent (snake_case), không phải discountPercent
     const discountPercent = parseFloat(voucher?.discount_percent || 0);
-
     const discountAmount = (serviceTotal * discountPercent) / 100;
-
     const total = serviceTotal + tip - discountAmount;
 
     return {
@@ -660,11 +672,7 @@ export const getBookingsByBranchService = async (idBranch, date) => {
       })),
 
       voucher: voucher
-        ? {
-            id: voucher.id,
-            name: voucher.name,
-            discountPercent,
-          }
+        ? { id: voucher.id, name: voucher.name, discountPercent }
         : null,
 
       serviceTotal: serviceTotal.toFixed(0),
@@ -674,5 +682,9 @@ export const getBookingsByBranchService = async (idBranch, date) => {
       subTotal: (serviceTotal + tip).toFixed(0),
       total: total.toFixed(0),
     };
-  });
+  } catch (err) {
+    console.error("❌ Lỗi map booking:", booking.idBooking, err.message);
+    return null;
+  }
+}).filter(Boolean);
 };

@@ -1,52 +1,77 @@
-// Bảng màu chuẩn Luxury Salon (Đã tinh chỉnh độ tương phản)
+// Bảng màu chuẩn Luxury Salon (Giữ nguyên)
 $gold-primary: #D4AF37; 
-$gold-dark: #997A2E;     // Nhấn đậm hơn để nét chữ sắc sảo
+$gold-dark: #997A2E;
 $gold-light: rgba(212, 175, 55, 0.12);
-$charcoal-dark: #111111; // Đen tuyền để chữ nổi bần bật
+$charcoal-dark: #111111;
 $charcoal-light: #2A2A2A;
 $bg-white: #FFFFFF;
-$bg-cream: #F8F6F0;      // Nền kem sáng hơn một chút
-$border-color: #E0E0E0;  // Viền nét hơn để phân tách khối
+$bg-cream: #F8F6F0;
+$border-color: #E0E0E0;
 $text-main: #222222;
-$text-muted: #555555;    // Xám đậm hơn (từ #888 -> #555) để dễ đọc
-$danger-color: #D35400;  // Cam đất, không bị chói mắt
+$text-muted: #555555;
+$danger-color: #D35400;
 
+// 👉 THÊM CLASS NÀY ĐỂ LÀM OVERLAY (Bỏ nền đen cũ của bạn đi và dùng cái này)
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.65); // Chỉ giữ lại overlay mờ
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  padding: 16px; // Khoảng cách an toàn để modal không dính mép màn hình
+  box-sizing: border-box;
+}
+
+// 👉 CẬP NHẬT LẠI CONTAINER
 .container {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px; // Giảm từ 20px xuống 16px để gọn chiều dọc hơn
   font-family: 'Inter', sans-serif;
   
-  /* 👉 THÊM 3 DÒNG NÀY ĐỂ KÉO RỘNG */
+  /* Đã sửa để chống scroll ngang dọc */
   width: 100%;
-  min-width: 550px; /* Ông có thể tăng lên 600px nếu muốn rộng hơn nữa */
-  margin: 0 auto;   /* Giúp form luôn nằm giữa */
+  max-width: 550px; // Dùng max-width thay vì min-width
+  max-height: 90vh; // Ép modal không bao giờ vượt quá 90% chiều cao màn hình
+  margin: 0 auto;
   
   background-color: $bg-white;
-  padding: 28px;    /* Tăng padding lên tí cho thoáng khí */
+  padding: 24px; // Giảm từ 28px xuống 24px cho vừa vặn
   border-radius: 16px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15); // Đổ bóng nổi bật hơn trên overlay
+
+  /* Nếu nội dung thêm dịch vụ quá dài, chỉ scroll phần bên trong, không scroll cả trang */
+  overflow-y: auto; 
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: #CCC; border-radius: 4px; }
 }
+
 .header {
   text-align: center;
-  padding-bottom: 10px;
+  padding-bottom: 8px; // Ép gọn lại
 
   .iconGold {
     color: $gold-primary;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
   }
 
   h2 {
-    font-size: 1.4rem;
+    font-size: 1.3rem; // Thu nhỏ font một chút xíu
     color: $charcoal-dark;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
     text-transform: uppercase;
     letter-spacing: 1px;
     font-weight: 700;
   }
 
   p {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     color: $text-muted;
   }
 }
@@ -55,17 +80,17 @@ $danger-color: #D35400;  // Cam đất, không bị chói mắt
 .card {
   background: $bg-cream;
   border-radius: 12px;
-  padding: 16px 20px;
+  padding: 14px 18px; // Thu nhỏ padding
   border: 1px solid $border-color;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px; // Thu nhỏ gap
 
   .infoRow {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 14px;
+    font-size: 13px; // Hạ font size xuống 1px để gọn hơn
 
     .label {
       display: flex;
@@ -89,12 +114,12 @@ $danger-color: #D35400;  // Cam đất, không bị chói mắt
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
     padding-bottom: 8px;
     border-bottom: 1px solid $border-color;
 
     h3 {
-      font-size: 1.05rem;
+      font-size: 1rem;
       color: $charcoal-dark;
       font-weight: 700;
     }
@@ -113,7 +138,7 @@ $danger-color: #D35400;  // Cam đất, không bị chói mắt
   .serviceItem {
     display: flex;
     justify-content: space-between;
-    padding: 10px 0;
+    padding: 8px 0;
     font-size: 14px;
 
     .serviceName {
@@ -126,17 +151,6 @@ $danger-color: #D35400;  // Cam đất, không bị chói mắt
       color: $charcoal-dark;
     }
   }
-}
-
-.emptyState {
-  text-align: center;
-  padding: 20px;
-  color: $text-muted;
-  font-style: italic;
-  font-size: 14px;
-  background: $bg-cream;
-  border-radius: 8px;
-  border: 1px dashed $border-color;
 }
 
 // Thêm dịch vụ (Toggle Button)
@@ -166,15 +180,14 @@ $danger-color: #D35400;  // Cam đất, không bị chói mắt
 .serviceListExpand {
   list-style: none;
   padding: 0;
-  margin: 10px 0 0 0;
+  margin: 8px 0 0 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: 180px;
+  max-height: 150px; // Giảm max-height để không đẩy form quá dài
   overflow-y: auto;
   padding-right: 6px;
 
-  // Tùy chỉnh thanh cuộn
   &::-webkit-scrollbar { width: 5px; }
   &::-webkit-scrollbar-track { background: #F1F1F1; border-radius: 5px; }
   &::-webkit-scrollbar-thumb { background: #CCC; border-radius: 5px; }
@@ -183,43 +196,32 @@ $danger-color: #D35400;  // Cam đất, không bị chói mắt
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 14px;
+    padding: 10px 12px;
     border: 1px solid $border-color;
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s ease;
     background: $bg-white;
 
-    &:hover {
-      border-color: $gold-primary;
-    }
-
+    &:hover { border-color: $gold-primary; }
     &.selected {
       background: $gold-light;
       border-color: $gold-primary;
-      box-shadow: 0 2px 8px rgba(212, 175, 55, 0.1);
     }
 
     .checkboxWrapper {
       display: flex;
       align-items: center;
       gap: 12px;
-      font-size: 14px;
+      font-size: 13px;
       color: $text-main;
       font-weight: 500;
-
-      input[type="checkbox"] {
-        accent-color: $gold-dark;
-        width: 16px;
-        height: 16px;
-        cursor: pointer;
-      }
     }
 
     .price {
       font-weight: 600;
       color: $charcoal-dark;
-      font-size: 14px;
+      font-size: 13px;
     }
   }
 }
@@ -228,16 +230,16 @@ $danger-color: #D35400;  // Cam đất, không bị chói mắt
 .summaryCard {
   background: $bg-cream;
   border-radius: 12px;
-  padding: 20px;
+  padding: 16px; // Giảm padding
   border: 1px solid $border-color;
-  margin-top: 10px;
+  margin-top: auto; // Tự động đẩy xuống dưới cùng nếu bên trên có khoảng trống
 
   .summaryRow {
     display: flex;
     justify-content: space-between;
     color: $text-muted;
-    font-size: 14px;
-    margin-bottom: 14px;
+    font-size: 13px;
+    margin-bottom: 10px;
     font-weight: 500;
 
     span:last-child {
@@ -246,49 +248,14 @@ $danger-color: #D35400;  // Cam đất, không bị chói mắt
     }
   }
 
-  .voucherBox {
-    background: #FFF8EB; 
-    border: 1px dashed $gold-primary;
-    border-radius: 8px;
-    padding: 14px;
-    margin-bottom: 16px;
-
-    .voucherTop {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 6px;
-
-      .voucherTitle {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        color: $gold-dark;
-        font-weight: 700;
-        font-size: 13px;
-      }
-
-      .discountValue {
-        color: $danger-color;
-        font-weight: 700;
-        font-size: 14px;
-      }
-    }
-
-    .voucherBottom {
-      font-size: 12px;
-      color: #8C6A21;
-    }
-  }
-
   .voucherEmpty {
-    font-size: 13px;
+    font-size: 12px;
     color: $text-muted;
     text-align: center;
-    padding: 12px;
+    padding: 10px;
     background: #EAEAEA;
     border-radius: 8px;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
     font-style: italic;
   }
 
@@ -296,18 +263,18 @@ $danger-color: #D35400;  // Cam đất, không bị chói mắt
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding-top: 16px;
-    border-top: 1px solid #D5D5D5; // Viền xám đậm hơn chút để chia cắt
+    padding-top: 12px;
+    border-top: 1px solid #D5D5D5; 
     
     span:first-child {
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 600;
       color: $charcoal-dark;
       text-transform: uppercase;
     }
 
     .totalPrice {
-      font-size: 1.5rem;
+      font-size: 1.3rem;
       font-weight: 800;
       color: $gold-dark;
     }
@@ -320,9 +287,9 @@ $danger-color: #D35400;  // Cam đất, không bị chói mắt
   color: #FFF;
   border: none;
   width: 100%;
-  padding: 16px;
+  padding: 14px; // Giảm padding
   border-radius: 50px;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -334,9 +301,5 @@ $danger-color: #D35400;  // Cam đất, không bị chói mắt
     background: $gold-primary;
     transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(212, 175, 55, 0.4);
-  }
-
-  &:active {
-    transform: translateY(0);
   }
 }

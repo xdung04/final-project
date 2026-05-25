@@ -6,7 +6,9 @@ export default (sequelize) => {
     static associate(models) {
       Customer.belongsTo(models.User, {
         foreignKey: "idCustomer",
+         targetKey:  "idUser", 
         as: "user",
+
       });
 
       Customer.belongsToMany(models.Voucher, {

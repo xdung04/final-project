@@ -12,43 +12,52 @@ import {
   checkInBooking,
   getBookingsByBranch,
 } from "../controllers/bookingController.js";
-import { authenticate } from "../middlewares/authMiddleware.js";
+import { authenticate, authorize } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
-// 🧾 Lấy tất cả chi nhánh
-router.get("/branches", getBranches);
+const receptionistOnly = authorize(["receptionist"]);
+const barberOnly        = authorize(["barber"]);
+const staffOnly         = authorize(["receptionist", "barber", "admin"]);
 
-// 🧩 Lấy chi tiết 1 chi nhánh
-router.get("/branches/:idBranch", getBranchDetails);
+// ═══════════════════════════════════════════════════════════════════════════
+// 1. PUBLIC — không cần đăng nhập
+// ═══════════════════════════════════════════════════════════════════════════
+router.get("/branches",             getBranches);
+router.get("/branches/:idBranch",   getBranchDetails);
 
-// 🧑‍💼 Booking theo barber
-router.get("/barbers/:idBarber", getBookingsByBarber);
-
-
-// 📋 Danh sách booking receptionist
-router.get("/branch/:idBranch", getBookingsByBranch);
-
-// ❌ Hủy booking
-router.put("/:idBooking/cancel", cancelBooking);
-router.put("/:idBooking/checkin", checkInBooking);
-
-router.get("/barber", getBookingsForBarber);
+// slot đã đặt — customer cần xem để chọn giờ
 router.get("/barbers/:idBarber/booked-slots", getBookedSlotsByBarber);
 
-// ✅ Hoàn tất booking (upload ảnh)
+// ═══════════════════════════════════════════════════════════════════════════
+// 2. CUSTOMER — đăng nhập là được
+// ═══════════════════════════════════════════════════════════════════════════
+router.post("/create", authenticate, createBooking);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 3. RECEPTIONIST
+// ═══════════════════════════════════════════════════════════════════════════
+router.get ("/branch/:idBranch",      authenticate, receptionistOnly, getBookingsByBranch);
+router.put ("/:idBooking/checkin",    authenticate, receptionistOnly, checkInBooking);
+router.put ("/:idBooking/cancel",     authenticate, receptionistOnly, cancelBooking);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 4. BARBER
+// ═══════════════════════════════════════════════════════════════════════════
+router.get("/barber",                 authenticate, barberOnly, getBookingsForBarber);
+router.get("/barbers/:idBarber",      authenticate, barberOnly, getBookingsByBarber);
+
 router.post(
   "/:id/complete",
+  authenticate,
+  barberOnly,
   upload.fields([
     { name: "front", maxCount: 1 },
-    { name: "left", maxCount: 1 },
+    { name: "left",  maxCount: 1 },
     { name: "right", maxCount: 1 },
-    { name: "back", maxCount: 1 },
+    { name: "back",  maxCount: 1 },
   ]),
-  completeBooking,
+  completeBooking
 );
-
-// ✍️ Tạo booking mới
-router.post("/create", authenticate, createBooking);
 
 export default router;

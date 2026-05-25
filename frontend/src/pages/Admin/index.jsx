@@ -13,7 +13,8 @@ import {
   Briefcase,
   Bell,
   Search,
-  Newspaper
+  Newspaper,
+  Wand2
 } from "lucide-react";
 
 import styles from "./Admin.module.scss";
@@ -44,7 +45,7 @@ const menuItems = [
   { id: "luong", label: "Lương Thưởng", path: "/admin/payroll", icon: <Wallet size={20} strokeWidth={1.5} />, category: "finance" },
   { id: "hr-policy", label: "Chính Sách Thợ", path: "/admin/hr-policy", icon: <Briefcase size={20} strokeWidth={1.5} />, category: "finance" },
   { id: "loyalty", label: "Điểm Khách Hàng", path: "/admin/loyalty", icon: <Award size={20} strokeWidth={1.5} />, category: "management" },
-  { id: "hairStyle", label: "Kiểu Tóc", path: "/admin/hair-style", icon: <Award size={20} strokeWidth={1.5} />, category: "management" },
+{ id: "hairStyle", label: "Kiểu Tóc", path: "/admin/hair-style", icon: <Wand2 size={20} strokeWidth={1.5} />, category: "management" },
   {
   id: "tintuc",
   label: "Tin Tức",
