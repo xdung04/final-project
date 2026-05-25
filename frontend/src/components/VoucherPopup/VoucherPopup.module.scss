@@ -302,7 +302,38 @@ $ff-body:    'DM Sans', sans-serif;
   font-family: $ff-body;
   &.urgent { color: #fb923c; font-weight: 600; }
 }
+// ── Disabled ticket (không thể áp dụng) ──
+.ticket.disabled {
+  opacity: 0.65;
+  filter: grayscale(0.05);
+  background: #faf9f7;
+  .apply-btn, .exchange-btn {
+    pointer-events: none;
+    opacity: 0.5;
+  }
+  &:hover {
+    border-color: $border;
+    box-shadow: none;
+  }
+}
 
+// ── Actual discount badge (hiện số tiền giảm thực tế) ──
+.ticket-actual-discount {
+  background: rgba($gold, 0.12);
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  color: $gold-dark;
+  font-family: $ff-body;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+// ── Đảm bảo fixed amount hiển thị đẹp ──
+.ticket-pct--fixed {
+  font-size: 24px;
+}
 .apply-btn {
   padding: 6px 16px;
   background: $gold;
@@ -400,6 +431,13 @@ $ff-body:    'DM Sans', sans-serif;
   &:hover { border-color: $charcoal; color: $charcoal; }
 }
 
+.disabled-reason {
+  font-size: 11px;
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.1);
+  padding: 4px 8px;
+  border-radius: 20px;
+}
 // ── Confirm exchange ──────────────────────────────────────────────────────────
 .confirm-overlay {
   position: fixed; inset: 0;

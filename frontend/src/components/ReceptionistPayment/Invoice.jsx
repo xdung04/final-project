@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import styles from "./Invoice.module.scss";
 
 // --- Import Kiến trúc mới ---
-import { PaymentAPI } from "~/apis/paymentAPI"; 
-import socket from "../../utils/socket"; 
+import { PaymentAPI } from "~/apis/paymentAPI";
+import socket from "../../utils/socket";
 
 /**
  * Step4_Invoice: Màn hình chốt hóa đơn & thanh toán
@@ -12,35 +12,49 @@ import socket from "../../utils/socket";
  * @param {Function} onClose - Đóng modal/kiosk
  * @param {Function} onPaidSuccess - Callback khi thanh toán thành công
  */
-export default function Step4_Invoice({ data, onBack, onClose, onPaidSuccess }) {
+export default function Step4_Invoice({
+  data,
+  onBack,
+  onClose,
+  onPaidSuccess,
+}) {
   // 1. Quản lý State
   const [selectedMethod, setSelectedMethod] = useState(null); // "VNPAY" | "CASH"
   const [loading, setLoading] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
 
   // 2. Destructure & Tính toán dữ liệu hóa đơn
-  const { 
-    booking = {}, 
-    services = [], 
-    tip = 0, 
-    voucher = null 
-  } = data || {};
+  const { booking = {}, services = [], tip = 0, voucher = null } = data || {};
 
   const selectedServices = services.filter((s) => s.selected);
-  const totalServicePrice = selectedServices.reduce((sum, s) => sum + (s.price || 0), 0);
-  
-  const discount = voucher?.discountPercent 
-    ? (totalServicePrice * voucher.discountPercent) / 100 
-    : 0;
-    
-  const total = totalServicePrice - discount + (Number(tip) || 0);
+  const totalServicePrice = selectedServices.reduce(
+    (sum, s) => sum + (s.price || 0),
+    0,
+  );
+
+  const discount = (() => {
+    if (!voucher) return 0;
+    const fixed = parseFloat(voucher.rawDiscountAmount || 0);
+    const percent = parseFloat(voucher.rawDiscountPercent || 0);
+    const maxDisc = parseFloat(voucher.maxDiscountAmount || 0);
+    let disc = 0;
+    if (fixed > 0) {
+      disc = Math.min(fixed, totalServicePrice);
+    } else if (percent > 0) {
+      disc = totalServicePrice * (percent / 100);
+    }
+    if (maxDisc > 0) disc = Math.min(disc, maxDisc);
+    return Math.round(disc);
+  })();
+
+  const totalPaid = totalServicePrice - discount + (Number(tip) || 0);
 
   // 3. Helper format tiền tệ
-  const formatVND = (num) => 
+  const formatVND = (num) =>
     num.toLocaleString("vi-VN", { style: "currency", currency: "VND" });
 
   // 4. XỬ LÝ THANH TOÁN CHÍNH
- // 4. XỬ LÝ THANH TOÁN CHÍNH
+  // 4. XỬ LÝ THANH TOÁN CHÍNH
   const handlePayment = async () => {
     if (!selectedMethod || loading) return;
 
@@ -49,17 +63,22 @@ export default function Step4_Invoice({ data, onBack, onClose, onPaidSuccess }) 
 
     try {
       // Chuẩn bị payload khớp với Backend Service
-const payload = {
-  method: selectedMethod,
-  total: Math.round(total),
-  tip: Math.round(tip),
-  rating: data.serviceRating || 0,
-  services: selectedServices.map((s) => ({
-    // ✅ FIX: dùng s.idService nếu có, fallback về s.id
-    idService: s.idService || s.id,
-    quantity: s.quantity || 1,
-  })),
-};
+      const payload = {
+        method: selectedMethod,
+        totalServicePrice: Math.round(totalServicePrice),
+        total: Math.round(totalServicePrice - discount),
+        tip: Math.round(tip),
+        totalPaid: Math.round(totalPaid),
+        rating: data.serviceRating || 0,
+        services: selectedServices.map((s) => ({
+          idService: s.idService || s.id,
+          quantity: s.quantity || 1,
+        })),
+        voucherReverted: data.voucherReverted || false, // ← thêm
+        customerVoucherId: data.voucherReverted
+          ? data.revokedVoucherCustomerId || null
+          : null,
+      };
 
       // =========================================================
       // 🐛 ĐOẠN CODE DEBUG: Bấm F12 -> Mở tab Console để xem
@@ -79,9 +98,9 @@ const payload = {
           step: 5,
           rating: payload.rating, // Lấy từ payload cho đồng bộ
           tip: payload.tip,
-          total: payload.total
+          total: payload.total,
         });
-        
+
         if (response.paymentUrl) {
           window.location.href = response.paymentUrl;
         } else {
@@ -93,7 +112,7 @@ const payload = {
           idBooking,
           customerName: booking.customer,
           total: payload.total,
-          tip: payload.tip
+          tip: payload.tip,
         });
 
         setIsPaid(true);
@@ -123,23 +142,28 @@ const payload = {
         </div>
         <p className={styles.eyebrow}>Hoàn tất dịch vụ</p>
         <h2 className={styles.title}>Hóa đơn của bạn</h2>
-        <p className={styles.subtitle}>Vui lòng kiểm tra lại thông tin trước khi thanh toán</p>
+        <p className={styles.subtitle}>
+          Vui lòng kiểm tra lại thông tin trước khi thanh toán
+        </p>
       </div>
 
       <div className={styles.card}>
         <div className={styles.invoiceContent}>
-          
           {/* Section 1: Thông tin khách & thợ */}
           <div className={styles.section}>
             <p className={styles.sectionTitle}>Thông tin lịch hẹn</p>
             <div className={styles.infoGrid}>
               <div className={styles.infoItem}>
                 <span className={styles.infoLabel}>Khách hàng</span>
-                <span className={styles.infoValue}>{booking.customer || "—"}</span>
+                <span className={styles.infoValue}>
+                  {booking.customer || "—"}
+                </span>
               </div>
               <div className={styles.infoItem}>
                 <span className={styles.infoLabel}>Barber</span>
-                <span className={styles.infoValue}>{booking.barber || "—"}</span>
+                <span className={styles.infoValue}>
+                  {booking.barber || "—"}
+                </span>
               </div>
               <div className={styles.infoItem}>
                 <span className={styles.infoLabel}>Thời gian</span>
@@ -147,7 +171,9 @@ const payload = {
               </div>
               <div className={styles.infoItem}>
                 <span className={styles.infoLabel}>Cơ sở</span>
-                <span className={styles.infoValue}>{booking.branch || "—"}</span>
+                <span className={styles.infoValue}>
+                  {booking.branch || "—"}
+                </span>
               </div>
             </div>
           </div>
@@ -162,7 +188,9 @@ const payload = {
                 {selectedServices.map((s) => (
                   <li key={s.id} className={styles.serviceItem}>
                     <span className={styles.serviceName}>{s.name}</span>
-                    <span className={styles.servicePrice}>{formatVND(s.price)}</span>
+                    <span className={styles.servicePrice}>
+                      {formatVND(s.price)}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -178,13 +206,27 @@ const payload = {
             <div className={styles.summaryRow}>
               <span className={styles.summaryLabel}>🎟️ Voucher</span>
               <span className={styles.summaryValue}>
-                {voucher ? `${voucher.title} (-${voucher.discountPercent}%)` : "Không áp dụng"}
+                {voucher
+                  ? (() => {
+                      const fixed = parseFloat(voucher.rawDiscountAmount || 0);
+                      const percent = parseFloat(
+                        voucher.rawDiscountPercent || 0,
+                      );
+                      const label =
+                        fixed > 0
+                          ? `-${fixed.toLocaleString("vi-VN")}đ`
+                          : `-${percent}%`;
+                      return `${voucher.name} (${label})`;
+                    })()
+                  : "Không áp dụng"}
               </span>
             </div>
             {discount > 0 && (
               <div className={styles.summaryRow}>
                 <span className={styles.summaryLabel}>Giảm giá</span>
-                <span className={styles.discountValue}>-{formatVND(discount)}</span>
+                <span className={styles.discountValue}>
+                  -{formatVND(discount)}
+                </span>
               </div>
             )}
             <div className={styles.summaryRow}>
@@ -208,7 +250,9 @@ const payload = {
                     <strong>VNPay (QR Code)</strong>
                     <p>Quét mã qua App Ngân hàng</p>
                   </div>
-                  {selectedMethod === "VNPAY" && <span className={styles.checkMark}>✓</span>}
+                  {selectedMethod === "VNPAY" && (
+                    <span className={styles.checkMark}>✓</span>
+                  )}
                 </div>
 
                 {/* Option CASH */}
@@ -221,7 +265,9 @@ const payload = {
                     <strong>Tiền mặt</strong>
                     <p>Thanh toán trực tiếp tại quầy</p>
                   </div>
-                  {selectedMethod === "CASH" && <span className={styles.checkMark}>✓</span>}
+                  {selectedMethod === "CASH" && (
+                    <span className={styles.checkMark}>✓</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -232,14 +278,14 @@ const payload = {
         <div className={styles.bottomArea}>
           <div className={styles.totalBox}>
             <span className={styles.totalLabel}>Tổng cộng hóa đơn</span>
-            <strong className={styles.totalAmount}>{formatVND(total)}</strong>
+            <strong className={styles.totalAmount}>{formatVND(totalPaid)}</strong>
           </div>
 
           {!isPaid ? (
             <div className={styles.btnGroup}>
-              <button 
-                onClick={onBack} 
-                className={styles.backBtn} 
+              <button
+                onClick={onBack}
+                className={styles.backBtn}
                 disabled={loading}
               >
                 ← Quay lại
@@ -257,8 +303,8 @@ const payload = {
               <div className={styles.successIcon}>🎉</div>
               <div className={styles.successContent}>
                 <p className={styles.successText}>
-                  {selectedMethod === "CASH" 
-                    ? "Yêu cầu thanh toán tiền mặt đã được gửi!" 
+                  {selectedMethod === "CASH"
+                    ? "Yêu cầu thanh toán tiền mặt đã được gửi!"
                     : "Giao dịch thành công!"}
                 </p>
                 <small>Hệ thống sẽ quay về trang chủ sau giây lát...</small>

@@ -56,8 +56,11 @@ const bookingApi = {
   },
 
   // Tạo booking mới
-  createBooking: (bookingData) => {
-    return axios.post(API_URL, bookingData, getAuthHeader());
+   createBooking: (data) => {
+    const token = localStorage.getItem("accessToken");
+    return axios.post(`${API_URL}/create`, data, {
+      headers: { Authorization: `Bearer ${token}` }
+    });  
   },
 };
 

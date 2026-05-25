@@ -4,7 +4,7 @@ import moment from "moment";
 import { sendBookingEmail } from "./mailService.js";
 import { createNotification } from "./notificationService.js";
 import { addBookingEventToCalendar } from "./googleCalendarService.js";
-
+import VoucherService from "./voucherService.js";
 // Lấy tất cả chi nhánh
 export const getBranches = async (req, res) => {
   try {
@@ -184,12 +184,29 @@ export const createBookingService = async ({
   });
 
   // Tính tổng giá
-  const total = services.reduce(
+  const originalTotal = services.reduce(
     (sum, s) => sum + s.price * (s.quantity || 1),
     0,
   );
+  let finalTotal = originalTotal;
+  let discountAmount = 0;
 
-  // Tạo booking
+  // Nếu có voucher, gọi applyVoucher để kiểm tra và cập nhật
+  if (idCustomerVoucher) {
+    try {
+      const applyResult = await VoucherService.applyVoucher(
+        idCustomerVoucher,
+        idCustomer,
+        originalTotal,
+      );
+      discountAmount = applyResult.discountAmount;
+      finalTotal = applyResult.finalAmount;
+    } catch (error) {
+      throw new Error(`Voucher không hợp lệ: ${error.message}`);
+    }
+  }
+
+  // Tạo booking với total đã được giảm giá
   const booking = await db.Booking.create({
     idCustomer,
     idBranch,
@@ -199,7 +216,7 @@ export const createBookingService = async ({
     bookingTime,
     status: "Pending",
     description,
-    total,
+    finalTotal,
   });
 
   // Tạo chi tiết dịch vụ
@@ -213,14 +230,6 @@ export const createBookingService = async ({
         price: s.price,
       });
     }
-  }
-
-  // Cập nhật voucher nếu có
-  if (idCustomerVoucher) {
-    await db.CustomerVoucher.update(
-      { status: "used", usedAt: new Date() },
-      { where: { id: idCustomerVoucher } },
-    );
   }
 
   // Lấy email khách
@@ -239,7 +248,7 @@ export const createBookingService = async ({
       bookingDate,
       bookingTime,
       services,
-      total,
+      total: finalTotal,
     });
   }
   const serviceIds = services.map((s) => s.idService);
@@ -483,42 +492,8 @@ export const getBookedSlotsByBarber = async (
     throw error;
   }
 };
-export const getBarberBookingsNext7Days = async (idBarber) => {
-  // 1. Check trạng thái tài khoản thợ
-  const barber = await db.Barber.findByPk(idBarber, {
-    attributes: ["idBarber", "isLocked"],
-  });
 
-  if (!barber) {
-    // Ném lỗi ra để Controller bắt và tự xử lý mã 404
-    throw new Error("BARBER_NOT_FOUND");
-  }
 
-  // 2. NẾU THỢ BỊ KHÓA -> Trả về isLocked = true và mảng rỗng
-  if (barber.isLocked) {
-    return { isLocked: true, bookings: [] };
-  }
-
-  // 3. Giới hạn thời gian 7 ngày
-  const today = moment().format("YYYY-MM-DD");
-  const next7Days = moment().add(7, "days").format("YYYY-MM-DD");
-
-  // 4. Lấy lịch
-  const bookings = await db.Booking.findAll({
-    where: {
-      idBarber,
-      bookingDate: { [Op.between]: [today, next7Days] },
-      status: { [Op.in]: ["Pending", "Confirmed", "InProgress"] },
-    },
-    attributes: ["idBooking", "bookingDate", "bookingTime", "status"],
-    order: [
-      ["bookingDate", "ASC"],
-      ["bookingTime", "ASC"],
-    ],
-  });
-
-  return { isLocked: false, bookings };
-};
 export const getBookingsByBranchService = async (idBranch, date) => {
   // Bước 1: lấy danh sách idBarber thuộc branch
   const barbers = await db.Barber.findAll({
@@ -539,7 +514,7 @@ export const getBookingsByBranchService = async (idBranch, date) => {
     whereClause[Op.and] = [
       db.Sequelize.where(
         db.Sequelize.fn("DATE", db.Sequelize.col("Booking.bookingDate")),
-        date
+        date,
       ),
     ];
   }
@@ -600,13 +575,21 @@ export const getBookingsByBranchService = async (idBranch, date) => {
       {
         model: db.CustomerVoucher,
         as: "customerVoucher",
-        required: false,
+        // Lấy thêm id để frontend có thể revert nếu cần
         attributes: ["id", "status"],
         include: [
           {
             model: db.Voucher,
             as: "voucher",
-            attributes: ["id", "name", "discount_percent"],
+            attributes: [
+              "id",
+              "name",
+              "type",
+              "discount_percent",    // giảm theo %
+              "discount_amount",     // giảm cố định (POINTS_EXCHANGE)
+              "max_discount_amount", // cap tối đa
+              "min_invoice_amount",  // ← THÊM: để frontend check khi lễ tân đổi dịch vụ
+            ],
           },
         ],
       },
@@ -623,64 +606,97 @@ export const getBookingsByBranchService = async (idBranch, date) => {
 
     const serviceTotal = details.reduce(
       (sum, item) => sum + parseFloat(item.price) * (item.quantity || 1),
-      0
+      0,
     );
 
-    const tip = parseFloat(booking.BookingTip?.tipAmount || 0);
+    const tip     = parseFloat(booking.BookingTip?.tipAmount || 0);
     const voucher = booking.customerVoucher?.voucher;
-    const discountPercent = parseFloat(voucher?.discount_percent || 0);
-    const discountAmount = (serviceTotal * discountPercent) / 100;
-    const total = serviceTotal + tip - discountAmount;
+
+    // ── Tính discountAmount đã áp dụng lúc đặt lịch ──────────────────────
+    // Dùng để hiển thị trong BookingList (không dùng để tính lại ở BookingInfo)
+    let discountAmount  = 0;
+    let discountPercent = 0;
+    let discountFixed   = 0;
+
+    if (voucher) {
+      const fixedAmt = parseFloat(voucher.discount_amount  || 0);
+      const pct      = parseFloat(voucher.discount_percent || 0);
+      const maxDisc  = parseFloat(voucher.max_discount_amount || 0);
+
+      if (fixedAmt > 0) {
+        // POINTS_EXCHANGE — giảm cố định
+        discountFixed  = Math.min(fixedAmt, serviceTotal);
+        if (maxDisc > 0) discountFixed = Math.min(discountFixed, maxDisc);
+        discountAmount = discountFixed;
+      } else if (pct > 0) {
+        // Giảm theo %
+        discountPercent = pct;
+        discountAmount  = serviceTotal * (pct / 100);
+        if (maxDisc > 0) discountAmount = Math.min(discountAmount, maxDisc);
+      }
+    }
+
+    const total    = serviceTotal - discountAmount + tip;
 
     return {
-      idBooking: booking.idBooking,
-      bookingDate: booking.bookingDate,
-      bookingTime: booking.bookingTime,
-      status: booking.status || "Pending",
-      isPaid: Boolean(booking.isPaid),
+      idBooking:     booking.idBooking,
+      bookingDate:   booking.bookingDate,
+      bookingTime:   booking.bookingTime,
+      status:        booking.status || "Pending",
+      isPaid:        Boolean(booking.isPaid),
       paymentMethod: booking.paymentMethod || null,
-      description: booking.description || "",
+      description:   booking.description   || "",
 
       customer: booking.Customer
         ? {
-            id: booking.Customer.idCustomer,
-            name: booking.Customer.user?.fullName || "Khách lẻ",
+            id:    booking.Customer.idCustomer,
+            name:  booking.Customer.user?.fullName || "Khách lẻ",
             phone: booking.Customer.user?.phoneNumber || "",
           }
         : { id: 0, name: "Khách lẻ", phone: "" },
 
       barber: booking.barber
-        ? {
-            id: booking.barber.idBarber,
-            name: booking.barber.user?.fullName || "",
-          }
+        ? { id: booking.barber.idBarber, name: booking.barber.user?.fullName || "" }
         : null,
 
       branch: booking.barber?.branch
         ? {
-            id: booking.barber.branch.idBranch,
-            name: booking.barber.branch.name,
+            id:      booking.barber.branch.idBranch,
+            name:    booking.barber.branch.name,
             address: booking.barber.branch.address,
           }
         : null,
 
       services: details.map((d) => ({
-        id: d.service?.idService,
-        name: d.service?.name,
-        price: parseFloat(d.service?.price || d.price),
+        id:       d.service?.idService,
+        name:     d.service?.name,
+        price:    parseFloat(d.service?.price || d.price),
         quantity: d.quantity,
       })),
 
+      // Voucher với đủ thông tin để BookingInfo tính lại khi lễ tân đổi dịch vụ
       voucher: voucher
-        ? { id: voucher.id, name: voucher.name, discountPercent }
+        ? {
+            customerVoucherId: booking.customerVoucher.id, // ← để revert khi cần
+            id:                voucher.id,
+            name:              voucher.name,
+            type:              voucher.type,
+            discountPercent,           // 0 nếu là fixed
+            discountFixed,             // 0 nếu là percent
+            // Raw fields — BookingInfo dùng để tính lại
+            rawDiscountPercent:  parseFloat(voucher.discount_percent  || 0),
+            rawDiscountAmount:   parseFloat(voucher.discount_amount   || 0),
+            maxDiscountAmount:   parseFloat(voucher.max_discount_amount || 0),
+            minInvoiceAmount:    parseFloat(voucher.min_invoice_amount  || 0),
+          }
         : null,
 
-      serviceTotal: serviceTotal.toFixed(0),
-      tip: tip.toFixed(0),
-      discountPercent,
+      serviceTotal:   serviceTotal.toFixed(0),
+      tip:            tip.toFixed(0),
       discountAmount: discountAmount.toFixed(0),
-      subTotal: (serviceTotal + tip).toFixed(0),
-      total: total.toFixed(0),
+      discountPercent,
+      discountFixed,
+      total:          total.toFixed(0),
     };
   } catch (err) {
     console.error("❌ Lỗi map booking:", booking.idBooking, err.message);
