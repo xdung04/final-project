@@ -89,10 +89,8 @@ export default function Step4_Invoice({
       console.groupEnd();
       // =========================================================
 
-      // Gọi API qua Service tầng cao
-      const response = await PaymentAPI.create(idBooking, payload);
-
       if (selectedMethod === "VNPAY") {
+        const response = await PaymentAPI.create(idBooking, payload);
         socket.emit("customer_update_progress", {
           bookingId: idBooking,
           step: 5,
@@ -109,10 +107,9 @@ export default function Step4_Invoice({
       } else {
         // LUỒNG TIỀN MẶT
         socket.emit("customer_choose_cash_payment", {
-          idBooking,
+          bookingId: idBooking,
           customerName: booking.customer,
-          total: payload.total,
-          tip: payload.tip,
+          ...payload,
         });
 
         setIsPaid(true);
@@ -278,7 +275,9 @@ export default function Step4_Invoice({
         <div className={styles.bottomArea}>
           <div className={styles.totalBox}>
             <span className={styles.totalLabel}>Tổng cộng hóa đơn</span>
-            <strong className={styles.totalAmount}>{formatVND(totalPaid)}</strong>
+            <strong className={styles.totalAmount}>
+              {formatVND(totalPaid)}
+            </strong>
           </div>
 
           {!isPaid ? (

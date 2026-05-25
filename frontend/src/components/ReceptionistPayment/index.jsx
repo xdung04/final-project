@@ -4,9 +4,12 @@ import styles from "./PaymentModal.module.scss";
 import monitorStyles from "./MonitoringView.module.scss";
 import Step1_BookingInfo from "./BookingInfo";
 import socket from "../../utils/socket";
+import { PaymentAPI } from "~/apis/paymentAPI";
 
 // --- COMPONENT PHỤ: MONITOR VIEW (ĐÃ TỐI ƯU) ---
 const MonitoringView = ({ guestProgress, onCancel, onCashPayment }) => {
+  const totalPayment = (guestProgress.total || 0) + (guestProgress.tip || 0);
+
   // Hàm xử lý text trạng thái thông minh
   const getStatusInfo = (progress) => {
     if (progress.isPaid) {
@@ -75,9 +78,7 @@ const MonitoringView = ({ guestProgress, onCancel, onCashPayment }) => {
           style={{ gridColumn: "1 / -1" }}
         >
           <label>
-            {guestProgress.isPaid
-              ? "Tiền đã nhận (VNPAY)"
-              : "Tổng tiền hóa đơn"}
+            {guestProgress.isPaid ? "Tiền đã nhận" : "Tổng tiền hóa đơn"}
           </label>
           <span
             className={monitorStyles.value}
@@ -86,8 +87,8 @@ const MonitoringView = ({ guestProgress, onCancel, onCashPayment }) => {
               fontSize: "1.6rem",
             }}
           >
-            {guestProgress.total
-              ? `${guestProgress.total.toLocaleString("vi-VN")}đ`
+            {totalPayment > 0
+              ? `${totalPayment.toLocaleString("vi-VN")}đ`
               : "—"}
           </span>
         </div>
@@ -108,10 +109,12 @@ const MonitoringView = ({ guestProgress, onCancel, onCashPayment }) => {
             <button onClick={onCancel} className={monitorStyles.btnCancel}>
               ✕ Hủy & Rút bill
             </button>
-            <button onClick={onCashPayment} className={monitorStyles.btnCash}>
-              {guestProgress.step === 6
-                ? "💵 Xác nhận thu tiền mặt"
-                : "💵 Thu tiền mặt"}
+            <button
+              onClick={onCashPayment}
+              className={monitorStyles.btnCash}
+              disabled={guestProgress.step !== 6} 
+            >
+              Xác nhận thu tiền mặt
             </button>
           </>
         )}
@@ -128,6 +131,7 @@ export default function ReceptionistPayment({
 }) {
   const [formData, setFormData] = useState(null);
   const [mode, setMode] = useState("EDIT");
+  const [cashPayload, setCashPayload] = useState(null);
   const [guestProgress, setGuestProgress] = useState({
     step: 1,
     rating: 0,
@@ -168,8 +172,8 @@ export default function ReceptionistPayment({
     const handleProgress = (data) => {
       setGuestProgress((prev) => ({ ...prev, ...data }));
     };
-    socket.on("receive_customer_progress", handleProgress);
     socket.on("customer_choose_cash_payment", (data) => {
+      setCashPayload(data);
       setGuestProgress((prev) => ({ ...prev, ...data, step: 6 }));
     });
 
@@ -195,9 +199,25 @@ export default function ReceptionistPayment({
   };
 
   // Hàm này dùng chung cho cả khi Lễ tân thu tiền mặt HOẶC xác nhận sau khi VNPAY xong
-  const handleFinalize = () => {
-    if (onPushSuccess) onPushSuccess();
-    onClose();
+  const handleFinalize = async () => {
+    if (guestProgress.isPaid) {
+      if (onPushSuccess) onPushSuccess();
+      onClose();
+      return;
+    }
+    if (guestProgress.step === 6 && cashPayload) {
+      try {
+        await PaymentAPI.create(formData.booking.idBooking, cashPayload);
+        if (onPushSuccess) onPushSuccess();
+        onClose();
+      } catch (error) {
+        console.error("Lỗi thanh toán CASH", error);
+        alert("Xác nhận thất bại, vui lòng thử lại");
+      }
+    } else {
+      if (onPushSuccess) onPushSuccess();
+      onClose();
+    }
   };
 
   if (!formData) return null;

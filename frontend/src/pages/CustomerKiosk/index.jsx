@@ -79,6 +79,7 @@ export default function CustomerKiosk() {
       step: currentStep,
       rating: currentFormData.serviceRating || 0,
       tip: currentFormData.tip || 0,
+      total: currentFormData.total || 0,
     });
   };
 
