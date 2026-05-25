@@ -1033,174 +1033,380 @@
     opacity: 1;
   }
 }
-/* ====================== HAIRSTYLE SELECTION (CÓ HOVER SIDE IMAGE) ====================== */
-.hairstyleSection {
-  margin: 32px 0;
+/* ═══════════════════════════════════════════════════════════
+   HAIRSTYLE MODAL — thay thế toàn bộ block cũ từ
+   "HAIRSTYLE SELECTION" đến cuối file
+═══════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════
+   HAIRSTYLE MODAL — ĐÃ SỬA LỖI BUG GAP & FIX KHÓA PHOM PORTRAIT
+═══════════════════════════════════════════════════════════ */
+
+/* ── Trigger button ─────────────────────────────────────── */
+.hairstyleTrigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 18px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--gold);
+  border-radius: 0 4px 4px 0;
+  cursor: pointer;
+  font-family: var(--ff-body);
+  font-size: 14px;
+  color: var(--charcoal);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  margin-bottom: 0;
+
+  &:hover {
+    border-color: var(--gold);
+    box-shadow: 0 4px 14px rgba(184, 150, 106, 0.1);
+  }
 }
 
-.hairstyleOpenBtn {
+.hairstyleTriggerText {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-dim);
+  font-style: italic;
+
+  strong {
+    font-style: normal;
+    font-weight: 600;
+    color: var(--gold-dark);
+  }
+}
+
+.hairstyleTriggerArrow {
+  font-size: 18px;
+  color: var(--gold);
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+/* ── Full-screen overlay ────────────────────────────────── */
+.hairstyleOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(30, 24, 18, 0.72);
+  backdrop-filter: blur(4px);
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: hsOverlayIn 0.2s ease;
+
+  @keyframes hsOverlayIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+}
+
+/* ── Modal box ──────────────────────────────────────────── */
+.hairstyleModal {
+  background: var(--bg-cream);
   width: 100%;
-  padding: 16px 20px;
-  background: white;
-  border: 2px solid var(--border);
-  border-radius: 6px;
+  max-width: 780px;
+  height: 82vh; /* Khống chế chiều cao modal cố định ở mức 82% màn hình */
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column; /* Xếp Header -> Thân Grid -> Footer theo hàng dọc */
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+  animation: hsModalIn 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+  @keyframes hsModalIn {
+    from { opacity: 0; transform: translateY(28px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0)    scale(1);    }
+  }
+}
+
+/* ── Modal header ───────────────────────────────────────── */
+.hairstyleModalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 26px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  background: #ffffff;
+
+  h3 {
+    font-family: var(--ff-serif);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--charcoal);
+    margin: 0;
+  }
+}
+
+.hairstyleModalHint {
   font-family: var(--ff-body);
-  font-size: 15px;
-  color: var(--charcoal);
+  font-size: 12px;
+  color: #aaa;
+  font-style: italic;
+  margin-top: 3px;
+}
+
+.hairstyleModalClose {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: none;
   cursor: pointer;
   display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  padding-bottom: 12px;
-  margin-top: 10px;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-
-  &::-webkit-scrollbar {
-    height: 3px;
-  }
-  &::-webkit-scrollbar-thumb {
-    background: var(--gold-dark);
-    border-radius: 10px;
-  }
-}
-
-
-.modalHint {
-  padding: 16px 24px;
-  margin: 0;
-  font-size: 13.5px;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
   color: var(--text-dim);
-  background: #fdfaf6;
+  flex-shrink: 0;
+  transition: all 0.15s;
+
+  &:hover {
+    background: var(--charcoal);
+    color: #fff;
+    border-color: var(--charcoal);
+  }
 }
 
-/* Grid */
+/* ── Grid scrollable area — ĐÃ FIX LỖI ── */
 .hairstyleGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-  gap: 18px;
-  padding: 24px;
-  overflow-y: auto;
-  max-height: 58vh;
+  /* Đổi min-width lên 195px để tự động chia 3 cột cực chuẩn trên modal 780px */
+  grid-template-columns: repeat(auto-fill, minmax(195px, 1fr)) !important;
+  gap: 16px !important; /* ĐÃ SỬA: Thay thế 'px' rỗng thành 16px rõ ràng */
+  padding: 22px 24px;
+  
+  /* BẬT SCROLL DỌC THOẢI MÁI CHO GRID */
+  flex: 1;
+  min-height: 0; 
+  overflow-y: auto !important;
+  
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+
+  &::-webkit-scrollbar       { width: 5px; }
+  &::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
 }
 
-/* Card + Hover Effect */
+/* ── Hairstyle card — KHÓA CỨNG CHIỀU CAO CHỐNG DẸT ── */
 .hairstyleCard {
   border: 2px solid transparent;
-  border-radius: 10px;
+  border-radius: 8px;
   overflow: hidden;
   cursor: pointer;
-  transition: all 0.3s ease;
-  background: white;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  background: #ffffff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.07);
+  transition: all 0.25s ease;
+  
+  display: flex !important;           
+  flex-direction: column !important;  
+  
+  /* ĐẶT CHIỀU CAO CỐ ĐỊNH: Ép buộc dài ra, không cho co cụm dẹt dí nữa */
+  height: 320px !important;
+  min-height: 320px !important;
+
+  // Chống lỗi đè layout từ thẻ div vô danh "bis_skin_checked" của extension trình duyệt
+  > div {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100%;
+  }
 
   &:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 15px 30px rgba(184, 150, 106, 0.2);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 28px rgba(184, 150, 106, 0.22);
+    border-color: rgba(184, 150, 106, 0.4);
+
+    .hairstyleCoverImg  { opacity: 0; }
+    .hairstyleSideImg   { opacity: 1; }
   }
 }
 
-
-.modalFooter {
-  padding: 20px 24px;
-  border-top: 1px solid var(--border);
-  background: #f8f5f0;
-}
-
-.confirmBtn {
-  width: 100%;
-  padding: 16px;
-  background: var(--charcoal);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s;
-
-  &:hover {
-    background: var(--gold);
-    letter-spacing: 1px;
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.voucherOpenBtn {
-  width: 100%;
-  margin-top: 12px;
-  padding: 12px;
-  background: white;
-  border: 1px solid var(--gold);
-  color: var(--gold);
-  font-family: var(--ff-display);
-  letter-spacing: 2px;
-  font-size: 13px;
-  cursor: pointer;
-  border-radius: 2px;
-  transition: all 0.3s;
-
-  &:hover {
-    background: var(--gold);
-    color: white;
-  }
-}
-
-/* Hairstyle Modal - Phần còn thiếu */
 .hairstyleCardSelected {
-  border-color: var(--gold);
-  box-shadow: 0 0 0 3px rgba(184, 150, 106, 0.25);
+  border-color: var(--gold) !important;
+  box-shadow: 0 6px 22px rgba(184, 150, 106, 0.35) !important;
 }
 
-.hairstyleImageContainer {
+/* ── Image container with hover swap ───────────────────── */
+/* ── Phần Ảnh + Hover Side Image (ĐÃ SỬA) ── */
+.hairstyleImgWrap {
   position: relative;
-  height: 180px;
+  width: 100%;
+  height: 200px;           /* Giữ cố định chiều cao ảnh */
+  background: #f0ece6;
   overflow: hidden;
-  background: #f5f0eb;
+  flex-shrink: 0;
 }
 
-.hairstyleImage,
-.hairstyleSideImage {
+.hairstyleCoverImg,
+.hairstyleSideImg {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: all 0.6s ease;
+  object-position: center top;
+  transition: opacity 0.4s ease;
 }
 
-.hairstyleSideImage {
+.hairstyleCoverImg {
+  opacity: 1;
+  z-index: 1;
+}
+
+.hairstyleSideImg {
   opacity: 0;
   z-index: 2;
 }
 
-.hairstyleCard:hover .hairstyleSideImage {
+/* Hover - Chuyển sang ảnh nghiêng */
+.hairstyleCard:hover .hairstyleCoverImg {
+  opacity: 0;
+}
+
+.hairstyleCard:hover .hairstyleSideImg {
   opacity: 1;
 }
 
-.hairstyleCard:hover .hairstyleImage {
-  transform: scale(1.08);
+/* ── Selected tick badge ────────────────────────────────── */
+.hairstyleSelectedTick {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 3;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--gold);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 
+/* ── Card info — CHIẾM 120px CÒN LẠI CỦA CARD ── */
 .hairstyleCardInfo {
-  padding: 12px 14px;
+  padding: 10px 12px;
+  height: 120px !important; /* Khóa chết vùng chữ cao 120px */
+  display: flex !important;
+  flex-direction: column !important;
+  background: #ffffff;
+
   h4 {
+    font-family: var(--ff-serif);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--charcoal);
+    margin: 0 0 4px 0;
+    line-height: 1.3;
+    white-space: nowrap;         
+    overflow: hidden;            
+    text-overflow: ellipsis;     
+  }
+
+  p {
+    font-family: var(--ff-body);
+    font-size: 11px;
+    color: var(--text-dim);
     margin: 0 0 6px 0;
-    font-size: 15px;
+    line-height: 1.45;
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* Cắt chữ tối đa sau 2 dòng */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+.hairstyleCardMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: auto; /* Tự động đẩy cụm tag xuống sát đáy card cho đều hàng */
+}
+
+.hairstyleMetaTag {
+  font-family: var(--ff-body);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 20px;
+  background: #f0ece6;
+  color: var(--gold-dark);
+  letter-spacing: 0.2px;
+}
+
+/* ── Modal footer ───────────────────────────────────────── */
+.hairstyleModalFooter {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  gap: 12px;
+}
+
+.hairstyleFooterSelected {
+  font-family: var(--ff-body);
+  font-size: 13px;
+  color: var(--gold-dark);
+  font-weight: 600;
+
+  span {
+    color: var(--text-dim);
+    font-weight: 400;
+    margin-right: 4px;
+  }
+}
+
+.hairstyleFooterBtns {
+  display: flex;
+  gap: 10px;
+}
+
+.hairstyleClearBtn {
+  padding: 11px 18px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-family: var(--ff-body);
+  font-size: 13px;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    border-color: var(--charcoal);
     color: var(--charcoal);
   }
-  p {
-    margin: 0;
-    font-size: 12.5px;
-    color: #666;
-    line-height: 1.45;
+}
+
+.hairstyleConfirmBtn {
+  padding: 11px 24px;
+  background: var(--charcoal);
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  font-family: var(--ff-display);
+  font-size: 14px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.25s;
+
+  &:hover {
+    background: var(--gold);
+    letter-spacing: 3px;
   }
 }

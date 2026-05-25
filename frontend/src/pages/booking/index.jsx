@@ -867,94 +867,119 @@ function BookingPage() {
               </ul>
             </div>
 
-            {/* ── Kiểu tóc ── */}
-            <div className={styles.hairstyleSection}>
-              <button
-                type="button"
-                className={styles.hairstyleOpenBtn}
-                onClick={() => setShowHairstylePanel(true)}
-              >
-                {selectedStyle
-                  ? `Kiểu tóc: ${selectedStyle.name}`
-                  : "Chọn kiểu tóc phù hợp với bạn"}
-                <span className={styles.arrow}>›</span>
-              </button>
+       
+{/* ── Kiểu tóc ── */}
 
-              {showHairstylePanel && (
-                <div className={styles.hairstyleModalOverlay}>
-                  <div className={styles.hairstyleModal}>
-                    <div className={styles.modalHeader}>
-                      <h3>Chọn kiểu tóc</h3>
-                      <button
-                        type="button"
-                        className={styles.closeModalBtn}
-                        onClick={() => setShowHairstylePanel(false)}
-                      >
-                        ✕
-                      </button>
+{/* ── Kiểu tóc ── */}
+<div className={styles.formGroup}>
+  <label>Kiểu tóc</label>
+
+  <button
+    type="button"
+    className={styles.hairstyleTrigger}
+    onClick={() => setShowHairstylePanel(true)}
+  >
+    <span className={styles.hairstyleTriggerText}>
+      {selectedStyle ? (
+        <>
+          Đã chọn: <strong>{selectedStyle.name}</strong> — Nhấn để đổi
+        </>
+      ) : (
+        "Chọn kiểu tóc phù hợp với bạn (tuỳ chọn)"
+      )}
+    </span>
+    <span className={styles.hairstyleTriggerArrow}>›</span>
+  </button>
+
+  {/* Overlay Modal */}
+  {showHairstylePanel && (
+    <div className={styles.hairstyleOverlay} onMouseDown={(e) => e.target === e.currentTarget && setShowHairstylePanel(false)}>
+      <div className={styles.hairstyleModal} ref={hairstylePanelRef}>
+        <div className={styles.hairstyleModalHeader}>
+          <div>
+            <h3>Chọn Kiểu Tóc</h3>
+            <p className={styles.hairstyleModalHint}>Chọn một kiểu tóc phù hợp với phong cách của bạn</p>
+          </div>
+          <button type="button" className={styles.hairstyleModalClose} onClick={() => setShowHairstylePanel(false)}>✕</button>
+        </div>
+
+        <div className={styles.hairstyleGrid}>
+          {hairstylesData.map((hs) => {
+            const isSelected = booking.hairstyleId === hs.idHairstyle;
+            return (
+              <div
+                key={hs.idHairstyle}
+                className={`${styles.hairstyleCard} ${isSelected ? styles.hairstyleCardSelected : ""}`}
+                onClick={() => {
+                  setBooking(prev => ({
+                    ...prev,
+                    hairstyleId: prev.hairstyleId === hs.idHairstyle ? null : hs.idHairstyle
+                  }));
+                }}
+              >
+            {/* 1. Phần Khung Ảnh */}
+<div className={styles.hairstyleImgWrap}>
+  <img
+    src={hs.coverImage}
+    alt={hs.name}
+    className={styles.hairstyleCoverImg}
+    onError={(e) => { 
+      e.target.src = `https://via.placeholder.com/400x400/2c2c2c/ffffff?text=${encodeURIComponent(hs.name)}`; 
+    }}
+  />
+  
+  {/* ← THÊM PHẦN NÀY */}
+  {hs.sideImage && (
+    <img
+      src={hs.sideImage}
+      alt={`${hs.name} - góc nghiêng`}
+      className={styles.hairstyleSideImg}
+      onError={(e) => (e.target.style.display = "none")}
+    />
+  )}
+
+  {isSelected && <div className={styles.hairstyleSelectedTick}>✓</div>}
+</div>
+                {/* 2. Phần Thông Tin Chữ (ĐOẠN CŨ BỊ THIẾU LÀM CARD BỊ DẸT) */}
+                <div className={styles.hairstyleCardInfo}>
+                  <h4>{hs.name}</h4>
+                  <p>{hs.shortDescription || "Kiểu tóc hiện đại, phong cách lịch lãm."}</p>
+                  
+                  {(hs.difficultyLevel || hs.suitableAge) && (
+                    <div className={styles.hairstyleCardMeta}>
+                      {hs.difficultyLevel && <span className={styles.hairstyleMetaTag}>{hs.difficultyLevel}</span>}
+                      {hs.suitableAge && <span className={styles.hairstyleMetaTag}>{hs.suitableAge}</span>}
                     </div>
-                    <p className={styles.modalHint}>
-                      Di chuột vào ảnh để xem góc nghiêng • Chọn một phong cách
-                      bạn thích
-                    </p>
-                    <div className={styles.hairstyleGrid}>
-                      {hairstylesData.map((hs) => {
-                        const isSelected =
-                          booking.hairstyleId === hs.idHairstyle;
-                        return (
-                          <div
-                            key={hs.idHairstyle}
-                            className={`${styles.hairstyleCard} ${isSelected ? styles.hairstyleCardSelected : ""}`}
-                            onClick={() =>
-                              handleHairstyleSelect(hs.idHairstyle)
-                            }
-                          >
-                            <div className={styles.hairstyleImageContainer}>
-                              <img
-                                src={hs.coverImage}
-                                alt={hs.name}
-                                className={styles.hairstyleImage}
-                                onError={(e) => {
-                                  e.target.src = `https://via.placeholder.com/300x200/2c2c2c/ffffff?text=${encodeURIComponent(hs.name)}`;
-                                }}
-                              />
-                              {hs.sideImage && (
-                                <img
-                                  src={hs.sideImage}
-                                  alt={`${hs.name} - side view`}
-                                  className={`${styles.hairstyleSideImage} ${styles.hairstyleImage}`}
-                                  onError={(e) =>
-                                    (e.target.style.display = "none")
-                                  }
-                                />
-                              )}
-                              {isSelected && (
-                                <div className={styles.selectedBadge}>
-                                  ✓ Đã chọn
-                                </div>
-                              )}
-                            </div>
-                            <div className={styles.hairstyleCardInfo}>
-                              <h4>{hs.name}</h4>
-                              <p>{hs.shortDescription || "Không có mô tả"}</p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <div className={styles.modalFooter}>
-                      <button
-                        type="button"
-                        className={styles.confirmBtn}
-                        onClick={() => setShowHairstylePanel(false)}
-                      >
-                        Xác nhận
-                      </button>
-                    </div>
-                  </div>
+                  )}
                 </div>
-              )}
-            </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className={styles.hairstyleModalFooter}>
+          <div className={styles.hairstyleFooterSelected}>
+            {booking.hairstyleId ? (
+              <>Đã chọn: <strong>{selectedStyle?.name}</strong></>
+            ) : (
+              <span>Chưa chọn kiểu tóc</span>
+            )}
+          </div>
+          <div className={styles.hairstyleFooterBtns}>
+            {booking.hairstyleId && (
+              <button type="button" className={styles.hairstyleClearBtn} onClick={() => setBooking(prev => ({ ...prev, hairstyleId: null }))}>
+                Bỏ chọn
+              </button>
+            )}
+            <button type="button" className={styles.hairstyleConfirmBtn} onClick={() => setShowHairstylePanel(false)}>
+              Xác nhận
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )}
+</div>
 
             {/* ── Silent mode ── */}
             <label
