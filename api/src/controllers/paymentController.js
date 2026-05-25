@@ -10,14 +10,14 @@ const paymentCache = new NodeCache({ stdTTL: 900, checkperiod: 120 });
 
 export const createPayment = async (req, res) => {
   const { idBooking } = req.params;
-  const { method, total, tip, rating, services } = req.body;
+  const { method, total, tip, rating, services, totalPaid, totalServicePrice, voucherReverted, customerVoucherId } = req.body;
 
   if (method === "CASH") {
     const t = await sequelize.transaction();
     try {
       const result = await paymentService.finalizePayment(
         idBooking,
-        { tip, rating, services, paymentMethod: "Cash" },
+        { tip, rating, services, paymentMethod: "Cash", total ,totalServicePrice, voucherReverted, customerVoucherId},
         t
       );
       await t.commit();
@@ -65,7 +65,7 @@ export const createPayment = async (req, res) => {
 
       const paymentUrl = await vnpayService.createPaymentUrl({
         idBooking,
-        amount: total,
+        amount: totalPaid, 
       });
 
       return res.status(200).json({

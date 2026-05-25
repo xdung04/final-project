@@ -104,38 +104,6 @@ function ChartTooltip({ active, payload, label }) {
   );
 }
 
-// ── Summary bar — Tổng khách (không phải segment) ────────────────────────────
-function SummaryBar({ summary }) {
-  const total = summary.totalActive || 0;
-  const walkIn = summary.walkInCount || 0;
-  const verified = total - walkIn;
-  return (
-    <div className={cx("summaryBar")}>
-      <div className={cx("summaryLeft")}>
-        <div className={cx("summaryIconBox")}>
-          <Users size={18} />
-        </div>
-        <div>
-          <p className={cx("summaryLabel")}>Tổng khách đang hoạt động</p>
-          <p className={cx("summaryCount")}>{total.toLocaleString("vi-VN")}</p>
-        </div>
-      </div>
-      <div className={cx("summaryRight")}>
-        <div className={cx("summaryPill", "pillGold")}>
-          <span className={cx("pillDot")} style={{ background: "#C9A84C" }} />
-          <strong>{verified.toLocaleString("vi-VN")}</strong>&nbsp;đã kích hoạt
-        </div>
-        {walkIn >= 0 && (
-          <div className={cx("summaryPill", "pillGray")}>
-            <span className={cx("pillDot")} style={{ background: "#BBB" }} />
-            <strong>{walkIn}</strong>&nbsp;chưa kích hoạt
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
 // ── Segment Card ──────────────────────────────────────────────────────────────
 function SegmentCard({ segKey, data, active, onClick }) {
   const cfg = SEGMENT_CONFIG[segKey];
@@ -511,9 +479,6 @@ export default function CustomerTab() {
 
   return (
     <div className={cx("wrapper")}>
-      {/* Summary bar - đưa lên đầu */}
-      {!loadingSegments && <SummaryBar summary={summary} />}
-
       {/* Biểu đồ */}
       <div className={cx("chartCard")}>
         <div className={cx("chartCardHead")}>

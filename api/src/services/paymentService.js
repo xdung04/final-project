@@ -2,7 +2,16 @@
 import db from "../models/index.js";
 import { Op } from "sequelize";
 
-const { Booking, BookingDetail, BookingTip, Customer, LoyaltyRule,BarberRatingSummary,  Service, sequelize } = db;
+const {
+  Booking,
+  BookingDetail,
+  BookingTip,
+  Customer,
+  LoyaltyRule,
+  BarberRatingSummary,
+  Service,
+  sequelize,
+} = db;
 
 /**
  * Hàm chốt hạ thanh toán (Dùng chung cho Cash và VNPAY IPN)
@@ -11,7 +20,16 @@ const { Booking, BookingDetail, BookingTip, Customer, LoyaltyRule,BarberRatingSu
  * @param {object} transaction - Sequelize Transaction từ Controller truyền vào
  */
 export const finalizePayment = async (idBooking, paymentData, transaction) => {
-  const { services, tip, rating, paymentMethod } = paymentData;
+  const {
+    services,
+    tip,
+    rating,
+    paymentMethod,
+    voucherReverted,
+    customerVoucherId,
+    totalServicePrice,
+    total,
+  } = paymentData;
 
   // 1. Kiểm tra sự tồn tại của Booking
   const booking = await Booking.findByPk(idBooking, { transaction });
@@ -27,16 +45,18 @@ export const finalizePayment = async (idBooking, paymentData, transaction) => {
     await BookingDetail.destroy({ where: { idBooking }, transaction });
 
     // B. Lấy thông tin giá mới nhất từ bảng Service để tính tiền
-    const serviceIds = services.map(s => (typeof s === 'object' ? s.idService : s));
+    const serviceIds = services.map((s) =>
+      typeof s === "object" ? s.idService : s,
+    );
     const dbServices = await Service.findAll({
       where: { idService: serviceIds },
-      transaction
+      transaction,
     });
 
     const newDetails = [];
     for (const srv of dbServices) {
       // Tìm lại quantity từ data iPad gửi lên (nếu có), không thì mặc định 1
-      const input = services.find(s => (s.idService || s) === srv.idService);
+      const input = services.find((s) => (s.idService || s) === srv.idService);
       const quantity = input?.quantity || 1;
       const priceAtTime = Number(srv.price);
 
@@ -46,7 +66,7 @@ export const finalizePayment = async (idBooking, paymentData, transaction) => {
         idBooking: idBooking,
         idService: srv.idService,
         quantity: quantity,
-        price: priceAtTime // Lưu giá lúc thanh toán
+        price: priceAtTime, // Lưu giá lúc thanh toán
       });
     }
 
@@ -54,7 +74,7 @@ export const finalizePayment = async (idBooking, paymentData, transaction) => {
     await BookingDetail.bulkCreate(newDetails, { transaction });
   } else {
     // Nếu iPad không gửi services (không đổi gì), lấy total cũ trong booking
-    serviceTotal = Number(booking.total);
+    serviceTotal = totalServicePrice;
   }
 
   // 3. Lưu Tiền Tip vào bảng BookingTip
@@ -66,7 +86,7 @@ export const finalizePayment = async (idBooking, paymentData, transaction) => {
         idBarber: booking.idBarber,
         tipAmount: tipAmount,
       },
-      { transaction }
+      { transaction },
     );
   }
 
@@ -75,16 +95,21 @@ export const finalizePayment = async (idBooking, paymentData, transaction) => {
     const [summary] = await BarberRatingSummary.findOrCreate({
       where: { idBarber: booking.idBarber },
       defaults: { totalRate: 0, avgRate: 0 },
-      transaction
+      transaction,
     });
 
     const newTotalRate = summary.totalRate + 1;
-    const newAvgRate = ((Number(summary.avgRate) * summary.totalRate) + Number(rating)) / newTotalRate;
+    const newAvgRate =
+      (Number(summary.avgRate) * summary.totalRate + Number(rating)) /
+      newTotalRate;
 
-    await summary.update({
-      totalRate: newTotalRate,
-      avgRate: parseFloat(newAvgRate.toFixed(2))
-    }, { transaction });
+    await summary.update(
+      {
+        totalRate: newTotalRate,
+        avgRate: parseFloat(newAvgRate.toFixed(2)),
+      },
+      { transaction },
+    );
   }
 
   // 5. Cập nhật trạng thái Booking & Total mới
@@ -93,24 +118,30 @@ export const finalizePayment = async (idBooking, paymentData, transaction) => {
     {
       isPaid: true,
       status: "Completed",
-      total: serviceTotal, 
+      total: total ?? serviceTotal, // ưu tiên total; fallback serviceTotal nếu null
       paymentMethod: paymentMethod || "Cash",
     },
-    { transaction }
+    { transaction },
   );
 
   // 6. Cộng điểm Loyalty (Sử dụng hàm của ông)
   // Lưu ý: serviceTotal là số tiền thực tế khách trả cho các dịch vụ
 
-    await addLoyaltyPoints(booking.idCustomer, serviceTotal, transaction);
+  await addLoyaltyPoints(booking.idCustomer, serviceTotal, transaction);
 
+  if (voucherReverted && customerVoucherId) {
+    const VoucherService = (await import("./voucherService.js")).default;
+    await VoucherService.revertVoucher(customerVoucherId, transaction);
+    // Xóa liên kết voucher khỏi booking
+    await booking.update({ idCustomerVoucher: null }, { transaction });
+  }
 
   return {
     idBooking: booking.idBooking,
     serviceTotal,
     tipAmount,
-    amountPaid: serviceTotal + tipAmount, // Tổng tiền khách đã thanh toán
-    isPaid: true
+    amountPaid: (total ?? serviceTotal) + tipAmount, // Tổng tiền khách đã thanh toán
+    isPaid: true,
   };
 };
 
@@ -122,7 +153,7 @@ const addLoyaltyPoints = async (idCustomer, orderTotal, transaction) => {
   if (!customer) return;
 
   const now = new Date();
-  
+
   // Tìm rule phù hợp (ưu tiên rule có min_order_amount cao nhất)
   let rule = await LoyaltyRule.findOne({
     where: {
@@ -144,11 +175,15 @@ const addLoyaltyPoints = async (idCustomer, orderTotal, transaction) => {
   }
 
   if (rule) {
-    const points = Math.floor((orderTotal / rule.money_per_point) * rule.point_multiplier);
+    const points = Math.floor(
+      (orderTotal / rule.money_per_point) * rule.point_multiplier,
+    );
     if (points > 0) {
       const newPoints = (customer.loyaltyPoint || 0) + points;
       await customer.update({ loyaltyPoint: newPoints }, { transaction });
-      console.log(`[Loyalty] Customer #${idCustomer} +${points} pts (New Balance: ${newPoints})`);
+      console.log(
+        `[Loyalty] Customer #${idCustomer} +${points} pts (New Balance: ${newPoints})`,
+      );
     }
   }
 };

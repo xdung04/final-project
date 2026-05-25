@@ -1,5 +1,13 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { Clock, User, Scissors, ReceiptText, Activity, Wallet, MoreHorizontal } from "lucide-react";
+import {
+  Clock,
+  User,
+  Scissors,
+  ReceiptText,
+  Activity,
+  Wallet,
+  MoreHorizontal,
+} from "lucide-react";
 import styles from "./BookingList.module.scss";
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
@@ -15,9 +23,12 @@ async function fetchMyBranch(token) {
 
 // Lấy bookings theo idBranch và ngày
 async function fetchBookingsByBranch(idBranch, date, token) {
-  const res = await fetch(`${API_BASE_URL}/bookings/branch/${idBranch}?date=${date}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const res = await fetch(
+    `${API_BASE_URL}/bookings/branch/${idBranch}?date=${date}`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    },
+  );
   if (!res.ok) throw new Error("Không lấy được danh sách lịch hẹn");
   const json = await res.json();
   return json.data || [];
@@ -51,10 +62,11 @@ export default function BookingList({ onSelect, date }) {
         services: b.services?.map((s) => s.name) || [],
         serviceTotal: parseFloat(b.serviceTotal || 0),
         tip: parseFloat(b.tip || 0),
-        discountPercent: parseFloat(b.discountPercent || 0),
         discountAmount: parseFloat(b.discountAmount || 0),
-        subTotal: parseFloat(b.subTotal || 0),
-        finalTotal: parseFloat(b.total || 0),
+        discountPercent: parseFloat(b.discountPercent || 0),
+        discountFixed: parseFloat(b.discountFixed || 0),
+        voucherType: b.voucher?.type || null, // ← sửa ở đây
+        total: parseFloat(b.total || 0),
         isPaid: b.isPaid || false,
         status: b.status || "Pending",
         raw: b,
@@ -111,7 +123,8 @@ export default function BookingList({ onSelect, date }) {
     }
   };
 
-  if (loading) return <div className={styles.loading}>Đang tải dữ liệu lịch hẹn...</div>;
+  if (loading)
+    return <div className={styles.loading}>Đang tải dữ liệu lịch hẹn...</div>;
   if (error)
     return (
       <div className={styles.loading} style={{ color: "red" }}>
@@ -124,7 +137,14 @@ export default function BookingList({ onSelect, date }) {
       <h2 className={styles.title}>
         Danh Sách Lịch Hẹn
         {branchInfo && (
-          <span style={{ fontSize: 14, fontWeight: 400, marginLeft: 12, color: "#888" }}>
+          <span
+            style={{
+              fontSize: 14,
+              fontWeight: 400,
+              marginLeft: 12,
+              color: "#888",
+            }}
+          >
             — {branchInfo.branchName}
           </span>
         )}
@@ -191,7 +211,10 @@ export default function BookingList({ onSelect, date }) {
                     <td className={styles.timeCell}>{booking.time}</td>
                     <td className={styles.boldCell}>{booking.customer}</td>
                     <td>{booking.barber}</td>
-                    <td title={booking.services.join(", ")} className={styles.truncateCell}>
+                    <td
+                      title={booking.services.join(", ")}
+                      className={styles.truncateCell}
+                    >
                       {displayedServices || "—"}
                     </td>
 
@@ -199,12 +222,24 @@ export default function BookingList({ onSelect, date }) {
                       <div className={styles.billDetails}>
                         <div className={styles.billRow}>
                           <span>Tạm tính:</span>
-                          <span>{booking.subTotal.toLocaleString("vi-VN")}đ</span>
+                          <span>
+                            {booking.serviceTotal.toLocaleString("vi-VN")}đ
+                          </span>
                         </div>
-                        {booking.discountPercent > 0 && (
-                          <div className={`${styles.billRow} ${styles.discount}`}>
-                            <span>Giảm {booking.discountPercent}%:</span>
-                            <span>-{booking.discountAmount.toLocaleString("vi-VN")}đ</span>
+                        {booking.discountAmount > 0 && (
+                          <div
+                            className={`${styles.billRow} ${styles.discount}`}
+                          >
+                            {booking.voucherType === "POINTS_EXCHANGE" ? (
+                              <span>Giảm tiền:</span>
+                            ) : booking.discountPercent > 0 ? (
+                              <span>Giảm {booking.discountPercent}%:</span>
+                            ) : (
+                              <span>Giảm:</span>
+                            )}
+                            <span>
+                              -{booking.discountAmount.toLocaleString("vi-VN")}đ
+                            </span>
                           </div>
                         )}
                         <div className={styles.billRow}>
@@ -213,13 +248,15 @@ export default function BookingList({ onSelect, date }) {
                         </div>
                         <div className={`${styles.billRow} ${styles.total}`}>
                           <span>Tổng:</span>
-                          <span>{booking.finalTotal.toLocaleString("vi-VN")}đ</span>
+                          <span>{booking.total.toLocaleString("vi-VN")}đ</span>
                         </div>
                       </div>
                     </td>
 
                     <td>
-                      <span className={`${styles.badge} ${styles[`status_${booking.status}`]}`}>
+                      <span
+                        className={`${styles.badge} ${styles[`status_${booking.status}`]}`}
+                      >
                         {booking.status === "Completed"
                           ? "Đã cắt xong"
                           : booking.status === "Cancelled"
@@ -232,7 +269,9 @@ export default function BookingList({ onSelect, date }) {
 
                     <td>
                       {booking.status === "Completed" ? (
-                        <span className={`${styles.badge} ${booking.isPaid ? styles.paid : styles.unpaid}`}>
+                        <span
+                          className={`${styles.badge} ${booking.isPaid ? styles.paid : styles.unpaid}`}
+                        >
                           {booking.isPaid ? "Đã thanh toán" : "Chưa thanh toán"}
                         </span>
                       ) : (
@@ -243,16 +282,25 @@ export default function BookingList({ onSelect, date }) {
                     <td className={styles.actionCell}>
                       <div className={styles.actionButtons}>
                         {booking.status === "Completed" && !booking.isPaid && (
-                          <button className={styles.btnCheckout} onClick={() => onSelect(booking.raw, fetchBookings)}>
+                          <button
+                            className={styles.btnCheckout}
+                            onClick={() => onSelect(booking.raw, fetchBookings)}
+                          >
                             Thanh toán
                           </button>
                         )}
                         {booking.status === "Pending" && (
                           <>
-                            <button className={styles.btnCheckin} onClick={() => handleCheckIn(booking.id)}>
+                            <button
+                              className={styles.btnCheckin}
+                              onClick={() => handleCheckIn(booking.id)}
+                            >
                               Check-in
                             </button>
-                            <button className={styles.btnCancel} onClick={() => handleCancel(booking.id)}>
+                            <button
+                              className={styles.btnCancel}
+                              onClick={() => handleCancel(booking.id)}
+                            >
                               Hủy
                             </button>
                           </>

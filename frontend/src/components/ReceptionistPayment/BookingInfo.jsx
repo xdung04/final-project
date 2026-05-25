@@ -1,107 +1,171 @@
-import React, { useEffect, useState } from "react";
-import { PlusCircle, MinusCircle, User, Scissors, Clock, MapPin, ReceiptText, Tag } from "lucide-react";
-import styles from "./BookingInfo.module.scss"; // 👉 IMPORT FILE SCSS MỚI
+import React, { useEffect, useState, useMemo, useRef } from "react";
+import {
+  PlusCircle,
+  MinusCircle,
+  User,
+  Scissors,
+  Clock,
+  MapPin,
+  ReceiptText,
+  Tag,
+  AlertTriangle,
+} from "lucide-react";
+import styles from "./BookingInfo.module.scss";
+
+function calcDiscount(voucher, subtotal) {
+  if (!voucher || subtotal <= 0) return 0;
+
+  const fixed = parseFloat(voucher.rawDiscountAmount || 0);
+  const percent = parseFloat(voucher.rawDiscountPercent || 0);
+  const maxDisc = parseFloat(voucher.maxDiscountAmount || 0);
+
+  let disc = 0;
+  if (fixed > 0) {
+    disc = Math.min(fixed, subtotal);
+  } else if (percent > 0) {
+    disc = subtotal * (percent / 100);
+  }
+
+  if (maxDisc > 0) disc = Math.min(disc, maxDisc);
+
+  return Math.round(disc);
+}
 
 export default function BookingInfo({ data, setData, onNext }) {
-  const { booking, services, voucher } = data;
-  const [branchServices, setBranchServices] = useState([]);
+  const { booking, services, voucher: initialVoucher } = data;
+
+  // Khởi tạo branchServices từ services ban đầu (tránh subtotal = 0)
+  const [branchServices, setBranchServices] = useState(() =>
+    (services || []).map((s) => ({
+      id: s.id,
+      name: s.name,
+      price: s.price,
+      selected: true,
+    })),
+  );
+
+  const initialVoucherRef = useRef(initialVoucher || null);
   const [showBranchServices, setShowBranchServices] = useState(false);
+  const [activeVoucher, setActiveVoucher] = useState(initialVoucher || null);
+  const [voucherReverted, setVoucherReverted] = useState(false);
+  const [revokedVoucherCustomerId, setRevokedVoucherCustomerId] = useState(
+    initialVoucher?.customerVoucherId || null,
+  );
+  const [voucherWarning, setVoucherWarning] = useState("");
+
   const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
-  // Lấy danh sách dịch vụ của chi nhánh
+  // ── Load dịch vụ chi nhánh (upsell) ─────────────────────────────────────────
   useEffect(() => {
-    if (!booking?.branch) return;
+    const branchId = booking.branchId;
+    if (!branchId) return;
 
     const fetchBranchServices = async () => {
       try {
-        const branchId = booking.branchId || booking.raw?.branch?.idBranch || 1;
-        const res = await fetch(`${API_BASE_URL}/bookings/branches/${branchId}`);
+        const res = await fetch(
+          `${API_BASE_URL}/bookings/branches/${branchId}`,
+        );
         const result = await res.json();
-
         if (result?.services) {
-          setBranchServices(
-            result.services.map((s) => ({
-              id: s.idService,
-              name: s.name,
-              price: parseFloat(s.price),
-              selected: services.some((sv) => sv.id === s.idService && sv.selected),
-            }))
-          );
+          // Merge: giữ lại selected của các service đã có trong branchServices hiện tại
+          const allServices = result.services.map((s) => ({
+            id: s.idService,
+            name: s.name,
+            price: parseFloat(s.price),
+            selected: branchServices.some(
+              (bs) => bs.id === s.idService && bs.selected,
+            ),
+          }));
+          setBranchServices(allServices);
         }
-      } catch (error) {
-        console.error("Lỗi khi tải dịch vụ của chi nhánh:", error);
+      } catch (err) {
+        console.error("Lỗi khi tải dịch vụ chi nhánh:", err);
       }
     };
 
     fetchBranchServices();
-  }, [booking?.branch, API_BASE_URL, booking.branchId, booking.raw?.branch?.idBranch, services]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [booking.branchId]); // chỉ chạy khi branchId thay đổi
 
-  // Lấy voucher theo booking.idVoucher
-  useEffect(() => {
-    if (!booking?.idVoucher) return;
-
-    const fetchVoucher = async () => {
-      try {
-        const res = await fetch(`${API_BASE_URL}/vouchers/${booking.idVoucher}`);
-        const result = await res.json();
-
-        if (result?.success && result.data) {
-          const v = result.data;
-          setData((prev) => ({
-            ...prev,
-            voucher: {
-              idVoucher: v.idVoucher,
-              title: v.title,
-              discountPercent: parseFloat(v.discountPercent),
-              expiryDate: v.expiryDate,
-            },
-          }));
-        } else if (result?.title) {
-          setData((prev) => ({
-            ...prev,
-            voucher: {
-              idVoucher: booking.idVoucher,
-              title: result.title,
-              discountPercent: parseFloat(result.discountPercent || 0),
-              expiryDate: result.expiryDate || null,
-            },
-          }));
-        }
-      } catch (error) {
-        console.error("❌ Lỗi khi tải voucher:", error);
-      }
-    };
-
-    fetchVoucher();
-  }, [booking?.idVoucher, API_BASE_URL, setData]);
-
-  // Toggle chọn dịch vụ
+  // ── Toggle dịch vụ (upsell) ────────────────────────────────────────────────
   const handleToggleService = (id) => {
-    const updatedServices = branchServices.map((s) => (s.id === id ? { ...s, selected: !s.selected } : s));
-    setBranchServices(updatedServices);
-    setData({
-      ...data,
-      services: updatedServices.filter((s) => s.selected),
-    });
+    const updated = branchServices.map((s) =>
+      s.id === id ? { ...s, selected: !s.selected } : s,
+    );
+    setBranchServices(updated);
+    setData({ ...data, services: updated.filter((s) => s.selected) });
   };
 
-  // Tính toán tổng tiền
   const selectedServices = branchServices.filter((s) => s.selected);
   const subtotal = selectedServices.reduce((sum, s) => sum + s.price, 0);
-  const discount = voucher?.discountPercent ? (subtotal * voucher.discountPercent) / 100 : 0;
-  const total = subtotal - discount;
+
+  // ── Re-check voucher khi subtotal thay đổi ─────────────────────────────────
+  const activeVoucherRef = useRef(activeVoucher);
+  useEffect(() => {
+    activeVoucherRef.current = activeVoucher;
+  }, [activeVoucher]);
+
+  useEffect(() => {
+    const original = initialVoucherRef.current; // voucher gốc của booking
+    if (!original) return; // booking không có voucher → không cần check
+
+    const min = parseFloat(original.minInvoiceAmount || 0);
+
+    if (min > 0 && subtotal < min) {
+      // Subtotal giảm xuống dưới min → bỏ voucher + hiện warning
+      if (activeVoucherRef.current !== null) {
+        // Chỉ set khi chưa bỏ (tránh re-set liên tục)
+        setRevokedVoucherCustomerId(original.customerVoucherId || null);
+        setActiveVoucher(null);
+        setVoucherReverted(true);
+      }
+      setVoucherWarning(
+        `Voucher "${original.name}" tạm bỏ do tổng dịch vụ ` +
+          `(${subtotal.toLocaleString("vi-VN")}đ) chưa đạt tối thiểu ` +
+          `${min.toLocaleString("vi-VN")}đ`,
+      );
+    } else {
+      // Subtotal thỏa mãn lại → restore voucher nếu đang bị bỏ
+      if (activeVoucherRef.current === null && voucherReverted) {
+        setActiveVoucher(original);
+        setVoucherReverted(false);
+        setRevokedVoucherCustomerId(null);
+      }
+      setVoucherWarning("");
+    }
+  }, [subtotal]);
+
+  const discountValue = useMemo(
+    () => calcDiscount(activeVoucher, subtotal),
+    [activeVoucher, subtotal],
+  );
+  const total = Math.max(0, subtotal - discountValue);
+
+  const renderVoucherDesc = () => {
+    if (!activeVoucher) return null;
+    const fixed = parseFloat(activeVoucher.rawDiscountAmount || 0);
+    const percent = parseFloat(activeVoucher.rawDiscountPercent || 0);
+    const maxDisc = parseFloat(activeVoucher.maxDiscountAmount || 0);
+    const maxStr =
+      maxDisc > 0 ? ` (tối đa ${maxDisc.toLocaleString("vi-VN")}đ)` : "";
+    if (fixed > 0) return `Giảm cố định ${fixed.toLocaleString("vi-VN")}đ`;
+    return `Giảm ${percent}% trên tổng hóa đơn${maxStr}`;
+  };
+
   const handleConfirm = () => {
-    // 1. Cập nhật các con số tiền nong vào formData
     const finalData = {
       ...data,
-      subtotal: subtotal,
-      discount: discount,
-      total: total
+      subtotal,
+      discount: discountValue,
+      total,
+      voucher: activeVoucher,
+      voucherReverted,
+      revokedVoucherCustomerId: voucherReverted
+        ? revokedVoucherCustomerId
+        : null,
     };
-    
-    // 2. Gửi dữ liệu mới nhất này lên cho ReceptionistPayment
-    setData(finalData); 
-    onNext(finalData); 
+    setData(finalData);
+    onNext(finalData);
   };
 
   return (
@@ -112,32 +176,37 @@ export default function BookingInfo({ data, setData, onNext }) {
         <p>Vui lòng kiểm tra lại thông tin dịch vụ trước khi gửi sang Kiosk.</p>
       </div>
 
-      {/* Thông tin cơ bản */}
       <div className={styles.card}>
         <div className={styles.infoRow}>
-          <div className={styles.label}><User size={16} /> Khách hàng</div>
+          <div className={styles.label}>
+            <User size={16} /> Khách hàng
+          </div>
           <div className={styles.value}>{booking.customer}</div>
         </div>
         <div className={styles.infoRow}>
-          <div className={styles.label}><Scissors size={16} /> Thợ cắt</div>
+          <div className={styles.label}>
+            <Scissors size={16} /> Thợ cắt
+          </div>
           <div className={styles.value}>{booking.barber}</div>
         </div>
         <div className={styles.infoRow}>
-          <div className={styles.label}><Clock size={16} /> Thời gian</div>
+          <div className={styles.label}>
+            <Clock size={16} /> Thời gian
+          </div>
           <div className={styles.value}>{booking.time}</div>
         </div>
         <div className={styles.infoRow}>
-          <div className={styles.label}><MapPin size={16} /> Chi nhánh</div>
+          <div className={styles.label}>
+            <MapPin size={16} /> Chi nhánh
+          </div>
           <div className={styles.value}>{booking.branch}</div>
         </div>
       </div>
 
-      {/* Dịch vụ đã chọn */}
       <div className={styles.section}>
         <div className={styles.sectionHeader}>
           <h3>Dịch vụ sử dụng</h3>
         </div>
-        
         {selectedServices.length === 0 ? (
           <div className={styles.emptyState}>Chưa có dịch vụ nào được chọn</div>
         ) : (
@@ -145,29 +214,33 @@ export default function BookingInfo({ data, setData, onNext }) {
             {selectedServices.map((s) => (
               <li key={s.id} className={styles.serviceItem}>
                 <span className={styles.serviceName}>{s.name}</span>
-                <span className={styles.servicePrice}>{s.price.toLocaleString("vi-VN")}đ</span>
+                <span className={styles.servicePrice}>
+                  {s.price.toLocaleString("vi-VN")}đ
+                </span>
               </li>
             ))}
           </ul>
         )}
       </div>
 
-      {/* Thêm dịch vụ (Upsell) */}
       <div className={styles.section}>
         <div className={styles.sectionHeader}>
           <h3>Thêm dịch vụ phát sinh</h3>
-          <button 
-            className={styles.toggleBtn} 
+          <button
+            className={styles.toggleBtn}
             onClick={() => setShowBranchServices(!showBranchServices)}
           >
             {showBranchServices ? (
-              <><MinusCircle size={14} /> Thu gọn</>
+              <>
+                <MinusCircle size={14} /> Thu gọn
+              </>
             ) : (
-              <><PlusCircle size={14} /> Thêm dịch vụ</>
+              <>
+                <PlusCircle size={14} /> Thêm dịch vụ
+              </>
             )}
           </button>
         </div>
-
         {showBranchServices && (
           <ul className={styles.serviceListExpand}>
             {branchServices.map((s) => (
@@ -177,50 +250,58 @@ export default function BookingInfo({ data, setData, onNext }) {
                 onClick={() => handleToggleService(s.id)}
               >
                 <div className={styles.checkboxWrapper}>
-                  <input 
-                    type="checkbox" 
-                    checked={s.selected} 
-                    onChange={() => {}} // Đã xử lý ở onClick của thẻ <li>
+                  <input
+                    type="checkbox"
+                    checked={s.selected}
+                    onChange={() => {}}
                   />
                   <span>{s.name}</span>
                 </div>
-                <span className={styles.price}>{s.price.toLocaleString("vi-VN")}đ</span>
+                <span className={styles.price}>
+                  {s.price.toLocaleString("vi-VN")}đ
+                </span>
               </li>
             ))}
           </ul>
         )}
       </div>
 
-      {/* Bill Summary */}
       <div className={styles.summaryCard}>
         <div className={styles.summaryRow}>
           <span>Tạm tính</span>
           <span>{subtotal.toLocaleString("vi-VN")}đ</span>
         </div>
 
-        {voucher ? (
-          <div className={styles.voucherBox}>
-            <div className={styles.voucherTop}>
-              <div className={styles.voucherTitle}>
-                <Tag size={14} /> {voucher.title}
-              </div>
-              <span className={styles.discountValue}>
-                -{discount.toLocaleString("vi-VN")}đ
-              </span>
-            </div>
-            <div className={styles.voucherBottom}>
-              Áp dụng giảm {voucher.discountPercent}% trên tổng hóa đơn
-            </div>
-          </div>
-        ) : (
-          <div className={styles.voucherEmpty}>
-            Không có mã giảm giá áp dụng
+        {voucherWarning && (
+          <div className={styles.voucherWarning}>
+            <AlertTriangle size={14} />
+            <span>{voucherWarning}</span>
           </div>
         )}
 
+        {activeVoucher ? (
+          <div className={styles.voucherBox}>
+            <div className={styles.voucherTop}>
+              <div className={styles.voucherTitle}>
+                <Tag size={14} /> {activeVoucher.name}
+              </div>
+              <span className={styles.discountValue}>
+                -{discountValue.toLocaleString("vi-VN")}đ
+              </span>
+            </div>
+            <div className={styles.voucherBottom}>{renderVoucherDesc()}</div>
+          </div>
+        ) : !voucherWarning ? (
+          <div className={styles.voucherEmpty}>
+            Không có mã giảm giá áp dụng
+          </div>
+        ) : null}
+
         <div className={styles.totalRow}>
           <span>Tổng thanh toán</span>
-          <span className={styles.totalPrice}>{total.toLocaleString("vi-VN")}đ</span>
+          <span className={styles.totalPrice}>
+            {total.toLocaleString("vi-VN")}đ
+          </span>
         </div>
       </div>
 
