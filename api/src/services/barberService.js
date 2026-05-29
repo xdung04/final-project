@@ -364,7 +364,19 @@ export const calculateBarberReward = async (idBarber) => {
 export const createBarberWithUser = async (data) => {
   const t = await db.sequelize.transaction();
   try {
-    const { email, password, fullName, phoneNumber, idBranch, profileDescription } = data;
+    const {
+      email,
+      password,
+      fullName,
+      phoneNumber,
+      idBranch,
+      profileDescription,
+      experienceYears,
+      specialty,
+      style,
+      certificates,
+      philosophy,
+    } = data;
 
     // 1️⃣ Kiểm tra email trùng
     const existed = await db.User.findOne({ where: { email } });
@@ -393,8 +405,13 @@ export const createBarberWithUser = async (data) => {
     const newBarber = await db.Barber.create(
       {
         idBarber: newUser.idUser,
-        idBranch: idBranch || null, // ✅ Cho phép null
+        idBranch: idBranch || null,
         profileDescription: profileDescription || "Chưa có mô tả",
+        experienceYears: experienceYears != null ? Number(experienceYears) : 0,
+        specialty: specialty || null,
+        style: style || null,
+        certificates: certificates || null,
+        philosophy: philosophy || null,
         isLocked: false,
         createdAt: new Date(),
         updatedAt: new Date(),
