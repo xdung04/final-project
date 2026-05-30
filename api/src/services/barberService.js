@@ -364,7 +364,19 @@ export const calculateBarberReward = async (idBarber) => {
 export const createBarberWithUser = async (data) => {
   const t = await db.sequelize.transaction();
   try {
-    const { email, password, fullName, phoneNumber, idBranch, profileDescription } = data;
+    const {
+      email,
+      password,
+      fullName,
+      phoneNumber,
+      idBranch,
+      profileDescription,
+      experienceYears,
+      specialty,
+      style,
+      certificates,
+      philosophy,
+    } = data;
 
     // 1️⃣ Kiểm tra email trùng
     const existed = await db.User.findOne({ where: { email } });
@@ -393,8 +405,13 @@ export const createBarberWithUser = async (data) => {
     const newBarber = await db.Barber.create(
       {
         idBarber: newUser.idUser,
-        idBranch: idBranch || null, // ✅ Cho phép null
+        idBranch: idBranch || null,
         profileDescription: profileDescription || "Chưa có mô tả",
+        experienceYears: experienceYears != null ? Number(experienceYears) : 0,
+        specialty: specialty || null,
+        style: style || null,
+        certificates: certificates || null,
+        philosophy: philosophy || null,
         isLocked: false,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -560,7 +577,6 @@ export const getProfile = async (idBarber) => {
   };
 };
 
-// SAU
 export const updateProfile = async (idBarber, payload) => {
   const barber = await Barber.findByPk(idBarber, {
     include: [{ model: db.User, as: "user" }],
@@ -582,19 +598,40 @@ export const updateProfile = async (idBarber, payload) => {
     philosophy,
   } = payload;
 
+  // ── Validate phoneNumber ──────────────────────────────────
+  if (phoneNumber !== undefined && phoneNumber !== "") {
+    const phoneRegex = /^0\d{9}$/;
+    if (!phoneRegex.test(phoneNumber)) {
+      throw Object.assign(new Error("Số điện thoại phải là 10 chữ số và bắt đầu bằng số 0."), { status: 400 });
+    }
+  }
+
+  // ── Validate experienceYears ──────────────────────────────
+  if (experienceYears !== undefined && experienceYears !== "") {
+    const exp = Number(experienceYears);
+    if (isNaN(exp) || exp < 0 || exp > 50) {
+      throw Object.assign(new Error("Số năm kinh nghiệm phải từ 0 đến 50."), { status: 400 });
+    }
+  }
+
+  // ── Update User ───────────────────────────────────────────
   if (barber.user) {
     await barber.user.update({
-      fullName: fullName ?? barber.user.fullName,
-      image: image ?? barber.user.image,
-      phoneNumber: phoneNumber ?? barber.user.phoneNumber,
-      email: email ?? barber.user.email,
+      fullName: fullName !== undefined ? fullName : barber.user.fullName,
+      image: image !== undefined ? image : barber.user.image,
+      phoneNumber: phoneNumber !== undefined ? phoneNumber : barber.user.phoneNumber,
+      email: email !== undefined ? email : barber.user.email,
     });
   }
 
+  // ── Update Barber ─────────────────────────────────────────
+  const expNum =
+    experienceYears !== undefined && experienceYears !== "" ? Number(experienceYears) : barber.experienceYears;
+
   await barber.update({
-    idBranch: idBranch ?? barber.idBranch,
-    profileDescription: profileDescription ?? barber.profileDescription,
-    experienceYears: experienceYears !== undefined ? experienceYears : barber.experienceYears,
+    idBranch: idBranch !== undefined ? idBranch : barber.idBranch,
+    profileDescription: profileDescription !== undefined ? profileDescription : barber.profileDescription,
+    experienceYears: expNum,
     specialty: specialty !== undefined ? specialty : barber.specialty,
     style: style !== undefined ? style : barber.style,
     certificates: certificates !== undefined ? certificates : barber.certificates,

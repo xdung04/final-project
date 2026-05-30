@@ -114,12 +114,24 @@ export const getBarberReward = async (req, res) => {
     res.status(500).json({ message: error.message || "Lỗi khi tính thưởng." });
   }
 };
+
 // 🔹 Tạo user + barber cùng lúc
 const createBarberWithUser = async (req, res) => {
   try {
-    const { email, password, fullName, phoneNumber, idBranch, profileDescription } = req.body;
+    const {
+      email,
+      password,
+      fullName,
+      phoneNumber,
+      idBranch,
+      profileDescription,
+      experienceYears,
+      specialty,
+      style,
+      certificates,
+      philosophy,
+    } = req.body;
 
-    // Gọi xuống service xử lý logic
     const result = await BarberService.createBarberWithUser({
       email,
       password,
@@ -127,6 +139,11 @@ const createBarberWithUser = async (req, res) => {
       phoneNumber,
       idBranch,
       profileDescription,
+      experienceYears,
+      specialty,
+      style,
+      certificates,
+      philosophy,
     });
 
     return res.status(201).json({
@@ -135,9 +152,11 @@ const createBarberWithUser = async (req, res) => {
       barber: result.barber,
     });
   } catch (error) {
-    await t.rollback();
-    console.error("❌ Lỗi khi tạo barber mới (chi tiết):", error.errors || error);
-    throw new Error("Lỗi khi tạo barber mới: " + (error.message || "Không rõ"));
+    // KHÔNG gọi t.rollback() ở đây — transaction được rollback bên trong service
+    console.error("Lỗi createBarberWithUser controller:", error.message);
+    return res.status(500).json({
+      message: "Lỗi khi tạo thợ mới: " + (error.message || "Không rõ"),
+    });
   }
 };
 
@@ -201,20 +220,25 @@ const updateBarberProfile = async (req, res) => {
     const { idBarber } = req.params;
     const payload = { ...req.body };
 
-    // ✅ Cloudinary lưu ở file.path hoặc file.url tùy lib, nên check cả 2
+    // Multer Cloudinary lưu URL vào file.path
     if (req.file) {
       payload.image = req.file.path || req.file.url;
     }
 
+    // Đảm bảo image là string, không phải object
     if (payload.image && typeof payload.image !== "string") {
       delete payload.image;
     }
 
     const result = await BarberService.updateProfile(idBarber, payload);
+
     return res.status(200).json(result);
   } catch (err) {
-    console.error("❌ Lỗi updateProfile:", err);
-    return res.status(500).json({ error: err.message });
+    console.error("Lỗi updateBarberProfile:", err);
+
+    // Nếu service throw lỗi có status (400 validate) → trả về đúng status đó
+    const status = err.status || 500;
+    return res.status(status).json({ error: err.message });
   }
 };
 

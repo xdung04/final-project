@@ -34,6 +34,21 @@ import { BranchAPI } from "~/apis/branchAPI";
 
 const cx = classNames.bind(styles);
 
+// ── State khởi tạo ────────────────────────────────────────────────────────────
+const EMPTY_FORM = {
+  email: "",
+  password: "",
+  fullName: "",
+  phoneNumber: "",
+  idBranch: "",
+  profileDescription: "",
+  experienceYears: "",
+  specialty: "",
+  style: "",
+  certificates: "",
+  philosophy: "",
+};
+
 function ThoCatToc() {
   const [toastList, setToastList] = useState([]);
 
@@ -58,32 +73,14 @@ function ThoCatToc() {
   const [showChangeBranch, setShowChangeBranch] = useState(false);
   const [showLockModal, setShowLockModal] = useState(false);
 
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    fullName: "",
-    phoneNumber: "",
-    idBranch: "",
-    profileDescription: "",
-  });
+  const [formData, setFormData] = useState({ ...EMPTY_FORM });
 
-  const [editData, setEditData] = useState({
-    fullName: "",
-    phoneNumber: "",
-    email: "",
-    idBranch: "",
-    profileDescription: "",
-    experienceYears: "",
-    specialty: "",
-    style: "",
-    certificates: "",
-    philosophy: "",
-  });
+  const [editData, setEditData] = useState({ ...EMPTY_FORM });
 
   const [newBranchId, setNewBranchId] = useState("");
 
-  // ── Hàm Fetch Dữ Liệu Tối Ưu (Chạy song song bằng Promise.all) ──────────────────
-  const refreshCurrentData = async (targetId = null) => {
+  // ── Fetch ────────────────────────────────────────────────────────────────────
+  const fetchBarbers = async () => {
     try {
       const activeId = targetId || selectedBarber?.idBarber;
 
@@ -161,7 +158,7 @@ function ThoCatToc() {
     });
   }, [barbers, searchQuery, filterBranch]);
 
-  // ── Actions (Đã lược bỏ toàn bộ code gọi trùng lặp) ──────────────────────────────
+  // ── Actions ──────────────────────────────────────────────────────────────────
   const handleToggleAccount = async (barber) => {
     const isLocked = barber.isLocked;
     const action = isLocked ? "mở" : "khóa";
@@ -186,12 +183,16 @@ function ThoCatToc() {
   const handleAddSubmit = async (e) => {
     e.preventDefault();
     try {
-      await BarberAPI.createBarber(formData);
+      await BarberAPI.createBarber({
+        ...formData,
+        experienceYears: formData.experienceYears !== "" ? Number(formData.experienceYears) : undefined,
+      });
       showToast("success", "Thêm thợ cắt tóc thành công!");
       setShowAddModal(false);
-      await refreshCurrentData();
+      setFormData({ ...EMPTY_FORM });
+      await fetchBarbers();
     } catch (error) {
-      showToast("error", error?.response?.data?.message || "Không thể tạo thợ mới!");
+      showToast("error", error?.response?.data?.message || error?.message || "Không thể tạo thợ mới!");
     }
   };
 
@@ -285,7 +286,7 @@ function ThoCatToc() {
 
   return (
     <div className={cx("container")}>
-      {/* ── HEADER ──────────────────────────────────────────────────────── */}
+      {/* ── HEADER ──────────────────────────────────────────────────────────── */}
       <div className={cx("headerArea")}>
         <div className={cx("titleBox")}>
           <Scissors size={26} strokeWidth={1.5} className={cx("titleIcon")} />
@@ -296,15 +297,21 @@ function ThoCatToc() {
             <p className={cx("titleMeta")}>{barbers.length} thợ trong hệ thống</p>
           </div>
         </div>
-        <button className={cx("addBtn")} onClick={() => setShowAddModal(true)}>
+        <button
+          className={cx("addBtn")}
+          onClick={() => {
+            setFormData({ ...EMPTY_FORM });
+            setShowAddModal(true);
+          }}
+        >
           <Plus size={16} strokeWidth={2.5} />
           Thêm thợ mới
         </button>
       </div>
 
-      {/* ── MAIN LAYOUT ─────────────────────────────────────────────────── */}
+      {/* ── MAIN LAYOUT ─────────────────────────────────────────────────────── */}
       <div className={cx("mainLayout")}>
-        {/* ── SIDEBAR ─────────────────────────────────────────────── */}
+        {/* ── SIDEBAR ─────────────────────────────────────────────────── */}
         <div className={cx("sidebar")}>
           <div className={cx("filterBox")}>
             <div className={cx("searchWrapper")}>
@@ -448,7 +455,6 @@ function ThoCatToc() {
                     <p className={!currentProfile.email ? "empty" : ""}>{currentProfile.email || "Chưa cập nhật"}</p>
                   </div>
                 </div>
-
                 <div className={cx("infoGroup")}>
                   <Phone size={16} className={cx("infoIcon")} />
                   <div>
@@ -458,7 +464,6 @@ function ThoCatToc() {
                     </p>
                   </div>
                 </div>
-
                 <div className={cx("infoGroup")}>
                   <Award size={16} className={cx("infoIcon")} />
                   <div>
@@ -468,7 +473,6 @@ function ThoCatToc() {
                     </p>
                   </div>
                 </div>
-
                 <div className={cx("infoGroup")}>
                   <Sparkles size={16} className={cx("infoIcon")} />
                   <div>
@@ -478,7 +482,6 @@ function ThoCatToc() {
                     </p>
                   </div>
                 </div>
-
                 <div className={cx("infoGroup", "fullWidth")}>
                   <BookOpen size={16} className={cx("infoIcon")} />
                   <div>
@@ -488,7 +491,6 @@ function ThoCatToc() {
                     </p>
                   </div>
                 </div>
-
                 <div className={cx("infoGroup", "fullWidth")}>
                   <Heart size={16} className={cx("infoIcon")} />
                   <div>
@@ -498,7 +500,6 @@ function ThoCatToc() {
                     </p>
                   </div>
                 </div>
-
                 <div className={cx("infoGroup", "fullWidth")}>
                   <FileText size={16} className={cx("infoIcon")} />
                   <div>
@@ -515,7 +516,6 @@ function ThoCatToc() {
                 <button className={cx("actionBtn", "edit")} onClick={openEditModal}>
                   <Edit2 size={14} /> Chỉnh sửa
                 </button>
-
                 <button
                   className={cx("actionBtn", "branch")}
                   onClick={() => {
@@ -525,20 +525,17 @@ function ThoCatToc() {
                 >
                   <ArrowRightLeft size={14} /> Đổi chi nhánh
                 </button>
-
                 {!currentProfile.isLocked && currentProfile?.lockDate && (
                   <button className={cx("actionBtn", "cancel")} onClick={handleCancelLockDate}>
                     <CalendarOff size={14} /> Hủy lịch khóa
                   </button>
                 )}
-
                 {!currentProfile.isLocked && (
                   <button className={cx("actionBtn", "lock")} onClick={() => setShowLockModal(true)}>
                     <Lock size={14} />
                     {currentProfile?.lockDate ? `Sẽ khóa ${formatDate(currentProfile.lockDate)}` : "Lên lịch khóa"}
                   </button>
                 )}
-
                 {currentProfile.isLocked && (
                   <button className={cx("actionBtn", "unlock")} onClick={() => handleToggleAccount(currentProfile)}>
                     <Unlock size={14} /> Mở khóa tài khoản
@@ -550,15 +547,18 @@ function ThoCatToc() {
         </div>
       </div>
 
-      {/* ── MODAL THÊM THỢ ── */}
+      {/* ══════════════════════════════════════════════════════════════
+          MODAL THÊM THỢ MỚI — đầy đủ tất cả fields
+      ══════════════════════════════════════════════════════════════ */}
       {showAddModal && (
         <div className={cx("modalOverlay")}>
           <div className={cx("modal")}>
             <h3>Thêm thợ cắt tóc mới</h3>
             <div className={cx("modalBody")}>
               <form id="add-form" onSubmit={handleAddSubmit}>
+                {/* Thông tin tài khoản */}
                 <div className={cx("modalSection")}>
-                  <p className={cx("sectionLabel")}>Thông tin cơ bản</p>
+                  <p className={cx("sectionLabel")}>Thông tin tài khoản</p>
                   <div className={cx("formGrid")}>
                     <div className={cx("formGroup")}>
                       <label>Họ và tên *</label>
@@ -604,10 +604,17 @@ function ThoCatToc() {
                         required
                       />
                     </div>
-                    <div className={cx("formGroup", "fullWidth")}>
+                  </div>
+                </div>
+
+                {/* Phân công & Kinh nghiệm */}
+                <div className={cx("modalSection")}>
+                  <p className={cx("sectionLabel")}>Phân công & Kinh nghiệm</p>
+                  <div className={cx("formGrid")}>
+                    <div className={cx("formGroup")}>
                       <label>Chi nhánh làm việc</label>
                       <select name="idBranch" value={formData.idBranch} onChange={handleAddChange}>
-                        <option value="">-- Không chọn --</option>
+                        <option value="">-- Chưa phân công --</option>
                         {branches.map((br) => (
                           <option key={br.idBranch} value={br.idBranch}>
                             {br.name}
@@ -615,14 +622,80 @@ function ThoCatToc() {
                         ))}
                       </select>
                     </div>
-                    <div className={cx("formGroup", "fullWidth")}>
-                      <label>Mô tả hồ sơ</label>
+                    <div className={cx("formGroup")}>
+                      <label>Số năm kinh nghiệm</label>
+                      <input
+                        type="number"
+                        name="experienceYears"
+                        min="0"
+                        max="50"
+                        value={formData.experienceYears}
+                        onChange={handleAddChange}
+                        placeholder="VD: 3"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Chuyên môn & Phong cách */}
+                <div className={cx("modalSection")}>
+                  <p className={cx("sectionLabel")}>Chuyên môn & Phong cách</p>
+                  <div className={cx("formGrid")}>
+                    <div className={cx("formGroup")}>
+                      <label>Chuyên môn</label>
+                      <input
+                        type="text"
+                        name="specialty"
+                        value={formData.specialty}
+                        onChange={handleAddChange}
+                        placeholder="VD: Cắt undercut, fade..."
+                      />
+                    </div>
+                    <div className={cx("formGroup")}>
+                      <label>Phong cách</label>
+                      <input
+                        type="text"
+                        name="style"
+                        value={formData.style}
+                        onChange={handleAddChange}
+                        placeholder="VD: Classic, Modern, Korean..."
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Chi tiết hồ sơ */}
+                <div className={cx("modalSection")}>
+                  <p className={cx("sectionLabel")}>Chi tiết hồ sơ</p>
+                  <div className={cx("formGrid", "singleCol")}>
+                    <div className={cx("formGroup")}>
+                      <label>Chứng chỉ / Bằng cấp</label>
+                      <textarea
+                        name="certificates"
+                        value={formData.certificates}
+                        onChange={handleAddChange}
+                        rows="3"
+                        placeholder="VD: Chứng chỉ nghề Hàn Quốc, Bằng kỹ thuật viên tóc..."
+                      />
+                    </div>
+                    <div className={cx("formGroup")}>
+                      <label>Triết lý nghề nghiệp</label>
+                      <textarea
+                        name="philosophy"
+                        value={formData.philosophy}
+                        onChange={handleAddChange}
+                        rows="3"
+                        placeholder="VD: Mỗi mái tóc là một tác phẩm nghệ thuật..."
+                      />
+                    </div>
+                    <div className={cx("formGroup")}>
+                      <label>Mô tả kỹ năng / Hồ sơ tổng quát</label>
                       <textarea
                         name="profileDescription"
                         value={formData.profileDescription}
                         onChange={handleAddChange}
-                        rows="3"
-                        placeholder="Mô tả kỹ năng, kinh nghiệm..."
+                        rows="4"
+                        placeholder="Mô tả chung về kỹ năng, kinh nghiệm làm việc..."
                       />
                     </div>
                   </div>
@@ -630,7 +703,14 @@ function ThoCatToc() {
               </form>
             </div>
             <div className={cx("modalActions")}>
-              <button type="button" className={cx("cancelBtn")} onClick={() => setShowAddModal(false)}>
+              <button
+                type="button"
+                className={cx("cancelBtn")}
+                onClick={() => {
+                  setShowAddModal(false);
+                  setFormData({ ...EMPTY_FORM });
+                }}
+              >
                 <X size={14} /> Hủy
               </button>
               <button type="submit" form="add-form" className={cx("saveBtn")}>
@@ -641,7 +721,9 @@ function ThoCatToc() {
         </div>
       )}
 
-      {/* ── MODAL SỬA HỒ SƠ THỢ ── */}
+      {/* ══════════════════════════════════════════════════════════════
+          MODAL SỬA HỒ SƠ THỢ
+      ══════════════════════════════════════════════════════════════ */}
       {showEditModal && (
         <div className={cx("modalOverlay")}>
           <div className={cx("modal")}>
@@ -696,7 +778,6 @@ function ThoCatToc() {
                     </div>
                   </div>
                 </div>
-
                 <div className={cx("modalSection")}>
                   <p className={cx("sectionLabel")}>Chuyên môn & Phong cách</p>
                   <div className={cx("formGrid")}>
@@ -722,7 +803,6 @@ function ThoCatToc() {
                     </div>
                   </div>
                 </div>
-
                 <div className={cx("modalSection")}>
                   <p className={cx("sectionLabel")}>Chi tiết hồ sơ</p>
                   <div className={cx("formGrid", "singleCol")}>
@@ -733,7 +813,7 @@ function ThoCatToc() {
                         value={editData.certificates}
                         onChange={handleEditChange}
                         rows="3"
-                        placeholder="VD: Chứng chỉ nghề Hàn Quốc, Bằng kỹ thuật viên tóc..."
+                        placeholder="VD: Chứng chỉ nghề Hàn Quốc..."
                       />
                     </div>
                     <div className={cx("formGroup")}>
@@ -743,7 +823,7 @@ function ThoCatToc() {
                         value={editData.philosophy}
                         onChange={handleEditChange}
                         rows="3"
-                        placeholder="VD: Mỗi mái tóc là một tác phẩm nghệ thuật..."
+                        placeholder="VD: Mỗi mái tóc là một tác phẩm..."
                       />
                     </div>
                     <div className={cx("formGroup")}>
@@ -753,7 +833,7 @@ function ThoCatToc() {
                         value={editData.profileDescription}
                         onChange={handleEditChange}
                         rows="4"
-                        placeholder="Mô tả chung về kỹ năng, kinh nghiệm làm việc..."
+                        placeholder="Mô tả chung về kỹ năng..."
                       />
                     </div>
                   </div>
@@ -772,7 +852,9 @@ function ThoCatToc() {
         </div>
       )}
 
-      {/* ── MODAL ĐỔI CHI NHÁNH ── */}
+      {/* ══════════════════════════════════════════════════════════════
+          MODAL ĐỔI CHI NHÁNH
+      ══════════════════════════════════════════════════════════════ */}
       {showChangeBranch && (
         <div className={cx("modalOverlay")}>
           <div className={cx("modal", "smallModal")}>
@@ -807,7 +889,9 @@ function ThoCatToc() {
         </div>
       )}
 
-      {/* ── MODAL LOCK DATE (ĐÃ TỐI ƯU HÀM SUCCESS) ── */}
+      {/* ══════════════════════════════════════════════════════════════
+          MODAL LOCK DATE
+      ══════════════════════════════════════════════════════════════ */}
       {showLockModal && currentProfile && (
         <LockDateModal
           barber={currentProfile}
@@ -821,7 +905,7 @@ function ThoCatToc() {
         />
       )}
 
-      {/* ── Toasts ─────────────────────────────────────────────────────── */}
+      {/* ── Toasts ─────────────────────────────────────────────────────────── */}
       <div className={cx("toastContainer")}>
         {toastList.map((t) => (
           <Toast
