@@ -1,15 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import DefaultLayout from "../../layouts/DefaultLayout";
 import styles from "./Booking.module.scss";
-import VoucherPopup, {
-  calcActualDiscount,
-} from "../../components/VoucherPopup";
+import VoucherPopup, { calcActualDiscount } from "../../components/VoucherPopup";
 import { fetchBookedSlots } from "~/services/bookingService";
 import { useToast } from "~/context/ToastContext";
-import {
-  getCalendarLinkStatus,
-  getGoogleAuthUrl,
-} from "~/services/calendarService";
+import { getCalendarLinkStatus, getGoogleAuthUrl } from "~/services/calendarService";
 import { useAuth } from "~/context/AuthContext";
 import ConfirmModal from "../../components/ComfirmModal/index";
 import { hairStyleAPI } from "~/apis/hairStyleAPI";
@@ -48,6 +43,9 @@ function BookingPage() {
   const [bookedTimesByDate, setBookedTimesByDate] = useState({});
   const [unavailableDates, setUnavailableDates] = useState([]);
 
+  // [FIX] Thêm state barberLockDate để block ngày từ lockDate trở đi
+  const [barberLockDate, setBarberLockDate] = useState(null);
+
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationError, setLocationError] = useState(null);
   const [hasLocation, setHasLocation] = useState(false);
@@ -65,13 +63,10 @@ function BookingPage() {
     onConfirm: null,
     onCancel: null,
   });
-  const closeConfirmModal = () =>
-    setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+  const closeConfirmModal = () => setConfirmModal((prev) => ({ ...prev, isOpen: false }));
 
-  // ─── Helper format tiền ──────────────────────────────────────────────────
   const formatMoney = (val) => Number(val).toLocaleString("vi-VN") + "đ";
 
-  // ─── Tính lại discount theo voucher + tổng tiền hiện tại ─────────────────
   const recalculateDiscount = useCallback((cv, currentTotal) => {
     if (!cv) return { discountPercent: 0, discountFixed: 0 };
     const vd = cv.voucher || cv;
@@ -80,10 +75,7 @@ function BookingPage() {
 
     if (vd.discount_amount && Number(vd.discount_amount) > 0) {
       discountFixed = Math.min(Number(vd.discount_amount), currentTotal);
-      if (
-        vd.max_discount_amount &&
-        discountFixed > Number(vd.max_discount_amount)
-      ) {
+      if (vd.max_discount_amount && discountFixed > Number(vd.max_discount_amount)) {
         discountFixed = Number(vd.max_discount_amount);
       }
     } else if (vd.discount_percent) {
@@ -92,13 +84,11 @@ function BookingPage() {
     return { discountPercent, discountFixed };
   }, []);
 
-  // ─── Ref để đọc voucher hiện tại mà không vào deps ───────────────────────
   const voucherRef = useRef(booking.voucher);
   useEffect(() => {
     voucherRef.current = booking.voucher;
   }, [booking.voucher]);
 
-  // ─── Re-check voucher real-time khi services thay đổi ────────────────────
   useEffect(() => {
     const cv = voucherRef.current;
 
@@ -107,15 +97,11 @@ function BookingPage() {
       return;
     }
 
-    const currentTotal = booking.services.reduce(
-      (sum, s) => sum + Number(s.price),
-      0,
-    );
+    const currentTotal = booking.services.reduce((sum, s) => sum + Number(s.price), 0);
     const vd = cv?.voucher || cv;
     const minInvoice = Number(vd?.min_invoice_amount || 0);
 
     if (minInvoice > 0 && currentTotal < minInvoice) {
-      // Không còn thỏa → bỏ voucher hẳn + hiện warning inline
       setBooking((prev) => ({
         ...prev,
         discount: 0,
@@ -127,12 +113,8 @@ function BookingPage() {
         `Voucher "${vd?.name}" đã bị bỏ do đơn chưa đạt tối thiểu ${Number(minInvoice).toLocaleString()}đ`,
       );
     } else {
-      // Vẫn thỏa → tính lại discount theo tổng mới
       setVoucherWarning("");
-      const { discountPercent, discountFixed } = recalculateDiscount(
-        cv,
-        currentTotal,
-      );
+      const { discountPercent, discountFixed } = recalculateDiscount(cv, currentTotal);
       setBooking((prev) => ({
         ...prev,
         discount: discountPercent,
@@ -142,13 +124,9 @@ function BookingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [booking.services]);
 
-  // ─── Close hairstyle panel on outside click ──────────────────────────────
   useEffect(() => {
     const handler = (e) => {
-      if (
-        hairstylePanelRef.current &&
-        !hairstylePanelRef.current.contains(e.target)
-      ) {
+      if (hairstylePanelRef.current && !hairstylePanelRef.current.contains(e.target)) {
         setShowHairstylePanel(false);
       }
     };
@@ -156,7 +134,6 @@ function BookingPage() {
     return () => document.removeEventListener("mousedown", handler);
   }, [showHairstylePanel]);
 
-  // ─── Build description ────────────────────────────────────────────────────
   const buildDescription = (b) => {
     const parts = [];
     if (b.services.length) parts.push(b.services.map((s) => s.name).join(", "));
@@ -164,12 +141,10 @@ function BookingPage() {
       const hs = hairstylesData.find((h) => h.idHairstyle === b.hairstyleId);
       if (hs) parts.push(`Kiểu tóc: ${hs.name}`);
     }
-    if (b.silentMode)
-      parts.push("Khách yêu cầu giữ im lặng khi đang làm dịch vụ");
+    if (b.silentMode) parts.push("Khách yêu cầu giữ im lặng khi đang làm dịch vụ");
     return parts.join(" | ");
   };
 
-  // ─── Branches ────────────────────────────────────────────────────────────
   const fetchBranches = useCallback(
     async (lat, lng) => {
       try {
@@ -207,7 +182,6 @@ function BookingPage() {
     );
   }, [fetchBranches]);
 
-  // ─── Load hairstyles ──────────────────────────────────────────────────────
   useEffect(() => {
     const loadHairstyles = async () => {
       try {
@@ -228,16 +202,12 @@ function BookingPage() {
     loadHairstyles();
   }, []);
 
-  // ─── Google Calendar callback ─────────────────────────────────────────────
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const calendarStatus = urlParams.get("calendar");
     if (calendarStatus === "linked") {
       const newUrl =
-        window.location.pathname +
-        window.location.search
-          .replace(/[?&]calendar=linked/, "")
-          .replace(/^&/, "?");
+        window.location.pathname + window.location.search.replace(/[?&]calendar=linked/, "").replace(/^&/, "?");
       window.history.replaceState({}, "", newUrl);
       const savedBooking = sessionStorage.getItem("pendingBooking");
       if (savedBooking) {
@@ -256,14 +226,10 @@ function BookingPage() {
         });
       }
     } else if (calendarStatus === "error") {
-      const msg =
-        urlParams.get("message") || "Liên kết thất bại, vui lòng thử lại";
+      const msg = urlParams.get("message") || "Liên kết thất bại, vui lòng thử lại";
       showToast({ text: decodeURIComponent(msg), type: "error" });
       const newUrl =
-        window.location.pathname +
-        window.location.search
-          .replace(/[?&]calendar=error[^&]*/, "")
-          .replace(/^&/, "?");
+        window.location.pathname + window.location.search.replace(/[?&]calendar=error[^&]*/, "").replace(/^&/, "?");
       window.history.replaceState({}, "", newUrl);
     }
   }, []);
@@ -272,7 +238,6 @@ function BookingPage() {
     requestLocation();
   }, []);
 
-  // ─── Branch selection ─────────────────────────────────────────────────────
   const applyBranchSelection = useCallback(
     async (branchId) => {
       const selectedBranch = branches.find((b) => b.idBranch === branchId);
@@ -286,6 +251,11 @@ function BookingPage() {
         time: "",
         date: "",
       }));
+      // [FIX] Reset lock/unavail khi đổi chi nhánh
+      setBarberLockDate(null);
+      setUnavailableDates([]);
+      setBookedTimesByDate({});
+
       if (!branchId) {
         setBarbers([]);
         setServices([]);
@@ -293,10 +263,9 @@ function BookingPage() {
         return;
       }
       try {
-        const res = await fetch(
-          `${API_BASE_URL}/bookings/branches/${branchId}`,
-        );
+        const res = await fetch(`${API_BASE_URL}/bookings/branches/${branchId}`);
         const data = await res.json();
+        // [FIX] data.barbers giờ có thêm lockDate, isLocked từ backend đã fix
         setBarbers(data.barbers || []);
         setServices(data.services || []);
         if (data.openTime && data.closeTime && data.slotDuration) {
@@ -304,11 +273,7 @@ function BookingPage() {
           const end = new Date(`2000-01-01T${data.closeTime}`);
           const slot = Number(data.slotDuration) || 60;
           const slots = [];
-          for (
-            let t = new Date(start);
-            t < end;
-            t = new Date(t.getTime() + slot * 60000)
-          )
+          for (let t = new Date(start); t < end; t = new Date(t.getTime() + slot * 60000))
             slots.push(t.toTimeString().slice(0, 5));
           setTimes(slots);
         } else {
@@ -324,11 +289,7 @@ function BookingPage() {
     [branches, API_BASE_URL],
   );
 
-  // ─── Submit ───────────────────────────────────────────────────────────────
-  const handleSubmitWithCalendarSync = async (
-    syncToCalendar,
-    bookingDataOverride = null,
-  ) => {
+  const handleSubmitWithCalendarSync = async (syncToCalendar, bookingDataOverride = null) => {
     const finalBooking = bookingDataOverride || booking;
     if (
       !finalBooking.branchId ||
@@ -382,68 +343,87 @@ function BookingPage() {
     }
   };
 
-  const handleBranchChange = (e) =>
-    applyBranchSelection(Number(e.target.value) || null);
+  const handleBranchChange = (e) => applyBranchSelection(Number(e.target.value) || null);
   const handleBranchCardClick = (branchId) => applyBranchSelection(branchId);
 
+  // [FIX] Sửa lại handleBarberChange — gọi đúng API unavailability, xử lý lockDate
   const handleBarberChange = async (e) => {
     const barberId = Number(e.target.value) || null;
     const barber = barbers.find((b) => Number(b.idBarber) === barberId);
-    setBooking({ ...booking, barberId, barber: barber?.user?.fullName || "" });
-    if (!barberId || !booking.branchId || !booking.date) return;
+
+    setBooking((prev) => ({
+      ...prev,
+      barberId,
+      barber: barber?.user?.fullName || "",
+      date: "", // reset ngày khi đổi barber
+      time: "", // reset giờ khi đổi barber
+    }));
+
+    // Reset state liên quan đến barber cũ
+    setUnavailableDates([]);
+    setBarberLockDate(null);
+    setBookedTimesByDate({});
+
+    if (!barberId) return;
+
+    // [FIX] Đọc lockDate từ barber object (đã có từ getBranchDetails sau khi fix backend)
+    if (barber?.lockDate) {
+      setBarberLockDate(barber.lockDate);
+    }
+
     try {
-      const res = await fetch(`${API_BASE_URL}/bookings/barbers/${barberId}`);
+      // [FIX] Gọi đúng API lấy unavailabilities — không dùng /bookings/barbers/:id
+      const res = await fetch(`${API_BASE_URL}/barbers/unavailability/${barberId}`);
       const data = await res.json();
-      const grouped = {};
-      data.bookedSlots?.forEach((time) => {
-        if (!grouped[booking.date]) grouped[booking.date] = [];
-        grouped[booking.date].push(time);
-      });
-      setBookedTimesByDate(grouped);
+
       const unava = [];
-      data.unavailabilities?.forEach((u) => {
-        for (
-          let d = new Date(u.startDate);
-          d <= new Date(u.endDate);
-          d.setDate(d.getDate() + 1)
-        )
+      (data.unavailabilities || []).forEach((u) => {
+        for (let d = new Date(u.startDate); d <= new Date(u.endDate); d.setDate(d.getDate() + 1)) {
           unava.push(d.toISOString().split("T")[0]);
+        }
       });
       setUnavailableDates(unava);
     } catch (err) {
-      console.error(err);
+      console.error("Lỗi lấy unavailabilities:", err);
     }
   };
 
+  // [FIX] Khi unavailableDates thay đổi, reset date nếu ngày đã chọn bị block
   useEffect(() => {
-    if (unavailableDates.includes(booking.date))
+    if (booking.date && unavailableDates.includes(booking.date)) {
       setBooking((prev) => ({ ...prev, date: "" }));
+    }
   }, [unavailableDates]);
 
-  const handleDateChange = async (e) => {
-    const date = e.target.value;
-    setBooking((prev) => ({ ...prev, date }));
+  // [FIX] Khi barberLockDate thay đổi, reset date nếu ngày đã chọn >= lockDate
+  useEffect(() => {
+    if (booking.date && barberLockDate) {
+      const lockDay = new Date(barberLockDate);
+      lockDay.setHours(0, 0, 0, 0);
+      const selectedDay = new Date(booking.date);
+      selectedDay.setHours(0, 0, 0, 0);
+      if (selectedDay >= lockDay) {
+        setBooking((prev) => ({ ...prev, date: "", time: "" }));
+        showToast({
+          text: `Thợ này sẽ nghỉ từ ngày ${new Date(barberLockDate).toLocaleDateString(
+            "vi-VN",
+          )}. Vui lòng chọn ngày khác.`,
+          type: "warning",
+        });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [barberLockDate]);
+
+  const handleDateChange = async (dateValue) => {
+    setBooking((prev) => ({ ...prev, date: dateValue, time: "" }));
     if (!booking.barberId || !booking.branchId) return;
     try {
-      const data = await fetchBookedSlots(
-        booking.barberId,
-        booking.branchId,
-        date,
-      );
+      const data = await fetchBookedSlots(booking.barberId, booking.branchId, dateValue);
       setBookedTimesByDate((prev) => ({
         ...prev,
-        [date]: data.bookedSlots || [],
+        [dateValue]: data.bookedSlots || [],
       }));
-      const unava = [];
-      data.unavailabilities?.forEach((u) => {
-        for (
-          let d = new Date(u.startDate);
-          d <= new Date(u.endDate);
-          d.setDate(d.getDate() + 1)
-        )
-          unava.push(d.toISOString().split("T")[0]);
-      });
-      setUnavailableDates(unava);
     } catch (err) {
       console.error(err);
     }
@@ -457,26 +437,18 @@ function BookingPage() {
   const handleServiceAdd = (e) => {
     const selectedId = Number(e.target.value) || null;
     const service = services.find((s) => Number(s.idService) === selectedId);
-    if (
-      service &&
-      !booking.services.find(
-        (s) => Number(s.idService) === Number(service.idService),
-      )
-    )
+    if (service && !booking.services.find((s) => Number(s.idService) === Number(service.idService)))
       setBooking({ ...booking, services: [...booking.services, service] });
   };
 
   const handleRemoveService = (idService) =>
     setBooking({
       ...booking,
-      services: booking.services.filter(
-        (s) => Number(s.idService) !== Number(idService),
-      ),
+      services: booking.services.filter((s) => Number(s.idService) !== Number(idService)),
     });
 
-  // ─── Voucher select / clear ───────────────────────────────────────────────
   const handleVoucherSelect = (cv) => {
-    setVoucherWarning(""); // reset warning khi chọn lại
+    setVoucherWarning("");
 
     if (!cv) {
       setBooking((prev) => ({
@@ -490,14 +462,8 @@ function BookingPage() {
       return;
     }
 
-    const currentTotal = booking.services.reduce(
-      (sum, s) => sum + Number(s.price),
-      0,
-    );
-    const { discountPercent, discountFixed } = recalculateDiscount(
-      cv,
-      currentTotal,
-    );
+    const currentTotal = booking.services.reduce((sum, s) => sum + Number(s.price), 0);
+    const { discountPercent, discountFixed } = recalculateDiscount(cv, currentTotal);
 
     setBooking((prev) => ({
       ...prev,
@@ -519,14 +485,10 @@ function BookingPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!booking.branchId)
-      return showToast({ text: "Vui lòng chọn cơ sở!", type: "error" });
-    if (!booking.barberId)
-      return showToast({ text: "Vui lòng chọn kỹ thuật viên!", type: "error" });
-    if (!booking.date)
-      return showToast({ text: "Vui lòng chọn ngày!", type: "error" });
-    if (!booking.time)
-      return showToast({ text: "Vui lòng chọn thời gian!", type: "error" });
+    if (!booking.branchId) return showToast({ text: "Vui lòng chọn cơ sở!", type: "error" });
+    if (!booking.barberId) return showToast({ text: "Vui lòng chọn kỹ thuật viên!", type: "error" });
+    if (!booking.date) return showToast({ text: "Vui lòng chọn ngày!", type: "error" });
+    if (!booking.time) return showToast({ text: "Vui lòng chọn thời gian!", type: "error" });
     if (!booking.services.length)
       return showToast({
         text: "Vui lòng chọn ít nhất một dịch vụ!",
@@ -537,6 +499,23 @@ function BookingPage() {
       return;
     }
 
+    // [FIX] Validate lockDate lần nữa trước khi submit (guard cuối)
+    if (barberLockDate) {
+      const lockDay = new Date(barberLockDate);
+      lockDay.setHours(0, 0, 0, 0);
+      const selectedDay = new Date(booking.date);
+      selectedDay.setHours(0, 0, 0, 0);
+      if (selectedDay >= lockDay) {
+        showToast({
+          text: `Thợ này sẽ nghỉ từ ngày ${new Date(barberLockDate).toLocaleDateString(
+            "vi-VN",
+          )}. Vui lòng chọn ngày trước đó.`,
+          type: "error",
+        });
+        return;
+      }
+    }
+
     setIsCheckingCalendar(true);
     try {
       const calendarStatus = await getCalendarLinkStatus(accessToken);
@@ -544,8 +523,7 @@ function BookingPage() {
         setConfirmModal({
           isOpen: true,
           title: "Liên kết Google Calendar",
-          message:
-            "Bạn chưa liên kết Google Calendar. Bạn có muốn liên kết để đồng bộ lịch hẹn không?",
+          message: "Bạn chưa liên kết Google Calendar. Bạn có muốn liên kết để đồng bộ lịch hẹn không?",
           confirmText: "Liên kết",
           cancelText: "Bỏ qua",
           confirmType: "primary",
@@ -566,26 +544,20 @@ function BookingPage() {
         await handleSubmitWithCalendarSync(true);
       }
     } catch (error) {
-      showToast({ text: "Có lỗi xảy ra, vui lòng thử lại sau", type: "error" });
+      showToast({
+        text: "Có lỗi xảy ra, vui lòng thử lại sau",
+        type: "error",
+      });
     } finally {
       setIsCheckingCalendar(false);
     }
   };
 
-  // ─── Derived values ───────────────────────────────────────────────────────
-  const totalPrice = booking.services.reduce(
-    (sum, s) => sum + Number(s.price),
-    0,
-  );
-  const discountAmt =
-    booking.discountFixed > 0
-      ? booking.discountFixed
-      : (totalPrice * (booking.discount || 0)) / 100;
+  const totalPrice = booking.services.reduce((sum, s) => sum + Number(s.price), 0);
+  const discountAmt = booking.discountFixed > 0 ? booking.discountFixed : (totalPrice * (booking.discount || 0)) / 100;
   const finalPrice = Math.max(0, totalPrice - discountAmt);
   const bookedTimes = booking.date ? bookedTimesByDate[booking.date] || [] : [];
-  const selectedStyle = hairstylesData.find(
-    (h) => h.idHairstyle === booking.hairstyleId,
-  );
+  const selectedStyle = hairstylesData.find((h) => h.idHairstyle === booking.hairstyleId);
 
   const getBranchStatus = (b) => {
     const now = new Date();
@@ -600,9 +572,22 @@ function BookingPage() {
     if (b.resumeDate) {
       const rd = new Date(b.resumeDate);
       if (rd > now)
-        return { type: "pause", label: `Mở ${rd.toLocaleDateString("vi-VN")}` };
+        return {
+          type: "pause",
+          label: `Mở ${rd.toLocaleDateString("vi-VN")}`,
+        };
     }
     return null;
+  };
+
+  // [FIX] Helper tính xem ngày có bị block vì lockDate không
+  const isDateBlockedByLock = (dateValue) => {
+    if (!barberLockDate) return false;
+    const lockDay = new Date(barberLockDate);
+    lockDay.setHours(0, 0, 0, 0);
+    const checkDay = new Date(dateValue);
+    checkDay.setHours(0, 0, 0, 0);
+    return checkDay >= lockDay;
   };
 
   return (
@@ -619,9 +604,7 @@ function BookingPage() {
           {/* ── Branch Finder ── */}
           <div className={styles.branchFinder}>
             <div className={styles.branchFinderHeader}>
-              <span className={styles.branchFinderTitle}>
-                Chi nhánh gần bạn
-              </span>
+              <span className={styles.branchFinderTitle}>Chi nhánh gần bạn</span>
               <button
                 type="button"
                 className={`${styles.locationBtn} ${locationLoading ? styles.locationBtnLoading : ""}`}
@@ -632,76 +615,44 @@ function BookingPage() {
                 {locationLoading ? "Đang định vị..." : "Cập nhật vị trí"}
               </button>
             </div>
-            {locationError && (
-              <p className={styles.locationError}>{locationError}</p>
-            )}
+            {locationError && <p className={styles.locationError}>{locationError}</p>}
             {!hasLocation && !locationLoading && !locationError && (
-              <p className={styles.locationHint}>
-                Cho phép truy cập vị trí để xem chi nhánh gần nhất.
-              </p>
+              <p className={styles.locationHint}>Cho phép truy cập vị trí để xem chi nhánh gần nhất.</p>
             )}
             {locationLoading && branches.length === 0 && (
               <div className={styles.branchCardList}>
                 {[1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    className={`${styles.branchCard} ${styles.branchCardSkeleton}`}
-                  />
+                  <div key={i} className={`${styles.branchCard} ${styles.branchCardSkeleton}`} />
                 ))}
               </div>
             )}
             {branches.length > 0 && (
               <div className={styles.branchCardList}>
                 {branches.map((b, idx) => {
-                  const isNearest =
-                    hasLocation && b.distanceM != null && idx === 0;
+                  const isNearest = hasLocation && b.distanceM != null && idx === 0;
                   const isSelected = booking.branchId === b.idBranch;
                   const status = getBranchStatus(b);
                   return (
                     <div
                       key={b.idBranch}
-                      className={`${styles.branchCard} ${isSelected ? styles.branchCardSelected : ""} ${isNearest ? styles.branchCardNearest : ""}`}
+                      className={`${styles.branchCard} ${
+                        isSelected ? styles.branchCardSelected : ""
+                      } ${isNearest ? styles.branchCardNearest : ""}`}
                       onClick={() => handleBranchCardClick(b.idBranch)}
                       role="button"
                       tabIndex={0}
-                      onKeyDown={(e) =>
-                        e.key === "Enter" && handleBranchCardClick(b.idBranch)
-                      }
+                      onKeyDown={(e) => e.key === "Enter" && handleBranchCardClick(b.idBranch)}
                     >
-                      {isNearest && (
-                        <span className={styles.nearestBadge}>Gần nhất</span>
-                      )}
-                      {isSelected && (
-                        <span className={styles.selectedBadge}>✓ Đã chọn</span>
-                      )}
+                      {isNearest && <span className={styles.nearestBadge}>Gần nhất</span>}
+                      {isSelected && <span className={styles.selectedBadge}>✓ Đã chọn</span>}
                       <div className={styles.branchCardName}>{b.name}</div>
-                      {b.address && (
-                        <div className={styles.branchCardAddr}>
-                          📍 {b.address}
-                        </div>
-                      )}
+                      {b.address && <div className={styles.branchCardAddr}>📍 {b.address}</div>}
                       <div className={styles.branchCardMeta}>
-                        {b.distanceText && (
-                          <span className={styles.chipDist}>
-                            📏 {b.distanceText}
-                          </span>
-                        )}
-                        {b.durationText && (
-                          <span className={styles.chipTime}>
-                            🚗 {b.durationText}
-                          </span>
-                        )}
-                        {!b.distanceText && !locationLoading && (
-                          <span className={styles.chipNoLoc}>— km</span>
-                        )}
+                        {b.distanceText && <span className={styles.chipDist}>📏 {b.distanceText}</span>}
+                        {b.durationText && <span className={styles.chipTime}>🚗 {b.durationText}</span>}
+                        {!b.distanceText && !locationLoading && <span className={styles.chipNoLoc}>— km</span>}
                         {status && (
-                          <span
-                            className={
-                              status.type === "warn"
-                                ? styles.chipWarn
-                                : styles.chipPause
-                            }
-                          >
+                          <span className={status.type === "warn" ? styles.chipWarn : styles.chipPause}>
                             {status.label}
                           </span>
                         )}
@@ -718,22 +669,14 @@ function BookingPage() {
             <div className={styles.formGroup}>
               <label>Cơ sở đã chọn</label>
               <div className={styles.selectWrapper}>
-                <select
-                  value={booking.branchId || ""}
-                  onChange={handleBranchChange}
-                >
+                <select value={booking.branchId || ""} onChange={handleBranchChange}>
                   <option value="">— Hoặc chọn từ danh sách —</option>
                   {branches.map((b) => {
-                    const suspend = b.suspendDate
-                      ? new Date(b.suspendDate).toLocaleDateString("vi-VN")
-                      : null;
-                    const resume = b.resumeDate
-                      ? new Date(b.resumeDate).toLocaleDateString("vi-VN")
-                      : null;
+                    const suspend = b.suspendDate ? new Date(b.suspendDate).toLocaleDateString("vi-VN") : null;
+                    const resume = b.resumeDate ? new Date(b.resumeDate).toLocaleDateString("vi-VN") : null;
                     let label = b.name;
                     if (suspend && !resume) label += ` — (ngưng từ ${suspend})`;
-                    if (resume && new Date(b.resumeDate) > new Date())
-                      label += ` — (mở từ ${resume})`;
+                    if (resume && new Date(b.resumeDate) > new Date()) label += ` — (mở từ ${resume})`;
                     return (
                       <option key={b.idBranch} value={b.idBranch}>
                         {label}
@@ -749,34 +692,42 @@ function BookingPage() {
             <div className={styles.formGroup}>
               <label>Kỹ thuật viên</label>
               <div className={styles.selectWrapper}>
-                <select
-                  value={booking.barberId || ""}
-                  onChange={handleBarberChange}
-                  disabled={!barbers.length}
-                >
+                <select value={booking.barberId || ""} onChange={handleBarberChange} disabled={!barbers.length}>
                   <option value="">— Chọn barber —</option>
-                  {barbers.map((barber) => (
-                    <option key={barber.idBarber} value={barber.idBarber}>
-                      {barber.user?.fullName}
-                    </option>
-                  ))}
+                  {/* [FIX] Hiển thị thêm thông tin lockDate trong option */}
+                  {barbers.map((barber) => {
+                    const lockLabel = barber.lockDate
+                      ? ` (nghỉ từ ${new Date(barber.lockDate).toLocaleDateString("vi-VN")})`
+                      : "";
+                    return (
+                      <option key={barber.idBarber} value={barber.idBarber}>
+                        {barber.user?.fullName}
+                        {lockLabel}
+                      </option>
+                    );
+                  })}
                 </select>
                 <span className={styles.selectArrow}>▾</span>
               </div>
+              {/* [FIX] Hiển thị warning nếu barber có lockDate */}
+              {barberLockDate && (
+                <p style={{ fontSize: 12, color: "#e69d9d", marginTop: 6 }}>
+                  ⚠ Thợ này sẽ nghỉ từ ngày {new Date(barberLockDate).toLocaleDateString("vi-VN")} — chỉ có thể đặt lịch
+                  trước ngày đó.
+                </p>
+              )}
             </div>
 
             {/* ── Ngày ── */}
             <div className={styles.formGroup}>
               <label>Ngày hẹn</label>
               <div className={styles.dateList}>
-                {[...Array(8)].map((_, i) => {
+                {[...Array(14)].map((_, i) => {
+                  // [FIX] Tăng lên 14 ngày để thấy rõ hiệu ứng block lockDate
                   const d = new Date();
                   d.setDate(today.getDate() + i);
                   const value = d.toISOString().split("T")[0];
-                  const dayLabel =
-                    i === 0
-                      ? "Hôm nay"
-                      : d.toLocaleDateString("vi-VN", { weekday: "short" });
+                  const dayLabel = i === 0 ? "Hôm nay" : d.toLocaleDateString("vi-VN", { weekday: "short" });
                   const dateNum = d.toLocaleDateString("vi-VN", {
                     day: "2-digit",
                   });
@@ -784,18 +735,49 @@ function BookingPage() {
                     month: "2-digit",
                   });
                   const isUnavail = unavailableDates.includes(value);
+                  // [FIX] Check lockDate
+                  const isLockedDate = isDateBlockedByLock(value);
+                  const isDisabled = isUnavail || isLockedDate;
                   const isSelected = booking.date === value;
+
                   return (
                     <div
                       key={i}
-                      className={`${styles.dateCard} ${isSelected ? styles.dateCardSelected : ""} ${isUnavail ? styles.dateCardDisabled : ""}`}
+                      title={
+                        isLockedDate
+                          ? `Thợ nghỉ từ ${new Date(barberLockDate).toLocaleDateString("vi-VN")}`
+                          : isUnavail
+                            ? "Thợ không làm việc ngày này"
+                            : ""
+                      }
+                      className={`${styles.dateCard} ${
+                        isSelected ? styles.dateCardSelected : ""
+                      } ${isDisabled ? styles.dateCardDisabled : ""}`}
+                      style={isLockedDate && !isUnavail ? { opacity: 0.4, cursor: "not-allowed" } : {}}
                       onClick={() => {
-                        if (!isUnavail) handleDateChange({ target: { value } });
+                        if (!isDisabled) handleDateChange(value);
                       }}
                     >
                       <span className={styles.dateDay}>{dayLabel}</span>
                       <span className={styles.dateNumber}>{dateNum}</span>
                       <span className={styles.dateMonth}>Tháng {monthNum}</span>
+                      {/* [FIX] Badge "Nghỉ" cho lockDate */}
+                      {isLockedDate && (
+                        <span
+                          style={{
+                            position: "absolute",
+                            fontSize: 9,
+                            fontWeight: 700,
+                            color: "#a32d2d",
+                            background: "rgba(255,0,0,0.1)",
+                            padding: "1px 5px",
+                            borderRadius: 4,
+                            bottom: 6,
+                          }}
+                        >
+                          Nghỉ
+                        </span>
+                      )}
                     </div>
                   );
                 })}
@@ -819,7 +801,9 @@ function BookingPage() {
                     <button
                       key={i}
                       type="button"
-                      className={`${styles.timeSlot} ${isBooked || isPast ? styles.booked : ""} ${booking.time === time ? styles.selected : ""}`}
+                      className={`${styles.timeSlot} ${
+                        isBooked || isPast ? styles.booked : ""
+                      } ${booking.time === time ? styles.selected : ""}`}
                       onClick={() => handleTimeSelect(time)}
                       disabled={isBooked || isPast || !booking.date}
                     >
@@ -837,11 +821,7 @@ function BookingPage() {
                 <select onChange={handleServiceAdd} value="">
                   <option value="">— Chọn dịch vụ —</option>
                   {services.map((s) => (
-                    <option
-                      key={s.idService}
-                      value={s.idService}
-                      disabled={s.status === "Inactive"}
-                    >
+                    <option key={s.idService} value={s.idService} disabled={s.status === "Inactive"}>
                       {s.status === "Inactive"
                         ? `${s.name} - Đang cập nhật...`
                         : `${s.name} - ${Number(s.price).toLocaleString()}đ`}
@@ -856,10 +836,7 @@ function BookingPage() {
                     <span>
                       {s.name} — {Number(s.price).toLocaleString()}đ
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveService(s.idService)}
-                    >
+                    <button type="button" onClick={() => handleRemoveService(s.idService)}>
                       ✕
                     </button>
                   </li>
@@ -867,119 +844,133 @@ function BookingPage() {
               </ul>
             </div>
 
-       
-{/* ── Kiểu tóc ── */}
+            {/* ── Kiểu tóc ── */}
+            <div className={styles.formGroup}>
+              <label>Kiểu tóc</label>
 
-{/* ── Kiểu tóc ── */}
-<div className={styles.formGroup}>
-  <label>Kiểu tóc</label>
-
-  <button
-    type="button"
-    className={styles.hairstyleTrigger}
-    onClick={() => setShowHairstylePanel(true)}
-  >
-    <span className={styles.hairstyleTriggerText}>
-      {selectedStyle ? (
-        <>
-          Đã chọn: <strong>{selectedStyle.name}</strong> — Nhấn để đổi
-        </>
-      ) : (
-        "Chọn kiểu tóc phù hợp với bạn (tuỳ chọn)"
-      )}
-    </span>
-    <span className={styles.hairstyleTriggerArrow}>›</span>
-  </button>
-
-  {/* Overlay Modal */}
-  {showHairstylePanel && (
-    <div className={styles.hairstyleOverlay} onMouseDown={(e) => e.target === e.currentTarget && setShowHairstylePanel(false)}>
-      <div className={styles.hairstyleModal} ref={hairstylePanelRef}>
-        <div className={styles.hairstyleModalHeader}>
-          <div>
-            <h3>Chọn Kiểu Tóc</h3>
-            <p className={styles.hairstyleModalHint}>Chọn một kiểu tóc phù hợp với phong cách của bạn</p>
-          </div>
-          <button type="button" className={styles.hairstyleModalClose} onClick={() => setShowHairstylePanel(false)}>✕</button>
-        </div>
-
-        <div className={styles.hairstyleGrid}>
-          {hairstylesData.map((hs) => {
-            const isSelected = booking.hairstyleId === hs.idHairstyle;
-            return (
-              <div
-                key={hs.idHairstyle}
-                className={`${styles.hairstyleCard} ${isSelected ? styles.hairstyleCardSelected : ""}`}
-                onClick={() => {
-                  setBooking(prev => ({
-                    ...prev,
-                    hairstyleId: prev.hairstyleId === hs.idHairstyle ? null : hs.idHairstyle
-                  }));
-                }}
-              >
-            {/* 1. Phần Khung Ảnh */}
-<div className={styles.hairstyleImgWrap}>
-  <img
-    src={hs.coverImage}
-    alt={hs.name}
-    className={styles.hairstyleCoverImg}
-    onError={(e) => { 
-      e.target.src = `https://via.placeholder.com/400x400/2c2c2c/ffffff?text=${encodeURIComponent(hs.name)}`; 
-    }}
-  />
-  
-  {/* ← THÊM PHẦN NÀY */}
-  {hs.sideImage && (
-    <img
-      src={hs.sideImage}
-      alt={`${hs.name} - góc nghiêng`}
-      className={styles.hairstyleSideImg}
-      onError={(e) => (e.target.style.display = "none")}
-    />
-  )}
-
-  {isSelected && <div className={styles.hairstyleSelectedTick}>✓</div>}
-</div>
-                {/* 2. Phần Thông Tin Chữ (ĐOẠN CŨ BỊ THIẾU LÀM CARD BỊ DẸT) */}
-                <div className={styles.hairstyleCardInfo}>
-                  <h4>{hs.name}</h4>
-                  <p>{hs.shortDescription || "Kiểu tóc hiện đại, phong cách lịch lãm."}</p>
-                  
-                  {(hs.difficultyLevel || hs.suitableAge) && (
-                    <div className={styles.hairstyleCardMeta}>
-                      {hs.difficultyLevel && <span className={styles.hairstyleMetaTag}>{hs.difficultyLevel}</span>}
-                      {hs.suitableAge && <span className={styles.hairstyleMetaTag}>{hs.suitableAge}</span>}
-                    </div>
+              <button type="button" className={styles.hairstyleTrigger} onClick={() => setShowHairstylePanel(true)}>
+                <span className={styles.hairstyleTriggerText}>
+                  {selectedStyle ? (
+                    <>
+                      Đã chọn: <strong>{selectedStyle.name}</strong> — Nhấn để đổi
+                    </>
+                  ) : (
+                    "Chọn kiểu tóc phù hợp với bạn (tuỳ chọn)"
                   )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className={styles.hairstyleModalFooter}>
-          <div className={styles.hairstyleFooterSelected}>
-            {booking.hairstyleId ? (
-              <>Đã chọn: <strong>{selectedStyle?.name}</strong></>
-            ) : (
-              <span>Chưa chọn kiểu tóc</span>
-            )}
-          </div>
-          <div className={styles.hairstyleFooterBtns}>
-            {booking.hairstyleId && (
-              <button type="button" className={styles.hairstyleClearBtn} onClick={() => setBooking(prev => ({ ...prev, hairstyleId: null }))}>
-                Bỏ chọn
+                </span>
+                <span className={styles.hairstyleTriggerArrow}>›</span>
               </button>
-            )}
-            <button type="button" className={styles.hairstyleConfirmBtn} onClick={() => setShowHairstylePanel(false)}>
-              Xác nhận
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  )}
-</div>
+
+              {showHairstylePanel && (
+                <div
+                  className={styles.hairstyleOverlay}
+                  onMouseDown={(e) => e.target === e.currentTarget && setShowHairstylePanel(false)}
+                >
+                  <div className={styles.hairstyleModal} ref={hairstylePanelRef}>
+                    <div className={styles.hairstyleModalHeader}>
+                      <div>
+                        <h3>Chọn Kiểu Tóc</h3>
+                        <p className={styles.hairstyleModalHint}>Chọn một kiểu tóc phù hợp với phong cách của bạn</p>
+                      </div>
+                      <button
+                        type="button"
+                        className={styles.hairstyleModalClose}
+                        onClick={() => setShowHairstylePanel(false)}
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    <div className={styles.hairstyleGrid}>
+                      {hairstylesData.map((hs) => {
+                        const isSelected = booking.hairstyleId === hs.idHairstyle;
+                        return (
+                          <div
+                            key={hs.idHairstyle}
+                            className={`${styles.hairstyleCard} ${isSelected ? styles.hairstyleCardSelected : ""}`}
+                            onClick={() => {
+                              setBooking((prev) => ({
+                                ...prev,
+                                hairstyleId: prev.hairstyleId === hs.idHairstyle ? null : hs.idHairstyle,
+                              }));
+                            }}
+                          >
+                            <div className={styles.hairstyleImgWrap}>
+                              <img
+                                src={hs.coverImage}
+                                alt={hs.name}
+                                className={styles.hairstyleCoverImg}
+                                onError={(e) => {
+                                  e.target.src = `https://via.placeholder.com/400x400/2c2c2c/ffffff?text=${encodeURIComponent(
+                                    hs.name,
+                                  )}`;
+                                }}
+                              />
+                              {hs.sideImage && (
+                                <img
+                                  src={hs.sideImage}
+                                  alt={`${hs.name} - góc nghiêng`}
+                                  className={styles.hairstyleSideImg}
+                                  onError={(e) => (e.target.style.display = "none")}
+                                />
+                              )}
+                              {isSelected && <div className={styles.hairstyleSelectedTick}>✓</div>}
+                            </div>
+                            <div className={styles.hairstyleCardInfo}>
+                              <h4>{hs.name}</h4>
+                              <p>{hs.shortDescription || "Kiểu tóc hiện đại, phong cách lịch lãm."}</p>
+                              {(hs.difficultyLevel || hs.suitableAge) && (
+                                <div className={styles.hairstyleCardMeta}>
+                                  {hs.difficultyLevel && (
+                                    <span className={styles.hairstyleMetaTag}>{hs.difficultyLevel}</span>
+                                  )}
+                                  {hs.suitableAge && <span className={styles.hairstyleMetaTag}>{hs.suitableAge}</span>}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <div className={styles.hairstyleModalFooter}>
+                      <div className={styles.hairstyleFooterSelected}>
+                        {booking.hairstyleId ? (
+                          <>
+                            Đã chọn: <strong>{selectedStyle?.name}</strong>
+                          </>
+                        ) : (
+                          <span>Chưa chọn kiểu tóc</span>
+                        )}
+                      </div>
+                      <div className={styles.hairstyleFooterBtns}>
+                        {booking.hairstyleId && (
+                          <button
+                            type="button"
+                            className={styles.hairstyleClearBtn}
+                            onClick={() =>
+                              setBooking((prev) => ({
+                                ...prev,
+                                hairstyleId: null,
+                              }))
+                            }
+                          >
+                            Bỏ chọn
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          className={styles.hairstyleConfirmBtn}
+                          onClick={() => setShowHairstylePanel(false)}
+                        >
+                          Xác nhận
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* ── Silent mode ── */}
             <label
@@ -987,21 +978,15 @@ function BookingPage() {
               htmlFor="silentMode"
             >
               <span className={styles.silentCheckbox}>
-                {booking.silentMode && (
-                  <span className={styles.silentTick}>✓</span>
-                )}
+                {booking.silentMode && <span className={styles.silentTick}>✓</span>}
               </span>
-              <span className={styles.silentLabelText}>
-                Yêu cầu thợ giữ im lặng trong suốt quá trình làm dịch vụ
-              </span>
+              <span className={styles.silentLabelText}>Yêu cầu thợ giữ im lặng trong suốt quá trình làm dịch vụ</span>
               <input
                 type="checkbox"
                 id="silentMode"
                 className={styles.silentHiddenInput}
                 checked={booking.silentMode}
-                onChange={(e) =>
-                  setBooking((p) => ({ ...p, silentMode: e.target.checked }))
-                }
+                onChange={(e) => setBooking((p) => ({ ...p, silentMode: e.target.checked }))}
               />
             </label>
 
@@ -1020,68 +1005,39 @@ function BookingPage() {
                 <b>{finalPrice.toLocaleString()}đ</b>
               </p>
 
-              {/* Warning inline khi voucher bị bỏ tự động */}
-              {voucherWarning && (
-                <p className={styles.voucherWarning}>⚠ {voucherWarning}</p>
-              )}
+              {voucherWarning && <p className={styles.voucherWarning}>⚠ {voucherWarning}</p>}
 
-              {/* Voucher đang áp dụng — chỉ hiện khi có voucher VÀ không có warning */}
               {booking.voucher &&
                 !voucherWarning &&
                 (() => {
                   const vd = booking.voucher.voucher || booking.voucher;
-                  const isFixed =
-                    vd.discount_amount && Number(vd.discount_amount) > 0;
+                  const isFixed = vd.discount_amount && Number(vd.discount_amount) > 0;
                   return (
                     <div className={styles.appliedVoucher}>
                       <p>
                         <strong>Voucher:</strong> {vd.name}
                       </p>
                       <p>
-                        {isFixed
-                          ? `Giảm cố định ${formatMoney(vd.discount_amount)}`
-                          : `Giảm ${vd.discount_percent}%`}
-                        {vd.max_discount_amount && !isFixed
-                          ? ` · Tối đa ${formatMoney(vd.max_discount_amount)}`
-                          : ""}
+                        {isFixed ? `Giảm cố định ${formatMoney(vd.discount_amount)}` : `Giảm ${vd.discount_percent}%`}
+                        {vd.max_discount_amount && !isFixed ? ` · Tối đa ${formatMoney(vd.max_discount_amount)}` : ""}
                       </p>
                     </div>
                   );
                 })()}
 
-              <button
-                type="button"
-                className={styles.voucherOpenBtn}
-                onClick={() => setShowVoucherList(true)}
-              >
+              <button type="button" className={styles.voucherOpenBtn} onClick={() => setShowVoucherList(true)}>
                 {booking.voucher ? "Đổi voucher khác" : "Áp dụng mã giảm"}
               </button>
             </div>
 
-            <button
-              type="submit"
-              className={styles.submitBtn}
-              disabled={isLoading || isCheckingCalendar}
-            >
-              {isLoading
-                ? "Đang xử lý..."
-                : isCheckingCalendar
-                  ? "Đang kiểm tra..."
-                  : "Xác nhận đặt lịch"}
+            <button type="submit" className={styles.submitBtn} disabled={isLoading || isCheckingCalendar}>
+              {isLoading ? "Đang xử lý..." : isCheckingCalendar ? "Đang kiểm tra..." : "Xác nhận đặt lịch"}
             </button>
           </form>
         </div>
 
-        <img
-          src="/keo.png"
-          alt="Left Scissors"
-          className={styles.scissorsLeft}
-        />
-        <img
-          src="/keo.png"
-          alt="Right Scissors"
-          className={styles.scissorsRight}
-        />
+        <img src="/keo.png" alt="Left Scissors" className={styles.scissorsLeft} />
+        <img src="/keo.png" alt="Right Scissors" className={styles.scissorsRight} />
 
         {showVoucherList && (
           <VoucherPopup

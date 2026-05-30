@@ -4,6 +4,7 @@ import { CloudinaryStorage } from "multer-storage-cloudinary";
 import cloudinary from "../config/cloudinary.js";
 import multer from "multer";
 import { fetchBranchesWithDistance } from "../services/branchService.js";
+
 export const getBranches = async (req, res) => {
   try {
     const { lat, lng } = req.query;
@@ -14,7 +15,8 @@ export const getBranches = async (req, res) => {
     res.status(500).json({ message: "Lỗi khi lấy danh sách chi nhánh", error });
   }
 };
-// Lấy chi tiết chi nhánh (barbers + services)
+
+// [FIX] Trả thêm lockDate, isLocked của barber để FE block ngày đặt lịch
 export const getBranchDetails = async (req, res) => {
   try {
     const { idBranch } = req.params;
@@ -24,12 +26,16 @@ export const getBranchDetails = async (req, res) => {
         {
           model: db.Barber,
           as: "barbers",
-          attributes: ["idBarber", "profileDescription"],
+          // [FIX] Thêm isLocked, lockDate vào attributes
+          attributes: ["idBarber", "profileDescription", "isLocked", "lockDate"],
+          // [FIX] Chỉ lấy barber chưa bị khóa vĩnh viễn
+          where: { isLocked: false },
+          required: false,
           include: [
             {
               model: db.User,
               as: "user",
-              attributes: ["idUser", "fullName", "email"],
+              attributes: ["idUser", "fullName", "email", "image"],
             },
           ],
         },
@@ -46,7 +52,15 @@ export const getBranchDetails = async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy chi nhánh" });
     }
 
-    res.json(branch);
+    const branchData = branch.toJSON();
+
+    res.json({
+      ...branchData,
+      // [FIX] Đảm bảo các field sinh time slot luôn có trong response
+      openTime: branch.openTime,
+      closeTime: branch.closeTime,
+      slotDuration: branch.slotDuration,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Lỗi khi lấy chi tiết chi nhánh", error });
@@ -59,7 +73,6 @@ export const createBooking = async (req, res) => {
     const idUser = req.user.idUser;
     const userRole = req.user.role;
 
-    // 1. Chặn ngay nếu không phải khách hàng
     if (userRole !== "customer") {
       return res.status(403).json({
         success: false,
@@ -67,8 +80,6 @@ export const createBooking = async (req, res) => {
       });
     }
 
-    // 2. Tìm idCustomer tương ứng với idUser này
-    // Giả sử bạn có một service hoặc dùng model tìm kiếm trực tiếp
     const customer = await db.Customer.findOne({ where: { idCustomer: idUser } });
 
     if (!customer) {
@@ -80,11 +91,38 @@ export const createBooking = async (req, res) => {
 
     const { syncToCalendar = false } = req.body;
 
-    // 3. Sử dụng idCustomer thực sự để tạo booking
+    // [FIX] Validate lockDate trước khi tạo booking
+    const { idBarber, bookingDate } = req.body;
+    if (idBarber && bookingDate) {
+      const barber = await db.Barber.findByPk(idBarber);
+      if (barber?.lockDate) {
+        const lockDay = new Date(barber.lockDate);
+        lockDay.setHours(0, 0, 0, 0);
+        const selectedDay = new Date(bookingDate);
+        selectedDay.setHours(0, 0, 0, 0);
+
+        if (selectedDay >= lockDay) {
+          return res.status(400).json({
+            success: false,
+            message: `Thợ này sẽ nghỉ từ ngày ${new Date(barber.lockDate).toLocaleDateString(
+              "vi-VN",
+            )}. Vui lòng chọn ngày trước đó hoặc chọn thợ khác.`,
+          });
+        }
+      }
+
+      if (barber?.isLocked) {
+        return res.status(400).json({
+          success: false,
+          message: "Tài khoản thợ đã bị khóa, không thể đặt lịch.",
+        });
+      }
+    }
+
     const booking = await bookingService.createBookingService({
       ...req.body,
       idCustomer: customer.idCustomer,
-      syncToCalendar, // Dùng ID của bảng customers, không phải ID bảng users
+      syncToCalendar,
     });
 
     return res.status(201).json({
@@ -93,7 +131,6 @@ export const createBooking = async (req, res) => {
       data: booking,
     });
   } catch (error) {
-    // Xử lý lỗi khóa ngoại MySQL để trả về message đẹp hơn
     if (error.code === "ER_NO_REFERENCED_ROW_2") {
       return res.status(400).json({
         success: false,
@@ -108,6 +145,7 @@ export const createBooking = async (req, res) => {
     });
   }
 };
+
 // Booking của barber (theo khoảng thời gian)
 export const getBookingsForBarber = async (req, res) => {
   try {
@@ -134,7 +172,6 @@ const storage = new CloudinaryStorage({
 
 export const upload = multer({ storage });
 
-// HOÀN TẤT LỊCH HẸN
 export const completeBooking = async (req, res) => {
   try {
     const idBooking = req.params.id;
@@ -167,67 +204,62 @@ export const completeBooking = async (req, res) => {
   }
 };
 
-// ✅ Lấy danh sách các booking của 1 barber
+// [FIX] Sửa lại hàm này — getBarberBookingsNext7Days không tồn tại trong service
 export const getBookingsByBarber = async (req, res) => {
   try {
     const { idBarber } = req.params;
 
-    // Validate đầu vào nhanh gọn
     if (!idBarber) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Thiếu idBarber" 
+      return res.status(400).json({ success: false, message: "Thiếu idBarber" });
+    }
+
+    const barber = await db.Barber.findByPk(idBarber);
+    if (!barber) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy thợ cắt tóc này.",
       });
     }
 
-    // Gọi Service làm việc nặng
-    const result = await bookingService.getBarberBookingsNext7Days(parseInt(idBarber));
+    // [FIX] Dùng hàm getBarberBookings có sẵn, lấy 7 ngày tới
+    const today = new Date().toISOString().split("T")[0];
+    const next7 = new Date();
+    next7.setDate(next7.getDate() + 7);
+    const end = next7.toISOString().split("T")[0];
 
-    // Thành công thì trả data về
+    const bookings = await bookingService.getBarberBookings(parseInt(idBarber), today, end);
+
     return res.status(200).json({
       success: true,
-      isLocked: result.isLocked,
-      bookings: result.bookings
+      isLocked: barber.isLocked,
+      lockDate: barber.lockDate || null,
+      bookings,
     });
-
   } catch (error) {
     console.error("Lỗi Controller getBookingsByBarber:", error.message);
-
-    // Bắt lỗi cụ thể từ Service ném ra
-    if (error.message === "BARBER_NOT_FOUND") {
-      return res.status(404).json({ 
-        success: false, 
-        message: "Không tìm thấy thợ cắt tóc này." 
-      });
-    }
-
-    // Lỗi hệ thống khác (chết DB, sai cú pháp,...)
-    return res.status(500).json({ 
-      success: false, 
+    return res.status(500).json({
+      success: false,
       message: "Lỗi hệ thống khi lấy lịch",
-      error: error.message 
+      error: error.message,
     });
   }
 };
-// ✅ HỦY BOOKING
+
 export const cancelBooking = async (req, res) => {
   try {
     const { idBooking } = req.params;
-
     const booking = await db.Booking.findByPk(idBooking);
 
     if (!booking) {
       return res.status(404).json({ message: "Không tìm thấy lịch hẹn để hủy" });
     }
 
-    // ❌ Không cho hủy nếu là InProgress, Completed hoặc Cancelled
     if (booking.status !== "Pending") {
       return res.status(400).json({
         message: `Không thể hủy lịch hẹn khi trạng thái đang là '${booking.status}'. Chỉ lịch hẹn Pending mới được phép hủy.`,
       });
     }
 
-    // ✅ Chỉ khi Pending mới đổi thành Cancelled
     booking.status = "Cancelled";
     await booking.save();
 
@@ -241,21 +273,18 @@ export const cancelBooking = async (req, res) => {
 export const checkInBooking = async (req, res) => {
   try {
     const { idBooking } = req.params;
-
-    // Tìm booking
     const booking = await db.Booking.findByPk(idBooking);
+
     if (!booking) {
       return res.status(404).json({ message: "Không tìm thấy lịch hẹn" });
     }
 
-    // Chỉ cho check-in khi trạng thái là Pending
     if (booking.status !== "Pending") {
       return res.status(400).json({
         message: `Chỉ có lịch hẹn Pending mới được check-in. Trạng thái hiện tại: '${booking.status}'`,
       });
     }
 
-    // Cập nhật trạng thái
     booking.status = "InProgress";
     await booking.save();
 
@@ -275,38 +304,32 @@ export const checkInBooking = async (req, res) => {
   }
 };
 
-// ✅ Lấy khung giờ đã đặt
+// [FIX] Thêm check lockDate trong getBookedSlotsByBarber
 export const getBookedSlotsByBarber = async (req, res) => {
   try {
     const { idBarber } = req.params;
     const { branchId, date } = req.query;
 
-    // 🧩 Kiểm tra thiếu tham số
     if (!idBarber || !branchId || !date) {
       return res.status(400).json({ message: "Thiếu tham số: idBarber, branchId hoặc date" });
     }
 
-    // 🧠 Gọi service
     const result = await bookingService.getBookedSlotsByBarber(parseInt(branchId), parseInt(idBarber), date);
 
     return res.status(200).json(result);
   } catch (error) {
     console.error("❌ Lỗi khi lấy khung giờ booking:", error);
 
-    // 🔍 Phân loại lỗi để trả mã hợp lý
     if (error.message.includes("Không tìm thấy thợ")) {
       return res.status(404).json({ message: error.message });
     }
-
     if (error.message.includes("Thợ không thuộc chi nhánh")) {
       return res.status(400).json({ message: error.message });
     }
-
     if (error.message.includes("Không tìm thấy chi nhánh")) {
       return res.status(404).json({ message: error.message });
     }
 
-    // ⚙️ Các lỗi khác (ngoài dự kiến)
     return res.status(500).json({
       message: "Lỗi khi lấy khung giờ booking của barber",
       error: error.message,
@@ -319,13 +342,9 @@ export const getBookingsByBranch = async (req, res) => {
     const { idBranch } = req.params;
 
     if (!idBranch) {
-      return res.status(400).json({
-        success: false,
-        message: "Thiếu idBranch",
-      });
+      return res.status(400).json({ success: false, message: "Thiếu idBranch" });
     }
 
-    // Admin xem được tất cả, receptionist chỉ xem chi nhánh mình
     const isAdmin = req.user.role === "admin";
     if (!isAdmin && parseInt(idBranch) !== req.user.idBranch) {
       return res.status(403).json({
@@ -336,7 +355,6 @@ export const getBookingsByBranch = async (req, res) => {
 
     const { date } = req.query;
 
-    // Validate format date nếu có truyền vào
     if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       return res.status(400).json({
         success: false,
@@ -344,10 +362,7 @@ export const getBookingsByBranch = async (req, res) => {
       });
     }
 
-    const result = await bookingService.getBookingsByBranchService(
-      parseInt(idBranch),
-      date || null
-    );
+    const result = await bookingService.getBookingsByBranchService(parseInt(idBranch), date || null);
 
     return res.status(200).json({
       success: true,
