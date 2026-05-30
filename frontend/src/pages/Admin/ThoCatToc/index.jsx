@@ -80,40 +80,23 @@ function ThoCatToc() {
   const [newBranchId, setNewBranchId] = useState("");
 
   // ── Fetch ────────────────────────────────────────────────────────────────────
-// ── Fetch ────────────────────────────────────────────────────────────────────
-const fetchBarbers = async (targetId) => {
-  try {
-    const activeId = targetId || selectedBarber?.idBarber;
+  const fetchBarbers = async () => {
+    try {
+      const barberList = await BarberAPI.getAll();
+      setBarbers(barberList || []);
 
-    const [barberList, detail] = await Promise.all([
-      BarberAPI.getAll(),
-      activeId ? BarberAPI.getProfile(activeId) : Promise.resolve(null),
-    ]);
-
-    const safeBarberList = barberList || [];
-    setBarbers(safeBarberList);
-
-    if (safeBarberList.length > 0) {
-      const updated = safeBarberList.find((b) => b.idBarber === activeId) || safeBarberList[0];
-      setSelectedBarber(updated);
-    } else {
-      setSelectedBarber(null);
+      if (barberList.length > 0 && !selectedBarber) {
+        setSelectedBarber(barberList[0]);
+      } else if (selectedBarber) {
+        const updated = barberList.find((b) => b.idBarber === selectedBarber.idBarber);
+        if (updated) setSelectedBarber(updated);
+      }
+    } catch (error) {
+      showToast("error", error?.message || "Không thể tải danh sách barber!");
+    } finally {
+      setLoading(false);
     }
-
-    if (detail) {
-      setBarberDetail(detail);
-    }
-  } catch (error) {
-    showToast("error", error?.message || "Không thể tải hoặc làm mới dữ liệu!");
-  } finally {
-    setLoading(false);
-    setIsLoadingDetail(false);
-  }
-};
-
-const refreshCurrentData = async (targetId) => {
-  await fetchBarbers(targetId);
-};
+  };
 
   const fetchBranches = async () => {
     try {
@@ -124,20 +107,14 @@ const refreshCurrentData = async (targetId) => {
     }
   };
 
-  // Khởi chạy dữ liệu ban đầu
   useEffect(() => {
-    refreshCurrentData();
+    fetchBarbers();
     fetchBranches();
   }, []);
 
-  // Lắng nghe thay đổi khi click chọn thợ khác ở sidebar (ID thay đổi thực sự)
   useEffect(() => {
     const fetchBarberDetail = async () => {
       if (!selectedBarber?.idBarber) return;
-      
-      // Nếu dữ liệu detail hiện tại đã đồng bộ với selectedBarber thì bỏ qua không gọi lại API
-      if (barberDetail && barberDetail.idBarber === selectedBarber.idBarber) return;
-
       setIsLoadingDetail(true);
       try {
         const detail = await BarberAPI.getProfile(selectedBarber.idBarber);
@@ -174,7 +151,7 @@ const refreshCurrentData = async (targetId) => {
         await BarberAPI.lock(barber.idBarber);
         showToast("success", "Tài khoản đã bị khóa!");
       }
-      await refreshCurrentData();
+      await fetchBarbers();
     } catch (error) {
       showToast("error", error?.response?.data?.message || `Không thể ${action} tài khoản!`);
     }
@@ -225,8 +202,9 @@ const refreshCurrentData = async (targetId) => {
       });
       showToast("success", "Cập nhật thông tin thợ thành công!");
       setShowEditModal(false);
-      // Chỉ cần 1 hàm này để cập nhật toàn bộ trạng thái mới mà không bị lặp request
-      await refreshCurrentData();
+      await fetchBarbers();
+      const updatedDetail = await BarberAPI.getProfile(selectedBarber.idBarber);
+      setBarberDetail(updatedDetail);
     } catch (error) {
       showToast("error", error?.response?.data?.message || "Không thể cập nhật!");
     }
@@ -246,7 +224,7 @@ const refreshCurrentData = async (targetId) => {
       if (res.success) {
         showToast("success", res.message);
         setShowChangeBranch(false);
-        await refreshCurrentData();
+        await fetchBarbers();
       } else {
         showToast("error", res.message);
       }
@@ -261,7 +239,9 @@ const refreshCurrentData = async (targetId) => {
       const res = await BarberAPI.cancelLockDate(currentProfile.idBarber);
       if (res?.success) {
         showToast("success", res.message);
-        await refreshCurrentData();
+        await fetchBarbers();
+        const updatedDetail = await BarberAPI.getProfile(currentProfile.idBarber);
+        setBarberDetail(updatedDetail);
       }
     } catch (err) {
       showToast("error", err?.message || "Không thể hủy lịch khóa!");
@@ -427,25 +407,6 @@ const refreshCurrentData = async (targetId) => {
                       </>
                     )}
                   </div>
-                </div>
-              </div>
-
-              {/* KPI Strip */}
-              <div className={cx("kpiStrip")}>
-                <div className={cx("kpiItem")}>
-                  <label>Đánh giá</label>
-                  <strong>{currentProfile.rating || currentProfile.avgRate || "—"}</strong>
-                  <span>/ 5.0 sao</span>
-                </div>
-                <div className={cx("kpiItem")}>
-                  <label>Khách đã phục vụ</label>
-                  <strong>{currentProfile.customers || 0}</strong>
-                  <span>lượt</span>
-                </div>
-                <div className={cx("kpiItem")}>
-                  <label>Kinh nghiệm</label>
-                  <strong>{currentProfile.experienceYears || "—"}</strong>
-                  <span>năm</span>
                 </div>
               </div>
 
@@ -900,8 +861,12 @@ const refreshCurrentData = async (targetId) => {
           barber={currentProfile}
           onClose={() => setShowLockModal(false)}
           onSuccess={async () => {
-            // Chỉ cần kích hoạt một chuỗi làm mới tinh gọn chạy song song duy nhất
-            await refreshCurrentData();
+            await fetchBarbers();
+            const updatedDetail = await BarberAPI.getProfile(selectedBarber.idBarber);
+            setBarberDetail(updatedDetail);
+            const updatedList = await BarberAPI.getAll();
+            const updatedSel = updatedList.find((b) => b.idBarber === selectedBarber.idBarber);
+            if (updatedSel) setSelectedBarber(updatedSel);
             setShowLockModal(false);
           }}
           showToast={showToast}
