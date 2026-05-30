@@ -19,14 +19,9 @@ const router = express.Router();
 const receptionistOnly = authorize(["receptionist"]);
 const barberOnly        = authorize(["barber"]);
 const staffOnly         = authorize(["receptionist", "barber", "admin"]);
-
-// ═══════════════════════════════════════════════════════════════════════════
-// 1. PUBLIC — không cần đăng nhập
-// ═══════════════════════════════════════════════════════════════════════════
 router.get("/branches",             getBranches);
 router.get("/branches/:idBranch",   getBranchDetails);
 
-// slot đã đặt — customer cần xem để chọn giờ
 router.get("/barbers/:idBarber/booked-slots", getBookedSlotsByBarber);
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -45,7 +40,7 @@ router.put ("/:idBooking/cancel",     authenticate, receptionistOnly, cancelBook
 // 4. BARBER
 // ═══════════════════════════════════════════════════════════════════════════
 router.get("/barber",                 authenticate, barberOnly, getBookingsForBarber);
-router.get("/barbers/:idBarber",      authenticate, barberOnly, getBookingsByBarber);
+router.get("/barbers/:idBarber",      authenticate,getBookingsByBarber);
 
 router.post(
   "/:id/complete",

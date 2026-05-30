@@ -495,7 +495,6 @@ export const getBookedSlotsByBarber = async (
 
 
 export const getBookingsByBranchService = async (idBranch, date) => {
-  // Bước 1: lấy danh sách idBarber thuộc branch
   const barbers = await db.Barber.findAll({
     where: { idBranch },
     attributes: ["idBarber"],
@@ -703,4 +702,40 @@ export const getBookingsByBranchService = async (idBranch, date) => {
     return null;
   }
 }).filter(Boolean);
+};
+export const getBarberBookingsNext7Days = async (idBarber) => {
+  // 1. Check trạng thái tài khoản thợ
+  const barber = await db.Barber.findByPk(idBarber, {
+    attributes: ["idBarber", "isLocked"],
+  });
+
+  if (!barber) {
+    // Ném lỗi ra để Controller bắt và tự xử lý mã 404
+    throw new Error("BARBER_NOT_FOUND");
+  }
+
+  // 2. NẾU THỢ BỊ KHÓA -> Trả về isLocked = true và mảng rỗng
+  if (barber.isLocked) {
+    return { isLocked: true, bookings: [] };
+  }
+
+  // 3. Giới hạn thời gian 7 ngày
+  const today = moment().format("YYYY-MM-DD");
+  const next7Days = moment().add(7, "days").format("YYYY-MM-DD");
+
+  // 4. Lấy lịch
+  const bookings = await db.Booking.findAll({
+    where: {
+      idBarber,
+      bookingDate: { [Op.between]: [today, next7Days] },
+      status: { [Op.in]: ["Pending", "Confirmed", "InProgress"] },
+    },
+    attributes: ["idBooking", "bookingDate", "bookingTime", "status"],
+    order: [
+      ["bookingDate", "ASC"],
+      ["bookingTime", "ASC"],
+    ],
+  });
+
+  return { isLocked: false, bookings };
 };

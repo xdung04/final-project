@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import classNames from "classnames/bind";
 import { 
@@ -45,21 +45,9 @@ const menuItems = [
   { id: "luong", label: "Lương Thưởng", path: "/admin/payroll", icon: <Wallet size={20} strokeWidth={1.5} />, category: "finance" },
   { id: "hr-policy", label: "Chính Sách Thợ", path: "/admin/hr-policy", icon: <Briefcase size={20} strokeWidth={1.5} />, category: "finance" },
   { id: "loyalty", label: "Điểm Khách Hàng", path: "/admin/loyalty", icon: <Award size={20} strokeWidth={1.5} />, category: "management" },
-{ id: "hairStyle", label: "Kiểu Tóc", path: "/admin/hair-style", icon: <Wand2 size={20} strokeWidth={1.5} />, category: "management" },
-  {
-  id: "tintuc",
-  label: "Tin Tức",
-  path: "/admin/news",
-  icon: <Newspaper size={20} strokeWidth={1.5} />,
-  category: "management" 
-},
+  { id: "hairStyle", label: "Kiểu Tóc", path: "/admin/hair-style", icon: <Wand2 size={20} strokeWidth={1.5} />, category: "management" },
+  { id: "tintuc", label: "Tin Tức", path: "/admin/news", icon: <Newspaper size={20} strokeWidth={1.5} />, category: "management" },
 ];
-
-const menuCategories = {
-  dashboard: { label: "Dashboard", items: [] },
-  management: { label: "Quản Lý", items: [] },
-  finance: { label: "Tài Chính", items: [] }
-};
 
 function Admin() {
   const { user, accessToken } = useAuth();
@@ -76,24 +64,37 @@ function Admin() {
   const notifyRef = useRef(null);
   const dialogRef = useRef(null);
 
-  // Phân loại menu
-  Object.keys(menuCategories).forEach(key => menuCategories[key].items = []);
-  menuItems.forEach(item => {
-    if (menuCategories[item.category]) {
-      menuCategories[item.category].items.push(item);
-    }
-  });
+  // ✅ TỐI ƯU: Sử dụng useMemo phân loại menu để TRÁNH biến đổi biến toàn cục (Global Mutation)
+  const menuCategories = useMemo(() => {
+    const categories = {
+      dashboard: { label: "Dashboard", items: [] },
+      management: { label: "Quản Lý", items: [] },
+      finance: { label: "Tài Chính", items: [] }
+    };
+    
+    menuItems.forEach(item => {
+      if (categories[item.category]) {
+        categories[item.category].items.push(item);
+      }
+    });
+    return categories;
+  }, []);
 
-  const currentMenuItem = menuItems.find(item => item.path === location.pathname) || menuItems[0];
+  const currentMenuItem = useMemo(() => {
+    return menuItems.find(item => item.path === location.pathname) || menuItems[0];
+  }, [location.pathname]);
+
   const activeId = currentMenuItem.id;
 
-  // Lấy thông báo
+  // ✅ TỐI ƯU: Thêm cờ dọn dẹp (isMounted) tránh leak và crash khi React bóc tách component đột ngột
   useEffect(() => {
     if (!accessToken) return;
+    let isMounted = true;
+
     const loadData = async () => {
       try {
         const notifyData = await fetchMyNotifications(accessToken);
-        if (notifyData) {
+        if (notifyData && isMounted) {
           setUnreadCount(notifyData.unreadCount || 0);
           setNotifications(notifyData.notifications || []);
         }
@@ -101,7 +102,12 @@ function Admin() {
         console.error("Lỗi tải thông báo:", error);
       }
     };
+
     loadData();
+
+    return () => {
+      isMounted = false; // Ngắt cập nhật state nếu component đã bị unmount
+    };
   }, [accessToken]);
 
   // Đóng thông báo khi click ngoài
