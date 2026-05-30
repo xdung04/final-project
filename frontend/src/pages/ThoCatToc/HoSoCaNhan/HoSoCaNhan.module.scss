@@ -1,29 +1,33 @@
-// ─── Tokens ──────────────────────────────────────────────────
-$gold:        #C9A84C;
-$gold-hover:  #BA9A3E;
-$gold-dim:    #8A6A28;
-$gold-faint:  rgba(201, 168, 76, 0.15);
-$gold-border: rgba(201, 168, 76, 0.3);
+// ─── Design Tokens ───────────────────────────────────────────
+$gold:         #C9A84C;
+$gold-hover:   #BA9A3E;
+$gold-dim:     #8A6A28;
+$gold-faint:   rgba(201, 168, 76, 0.12);
+$gold-border:  rgba(201, 168, 76, 0.28);
 
-$ink:         #1A1612;
-$ink-text:    #F5F0E8;
-$ink-muted:   rgba(245, 240, 232, 0.5);
+$ink:          #1A1612;
+$ink-2:        #2C2720;
 
-$card-bg:     #FFFFFF;
-$input-bg:    #F9F6F1;
-$page-bg:     #F7F4EF;
+$card-bg:      #FFFFFF;
+$input-bg:     #F9F6F1;
+$page-bg:      #F7F4EF;
+$surface-2:    #F2EFE9;
 
-$border:      1px solid rgba(0, 0, 0, 0.07);
+$border:       1px solid rgba(0, 0, 0, 0.07);
+$border-gold:  1px solid $gold-border;
 
-$danger:      #E24B4A;
+$danger:       #D94040;
+$danger-bg:    rgba(217, 64, 64, 0.07);
+$danger-border:rgba(217, 64, 64, 0.25);
 
-$radius-sm:   6px;
-$radius-md:   10px;
-$radius-lg:   14px;
+$green:        #3B9B5E;
+$green-bg:     rgba(59, 155, 94, 0.08);
 
-$ff-serif:    Georgia, 'Times New Roman', serif;
-
-$transition:  0.15s;
+$ff-serif:     Georgia, 'Times New Roman', serif;
+$radius-sm:    5px;
+$radius-md:    10px;
+$radius-lg:    14px;
+$t:            0.15s;
 
 // ─── Loading / Empty ─────────────────────────────────────────
 .loadingContainer,
@@ -32,270 +36,330 @@ $transition:  0.15s;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 60px 20px;
+  gap: 12px;
+  padding: 80px 20px;
   background: $card-bg;
   border: $border;
   border-radius: $radius-lg;
-  color: #888;
-  max-width: 800px;
-  margin: 40px auto;
-  gap: 12px;
+  color: #999;
 
-  .loadingIcon {
-    color: $gold;
-    animation: spin 0.9s linear infinite;
-  }
+  .loadingIcon { color: $gold; animation: spin 0.9s linear infinite; }
 
   p {
     font-size: 11px;
     font-weight: 600;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: #888;
+    color: #aaa;
     margin: 0;
   }
 }
 
-// ─── Container ───────────────────────────────────────────────
+// ─── Root Container ───────────────────────────────────────────
 .container {
-  max-width: 800px;
-  margin: 0 auto;
-  background: $card-bg;
-  border: $border;
-  border-radius: $radius-lg;
-  padding: 28px 32px;
-  color: $ink;
-  transition: opacity $transition;
-}
-
-.savingState {
-  opacity: 0.55;
-  pointer-events: none;
-}
-
-// ─── Server Error Banner ──────────────────────────────────────
-.serverError {
-  background: rgba(226, 75, 74, 0.08);
-  border: 1px solid rgba(226, 75, 74, 0.3);
-  border-radius: $radius-md;
-  color: $danger;
-  font-size: 13px;
-  font-weight: 600;
-  padding: 10px 14px;
-  margin-top: 16px;
-}
-
-// ─── Header ──────────────────────────────────────────────────
-.header {
   display: flex;
-  gap: 28px;
-  border-bottom: $border;
-  padding-bottom: 24px;
+  flex-direction: column;
+  gap: 0;
+  color: $ink;
+  animation: fadeIn 0.3s ease;
+}
+
+// ─── HERO HEADER ─────────────────────────────────────────────
+// Dark strip, full-width — avatar + name + key stats inline
+.hero {
+  background: $ink-2;
+  border-radius: $radius-lg $radius-lg 0 0;
+  padding: 28px 32px 24px;
+  display: flex;
+  align-items: flex-end;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+
+  // subtle texture
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 40px,
+        rgba(255,255,255,0.015) 40px,
+        rgba(255,255,255,0.015) 41px
+      );
+    pointer-events: none;
+  }
 
   @media (max-width: 600px) {
     flex-direction: column;
     align-items: center;
     text-align: center;
+    padding: 24px 20px 20px;
   }
 }
 
 // ─── Avatar ──────────────────────────────────────────────────
-.avatarBox {
+.avatarWrap {
   position: relative;
   flex-shrink: 0;
 }
 
 .avatar {
-  width: 120px;
-  height: 120px;
+  width: 100px;
+  height: 100px;
   border-radius: $radius-md;
   object-fit: cover;
-  border: $border;
+  display: block;
+  border: 2px solid rgba(255,255,255,0.12);
   outline: 2px solid $gold-border;
   outline-offset: 3px;
-  background: $input-bg;
-  display: block;
+  background: $ink;
 }
 
-.changeAvatar {
+.avatarEditLabel {
   position: absolute;
-  bottom: -6px;
-  right: -6px;
-  background: $ink;
-  color: $gold;
-  width: 30px;
-  height: 30px;
-  border-radius: $radius-sm;
+  inset: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 5px;
+  background: rgba(0,0,0,0.52);
+  border-radius: $radius-md;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   cursor: pointer;
-  border: 2px solid $card-bg;
-  transition: background $transition, color $transition;
+  opacity: 0;
+  transition: opacity $t;
+  text-align: center;
+  line-height: 1.3;
 
-  &:hover {
-    background: $gold;
-    color: $ink;
-  }
+  svg { color: $gold; }
 }
 
-// ─── Info ────────────────────────────────────────────────────
-.info {
+.avatarWrap:hover .avatarEditLabel { opacity: 1; }
+
+// ─── Hero Info ───────────────────────────────────────────────
+.heroInfo {
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 7px;
+  gap: 8px;
+  position: relative;
+  z-index: 1;
 }
 
-.name {
+.heroName {
   font-family: $ff-serif;
-  font-size: 24px;
-  font-weight: 600;
-  color: $ink;
-  margin: 0 0 2px;
+  font-size: 26px;
+  font-weight: 700;
+  color: #F5F0E8;
+  margin: 0;
+  line-height: 1.15;
   letter-spacing: 0.01em;
 }
 
-.branch,
-.contact {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  color: #888;
-  margin: 0;
-
-  svg { color: $gold-dim; flex-shrink: 0; }
-
-  @media (max-width: 600px) { justify-content: center; }
-}
-
-.contact {
-  gap: 16px;
-
-  span {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-  }
-}
-
-// ─── Experience Badge ─────────────────────────────────────────
-.expBadge {
+.heroPlan {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  font-size: 12px;
-  font-weight: 600;
-  color: $gold-dim;
+  gap: 6px;
   background: $gold-faint;
   border: 1px solid $gold-border;
   border-radius: $radius-sm;
-  padding: 4px 10px;
-  width: fit-content;
-
-  svg { color: $gold-dim; }
-
-  @media (max-width: 600px) { margin: 0 auto; }
-}
-
-// ─── Rating Box ──────────────────────────────────────────────
-.ratingBox {
-  margin-top: 4px;
-  font-size: 12px;
-  color: #666;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  background: $gold-faint;
-  border: 1px solid $gold-border;
-  border-radius: $radius-md;
-  padding: 7px 13px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: $gold;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
   width: fit-content;
 
   svg { color: $gold; }
 
-  strong {
-    font-family: $ff-serif;
-    font-size: 16px;
-    font-weight: 700;
-    color: $gold-dim;
-  }
+  @media (max-width: 600px) { margin: 0 auto; }
+}
 
-  @media (max-width: 600px) { margin: 6px auto 0; }
+.heroMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin-top: 2px;
+
+  @media (max-width: 600px) { justify-content: center; }
+}
+
+.heroMetaItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: rgba(245, 240, 232, 0.55);
+
+  svg { color: $gold; flex-shrink: 0; opacity: 0.8; }
+
+  strong { color: rgba(245, 240, 232, 0.85); font-weight: 500; }
+}
+
+.heroMetaBreak {
+  width: 100%;
+  height: 0;
+}
+
+// ─── Rating Pill (inside hero, right side) ───────────────────
+.heroRating {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  align-self: center;
+
+  @media (max-width: 600px) {
+    align-items: center;
+    align-self: auto;
+  }
+}
+
+.ratingScore {
+  font-family: $ff-serif;
+  font-size: 38px;
+  font-weight: 700;
+  color: $gold;
+  line-height: 1;
+}
+
+.ratingStars {
+  display: flex;
+  gap: 3px;
+}
+
+.starFilled { color: $gold; }
+.starEmpty  { color: rgba(201, 168, 76, 0.25); }
+
+.ratingCount {
+  font-size: 11px;
+  color: rgba(245, 240, 232, 0.4);
+  text-align: right;
+
+  @media (max-width: 600px) { text-align: center; }
+}
+
+// ─── BODY (tabs + form area) ──────────────────────────────────
+.body {
+  background: $card-bg;
+  border: $border;
+  border-top: none;
+  border-radius: 0 0 $radius-lg $radius-lg;
+  overflow: hidden;
 }
 
 // ─── Section ─────────────────────────────────────────────────
 .section {
-  margin-top: 24px;
+  padding: 22px 28px;
+  border-bottom: $border;
+
+  &:last-child { border-bottom: none; }
+
+  @media (max-width: 600px) { padding: 18px 16px; }
 }
 
-.sectionTitle {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  color: $gold-dim;
-  text-transform: uppercase;
-  margin: 0 0 14px;
+.sectionHead {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
+  margin: 0 0 16px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: $gold-dim;
 
-  svg { color: $gold-dim; flex-shrink: 0; }
+  svg { color: $gold; flex-shrink: 0; }
 
   &::after {
     content: '';
     flex: 1;
     height: 1px;
-    background: rgba(0, 0, 0, 0.07);
+    background: rgba(0,0,0,0.06);
   }
 }
 
 // ─── Info Grid (view mode) ────────────────────────────────────
 .infoGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 10px;
 }
 
-.infoItem {
+.infoCard {
   background: $input-bg;
   border: $border;
   border-radius: $radius-md;
-  padding: 10px 14px;
+  padding: 11px 14px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
+
+  // full-width variant
+  &.wide { grid-column: 1 / -1; }
 }
 
 .infoLabel {
   font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
+  font-weight: 700;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: #aaa;
+  color: #b0a898;
 }
 
 .infoValue {
   font-size: 13px;
   color: $ink;
-  line-height: 1.5;
+  line-height: 1.55;
   white-space: pre-wrap;
   word-break: break-word;
+
+  &.muted { color: #bbb; font-style: italic; }
 }
 
-.desc {
+// ─── Description pre ─────────────────────────────────────────
+.descPre {
   background: $input-bg;
   border: $border;
   border-radius: $radius-md;
   padding: 14px 16px;
-  white-space: pre-wrap;
-  color: #555;
-  font-size: 13px;
-  line-height: 1.7;
   margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 13px;
+  color: #555;
+  line-height: 1.75;
   font-family: inherit;
+
+  &.muted { color: #bbb; font-style: italic; }
+}
+
+// ─── Experience Badge (view) ──────────────────────────────────
+.expBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: $gold-faint;
+  border: 1px solid $gold-border;
+  border-radius: $radius-sm;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: $gold-dim;
+
+  svg { color: $gold-dim; }
 }
 
 // ─── Edit Form ───────────────────────────────────────────────
@@ -305,163 +369,234 @@ $transition:  0.15s;
   gap: 0;
 }
 
-// Field group (label + input + error)
 .fieldGroup {
   display: flex;
   flex-direction: column;
   gap: 5px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 
   &:last-child { margin-bottom: 0; }
 }
 
 .fieldLabel {
   font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
+  font-weight: 700;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
   color: #aaa;
 }
 
-// Grid layouts for edit mode
-.grid2 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0 16px;
-
-  @media (max-width: 560px) {
-    grid-template-columns: 1fr;
-  }
-}
-
-.grid1 {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-// ─── Inputs ──────────────────────────────────────────────────
 .input,
-.textarea {
+.textarea,
+.selectInput {
   width: 100%;
   background: $input-bg;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0,0,0,0.09);
   border-radius: $radius-md;
-  padding: 8px 11px;
+  padding: 9px 12px;
   font-size: 13px;
   color: $ink;
   font-family: inherit;
   outline: none;
-  transition: border-color $transition, background $transition;
+  transition: border-color $t, box-shadow $t;
   box-sizing: border-box;
 
   &:focus {
     border-color: $gold;
     background: $card-bg;
+    box-shadow: 0 0 0 3px rgba(201,168,76,0.1);
   }
 
-  &::placeholder { color: #c0b8ae; }
+  &::placeholder { color: #c8bfb5; }
 }
 
 .textarea {
   resize: vertical;
-  line-height: 1.6;
-  min-height: 80px;
+  line-height: 1.65;
+  min-height: 88px;
 }
 
-.disabled {
-  background: $input-bg;
-  color: #aaa;
+.selectInput {
+  appearance: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23aaa' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+
+.inputDisabled {
+  background: $surface-2;
+  color: #bbb;
   cursor: not-allowed;
-  opacity: 0.6;
+  border-color: transparent;
 
   &:focus {
-    border-color: rgba(0, 0, 0, 0.1);
-    background: $input-bg;
+    border-color: transparent;
+    box-shadow: none;
   }
 }
 
 .inputError {
   border-color: $danger !important;
-
-  &:focus { border-color: $danger !important; }
+  &:focus { box-shadow: 0 0 0 3px rgba(217,64,64,0.1) !important; }
 }
 
 .errorText {
-  color: $danger;
   font-size: 11px;
   font-weight: 600;
+  color: $danger;
+  letter-spacing: 0.04em;
   margin: 0;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
-// ─── Actions ─────────────────────────────────────────────────
+// ─── Grid layouts ─────────────────────────────────────────────
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 16px;
+
+  @media (max-width: 560px) { grid-template-columns: 1fr; }
+}
+
+.grid3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0 16px;
+
+  @media (max-width: 640px) { grid-template-columns: 1fr; }
+}
+
+// ─── Character counter ────────────────────────────────────────
+.fieldFooter {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -8px;
+  margin-bottom: 4px;
+}
+
+.charCount {
+  font-size: 10px;
+  color: #ccc;
+  font-variant-numeric: tabular-nums;
+
+  &.warn { color: $danger; }
+}
+
+// ─── Readonly lock hint ───────────────────────────────────────
+.lockHint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #bbb;
+  padding: 8px 12px;
+  background: $surface-2;
+  border: $border;
+  border-radius: $radius-md;
+  font-style: italic;
+
+  svg { flex-shrink: 0; color: #ccc; }
+}
+
+// ─── Actions bar ─────────────────────────────────────────────
 .actions {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  margin-top: 24px;
-  padding-top: 18px;
+  padding: 18px 28px;
   border-top: $border;
+  background: $input-bg;
+  border-radius: 0 0 $radius-lg $radius-lg;
+
+  @media (max-width: 600px) {
+    padding: 14px 16px;
+    flex-wrap: wrap;
+    button { flex: 1; justify-content: center; }
+  }
 }
 
-// Shared button base
-%btnBase {
+%btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 18px;
+  gap: 7px;
+  padding: 9px 20px;
   border-radius: $radius-md;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 600;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.025em;
   cursor: pointer;
-  transition: background $transition, color $transition, border-color $transition;
+  transition: background $t, color $t, border-color $t, opacity $t;
 
-  &:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
+  &:disabled { opacity: 0.45; cursor: not-allowed; }
 }
 
-.editBtn {
-  @extend %btnBase;
+.btnEdit {
+  @extend %btn;
   background: transparent;
-  color: #666;
-  border: 1px solid rgba(0, 0, 0, 0.12);
+  color: #777;
+  border: 1px solid rgba(0,0,0,0.12);
 
-  &:hover:not(:disabled) {
-    background: $input-bg;
-    color: $ink;
-    border-color: rgba(0, 0, 0, 0.2);
-  }
+  &:hover:not(:disabled) { background: $surface-2; color: $ink; }
 }
 
-.saveBtn {
-  @extend %btnBase;
+.btnSave {
+  @extend %btn;
   background: $gold;
   color: $ink;
   border: none;
+  font-weight: 700;
 
   &:hover:not(:disabled) { background: $gold-hover; }
 }
 
-.cancelBtn {
-  @extend %btnBase;
+.btnCancel {
+  @extend %btn;
   background: transparent;
-  color: #666;
-  border: 1px solid rgba(0, 0, 0, 0.12);
+  color: #777;
+  border: 1px solid rgba(0,0,0,0.1);
 
-  &:hover:not(:disabled) {
-    background: $input-bg;
-    color: $ink;
-  }
+  &:hover:not(:disabled) { background: $surface-2; color: $ink; }
 }
 
-// ─── Spin animation ──────────────────────────────────────────
-.spin {
-  animation: spin 0.9s linear infinite;
+// ─── Spinning icon ───────────────────────────────────────────
+.spin { animation: spin 0.9s linear infinite; }
+
+// ─── Unsaved indicator ───────────────────────────────────────
+.unsavedDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: $gold;
+  display: inline-block;
+  margin-right: 2px;
+}
+
+// ─── Server error ─────────────────────────────────────────────
+.serverError {
+  background: $danger-bg;
+  border: 1px solid $danger-border;
+  border-radius: $radius-md;
+  color: $danger;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 10px 14px;
+  margin: 12px 28px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+// ─── Saving overlay ───────────────────────────────────────────
+.savingOverlay {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+// ─── Animations ──────────────────────────────────────────────
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes spin {
@@ -471,17 +606,11 @@ $transition:  0.15s;
 
 // ─── Responsive ──────────────────────────────────────────────
 @media (max-width: 768px) {
-  .container {
-    padding: 20px 16px;
-  }
+  .infoGrid { grid-template-columns: 1fr 1fr; }
+}
 
-  .actions {
-    flex-wrap: wrap;
-
-    button { flex: 1; justify-content: center; }
-  }
-
-  .grid2 {
-    grid-template-columns: 1fr;
-  }
+@media (max-width: 480px) {
+  .infoGrid { grid-template-columns: 1fr; }
+  .grid2    { grid-template-columns: 1fr; }
+  .grid3    { grid-template-columns: 1fr; }
 }
