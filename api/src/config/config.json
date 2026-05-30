@@ -1,42 +1,28 @@
 {
   "development": {
-    "username": "rpWeBffxsABWN46.root",
-    "password": "I1zjl93hQooAG5uH",
+    "username": "root",
+    "password": "123456789",
     "database": "barbershop",
-    "host": "gateway01.ap-southeast-1.prod.aws.tidbcloud.com",
-    "port": 4000,
-    "dialect": "mysql",
-    "dialectOptions": {
-      "ssl": {
-        "require": true,
-        "rejectUnauthorized": true
-      }
-    }
+    "host": "127.0.0.1",
+    "port": 3306,
+    "dialect": "mysql"
   },
+
   "test": {
-    "username": "rpWeBffxsABWN46.root",
-    "password": null,
+    "username": "root",
+    "password": "123456789",
     "database": "database_test",
-    "host": "gateway01.ap-southeast-1.prod.aws.tidbcloud.com",
-    "dialect": "mysql",
-    "dialectOptions": {
-      "ssl": {
-        "require": true,
-        "rejectUnauthorized": true
-      }
-    }
+    "host": "127.0.0.1",
+    "port": 3306,
+    "dialect": "mysql"
   },
+
   "production": {
-    "username": "rpWeBffxsABWN46.root",
-    "password": null,
+    "username": "root",
+    "password": "",
     "database": "database_production",
-    "host": "gateway01.ap-southeast-1.prod.aws.tidbcloud.com",
-    "dialect": "mysql",
-    "dialectOptions": {
-      "ssl": {
-        "require": true,
-        "rejectUnauthorized": true
-      }
-    }
+    "host": "127.0.0.1",
+    "port": 3306,
+    "dialect": "mysql"
   }
 }

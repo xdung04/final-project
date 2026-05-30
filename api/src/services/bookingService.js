@@ -463,7 +463,6 @@ export const getBookedSlotsByBarber = async (idBranch, idBarber, bookingDate) =>
 };
 
 export const getBookingsByBranchService = async (idBranch, date) => {
-  // Bước 1: lấy danh sách idBarber thuộc branch
   const barbers = await db.Barber.findAll({
     where: { idBranch },
     attributes: ["idBarber"],
