@@ -80,37 +80,40 @@ function ThoCatToc() {
   const [newBranchId, setNewBranchId] = useState("");
 
   // ── Fetch ────────────────────────────────────────────────────────────────────
-  const fetchBarbers = async () => {
-    try {
-      const activeId = targetId || selectedBarber?.idBarber;
+// ── Fetch ────────────────────────────────────────────────────────────────────
+const fetchBarbers = async (targetId) => {
+  try {
+    const activeId = targetId || selectedBarber?.idBarber;
 
-      // Kích hoạt đồng thời cả 2 API (Danh sách + Chi tiết) chạy song song nếu đã chọn thợ
-      const [barberList, detail] = await Promise.all([
-        BarberAPI.getAll(),
-        activeId ? BarberAPI.getProfile(activeId) : Promise.resolve(null),
-      ]);
+    const [barberList, detail] = await Promise.all([
+      BarberAPI.getAll(),
+      activeId ? BarberAPI.getProfile(activeId) : Promise.resolve(null),
+    ]);
 
-      const safeBarberList = barberList || [];
-      setBarbers(safeBarberList);
+    const safeBarberList = barberList || [];
+    setBarbers(safeBarberList);
 
-      if (safeBarberList.length > 0) {
-        // Cập nhật lại reference cho thợ đang được chọn hoặc lấy thợ đầu tiên nếu chưa chọn ai
-        const updated = safeBarberList.find((b) => b.idBarber === activeId) || safeBarberList[0];
-        setSelectedBarber(updated);
-      } else {
-        setSelectedBarber(null);
-      }
-
-      if (detail) {
-        setBarberDetail(detail);
-      }
-    } catch (error) {
-      showToast("error", error?.message || "Không thể tải hoặc làm mới dữ liệu!");
-    } finally {
-      setLoading(false);
-      setIsLoadingDetail(false);
+    if (safeBarberList.length > 0) {
+      const updated = safeBarberList.find((b) => b.idBarber === activeId) || safeBarberList[0];
+      setSelectedBarber(updated);
+    } else {
+      setSelectedBarber(null);
     }
-  };
+
+    if (detail) {
+      setBarberDetail(detail);
+    }
+  } catch (error) {
+    showToast("error", error?.message || "Không thể tải hoặc làm mới dữ liệu!");
+  } finally {
+    setLoading(false);
+    setIsLoadingDetail(false);
+  }
+};
+
+const refreshCurrentData = async (targetId) => {
+  await fetchBarbers(targetId);
+};
 
   const fetchBranches = async () => {
     try {
