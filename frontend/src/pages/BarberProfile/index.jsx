@@ -1,36 +1,42 @@
 import React, { useEffect, useState } from "react";
 import styles from "./BarberProfile.module.scss";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { BarberAPI } from "~/apis/barberAPI";
 import { fetchReelsByBarberId } from "~/services/reelService";
 import VideoCard from "~/components/VideoCard";
 import VideoDetailDialog from "~/components/VideoDetailDialog";
 import { useAuth } from "~/context/AuthContext";
 import { useToast } from "~/context/ToastContext";
-import { useNavigate } from "react-router-dom";
+
+function renderStars(avg) {
+  const rounded = Math.round(avg);
+  return "★".repeat(Math.min(rounded, 5)) + "☆".repeat(Math.max(0, 5 - rounded));
+}
 
 function BarberProfile() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { accessToken, isLogin, loading: isAuthLoading } = useAuth();
+  const { showToast } = useToast();
+
   const [barber, setBarber] = useState(null);
   const [reels, setReels] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(null);
   const [globalMuted, setGlobalMuted] = useState(true);
   const [loading, setLoading] = useState(true);
-  const { accessToken, isLogin, loading: isAuthLoading } = useAuth();
-  const { showToast } = useToast();
-  const navigate = useNavigate();
 
   useEffect(() => {
     if (isAuthLoading) return;
-
     const loadData = async () => {
       try {
-        const profile = await BarberAPI.getProfile(id);
-        const videos = await fetchReelsByBarberId(id, 1, 20, accessToken);
+        const [profile, videos] = await Promise.all([
+          BarberAPI.getProfile(id),
+          fetchReelsByBarberId(id, 1, 20, accessToken),
+        ]);
         setBarber(profile);
         setReels(videos);
       } catch (err) {
-        console.error("Lỗi khi tải dữ liệu:", err);
+        console.error("Lỗi khi tải dữ liệu barber:", err);
       } finally {
         setLoading(false);
       }
@@ -38,9 +44,7 @@ function BarberProfile() {
     loadData();
   }, [id, accessToken, isAuthLoading]);
 
-  const handleHashtagClick = (tag) => {
-    navigate("/reels", { state: { keyword: `#${tag}` } });
-  };
+  const handleHashtagClick = (tag) => navigate("/reels", { state: { keyword: `#${tag}` } });
 
   const handleOpenDetail = (idx) => {
     if (!isLogin) {
@@ -58,96 +62,133 @@ function BarberProfile() {
     setReels((prev) => prev.map((r) => (r.idReel === idReel ? { ...r, isLiked: liked, likesCount: count } : r)));
   };
 
-  if (loading) return <div className={styles.loading}>Đang tải dữ liệu...</div>;
-  if (!barber) return <div className={styles.empty}>Không tìm thấy thợ cắt tóc này.</div>;
-
-  // Parse certificates thành mảng (có thể lưu dạng string nhiều dòng)
-  const certificateList = barber.certificates ? barber.certificates.split("\n").filter((c) => c.trim()) : [];
-
-  return (
-    <div className={styles.container}>
-      <div className={styles.grainOverlay}></div>
-
-      {/* ===== THÔNG TIN CƠ BẢN ===== */}
-      <div className={styles.profileSection}>
-        <img src={barber.image || "/default-avatar.png"} alt={barber.fullName} className={styles.avatar} />
-        <div className={styles.info}>
-          <p className={styles.branch}>{barber.branchName}</p>
-          <h2 className={styles.name}>{barber.fullName}</h2>
-
-          <div className={styles.contact}>
-            <span>📧 {barber.email}</span>
-            <span>☎️ {barber.phoneNumber}</span>
-          </div>
-
-          <div className={styles.rating}>
-            PREMIUM BARBER ★ {barber.avgRate} ({barber.totalRate} REVIEWS)
-          </div>
-
-          {/* ── THỐNG KÊ NHANH ── */}
-          <div className={styles.quickStats}>
-            {barber.experienceYears > 0 && (
-              <div className={styles.statItem}>
-                <span className={styles.statValue}>{barber.experienceYears}</span>
-                <span className={styles.statLabel}>NĂM KINH NGHIỆM</span>
-              </div>
-            )}
-            {barber.specialty && (
-              <div className={styles.statItem}>
-                <span className={styles.statValue}>✦</span>
-                <span className={styles.statLabel}>{barber.specialty}</span>
-              </div>
-            )}
-          </div>
-
-          <div className={styles.descBox}>
-            <h3>STORY & EXPERTISE</h3>
-            <p className={styles.desc}>{barber.profileDescription}</p>
-          </div>
+  if (loading) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.stateWrapper}>
+          <p className={styles.stateText}>Đang tải thông tin...</p>
         </div>
       </div>
+    );
+  }
 
-      {/* ===== THÔNG TIN CHI TIẾT BỔ SUNG ===== */}
-      <div className={styles.detailSection}>
-        {/* Phong cách */}
-        {barber.style && (
-          <div className={styles.detailCard}>
-            <h4 className={styles.detailTitle}>PHONG CÁCH</h4>
-            <p className={styles.detailText}>{barber.style}</p>
-          </div>
-        )}
-
-        {/* Triết lý nghề */}
-        {barber.philosophy && (
-          <div className={styles.detailCard}>
-            <h4 className={styles.detailTitle}>TRIẾT LÝ NGHỀ</h4>
-            <p className={styles.detailText}>{barber.philosophy}</p>
-          </div>
-        )}
-
-        {/* Chứng chỉ */}
-        {certificateList.length > 0 && (
-          <div className={styles.detailCard}>
-            <h4 className={styles.detailTitle}>CHỨNG CHỈ & THÀNH TỰU</h4>
-            <ul className={styles.certList}>
-              {certificateList.map((cert, idx) => (
-                <li key={idx} className={styles.certItem}>
-                  <span className={styles.certDot}>◆</span>
-                  {cert.trim()}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+  if (!barber) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.stateWrapper}>
+          <p className={styles.stateText}>Không tìm thấy thợ cắt tóc này.</p>
+        </div>
       </div>
+    );
+  }
 
-      {/* ===== VIDEO TAY NGHỀ ===== */}
-      <div className={styles.videoSection}>
-        <h3 className={styles.videoTitle}>Lookbook & Portfolio</h3>
+  const certList = barber.certificates ? barber.certificates.split("\n").filter((c) => c.trim()) : [];
+
+  return (
+    <div className={styles.page}>
+      <div className={styles.grain} aria-hidden="true" />
+
+      {/* ══════════════════════════════════════════════════════════
+          PROFILE CARD — 3 cột: ảnh | thông tin cá nhân | chi tiết
+      ══════════════════════════════════════════════════════════ */}
+      <section className={styles.profileCard}>
+        {/* CỘT 1 — Ảnh */}
+        <div className={styles.colAvatar}>
+          <img src={barber.image || "/default-avatar.png"} alt={barber.fullName} className={styles.avatar} />
+        </div>
+
+        {/* CỘT 2 — Tên, chi nhánh, sao, lượt đánh giá, kinh nghiệm, email, SĐT */}
+        <div className={styles.colInfo}>
+          <p className={styles.branch}>{barber.branchName}</p>
+          <h1 className={styles.name}>{barber.fullName}</h1>
+
+          <div className={styles.ratingRow}>
+            <span className={styles.stars}>{renderStars(barber.avgRate || 0)}</span>
+            <span className={styles.ratingNum}>{Number(barber.avgRate || 0).toFixed(1)}</span>
+            <span className={styles.ratingCount}>({barber.totalRate || 0} đánh giá)</span>
+          </div>
+
+          <div className={styles.metaList}>
+            {barber.experienceYears > 0 && (
+              <div className={styles.metaItem}>
+                <span className={styles.metaLabel}>Kinh nghiệm</span>
+                <span className={styles.metaValue}>{barber.experienceYears} năm</span>
+              </div>
+            )}
+            {barber.email && (
+              <div className={styles.metaItem}>
+                <span className={styles.metaLabel}>Email</span>
+                <span className={styles.metaValue}>{barber.email}</span>
+              </div>
+            )}
+            {barber.phoneNumber && (
+              <div className={styles.metaItem}>
+                <span className={styles.metaLabel}>Điện thoại</span>
+                <span className={styles.metaValue}>{barber.phoneNumber}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* CỘT 3 — Chuyên môn, Phong cách, Triết lý, Story, Chứng chỉ */}
+        <div className={styles.colDetail}>
+          {barber.specialty && (
+            <div className={styles.detailRow}>
+              <span className={styles.detailLabel}>Chuyên môn</span>
+              <span className={styles.detailValue}>{barber.specialty}</span>
+            </div>
+          )}
+          {barber.style && (
+            <div className={styles.detailRow}>
+              <span className={styles.detailLabel}>Phong cách</span>
+              <span className={styles.detailValue}>{barber.style}</span>
+            </div>
+          )}
+          {barber.philosophy && (
+            <div className={styles.detailRow}>
+              <span className={styles.detailLabel}>Triết lý nghề</span>
+              <span className={styles.detailValue}>{barber.philosophy}</span>
+            </div>
+          )}
+          {barber.profileDescription && (
+            <div className={styles.detailRow}>
+              <span className={styles.detailLabel}>Story &amp; Expertise</span>
+              <span className={styles.detailValue}>{barber.profileDescription}</span>
+            </div>
+          )}
+          {certList.length > 0 && (
+            <div className={styles.detailRow}>
+              <span className={styles.detailLabel}>Chứng chỉ &amp; Thành tựu</span>
+              <ul className={styles.certList}>
+                {certList.map((cert, i) => (
+                  <li key={i} className={styles.certItem}>
+                    <span className={styles.certDot} aria-hidden="true">
+                      ◆
+                    </span>
+                    {cert.trim()}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════════
+          LOOKBOOK — scroll xuống là reel
+      ══════════════════════════════════════════════════════════ */}
+      <section className={styles.videoSection} aria-label="Lookbook">
+        <div className={styles.sectionHeader}>
+          <h2 className={styles.sectionTitle}>Lookbook &amp; Portfolio</h2>
+          {reels.length > 0 && <span className={styles.sectionSub}>{reels.length} tác phẩm</span>}
+        </div>
+
         {reels.length === 0 ? (
-          <div className={styles.empty}>Chưa có tác phẩm nào được cập nhật.</div>
+          <div className={styles.stateWrapper}>
+            <p className={styles.stateText}>Chưa có tác phẩm nào được cập nhật.</p>
+          </div>
         ) : (
-          <div className={styles.grid}>
+          <div className={styles.videoGrid}>
             {reels.map((reel, idx) => (
               <VideoCard
                 key={reel.idReel}
@@ -158,9 +199,8 @@ function BarberProfile() {
             ))}
           </div>
         )}
-      </div>
+      </section>
 
-      {/* ===== DIALOG XEM VIDEO ===== */}
       {currentIndex !== null && (
         <VideoDetailDialog
           reels={reels}
