@@ -38,8 +38,6 @@ export async function up(queryInterface, Sequelize) {
       onUpdate: "CASCADE",
       onDelete: "SET NULL",
     },
-
-    // ✅ NEW
     last_message: {
       type: Sequelize.TEXT,
       allowNull: true,
@@ -48,6 +46,11 @@ export async function up(queryInterface, Sequelize) {
       type: Sequelize.INTEGER,
       allowNull: false,
       defaultValue: 0,
+    },
+    booking_state: {
+      type: Sequelize.JSON,
+      allowNull: true,
+      defaultValue: null,
     },
 
     created_at: {
@@ -64,7 +67,6 @@ export async function up(queryInterface, Sequelize) {
     },
   });
 
-  // index
   await queryInterface.addIndex("conversations", [
     "status",
     "assigned_receptionist_id",

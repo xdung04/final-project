@@ -31,7 +31,7 @@ export default (sequelize) => {
         autoIncrement: true,
       },
       customerId: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.INTEGER,
         allowNull: false,
         field: "customer_id",
       },
@@ -60,6 +60,12 @@ export default (sequelize) => {
         allowNull: false,
         defaultValue: 0,
         field: "unread_count",
+      },
+       bookingState: {
+        type: DataTypes.JSON,
+        allowNull: true,
+        defaultValue: null,
+        field: "booking_state",
       },
     },
     {

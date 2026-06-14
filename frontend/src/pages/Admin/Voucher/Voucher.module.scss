@@ -1,290 +1,347 @@
-/* ── Voucher.module.scss (Admin) ─────────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@300;400;500;700&display=swap');
+// Admin — Quản Lý Voucher Thẻ Grid Vé Barber | NOULE Barber Premium Layout
 
-.page {
-  padding: 40px;
-  background: #ffffff;
-  min-height: 100vh;
-  font-family: 'DM Sans', sans-serif;
-}
+$gold:        #C9A84C;
+$gold-hover:  #BA9A3E;
+$gold-dim:    #8A6A28;
+$gold-faint:  rgba(201, 168, 76, 0.12);
+$gold-border: rgba(201, 168, 76, 0.25);
 
-/* Header */
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 32px;
-  padding-bottom: 20px;
-  border-bottom: 1.5px solid #000;
+$ink:         #1A1612;
+$ink-text:    #F5F0E8;
+$ink-muted:   rgba(245, 240, 232, 0.5);
 
-  .header-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 32px;
-    font-weight: 800;
-    color: #000;
-    margin: 0 0 4px;
-  }
-  .header-sub {
-    font-size: 13px;
-    color: #999;
-    margin: 0;
-  }
-}
+$page-bg:     #F7F4EF;
+$card-bg:     #FFFFFF;
+$surface-2:   #F9F6F1;
 
-.btn-create {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: #000;
-  color: #fff;
-  border: none;
-  padding: 12px 24px;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: all 0.3s;
+$border:      1px solid rgba(0, 0, 0, 0.06);
+$radius-sm:   6px;
+$radius-md:   14px; // Tăng độ bo góc cho thẻ card mềm mại hẳn
+$radius-lg:   16px;
 
-  &:hover { background: #4b382a; transform: translateY(-2px); }
-}
-
-/* Summary cards */
-.summary {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-bottom: 28px;
-
-  @media (max-width: 768px) { grid-template-columns: repeat(2, 1fr); }
-}
-
-.summary-card {
-  padding: 20px;
-  border: 1px solid #eee;
-  border-top: 3px solid var(--accent, #000);
+.voucherPage {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  transition: box-shadow 0.2s;
-
-  &:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
-
-  .summary-icon { font-size: 20px; color: var(--accent, #000); }
-  .summary-count { font-size: 36px; font-weight: 800; font-family: 'Playfair Display', serif; color: #000; line-height: 1; }
-  .summary-label { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: #999; }
+  gap: 28px;
+  background: $page-bg;
+  min-height: 100vh;
+  padding: 0 8px 64px 8px;
+  color: $ink;
 }
 
-/* Filter tabs */
-.filter-tabs {
+// ── Page Heading & Filter Tabs (Giữ nguyên cấu trúc của bạn) ─────────────────
+.pageHead {
   display: flex;
-  gap: 4px;
-  margin-bottom: 20px;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 0;
-}
+  align-items: flex-end;
+  justify-content: space-between;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 
-.filter-tab {
-  padding: 10px 20px;
-  background: none;
-  border: none;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: #999;
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-  transition: all 0.2s;
-
-  &:hover { color: #000; }
-  &.active { color: #000; border-bottom-color: #000; }
-}
-
-/* Table */
-.table-wrap {
-  overflow-x: auto;
-  border: 1px solid #eee;
-}
-
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-
-  th {
-    padding: 12px 16px;
-    background: #fafafa;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    color: #999;
-    border-bottom: 1px solid #eee;
-    white-space: nowrap;
+  &__title {
+    font-size: 28px;
+    font-weight: 600;
+    color: $ink;
+    font-family: Georgia, serif;
+    margin: 0;
+    em { color: $gold; font-style: italic; }
   }
-
-  td {
-    padding: 14px 16px;
-    border-bottom: 1px solid #f5f5f5;
-    vertical-align: middle;
-  }
-
-  .td-center { text-align: center; }
-  .td-right  { text-align: right; }
 }
 
-.row {
-  transition: background 0.15s;
-  &:hover td { background: #fafafa; }
-  &.inactive td { opacity: 0.5; }
-}
-
-.row-name {
-  font-weight: 600;
-  color: #000;
-  margin-bottom: 2px;
-}
-.row-desc {
-  font-size: 11px;
-  color: #999;
-  max-width: 220px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.type-badge {
+.addButton {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  border: 1px solid currentColor;
-  padding: 3px 10px;
-  white-space: nowrap;
+  gap: 7px;
+  padding: 9px 20px;
+  font-size: 12px;
+  font-weight: 600;
+  background: $gold;
+  color: $ink;
+  border: none;
+  border-radius: $radius-sm;
+  cursor: pointer;
+  &:hover { background: $gold-hover; }
 }
 
-.discount-val {
-  font-weight: 800;
-  font-size: 16px;
-  font-family: 'Playfair Display', serif;
-  color: #4b382a;
-}
-
-.status-dot {
-  display: inline-block;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  padding: 3px 10px;
-  background: #eee;
-  color: #999;
-
-  &.active {
-    background: rgba(0,0,0,0.07);
-    color: #000;
-  }
-}
-
-.row-actions {
+.filterTabs {
   display: flex;
   gap: 8px;
-  justify-content: flex-end;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-.btn-edit {
-  padding: 6px 12px;
-  border: 1px solid #4b382a;
-  color: #4b382a;
+.filterTab {
+  padding: 8px 20px;
   background: transparent;
-  cursor: pointer;
+  border: none;
   font-size: 12px;
-  transition: all 0.2s;
-  &:hover { background: #4b382a; color: #fff; }
-}
-
-.btn-delete {
-  padding: 6px 12px;
-  border: 1px solid #eee;
-  color: #ccc;
-  background: transparent;
+  font-weight: 500;
+  color: #7a756e;
   cursor: pointer;
-  font-size: 12px;
-  transition: all 0.2s;
-  &:hover { border-color: #ff4d4f; color: #ff4d4f; }
-}
+  border-radius: $radius-sm;
+  transition: all 0.15s;
 
-/* Loading / Empty */
-.loading {
-  padding: 60px;
-  text-align: center;
-  color: #999;
-  font-size: 13px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-}
-
-.empty {
-  padding: 60px;
-  text-align: center;
-  .empty-icon { font-size: 32px; color: #ddd; margin-bottom: 12px; display: block; }
-  p { color: #bbb; font-style: italic; font-size: 13px; }
-}
-
-/* Confirm delete modal */
-.confirm-overlay {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.5);
-  display: flex; align-items: center; justify-content: center;
-  z-index: 999;
-}
-
-.confirm-box {
-  background: #fff;
-  border: 1px solid #000;
-  padding: 32px;
-  width: 400px;
-  max-width: 95%;
-
-  .confirm-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 22px;
-    font-weight: 700;
-    margin-bottom: 12px;
-  }
-  .confirm-text { font-size: 13px; color: #666; margin-bottom: 24px; }
-  .confirm-actions { display: flex; gap: 12px; justify-content: flex-end; }
-
-  .confirm-cancel {
-    padding: 10px 20px;
-    border: 1px solid #eee;
-    background: transparent;
-    color: #999;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    transition: all 0.2s;
-    &:hover { border-color: #000; color: #000; }
-  }
-  .confirm-ok {
-    padding: 10px 20px;
-    border: none;
-    background: #000;
+  &.active {
     color: #fff;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    transition: all 0.2s;
-    &:hover { background: #ff4d4f; }
+    background: $ink;
+    font-weight: 600;
   }
 }
+
+// ── Layout Phân Khu ──────────────────────────────────────────────────────────
+.zonesContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+.zoneBlock {
+  display: flex;
+  flex-direction: column;
+}
+
+.zoneTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: $ink;
+  font-family: Georgia, serif;
+  margin: 0 0 12px 0;
+  border-left: 3.5px solid var(--title-color, #{$gold});
+  padding-left: 12px;
+  line-height: 1;
+}
+
+.zoneLine {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.07);
+  margin-bottom: 24px;
+}
+
+.ticketGrid {
+  display: grid;
+  // Khống chế kích thước thẻ tối đa 400px để card trông dày dặn, ko bị dài ngoãng
+  grid-template-columns: repeat(auto-fill, minmax(360px, 400px)); 
+  gap: 24px;
+}
+
+// ── THIẾT KẾ CARD VÉ BARBER SIÊU CẤP ĐỔI MỚI ─────────────────────────────────
+.voucherTicket {
+  background: $card-bg;
+  border: $border;
+  border-radius: $radius-md;
+  display: flex;
+  height: 125px;
+  position: relative;
+  // Đổ bóng sâu lớp kép tạo chiều nổi hẳn lên trên nền kem
+  box-shadow: 0 4px 12px rgba(26, 22, 18, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+  transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  overflow: hidden;
+
+  &:hover {
+    transform: translateY(-4px);
+    // Bóng đổ đậm đà kích thích thị giác khi đưa chuột vào
+    box-shadow: 0 12px 24px rgba(138, 106, 40, 0.12), 0 4px 8px rgba(0, 0, 0, 0.04);
+    border-color: rgba(201, 168, 76, 0.4);
+
+    .ticketLeft {
+      filter: brightness(1.05); // Cuống trái sáng bừng lên nhẹ
+    }
+  }
+
+  &.inactive {
+    opacity: 0.5;
+    filter: grayscale(80%);
+  }
+}
+
+// Cuống Vé Trái (Tăng tương phản đậm màu, font cực bốc)
+.ticketLeft {
+  width: 115px; 
+  // Đẩy gradient đậm hơn sang tone đen/tối ở góc để chữ trắng nổi bần bật
+  background: linear-gradient(135deg, var(--ticket-color) 0%, rgba(26, 22, 18, 0.4) 140%);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 12px;
+  text-align: center;
+  flex-shrink: 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); // Tạo độ nét cho chữ
+
+  .discountBadge {
+    .amount {
+      font-size: 26px; // Tăng kích thước số
+      font-weight: 800;
+      font-family: Georgia, serif;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+    }
+    
+    .percent {
+      font-size: 28px;
+      font-weight: 800;
+      font-family: Georgia, serif;
+      line-height: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+
+      small {
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        color: rgba(255, 255, 255, 0.9);
+        margin-top: 2px;
+      }
+    }
+  }
+
+  .conditionText {
+    font-size: 9px;
+    color: rgba(255, 255, 255, 0.85);
+    margin-top: 8px;
+    line-height: 1.2;
+    font-weight: 500;
+  }
+}
+
+// Đường Phân Cách Răng Cưa (Tạo bóng đổ cho lỗ khoét có chiều sâu)
+.ticketDivider {
+  width: 14px;
+  position: relative;
+  background: $card-bg;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  .notchTop, .notchBottom {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: $page-bg; 
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  // Bóng đổ viền nhẹ vào trong lỗ khoét nhìn như một vết bấm vé thật
+  .notchTop { 
+    top: -8px; 
+    box-shadow: inset 0 -2px 4px rgba(0,0,0,0.08), 0 1px 0 rgba(255,255,255,0.8);
+  }
+  .notchBottom { 
+    bottom: -8px; 
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.08), 0 -1px 0 rgba(255,255,255,0.8);
+  }
+
+  .dashLine {
+    height: 75%;
+    border-left: 1px dashed rgba(0, 0, 0, 0.15);
+  }
+}
+
+// Cuống Vé Phải
+.ticketRight {
+  flex: 1;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: $card-bg;
+  min-width: 0;
+
+  .ticketHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .ticketName {
+    font-size: 14px;
+    font-weight: 600;
+    color: $ink;
+    margin: 0;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .statusBadge {
+    font-size: 9px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: #f0ede9;
+    color: #888;
+    white-space: nowrap;
+
+    &.active {
+      background: rgba(46, 125, 50, 0.08);
+      color: #2e7d32;
+    }
+  }
+
+  .ticketDesc {
+    font-size: 11px;
+    color: #6e6963; // Làm đậm text mô tả lên một chút cho dễ đọc
+    margin: 4px 0 auto 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.4;
+  }
+
+  .ticketFooter {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-top: 4px;
+    padding-top: 6px;
+    border-top: 1px dashed rgba(0,0,0,0.05);
+  }
+
+  .metaInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    font-size: 10.5px;
+    color: #9c968f;
+    strong { color: $ink; font-weight: 600; }
+  }
+
+  .metaItem {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .ticketActions {
+    display: flex;
+    gap: 4px;
+    
+    button {
+      width: 26px;
+      height: 26px;
+      border-radius: $radius-sm;
+      background: $surface-2;
+      border: 1px solid rgba(0, 0, 0, 0.04);
+      color: #777;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s;
+
+      &:hover { background: $ink; color: #fff; border-color: $ink; }
+      &.btnDelete:hover { background: #d32f2f; color: #fff; border-color: #d32f2f; }
+    }
+  }
+}
+
+.globalEmpty { text-align: center; padding: 80px 24px; color: #bbb; font-size: 13px; }
+.loading { text-align: center; padding: 100px 24px; color: #aaa; }

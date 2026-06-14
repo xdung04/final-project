@@ -1,207 +1,185 @@
 import React, { useState, useEffect } from "react";
 import classNames from "classnames/bind";
 import styles from "./CreateRuleModal.module.scss";
+import { Check } from "lucide-react";
 
 const cx = classNames.bind(styles);
 
-// Checkbox tự render — tránh hoàn toàn vấn đề CSS ::after với SCSS modules
-function CustomCheckbox({ checked }) {
-  return (
-    <span className={cx("cb-box", { "cb-checked": checked })}>
-      {checked && (
-        <svg
-          width="10"
-          height="10"
-          viewBox="0 0 10 10"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <polyline
-            points="1.5,5 4,7.5 8.5,2"
-            stroke="#ffffff"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      )}
-    </span>
-  );
-}
+export default function CreateRuleModal({ initialData, onClose, onCreate }) {
+  const isEdit = !!initialData;
 
-function CreateRuleModal({ onClose, onCreate, initialData }) {
   const [form, setForm] = useState({
-    money_per_point: 0,
-    point_multiplier: 1,
-    min_order_amount: 0,
-    is_default: false,
-    is_active: true,
-    start_date: "",
-    end_date: "",
+    name:          "",
+    minSpend:      "",
+    pointsAwarded: "",
+    multiplier:    "1",
+    isDefault:     false,
+    hasDateRange:  false,
+    startDate:     "",
+    endDate:       "",
   });
-
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (initialData) {
       setForm({
-        money_per_point: initialData.money_per_point || 0,
-        point_multiplier: initialData.point_multiplier || 1,
-        min_order_amount: initialData.min_order_amount || 0,
-        is_default: initialData.is_default || false,
-        is_active: initialData.is_active ?? true,
-        start_date: initialData.start_date ? initialData.start_date.slice(0, 10) : "",
-        end_date: initialData.end_date ? initialData.end_date.slice(0, 10) : "",
+        name:          initialData.name          ?? "",
+        minSpend:      initialData.minSpend       ?? "",
+        pointsAwarded: initialData.pointsAwarded  ?? "",
+        multiplier:    initialData.multiplier      ?? "1",
+        isDefault:     initialData.isDefault       ?? false,
+        hasDateRange:  !!(initialData.startDate || initialData.endDate),
+        startDate:     initialData.startDate       ?? "",
+        endDate:       initialData.endDate          ?? "",
       });
     }
   }, [initialData]);
 
-  const formatMoneyDisplay = (val) => {
-    if (!val) return "";
-    return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-  };
+  const set = (key, val) => setForm((prev) => ({ ...prev, [key]: val }));
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    if (name === "money_per_point" || name === "min_order_amount") {
-      const raw = value.replace(/[^0-9]/g, "");
-      setForm((prev) => ({ ...prev, [name]: Number(raw) || 0 }));
-    } else {
-      setForm((prev) => ({
-        ...prev,
-        [name]: type === "checkbox" ? checked : value,
-      }));
-    }
-    if (error) setError("");
-  };
+  const handleSubmit = () => {
+    if (!form.name.trim())        return setError("Vui lòng nhập tên quy tắc.");
+    if (!form.pointsAwarded)      return setError("Vui lòng nhập số điểm thưởng.");
+    if (form.hasDateRange && !form.startDate) return setError("Vui lòng chọn ngày bắt đầu.");
 
-  const toggleField = (fieldName) => {
-    setForm((prev) => ({ ...prev, [fieldName]: !prev[fieldName] }));
-    if (error) setError("");
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!form.is_default && (!form.start_date || !form.end_date)) {
-      setError("Vui lòng nhập thời gian áp dụng cho quy tắc thường.");
-      return;
-    }
     setError("");
-    onCreate(form);
-    onClose();
+    const payload = {
+      name:          form.name.trim(),
+      minSpend:      Number(form.minSpend) || 0,
+      pointsAwarded: Number(form.pointsAwarded),
+      multiplier:    Number(form.multiplier) || 1,
+      isDefault:     form.isDefault,
+      startDate:     form.hasDateRange ? form.startDate : null,
+      endDate:       form.hasDateRange ? form.endDate   : null,
+    };
+    onCreate(payload);
   };
 
   return (
-    <div className={cx("overlay")} onClick={onClose}>
-      <div className={cx("modal")} onClick={(e) => e.stopPropagation()}>
+    <div className={cx("overlay")} onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className={cx("modal")}>
 
-        <div className={cx("modal-header")}>
-          <h2>{initialData ? "Cập nhật chính sách" : "Tạo quy tắc mới"}</h2>
-          <p className={cx("modal-sub")}>Cấu hình chính sách tích điểm cho đơn hàng</p>
+        {/* ── Dark header ─────────────────────────────────────────── */}
+        <div className={cx("modalHead")}>
+          <h2>{isEdit ? "Chỉnh sửa quy tắc" : "Tạo quy tắc tích điểm"}</h2>
+          <p className={cx("modalSub")}>
+            {isEdit ? "Cập nhật thông tin quy tắc tích điểm" : "Thiết lập điều kiện và phần thưởng điểm mới"}
+          </p>
         </div>
 
-        <div className={cx("divider")} />
+        {/* ── Body ────────────────────────────────────────────────── */}
+        <div className={cx("modalBody")}>
 
-        <div className={cx("modal-body")}>
+          {/* Tên quy tắc */}
           <div className={cx("field")}>
-            <label htmlFor="money_per_point">Giá trị đổi 1 điểm (VND)</label>
+            <label>Tên quy tắc</label>
             <input
-              id="money_per_point"
               type="text"
-              name="money_per_point"
-              value={formatMoneyDisplay(form.money_per_point)}
-              onChange={handleChange}
-              placeholder="VD: 10.000"
+              placeholder="VD: Tích điểm thường"
+              value={form.name}
+              onChange={(e) => set("name", e.target.value)}
             />
           </div>
 
-          <div className={cx("row-2")}>
+          {/* Điểm & hệ số */}
+          <div className={cx("row2")}>
             <div className={cx("field")}>
-              <label htmlFor="point_multiplier">Hệ số nhân (×)</label>
+              <label>Điểm thưởng</label>
               <input
-                id="point_multiplier"
                 type="number"
-                step="0.1"
-                name="point_multiplier"
-                value={form.point_multiplier}
-                onChange={handleChange}
+                min="0"
+                placeholder="10"
+                value={form.pointsAwarded}
+                onChange={(e) => set("pointsAwarded", e.target.value)}
               />
             </div>
             <div className={cx("field")}>
-              <label htmlFor="min_order_amount">Đơn tối thiểu (VND)</label>
+              <label>Hệ số nhân</label>
               <input
-                id="min_order_amount"
-                type="text"
-                name="min_order_amount"
-                value={formatMoneyDisplay(form.min_order_amount)}
-                onChange={handleChange}
-                placeholder="VD: 50.000"
+                type="number"
+                min="1"
+                step="0.1"
+                placeholder="1"
+                value={form.multiplier}
+                onChange={(e) => set("multiplier", e.target.value)}
               />
             </div>
           </div>
 
+          {/* Chi tiêu tối thiểu */}
+          <div className={cx("field")}>
+            <label>Chi tiêu tối thiểu (đ)</label>
+            <input
+              type="number"
+              min="0"
+              placeholder="0"
+              value={form.minSpend}
+              onChange={(e) => set("minSpend", e.target.value)}
+            />
+          </div>
+
+          {/* Quy tắc mặc định */}
           <div
-            className={cx("check-item", { active: form.is_default })}
-            onClick={() => toggleField("is_default")}
+            className={cx("checkItem", { active: form.isDefault })}
+            onClick={() => set("isDefault", !form.isDefault)}
           >
-            <CustomCheckbox checked={form.is_default} />
-            <div className={cx("check-texts")}>
-              <span className={cx("check-name")}>Quy tắc mặc định</span>
-              <span className={cx("check-hint")}>Không giới hạn thời gian áp dụng</span>
+            <div className={cx("cbBox", { cbChecked: form.isDefault })}>
+              {form.isDefault && <Check size={11} color="#F5F0E8" strokeWidth={3} />}
+            </div>
+            <div className={cx("checkTexts")}>
+              <span className={cx("checkName")}>Đặt làm quy tắc mặc định</span>
+              <span className={cx("checkHint")}>Áp dụng cho tất cả giao dịch không có quy tắc riêng</span>
             </div>
           </div>
 
-          <div className={cx("date-wrap", { hidden: form.is_default })}>
-            <div className={cx("row-2")}>
+          {/* Giới hạn thời gian */}
+          <div
+            className={cx("checkItem", { active: form.hasDateRange })}
+            onClick={() => set("hasDateRange", !form.hasDateRange)}
+          >
+            <div className={cx("cbBox", { cbChecked: form.hasDateRange })}>
+              {form.hasDateRange && <Check size={11} color="#F5F0E8" strokeWidth={3} />}
+            </div>
+            <div className={cx("checkTexts")}>
+              <span className={cx("checkName")}>Giới hạn thời gian</span>
+              <span className={cx("checkHint")}>Chỉ áp dụng trong khoảng thời gian nhất định</span>
+            </div>
+          </div>
+
+          {/* Date range — animated show/hide */}
+          <div className={cx("dateWrap", { hidden: !form.hasDateRange })}>
+            <div className={cx("row2")}>
               <div className={cx("field")}>
-                <label htmlFor="start_date">Ngày bắt đầu</label>
+                <label>Ngày bắt đầu</label>
                 <input
-                  id="start_date"
                   type="date"
-                  name="start_date"
-                  value={form.start_date}
-                  onChange={handleChange}
+                  value={form.startDate}
+                  onChange={(e) => set("startDate", e.target.value)}
                 />
               </div>
               <div className={cx("field")}>
-                <label htmlFor="end_date">Ngày kết thúc</label>
+                <label>Ngày kết thúc</label>
                 <input
-                  id="end_date"
                   type="date"
-                  name="end_date"
-                  value={form.end_date}
-                  onChange={handleChange}
+                  value={form.endDate}
+                  onChange={(e) => set("endDate", e.target.value)}
                 />
               </div>
             </div>
           </div>
 
-          <div
-            className={cx("check-item", { active: form.is_active })}
-            onClick={() => toggleField("is_active")}
-          >
-            <CustomCheckbox checked={form.is_active} />
-            <div className={cx("check-texts")}>
-              <span className={cx("check-name")}>Kích hoạt ngay</span>
-              <span className={cx("check-hint")}>Có hiệu lực ngay sau khi tạo</span>
-            </div>
-          </div>
-
-          {error && <p className={cx("error")}>{error}</p>}
+          {/* Error */}
+          {error && <div className={cx("error")}>{error}</div>}
         </div>
 
-        <div className={cx("modal-footer")}>
-          <button type="button" className={cx("btn-ghost")} onClick={onClose}>
-            Hủy
-          </button>
-          <button type="button" className={cx("btn-primary")} onClick={handleSubmit}>
-            {initialData ? "Lưu thay đổi" : "Tạo quy tắc"}
+        {/* ── Footer ──────────────────────────────────────────────── */}
+        <div className={cx("modalFooter")}>
+          <button className={cx("btnGhost")} onClick={onClose}>Huỷ</button>
+          <button className={cx("btnPrimary")} onClick={handleSubmit}>
+            {isEdit ? "Lưu thay đổi" : "Tạo quy tắc"}
           </button>
         </div>
-
       </div>
     </div>
   );
 }
-
-export default CreateRuleModal;

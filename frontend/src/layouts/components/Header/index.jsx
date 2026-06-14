@@ -9,6 +9,7 @@ import Button from "~/components/Button";
 import Modal from "~/components/Modal";
 import UserMenu from "~/components/Popper/UserMenu";
 import { useAuth } from "~/context/AuthContext";
+import { useToast } from "~/context/ToastContext"; // 🌟 ĐÃ THÊM: Gọi ToastContext để bắn alert xịn
 import { fetchMyNotifications, markNotificationAsRead } from "~/services/notificationService";
 
 const cx = classNames.bind(styles);
@@ -17,6 +18,7 @@ function Header() {
   const [showModal, setShowModal] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { user, isLogin, accessToken } = useAuth();
+  const { showToast } = useToast(); // 🌟 ĐÃ THÊM: Sử dụng bộ Toast của hệ thống
 
   const [showNotify, setShowNotify] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -27,6 +29,27 @@ function Header() {
 
   const notifyRef = useRef(null);
   const dialogRef = useRef(null);
+
+  // ==================== 🌟 XỬ LÝ CỜ HẾT HẠN PHIÊN ĐĂNG NHẬP ====================
+  useEffect(() => {
+    // 1. Kiểm tra xem sau khi F5, máy người dùng có "Cờ báo tử token" không
+    const isExpired = localStorage.getItem("SESSION_EXPIRED_FLAG");
+
+    if (isExpired) {
+      // 2. Ép mở Modal Đăng nhập lên ngay lập tức
+      setShowModal(true);
+
+      // 3. Bắn chiếc Toast thông báo lịch sự tới người dùng
+      showToast({
+        text: "🔒 Phiên làm việc của bạn đã hết hạn. Vui lòng đăng nhập lại!",
+        type: "warning", // Hoặc "error" tùy màu sắc bộ Toast của anh
+      });
+
+      // 4. 🔴 CỰC KỲ QUAN TRỌNG: Xóa cờ ngay để tránh bị lặp lại vô duyên khi user tự F5 bằng tay sau này
+      localStorage.removeItem("SESSION_EXPIRED_FLAG");
+    }
+  }, [showToast]);
+  // ============================================================================
 
   // Hiệu ứng cuộn chuột (Scroll)
   useEffect(() => {
@@ -99,7 +122,7 @@ function Header() {
           </div>
         </a>
 
-        {/* CẬP NHẬT LẠI MENU THEO THỨ TỰ */}
+        {/* MENU THEO THỨ TỰ */}
         <ul className={cx("navLinks")}>
           <li><Button href="/" text className={cx("menuLink")}>Trang chủ</Button></li>
           <li><Button href="/reels" text className={cx("menuLink")}>Reels</Button></li>

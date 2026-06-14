@@ -1,8 +1,9 @@
 import db from "../models/index.js";
-import { upsertBarbers } from "./pineconeService.js";
+import { upsertBarbers,deleteNamespace } from "./pineconeService.js";
 import { fn, col, Op } from "sequelize";
 import ratingService from "./ratingService.js";
-const Barber = db.Barber;
+
+const Barber = db.Barber; 
 const Booking = db.Booking;
 export const getAllBarbers = async () => {
   try {
@@ -61,29 +62,35 @@ export const syncBarbersToPinecone = async () => {
       include: [
         { model: db.User, as: "user", attributes: ["fullName"] },
         { model: db.Branch, as: "branch", attributes: ["name"] },
-        { model: db.BarberRatingSummary, as: "ratingSummary", attributes: ["avgRate"] }, // 👈 thêm dòng này
+        { model: db.BarberRatingSummary, as: "ratingSummary", attributes: ["avgRate"] },
       ],
     });
 
     if (!barbers.length) {
-      return { message: " Không có dữ liệu barber để đồng bộ." };
+      return { message: "Không có dữ liệu barber để đồng bộ." };
     }
 
     const barberData = barbers.map((b) => ({
-      idBarber: b.idBarber,
-      idBranch: b.idBranch,
-      fullName: b.user?.fullName || "Chưa có tên",
-      branchName: b.branch?.name || "Chưa có chi nhánh",
-      profileDescription: b.profileDescription || "Không có mô tả",
-      avgRate: b.ratingSummary?.avgRate || 0,
-      displayText: `Tên barber: ${b.user?.fullName || "Chưa có tên"}, Chi nhánh: ${b.branch?.name || "Chưa có chi nhánh"}, Mô tả: ${b.profileDescription || "Không có mô tả"}, Đánh giá trung bình: ${b.ratingSummary?.avgRate || 0}`,
+      idBarber:           b.idBarber,
+      idBranch:           b.idBranch,
+      fullName:           b.user?.fullName            || "Chưa có tên",
+      branchName:         b.branch?.name              || "Chưa có chi nhánh",
+      profileDescription: b.profileDescription        || "Không có mô tả",
+      experienceYears:    b.experienceYears            ?? 0,
+      specialty:          b.specialty                 || "Không có chuyên môn",
+      style:              b.style                     || "Không có phong cách",
+      certificates:       b.certificates              || "Không có chứng chỉ",
+      philosophy:         b.philosophy                || "Không có triết lý",
+      avgRate:            b.ratingSummary?.avgRate     ?? 0,
     }));
+
+    await deleteNamespace("barbers");
 
     await upsertBarbers(barberData);
 
-    return { message: "Barber data synced to Pinecone (test).", total: barberData.length };
+    return { message: "Barber data synced to Pinecone.", total: barberData.length };
   } catch (error) {
-    return { message: " Lỗi server", error: error.message };
+    return { message: "Lỗi server", error: error.message };
   }
 };
 

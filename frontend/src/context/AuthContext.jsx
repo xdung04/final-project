@@ -7,7 +7,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [accessToken, setAccessToken] = useState(null);
   const [refreshToken, setRefreshToken] = useState(null);
-  const [loading, setLoading] = useState(true); // trạng thái load auth khi app start
+  const [loading, setLoading] = useState(true); // Giữ ứng dụng ở trạng thái chờ xác thực
 
   // Load auth từ localStorage khi app khởi chạy
   useEffect(() => {
@@ -16,23 +16,30 @@ export function AuthProvider({ children }) {
     const storedRefreshToken = localStorage.getItem("refreshToken");
 
     if (storedUser && storedAccessToken && storedRefreshToken) {
-      // 👉 gọi API để verify token còn sống không
+      // 👉 Gọi API verify token xem còn sống hay không
       AuthAPI.getMe()
         .then((res) => {
+          // Thành công: Cập nhật toàn bộ data vào state trước
           setUser(JSON.parse(storedUser));
           setAccessToken(storedAccessToken);
           setRefreshToken(storedRefreshToken);
         })
-        .catch(() => {
-          // ❌ token chết → logout luôn
+        .catch((err) => {
+          console.error("Token expired or invalid:", err);
+          // ❌ Token chết hoặc có lỗi hệ thống → Dọn sạch rác
           localStorage.clear();
           setUser(null);
           setAccessToken(null);
           setRefreshToken(null);
+        })
+        .finally(() => {
+          // 🏁 CHỈ TẮT LOADING KHI API ĐÃ CHẠY XONG XUÔI (Thành công hoặc Thất bại đều tắt)
+          setLoading(false);
         });
+    } else {
+      // Nếu không có bất kỳ token nào lưu ở máy, tắt loading luôn để render màn hình khách vãng lai
+      setLoading(false);
     }
-
-    setLoading(false);
   }, []);
 
   // LOGIN
@@ -50,12 +57,11 @@ export function AuthProvider({ children }) {
   const logout = async () => {
     try {
       if (refreshToken) {
-        await AuthAPI.logout({ refreshToken }); // gọi API logout nếu có
+        await AuthAPI.logout({ refreshToken }); 
       }
     } catch (err) {
       console.error("Logout API error:", err);
     } finally {
-      // Xóa localStorage và state
       localStorage.removeItem("user");
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
@@ -76,7 +82,7 @@ export function AuthProvider({ children }) {
         logout,
         setUser,
         isLogin: !!user,
-        loading, // expose loading để ProtectedRoute chờ load xong
+        loading, // Expose để các file Router bảo vệ (ProtectedRoute) hoặc Component con bắt trạng thái chờ
       }}
     >
       {children}
@@ -84,7 +90,6 @@ export function AuthProvider({ children }) {
   );
 }
 
-// Hook tiện lợi
 export function useAuth() {
   return useContext(AuthContext);
 }

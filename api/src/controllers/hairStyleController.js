@@ -179,7 +179,7 @@ export const getAdminHairstyles = async (req, res) => {
  */
 export const createAdminHairstyle = async (req, res) => {
   try {
-    const newHairstyle = await adminCreateHairstyle(req.body);
+    const newHairstyle = await adminCreateHairstyle(req.body, req.files);
 
     return res.status(201).json({
       success: true,
@@ -194,14 +194,10 @@ export const createAdminHairstyle = async (req, res) => {
   }
 };
 
-/**
- * PUT /api/admin/hairstyles/:idHairstyle
- * Admin chỉnh sửa thông tin kiểu tóc
- */
 export const updateAdminHairstyle = async (req, res) => {
   try {
     const { idHairstyle } = req.params;
-    const updatedHairstyle = await adminUpdateHairstyle(idHairstyle, req.body);
+    const updatedHairstyle = await adminUpdateHairstyle(idHairstyle, req.body, req.files);
 
     return res.status(200).json({
       success: true,

@@ -10,29 +10,13 @@ import {
 } from "lucide-react";
 import styles from "./BookingList.module.scss";
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
-
-// Lấy idBranch của receptionist từ token
-async function fetchMyBranch(token) {
-  const res = await fetch(`${API_BASE_URL}/receptionist/my-branch`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!res.ok) throw new Error("Không lấy được thông tin chi nhánh");
-  return res.json();
-}
-
-// Lấy bookings theo idBranch và ngày
-async function fetchBookingsByBranch(idBranch, date, token) {
-  const res = await fetch(
-    `${API_BASE_URL}/bookings/branch/${idBranch}?date=${date}`,
-    {
-      headers: { Authorization: `Bearer ${token}` },
-    },
-  );
-  if (!res.ok) throw new Error("Không lấy được danh sách lịch hẹn");
-  const json = await res.json();
-  return json.data || [];
-}
+// 🌟 IMPORT CÁC HÀM SERVICE ĐÃ ĐƯỢC ỦY QUYỀN XỬ LÝ API
+import {
+  fetchMyBranch,
+  fetchBookingsByBranch,
+  checkInBooking,
+  cancelBooking,
+} from "~/services/bookingService"; // Đổi lại đường dẫn thư mục service của m nếu cần nhé
 
 export default function BookingList({ onSelect, date }) {
   const [bookings, setBookings] = useState([]);
@@ -40,20 +24,20 @@ export default function BookingList({ onSelect, date }) {
   const [error, setError] = useState(null);
   const [branchInfo, setBranchInfo] = useState(null);
 
-  const token = localStorage.getItem("accessToken");
-
+  // Hàm reload danh sách
   const fetchBookings = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      // Bước 1: lấy branch của receptionist
-      const branch = await fetchMyBranch(token);
+      // Bước 1: lấy branch của receptionist qua Service
+      const branch = await fetchMyBranch();
       setBranchInfo(branch);
 
-      // Bước 2: lấy bookings theo branch + ngày
-      const raw = await fetchBookingsByBranch(branch.idBranch, date, token);
+      // Bước 2: lấy bookings theo branch + ngày qua Service
+      const resData = await fetchBookingsByBranch(branch.idBranch, date);
+      const raw = resData.data || [];
 
-      // Bước 3: map dữ liệu
+      // Bước 3: map dữ liệu (Giữ nguyên 100% logic hiển thị của m)
       const list = raw.map((b) => ({
         id: b.idBooking,
         time: b.bookingTime || "—",
@@ -65,7 +49,7 @@ export default function BookingList({ onSelect, date }) {
         discountAmount: parseFloat(b.discountAmount || 0),
         discountPercent: parseFloat(b.discountPercent || 0),
         discountFixed: parseFloat(b.discountFixed || 0),
-        voucherType: b.voucher?.type || null, // ← sửa ở đây
+        voucherType: b.voucher?.type || null, 
         total: parseFloat(b.total || 0),
         isPaid: b.isPaid || false,
         status: b.status || "Pending",
@@ -75,51 +59,48 @@ export default function BookingList({ onSelect, date }) {
       setBookings(list);
     } catch (err) {
       console.error("❌ Lỗi fetch booking:", err);
-      setError(err.message);
+      setError(err.response?.data?.message || err.message);
     } finally {
       setLoading(false);
     }
-  }, [date, token]);
+  }, [date]); // Sạch sẽ tuyệt đối, không dính dependency 'token' làm lặp loop
 
   useEffect(() => {
     fetchBookings();
   }, [fetchBookings]);
 
-  // Expose hàm reload ra ngoài
+  // Expose hàm reload ra ngoài Component cha
   useEffect(() => {
     if (onSelect) {
       onSelect((prev) => prev, fetchBookings);
     }
   }, [fetchBookings, onSelect]);
 
+  // Hành động Hủy lịch
   const handleCancel = async (id) => {
     if (!window.confirm("Bạn có chắc muốn hủy lịch hẹn này không?")) return;
     try {
-      const res = await fetch(`${API_BASE_URL}/bookings/${id}/cancel`, {
-        method: "PUT",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (!res.ok) return alert(data.message || "Hủy lịch thất bại!");
+      const data = await cancelBooking(id);
+      // Nếu backend có trả trạng thái false m check ở đây, nếu ko thì ăn luôn catch khi dính 4xx/5xx
+      if (data && data.success === false) return alert(data.message || "Hủy lịch thất bại!");
+      
       alert("Đã hủy lịch hẹn thành công!");
       fetchBookings();
     } catch (err) {
-      alert("Có lỗi xảy ra khi hủy lịch!");
+      alert(err.response?.data?.message || "Có lỗi xảy ra khi hủy lịch!");
     }
   };
 
+  // Hành động Check-in
   const handleCheckIn = async (id) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/bookings/${id}/checkin`, {
-        method: "PUT",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (!res.ok) return alert(data.message || "Check-in thất bại!");
+      const data = await checkInBooking(id);
+      if (data && data.success === false) return alert(data.message || "Check-in thất bại!");
+
       alert("Khách đã check-in!");
       fetchBookings();
     } catch (err) {
-      alert("Có lỗi xảy ra khi check-in!");
+      alert(err.response?.data?.message || "Có lỗi xảy ra khi check-in!");
     }
   };
 
@@ -137,14 +118,7 @@ export default function BookingList({ onSelect, date }) {
       <h2 className={styles.title}>
         Danh Sách Lịch Hẹn
         {branchInfo && (
-          <span
-            style={{
-              fontSize: 14,
-              fontWeight: 400,
-              marginLeft: 12,
-              color: "#888",
-            }}
-          >
+          <span style={{ fontSize: 14, fontWeight: 400, marginLeft: 12, color: "#888" }}>
             — {branchInfo.branchName}
           </span>
         )}
@@ -154,41 +128,13 @@ export default function BookingList({ onSelect, date }) {
         <table>
           <thead>
             <tr>
-              <th>
-                <div className={styles.thContent}>
-                  <Clock size={16} /> Giờ
-                </div>
-              </th>
-              <th>
-                <div className={styles.thContent}>
-                  <User size={16} /> Khách hàng
-                </div>
-              </th>
-              <th>
-                <div className={styles.thContent}>
-                  <Scissors size={16} /> Thợ cắt
-                </div>
-              </th>
-              <th>
-                <div className={styles.thContent}>
-                  <MoreHorizontal size={16} /> Dịch vụ
-                </div>
-              </th>
-              <th>
-                <div className={styles.thContent}>
-                  <ReceiptText size={16} /> Chi tiết Bill
-                </div>
-              </th>
-              <th>
-                <div className={styles.thContent}>
-                  <Activity size={16} /> Trạng thái
-                </div>
-              </th>
-              <th>
-                <div className={styles.thContent}>
-                  <Wallet size={16} /> Thanh toán
-                </div>
-              </th>
+              <th><div className={styles.thContent}><Clock size={16} /> Giờ</div></th>
+              <th><div className={styles.thContent}><User size={16} /> Khách hàng</div></th>
+              <th><div className={styles.thContent}><Scissors size={16} /> Thợ cắt</div></th>
+              <th><div className={styles.thContent}><MoreHorizontal size={16} /> Dịch vụ</div></th>
+              <th><div className={styles.thContent}><ReceiptText size={16} /> Chi tiết Bill</div></th>
+              <th><div className={styles.thContent}><Activity size={16} /> Trạng thái</div></th>
+              <th><div className={styles.thContent}><Wallet size={16} /> Thanh toán</div></th>
               <th className={styles.alignRight}>Thao tác</th>
             </tr>
           </thead>
@@ -211,10 +157,7 @@ export default function BookingList({ onSelect, date }) {
                     <td className={styles.timeCell}>{booking.time}</td>
                     <td className={styles.boldCell}>{booking.customer}</td>
                     <td>{booking.barber}</td>
-                    <td
-                      title={booking.services.join(", ")}
-                      className={styles.truncateCell}
-                    >
+                    <td title={booking.services.join(", ")} className={styles.truncateCell}>
                       {displayedServices || "—"}
                     </td>
 
@@ -222,14 +165,10 @@ export default function BookingList({ onSelect, date }) {
                       <div className={styles.billDetails}>
                         <div className={styles.billRow}>
                           <span>Tạm tính:</span>
-                          <span>
-                            {booking.serviceTotal.toLocaleString("vi-VN")}đ
-                          </span>
+                          <span>{booking.serviceTotal.toLocaleString("vi-VN")}đ</span>
                         </div>
                         {booking.discountAmount > 0 && (
-                          <div
-                            className={`${styles.billRow} ${styles.discount}`}
-                          >
+                          <div className={`${styles.billRow} ${styles.discount}`}>
                             {booking.voucherType === "POINTS_EXCHANGE" ? (
                               <span>Giảm tiền:</span>
                             ) : booking.discountPercent > 0 ? (
@@ -237,9 +176,7 @@ export default function BookingList({ onSelect, date }) {
                             ) : (
                               <span>Giảm:</span>
                             )}
-                            <span>
-                              -{booking.discountAmount.toLocaleString("vi-VN")}đ
-                            </span>
+                            <span>-{booking.discountAmount.toLocaleString("vi-VN")}đ</span>
                           </div>
                         )}
                         <div className={styles.billRow}>
@@ -254,9 +191,7 @@ export default function BookingList({ onSelect, date }) {
                     </td>
 
                     <td>
-                      <span
-                        className={`${styles.badge} ${styles[`status_${booking.status}`]}`}
-                      >
+                      <span className={`${styles.badge} ${styles[`status_${booking.status}`]}`}>
                         {booking.status === "Completed"
                           ? "Đã cắt xong"
                           : booking.status === "Cancelled"
@@ -269,9 +204,7 @@ export default function BookingList({ onSelect, date }) {
 
                     <td>
                       {booking.status === "Completed" ? (
-                        <span
-                          className={`${styles.badge} ${booking.isPaid ? styles.paid : styles.unpaid}`}
-                        >
+                        <span className={`${styles.badge} ${booking.isPaid ? styles.paid : styles.unpaid}`}>
                           {booking.isPaid ? "Đã thanh toán" : "Chưa thanh toán"}
                         </span>
                       ) : (

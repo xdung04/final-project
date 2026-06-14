@@ -110,9 +110,11 @@ export const getAdminHairstyles = async () => {
   }
 };
 
-export const createAdminHairstyle = async (data) => {
+export const createAdminHairstyle = async (formData) => {
   try {
-    const res = await request.post("/hairstyles/admin/hairstyles", data);
+    const res = await request.post("/hairstyles/admin/hairstyles", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
     if (res && res.success) return res.data;
     throw new Error(res?.message || "Tạo kiểu tóc thất bại");
   } catch (error) {
@@ -121,9 +123,11 @@ export const createAdminHairstyle = async (data) => {
   }
 };
 
-export const updateAdminHairstyle = async (idHairstyle, data) => {
+export const updateAdminHairstyle = async (idHairstyle, formData) => {
   try {
-    const res = await request.put(`/hairstyles/admin/hairstyles/${idHairstyle}`, data);
+    const res = await request.put(`/hairstyles/admin/hairstyles/${idHairstyle}`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
     if (res && res.success) return res.data;
     throw new Error(res?.message || "Cập nhật kiểu tóc thất bại");
   } catch (error) {

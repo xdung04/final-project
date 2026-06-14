@@ -11,7 +11,7 @@ import ConfirmModal from "../../../components/ComfirmModal/index";
 const cx = classNames.bind(styles);
 
 const ChatKhachHang = () => {
-  const { user, accessToken } = useAuth();
+  const { user } = useAuth(); 
   const { showToast } = useToast();
   const [conversations, setConversations] = useState({
     waiting: [],
@@ -19,7 +19,13 @@ const ChatKhachHang = () => {
     closed: [],
   });
   const [activeTab, setActiveTab] = useState("waiting");
-  const [activeConversationId, setActiveConversationId] = useState(null);
+  
+  // Giữ lại ID phòng chat đang active trong sessionStorage khi F5 trang
+  const [activeConversationId, setActiveConversationId] = useState(() => {
+    const savedId = sessionStorage.getItem("activeConversationId");
+    return savedId ? Number(savedId) : null;
+  });
+  
   const [messagesMap, setMessagesMap] = useState({});
   const [inputMessage, setInputMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -29,11 +35,11 @@ const ChatKhachHang = () => {
   const [searchKeyword, setSearchKeyword] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
+  
   const sentMessagesRef = useRef(new Set());
   const messagesEndRef = useRef(null);
   const activeConversationIdRef = useRef(null);
   const receptionistId = user?.idUser;
-  const token = accessToken;
 
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
@@ -47,54 +53,99 @@ const ChatKhachHang = () => {
   const closeConfirmModal = () =>
     setConfirmModal((prev) => ({ ...prev, isOpen: false }));
 
+  useEffect(() => {
+    activeConversationIdRef.current = activeConversationId
+      ? Number(activeConversationId) : null;
+  }, [activeConversationId]);
+
+  // Tự động đồng bộ id phòng chat đang mở vào sessionStorage
+  useEffect(() => {
+    if (activeConversationId) {
+      sessionStorage.setItem("activeConversationId", activeConversationId);
+    } else {
+      sessionStorage.removeItem("activeConversationId");
+    }
+  }, [activeConversationId]);
+
+  // Tìm cuộc trò chuyện đang active
+  const activeConversation = [
+    ...conversations.waiting,
+    ...conversations.inProgress,
+    ...conversations.closed,
+    ...searchResults
+  ].find((c) => c.id === activeConversationId);
+
+  const isClosedStatus = activeConversation?.status === "closed";
+
+  // Hàm load danh sách phòng chat Chờ và Đang xử lý từ API
   const loadConversations = useCallback(async () => {
-    if (!receptionistId || !token) return;
+    if (!receptionistId) return;
+    const currentToken = localStorage.getItem("accessToken");
+    if (!currentToken) return;
+
     setLoading(true);
     try {
       const [waitingList, activeList] = await Promise.all([
-        chatLiveService.getWaitingConversations(token),
-        chatLiveService.getActiveConversations(receptionistId, token),
+        chatLiveService.getWaitingConversations(currentToken),
+        chatLiveService.getActiveConversations(receptionistId, currentToken),
       ]);
       const currentOpenId = activeConversationIdRef.current;
-      const patchUnread = (list) =>
-        (list || []).map((c) =>
-          currentOpenId && Number(c.id) === currentOpenId
-            ? { ...c, unreadCount: 0 }
-            : c,
-        );
-      setConversations((prev) => ({
-        ...prev,
-        waiting: patchUnread(waitingList),
-        inProgress: patchUnread(activeList),
-      }));
+      
+      setConversations((prev) => {
+        // Tách biệt mảng Chờ (waiting) - Không clear số unreadCount về 0 khi trùng ID mở của tab Đang xử lý
+        const patchWaiting = (newList, oldList = []) =>
+          (newList || []).map((c) => {
+            const oldConv = oldList.find((o) => o.id === c.id);
+            return { ...c, unreadCount: oldConv ? oldConv.unreadCount : (c.unreadCount || 0) };
+          });
+
+        // Chỉ clear số unreadCount về 0 đối với phòng đang được click mở xử lý trực tiếp
+        const patchActive = (newList, oldList = []) =>
+          (newList || []).map((c) => {
+            if (currentOpenId && Number(c.id) === currentOpenId) {
+              return { ...c, unreadCount: 0 };
+            }
+            const oldConv = oldList.find((o) => o.id === c.id);
+            return { ...c, unreadCount: oldConv ? oldConv.unreadCount : (c.unreadCount || 0) };
+          });
+
+        return {
+          ...prev,
+          waiting: patchWaiting(waitingList, prev.waiting),
+          inProgress: patchActive(activeList, prev.inProgress),
+        };
+      });
     } catch (error) {
       console.error("Lỗi load conversations:", error);
       showToast({ text: "Không thể tải danh sách", type: "error" });
     } finally {
       setLoading(false);
     }
-  }, [receptionistId, token, showToast]);
+  }, [receptionistId, showToast]);
 
   const loadClosedCount = useCallback(async () => {
-    if (!token) return;
+    const currentToken = localStorage.getItem("accessToken");
+    if (!currentToken) return;
     try {
-      const data = await chatLiveService.searchConversations(token, "", "closed");
-      setConversations((prev) => ({ ...prev, closed: data || [] }));
+      const data = await chatLiveService.searchConversations(currentToken, "", "closed");
+      const closedList = (data || []).map(c => ({ ...c, status: c.status || "closed" }));
+      setConversations((prev) => ({ ...prev, closed: closedList }));
     } catch (error) {
       console.error("Lỗi load closed count:", error);
     }
-  }, [token]);
+  }, []);
 
   const handleSearch = useCallback(
     async (keyword) => {
-      if (!token) return;
+      const currentToken = localStorage.getItem("accessToken");
+      if (!currentToken) return;
       if (!keyword.trim()) {
         setIsSearching(false);
         setSearchResults([]);
         return;
       }
       try {
-        const results = await chatLiveService.searchConversations(token, keyword, null);
+        const results = await chatLiveService.searchConversations(currentToken, keyword, null);
         setSearchResults(results || []);
         setIsSearching(true);
       } catch (error) {
@@ -102,53 +153,57 @@ const ChatKhachHang = () => {
         showToast({ text: "Tìm kiếm thất bại", type: "error" });
       }
     },
-    [token, showToast],
+    [showToast],
   );
 
   const loadChatHistory = useCallback(
     async (conversationId) => {
-      if (!conversationId || !token) return;
+      if (!conversationId) return;
+      const currentToken = localStorage.getItem("accessToken");
+      if (!currentToken) return;
+
       try {
-        const result = await chatLiveService.getChatHistory(conversationId, token);
+        const result = await chatLiveService.getChatHistory(conversationId, currentToken);
         if (result.success) {
           setMessagesMap((prev) => ({
             ...prev,
             [conversationId]: result.data.messages,
           }));
           socket.emit("reset_unread", { conversationId, receptionistId });
+          
+          const clearUnread = (list) =>
+            list.map((c) => (c.id === conversationId ? { ...c, unreadCount: 0 } : c));
+
           setConversations((prev) => ({
-            ...prev,
-            inProgress: prev.inProgress.map((c) =>
-              c.id === conversationId ? { ...c, unreadCount: 0 } : c,
-            ),
-            waiting: prev.waiting.map((c) =>
-              c.id === conversationId ? { ...c, unreadCount: 0 } : c,
-            ),
-            closed: prev.closed.map((c) =>
-              c.id === conversationId ? { ...c, unreadCount: 0 } : c,
-            ),
+            waiting: clearUnread(prev.waiting),
+            inProgress: clearUnread(prev.inProgress),
+            closed: clearUnread(prev.closed),
           }));
-          if (isSearching) {
-            setSearchResults((prev) =>
-              prev.map((c) =>
-                c.id === conversationId ? { ...c, unreadCount: 0 } : c,
-              ),
-            );
-          }
+          
+          setSearchResults((prev) => clearUnread(prev));
         }
       } catch (error) {
         console.error("Lỗi load lịch sử:", error);
         showToast({ text: "Không thể tải lịch sử chat", type: "error" });
       }
     },
-    [token, receptionistId, isSearching, showToast],
+    [receptionistId, showToast],
   );
+
+  // 🔥 FIX LỖI F5 MẤT TIN NHẮN 1: Đợi receptionistId sẵn sàng rồi mới tự động gọi API tải lịch sử chat dở
+  useEffect(() => {
+    if (receptionistId && activeConversationId && !messagesMap[activeConversationId]) {
+      loadChatHistory(activeConversationId);
+    }
+  }, [receptionistId, activeConversationId, loadChatHistory, messagesMap]);
 
   const handleJoinConversation = useCallback(
     async (conversation) => {
+      const currentToken = localStorage.getItem("accessToken");
+      if (!currentToken) return;
       try {
         const result = await chatLiveService.receptionistJoin(
-          conversation.id, receptionistId, token,
+          conversation.id, receptionistId, currentToken,
         );
         if (result.success) {
           await loadConversations();
@@ -161,11 +216,14 @@ const ChatKhachHang = () => {
         showToast({ text: error.response?.data?.error || "Không thể join", type: "error" });
       }
     },
-    [receptionistId, token, loadConversations, loadChatHistory, showToast],
+    [receptionistId, loadConversations, loadChatHistory, showToast],
   );
 
   const handleLeaveConversation = useCallback(() => {
     if (!activeConversationId) return;
+    const currentToken = localStorage.getItem("accessToken");
+    if (!currentToken) return;
+
     setConfirmModal({
       isOpen: true,
       title: "Rời cuộc trò chuyện?",
@@ -175,24 +233,43 @@ const ChatKhachHang = () => {
       onConfirm: async () => {
         closeConfirmModal();
         try {
-          await chatLiveService.receptionistLeave(activeConversationId, receptionistId, token);
-          socket.emit("leave_conversation", { conversationId: activeConversationId });
-          await loadConversations();
+          const currentId = activeConversationId;
+          await chatLiveService.receptionistLeave(currentId, receptionistId, currentToken);
+          
+          socket.emit("send_message", {
+            conversationId: currentId,
+            senderType: "system",
+            messageType: "system",
+            eventType: "leave",
+            content: "💼 Lễ tân đã rời phòng. Hệ thống đang kết nối bạn với lễ tân khác, vui lòng chờ trong giây lát... ⏳",
+            metadata: { name: user?.name || "Lễ tân" }
+          });
+
+          socket.emit("leave_conversation", { conversationId: String(currentId) });
           setActiveConversationId(null);
-          showToast({ text: "Đã rời cuộc trò chuyện", type: "info" });
-        } catch {
+          
+          setTimeout(async () => {
+            await loadConversations();
+            showToast({ text: "Đã rời cuộc trò chuyện", type: "info" });
+          }, 300);
+
+        } catch (error) {
+          console.error("Lỗi khi rời phòng chat:", error);
           showToast({ text: "Rời thất bại", type: "error" });
         }
       },
     });
-  }, [activeConversationId, receptionistId, token, loadConversations, showToast]);
+  }, [activeConversationId, receptionistId, loadConversations, showToast, user?.name]);
 
   const handleTransfer = useCallback(
     async (toReceptionistId) => {
       if (!activeConversationId) return;
+      const currentToken = localStorage.getItem("accessToken");
+      if (!currentToken) return;
+
       try {
         await chatLiveService.transferConversation(
-          activeConversationId, receptionistId, toReceptionistId, token,
+          activeConversationId, receptionistId, toReceptionistId, currentToken,
         );
         socket.emit("leave_conversation", { conversationId: activeConversationId });
         await loadConversations();
@@ -204,11 +281,14 @@ const ChatKhachHang = () => {
         showToast({ text: error.response?.data?.error || "Chuyển thất bại", type: "error" });
       }
     },
-    [activeConversationId, receptionistId, token, loadConversations, showToast],
+    [activeConversationId, receptionistId, loadConversations, showToast],
   );
 
   const handleCloseConversation = useCallback(() => {
     if (!activeConversationId) return;
+    const currentToken = localStorage.getItem("accessToken");
+    if (!currentToken) return;
+
     setConfirmModal({
       isOpen: true,
       title: "Đóng cuộc trò chuyện?",
@@ -218,40 +298,56 @@ const ChatKhachHang = () => {
       onConfirm: async () => {
         closeConfirmModal();
         try {
-          await chatLiveService.closeCustomerConversation(activeConversationId, token);
+          const currentId = activeConversationId;
+          await chatLiveService.closeCustomerConversation(currentId, currentToken);
+          
+          socket.emit("send_message", {
+            conversationId: currentId,
+            senderType: "system",
+            messageType: "system",
+            eventType: "close",
+            content: "Cuộc trò chuyện trực tiếp đã kết thúc. Trợ lý AI đã quay trở lại! 🤖"
+          });
+
           await loadConversations();
           setActiveConversationId(null);
           showToast({ text: "Đã đóng cuộc trò chuyện", type: "info" });
-        } catch {
+        } catch (error) {
+          console.error("Lỗi khi đóng cuộc hội thoại:", error);
           showToast({ text: "Đóng thất bại", type: "error" });
         }
       },
     });
-  }, [activeConversationId, token, loadConversations, showToast]);
+  }, [activeConversationId, loadConversations, showToast]);
 
-  const handleBack = () => setActiveConversationId(null);
+  const handleBack = () => {
+    setActiveConversationId(null);
+    setShowTransfer(false);
+  };
 
   useEffect(() => {
     const loadReceptionists = async () => {
-      const res = await chatLiveService.getAllReceptionists(token);
+      const currentToken = localStorage.getItem("accessToken");
+      if (!currentToken) return;
+      const res = await chatLiveService.getAllReceptionists(currentToken);
       if (res.success) setReceptionists(res.data);
     };
-    if (token) loadReceptionists();
-  }, [token]);
+    loadReceptionists();
+  }, []); 
 
   useEffect(() => {
     const handleReceiveMessage = (msg) => {
-      if (sentMessagesRef.current.has(msg.clientId)) return;
-      setMessagesMap((prev) => ({
-        ...prev,
-        [msg.conversationId]: [...(prev[msg.conversationId] || []), msg],
-      }));
+      if (msg.clientId && sentMessagesRef.current.has(msg.clientId)) return;
+      const convId = Number(msg.conversationId);
+      setMessagesMap((prev) => {
+        const currentList = prev[convId] || [];
+        if (msg.id && currentList.some((m) => m.id === msg.id)) return prev;
+        return { ...prev, [convId]: [...currentList, msg] };
+      });
     };
 
     const handleConversationUpdated = () => {
-      loadConversations();
       loadClosedCount();
-      if (isSearching && searchKeyword) handleSearch(searchKeyword);
     };
 
     const handleTransferNotify = ({ toId, fromName }) => {
@@ -262,65 +358,78 @@ const ChatKhachHang = () => {
     };
 
     const handleNewMessage = ({ conversationId, lastMessage, senderType, clientId }) => {
-      if (sentMessagesRef.current.has(clientId)) return;
+      if (clientId && sentMessagesRef.current.has(clientId)) return;
       if (senderType === "receptionist") return;
+      
       const convId = Number(conversationId);
       const isCurrentlyOpen = activeConversationIdRef.current === convId;
+      
       if (isCurrentlyOpen) {
         socket.emit("reset_unread", { conversationId: convId, receptionistId });
       }
+      
       const updateList = (list) =>
         list.map((conv) =>
           Number(conv.id) === convId
-            ? { ...conv, lastMessage, unreadCount: isCurrentlyOpen ? 0 : (conv.unreadCount || 0) + 1 }
+            ? { 
+                ...conv, 
+                lastMessage, 
+                unreadCount: (conv.unreadCount || 0) + 1
+              }
             : conv,
         );
+        
       setConversations((prev) => ({
         waiting:    updateList(prev.waiting),
         inProgress: updateList(prev.inProgress),
         closed:     updateList(prev.closed),
       }));
-      if (isSearching) setSearchResults((prev) => updateList(prev));
+
+      setSearchResults((prev) => updateList(prev));
     };
 
-    socket.on("conversation_new_message",   handleNewMessage);
-    socket.on("conversation_transfer_notify", handleTransferNotify);
-    socket.on("receive_message",            handleReceiveMessage);
-    socket.on("conversation_updated",       handleConversationUpdated);
+    socket.on("conversation_new_message",       handleNewMessage);
+    socket.on("conversation_transfer_notify",   handleTransferNotify);
+    socket.on("receive_message",                handleReceiveMessage);
+    socket.on("conversation_updated",           handleConversationUpdated);
+    
     socket.on("conversation_closed", ({ conversationId }) => {
-      if (activeConversationId === conversationId) setActiveConversationId(null);
-      handleConversationUpdated();
+      if (activeConversationIdRef.current === Number(conversationId)) {
+        setActiveConversationId(null);
+      }
+      loadConversations();
+      loadClosedCount();
     });
 
     return () => {
-      socket.off("receive_message",             handleReceiveMessage);
-      socket.off("conversation_updated",        handleConversationUpdated);
+      socket.off("receive_message",               handleReceiveMessage);
+      socket.off("conversation_updated",          handleConversationUpdated);
       socket.off("conversation_closed");
-      socket.off("conversation_transfer_notify", handleTransferNotify);
-      socket.off("conversation_new_message",    handleNewMessage);
+      socket.off("conversation_transfer_notify",   handleTransferNotify);
+      socket.off("conversation_new_message",      handleNewMessage);
     };
-  }, [
-    activeConversationId, receptionistId, activeTab,
-    loadConversations, loadClosedCount,
-    isSearching, searchKeyword, handleSearch, showToast,
-  ]);
-
-  useEffect(() => {
-    activeConversationIdRef.current = activeConversationId
-      ? Number(activeConversationId) : null;
-  }, [activeConversationId]);
+  }, [receptionistId, loadConversations, loadClosedCount, showToast]);
 
   useEffect(() => {
     if (!activeConversationId) return;
-    const joinRoom = () =>
-      socket.emit("join_conversation", { conversationId: activeConversationId });
+    const joinRoom = () => {
+      socket.emit("join_conversation", { conversationId: String(activeConversationId) });
+    };
     if (socket.connected) joinRoom();
-    else socket.once("connect", joinRoom);
-    return () =>
-      socket.emit("leave_conversation", { conversationId: activeConversationId });
+    socket.on("connect", joinRoom);
+    return () => {
+      socket.off("connect", joinRoom);
+      socket.emit("leave_conversation", { conversationId: String(activeConversationId) });
+    };
   }, [activeConversationId]);
 
-  useEffect(() => { loadConversations(); loadClosedCount(); }, [loadConversations, loadClosedCount]);
+  // 🔥 FIX LỖI F5 MẤT TIN NHẮN 2: Lắng nghe receptionistId đổi từ undefined sang có dữ liệu để load lại chính xác danh sách phòng
+  useEffect(() => {
+    if (receptionistId) {
+      loadConversations(); 
+    }
+    loadClosedCount(); 
+  }, [receptionistId, loadConversations, loadClosedCount]);
 
   useEffect(() => {
     const delayDebounce = setTimeout(() => handleSearch(searchKeyword), 500);
@@ -332,7 +441,9 @@ const ChatKhachHang = () => {
   }, [messagesMap, activeConversationId]);
 
   const handleSend = () => {
+    if (isClosedStatus) return; 
     if (!inputMessage.trim() || !activeConversationId) return;
+
     const clientId = Date.now() + "_" + Math.random();
     const messageData = {
       conversationId: activeConversationId,
@@ -346,9 +457,11 @@ const ChatKhachHang = () => {
     sentMessagesRef.current.add(clientId);
     setTimeout(() => sentMessagesRef.current.delete(clientId), 2000);
     socket.emit("send_message", messageData);
+    
+    const targetId = Number(activeConversationId);
     setMessagesMap((prev) => ({
       ...prev,
-      [activeConversationId]: [...(prev[activeConversationId] || []), messageData],
+      [targetId]: [...(prev[targetId] || []), messageData],
     }));
     setInputMessage("");
   };
@@ -356,7 +469,6 @@ const ChatKhachHang = () => {
   const formatTime = (dateStr) =>
     new Date(dateStr).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
-  // ── Conversation Item ────────────────────────────────────────────────────
   const renderConversationItem = (conv, isWaiting = false) => (
     <div
       key={conv.id}
@@ -374,11 +486,6 @@ const ChatKhachHang = () => {
               inProgress: prev.inProgress.map((c) => c.id === conv.id ? { ...c, unreadCount: 0 } : c),
               closed:     prev.closed.map((c)     => c.id === conv.id ? { ...c, unreadCount: 0 } : c),
             }));
-            if (isSearching) {
-              setSearchResults((prev) =>
-                prev.map((c) => c.id === conv.id ? { ...c, unreadCount: 0 } : c),
-              );
-            }
           }
         }
       }}
@@ -393,8 +500,10 @@ const ChatKhachHang = () => {
           {conv.lastMessage?.substring(0, 50) || "Chưa có tin nhắn"}
         </div>
       </div>
-      {conv.unreadCount > 0 && (
-        <div className={cx("unreadBadge")}>{conv.unreadCount}</div>
+      {Number(conv.unreadCount) > 0 && (
+        <span className={cx("unreadBadge")}>
+          {conv.unreadCount}
+        </span>
       )}
     </div>
   );
@@ -402,14 +511,9 @@ const ChatKhachHang = () => {
   if (loading && !activeConversationId)
     return <div className={cx("loading")}>Đang tải...</div>;
 
-  // ── Render ───────────────────────────────────────────────────────────────
   return (
     <div className={cx("chatContainer")}>
-
-      {/* ── SIDEBAR ─────────────────────────────────────────────────────── */}
       <div className={cx("chatSidebar")}>
-
-        {/* Search */}
         <div className={cx("chatSearch")}>
           <Search size={16} />
           <input
@@ -432,7 +536,6 @@ const ChatKhachHang = () => {
             </>
           ) : (
             <>
-              {/* Tab bar */}
               <div className={cx("sidebarTabs")}>
                 {[
                   { id: "waiting",    label: "Chờ",         count: conversations.waiting.length },
@@ -457,117 +560,164 @@ const ChatKhachHang = () => {
         </div>
       </div>
 
-      {/* ── CHAT WINDOW ─────────────────────────────────────────────────── */}
       <div className={cx("chatWindow")}>
         {activeConversationId ? (
           <>
-            {/* Window Header */}
             <div className={cx("windowHeader")}>
               <button className={cx("backButton")} onClick={handleBack}>
                 <ArrowLeft size={16} /> Quay lại
               </button>
 
-              <strong>
-                {[
-                  ...conversations.waiting,
-                  ...conversations.inProgress,
-                  ...conversations.closed,
-                ].find((c) => c.id === activeConversationId)?.customerName || "..."}
-              </strong>
+              <strong>{activeConversation?.customerName || "..."}</strong>
 
               <div className={cx("headerActions")}>
-                {showTransfer ? (
-                  <>
-                    <select
-                      className={cx("transferSelect")}
-                      value={selectedReceptionist}
-                      onChange={(e) => setSelectedReceptionist(e.target.value)}
-                    >
-                      <option value="">-- Chọn lễ tân --</option>
-                      {receptionists
-                        .filter((r) => r.id !== receptionistId)
-                        .map((r) => (
-                          <option key={r.id} value={r.id}>{r.name}</option>
-                        ))}
-                    </select>
-                    <button
-                      className={cx("headerBtn")}
-                      onClick={() => {
-                        if (selectedReceptionist) handleTransfer(Number(selectedReceptionist));
-                        else showToast({ text: "Chọn lễ tân", type: "warning" });
-                      }}
-                    >
-                      Xác nhận
-                    </button>
-                    <button className={cx("headerBtn")} onClick={() => setShowTransfer(false)}>
-                      Huỷ
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button className={cx("headerBtn")} onClick={handleLeaveConversation}>
-                      Rời
-                    </button>
-                    <button className={cx("headerBtn", "danger")} onClick={handleCloseConversation}>
-                      Đóng
-                    </button>
-                    <button className={cx("headerBtn")} onClick={() => setShowTransfer(true)}>
-                      Chuyển
-                    </button>
-                  </>
+                {!isClosedStatus && (
+                  showTransfer ? (
+                    <>
+                      <select
+                        className={cx("transferSelect")}
+                        value={selectedReceptionist}
+                        onChange={(e) => setSelectedReceptionist(e.target.value)}
+                        style={{ minWidth: "240px", padding: "6px 10px", borderRadius: "6px" }}
+                      >
+                        <option value="">-- Chọn lễ tân --</option>
+                        {receptionists
+                          .filter((r) => r.id !== receptionistId) 
+                          .map((r) => {
+                            const branchName = r.branch?.name || "Chưa gán chi nhánh";
+                            return (
+                              <option key={r.id} value={r.id}>
+                                {r.name} — [{branchName}]
+                              </option>
+                            );
+                          })}
+                      </select>
+                      <button
+                        className={cx("headerBtn")}
+                        onClick={() => {
+                          if (selectedReceptionist) handleTransfer(Number(selectedReceptionist));
+                          else showToast({ text: "Chọn lễ tân", type: "warning" });
+                        }}
+                      >
+                        Xác nhận
+                      </button>
+                      <button className={cx("headerBtn")} onClick={() => setShowTransfer(false)}>
+                        Huỷ
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button className={cx("headerBtn")} onClick={handleLeaveConversation}>
+                        Rời
+                      </button>
+                      <button className={cx("headerBtn", "danger")} onClick={handleCloseConversation}>
+                        Đóng
+                      </button>
+                      <button className={cx("headerBtn")} onClick={() => setShowTransfer(true)}>
+                        Chuyển
+                      </button>
+                    </>
+                  )
                 )}
               </div>
             </div>
 
-            {/* Messages */}
             <div className={cx("messageArea")}>
               {!messagesMap[activeConversationId] ? (
                 <div className={cx("loading")}>Đang tải tin nhắn...</div>
               ) : (
-                messagesMap[activeConversationId].map((msg, idx) => (
-                  <div
-                    key={idx}
-                    className={cx("msgRow", {
-                      sent:     msg.senderType === "receptionist",
-                      received: msg.senderType === "customer",
-                      system:   msg.senderType === "system",
-                    })}
-                  >
-                    <div className={cx("msgBubble")}>
-                      {msg.messageType === "system" ? (
-                        <>
-                          {msg.eventType === "join"     && `💼 ${msg.metadata?.name} đã tham gia`}
-                          {msg.eventType === "leave"    && `💼 ${msg.metadata?.name} đã rời`}
-                          {msg.eventType === "transfer" && `🔄 Chuyển từ ${msg.metadata?.fromName} sang ${msg.metadata?.toName}`}
-                          {msg.eventType === "reopen"   && `🔄 Cuộc trò chuyện được mở lại`}
-                        </>
+                messagesMap[activeConversationId].map((msg, idx) => {
+                  const isSystem = msg.senderType === "system" || msg.messageType === "system";
+                  const isSent = msg.senderType === "receptionist";
+                  const isReceived = msg.senderType === "customer";
+
+                  return (
+                    <div
+                      key={idx}
+                      className={cx("msgRow", {
+                        sent:     isSent,
+                        received: isReceived,
+                        system:   isSystem,
+                      })}
+                    >
+                      {isReceived && (
+                        <div className={cx("msgAvatar")}>
+                          <User size={14} />
+                        </div>
+                      )}
+
+                      {isSystem ? (
+                        <div className={cx("msgBubble", "systemSummary")}>
+                          <div className={cx("systemEventText")}>
+                            {msg.eventType === "join"     && `💼 ${msg.metadata?.name || "Lễ tân"} đã tham gia cuộc hội thoại.`}
+                            {msg.eventType === "leave"    && `💼 ${msg.metadata?.name || "Lễ tân"} đã rời cuộc hội thoại.`}
+                            {msg.eventType === "transfer" && `🔄 Chuyển từ ${msg.metadata?.fromName} sang ${msg.metadata?.toName}`}
+                            {msg.eventType === "reopen"   && `🔄 Cuộc trò chuyện được mở lại`}
+                            {msg.eventType === "close"    && `🏁 Cuộc trò chuyện trực tiếp này đã được đóng.`}
+                          </div>
+                          {msg.content && (
+                            <div className={cx("aiSummaryBlock")}>
+                              {msg.content}
+                            </div>
+                          )}
+                        </div>
                       ) : (
-                        msg.content
+                        <div className={cx("msgBubbleWrapper")}>
+                          <span className={cx("senderName")}>
+                            {isSent ? "Lễ tân" : "Khách hàng"}
+                          </span>
+                          <div className={cx("msgBubble")}>
+                            {msg.content}
+                          </div>
+                        </div>
                       )}
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input */}
-            <div className={cx("inputArea")}>
-              <input
-                type="text"
-                placeholder="Nhập tin nhắn..."
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && handleSend()}
-              />
-              <label className={cx("attachBtn")}>
-                <Camera size={18} />
-                <input type="file" hidden accept="image/*" onChange={(e) => console.log(e)} />
-              </label>
-              <button className={cx("sendBtn")} onClick={handleSend}>
-                <Send size={16} />
-              </button>
-            </div>
+            {isClosedStatus ? (
+              <div 
+                className={cx("inputArea")} 
+                style={{ 
+                  justifyContent: "center", 
+                  backgroundColor: "#f5f5f5", 
+                  color: "#888", 
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  fontStyle: "italic"
+                }}
+              >
+                🔒 Cuộc trò chuyện này đã kết thúc. Bạn chỉ có quyền xem lịch sử.
+              </div>
+            ) : (
+              <div className={cx("inputArea")}>
+                <input
+                  type="text"
+                  placeholder="Nhập tin nhắn..."
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.nativeEvent.isComposing || e.keyCode === 229) {
+                      return;
+                    }
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleSend();
+                    }
+                  }}
+                />
+                <label className={cx("attachBtn")}>
+                  <Camera size={18} />
+                  <input type="file" hidden accept="image/*" onChange={(e) => console.log(e)} />
+                </label>
+                <button className={cx("sendBtn")} onClick={handleSend}>
+                  <Send size={16} />
+                </button>
+              </div>
+            )}
           </>
         ) : (
           <div className={cx("emptyWindow")}>

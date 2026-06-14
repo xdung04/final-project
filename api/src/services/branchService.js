@@ -1,5 +1,5 @@
 import db from "../models/index.js";
-import { upsertBranches } from "./pineconeService.js";
+import { upsertBranches,deleteNamespace } from "./pineconeService.js";
 const { Op } = db.Sequelize;
 const Barber = db.Barber;
 const Branch = db.Branch;
@@ -350,7 +350,7 @@ const syncBranchesToPinecone = async () => {
         }. Giờ đóng cửa: ${b.closeTime || "N/A"}. Dịch vụ: ${serviceList}.`.trim(),
       };
     });
-
+    await deleteNamespace("branches");
     await upsertBranches(branchData);
 
     return {
@@ -504,55 +504,71 @@ const setResumeDate = async (branchId, resumeDate) => {
 };
 
 export const fetchBranchesWithDistance = async (userLat, userLng) => {
+  // 1. Luôn lấy danh sách chi nhánh từ Database trước
   const branches = await db.Branch.findAll({
     attributes: [
       "idBranch",
       "name",
       "address",
-
       "latitude",
       "longitude",
-
       "openTime",
       "closeTime",
-
       "status",
       "slotDuration",
-
       "suspendDate",
       "resumeDate",
     ],
   });
 
-  if (!userLat || !userLng) return branches.map((b) => b.toJSON());
+  // Chuyển đổi hàng loạt sang JSON thuần cho an toàn
+  const plainBranches = branches.map((b) => b.toJSON());
 
-  const branchesWithCoords = branches.filter((b) => b.latitude != null && b.longitude != null);
+  // Nếu không có tọa độ người dùng, trả về danh sách gốc ngay lập tức
+  if (!userLat || !userLng) return plainBranches;
 
-  if (branchesWithCoords.length === 0) return branches.map((b) => b.toJSON());
+  // Lọc ra các chi nhánh hợp lệ có đủ kinh độ/vĩ độ
+  const branchesWithCoords = plainBranches.filter(
+    (b) => b.latitude != null && b.longitude != null
+  );
 
-  const distanceMap = await getDistanceMatrix(userLat, userLng, branchesWithCoords);
+  // Nếu không có chi nhánh nào có tọa độ, trả về luôn danh sách gốc
+  if (branchesWithCoords.length === 0) return plainBranches;
 
-  return branches
+  // 2. BỌC PHÒNG THỦ: Cô lập hàm gọi API bên thứ ba bằng block try...catch riêng
+  let distanceMap = {};
+  try {
+    const mapResult = await getDistanceMatrix(userLat, userLng, branchesWithCoords);
+    
+    // Đảm bảo mapResult hợp lệ và là một Object trước khi gán
+    if (mapResult && typeof mapResult === "object") {
+      distanceMap = mapResult;
+    }
+  } catch (error) {
+    // Nếu API khoảng cách lỗi (Hết key, sập server bên thứ 3, lỗi mạng...), 
+    // ta CHỈ ghi log lỗi lại chứ KHÔNG để sập toàn bộ hàm.
+    console.error("🔥 LỖI API KHOẢNG CÁCH (getDistanceMatrix):", error.message);
+    
+    // Gán distanceMap thành object rỗng để logic bên dưới chạy bình thường
+    distanceMap = {}; 
+  }
 
+  // 3. Map dữ liệu khoảng cách vào chi nhánh (Nếu API sập thì toàn bộ sẽ nhận giá trị null)
+  return plainBranches
     .map((b) => ({
-      ...b.toJSON(),
-
+      ...b,
       ...(distanceMap[b.idBranch] ?? {
         distanceM: null,
         durationSec: null,
-
         distanceText: null,
         durationText: null,
       }),
     }))
-
     .sort((a, b) => {
+      // Sắp xếp an toàn: Đẩy các chi nhánh không tính được khoảng cách xuống cuối danh sách
       if (a.distanceM == null && b.distanceM == null) return 0;
-
       if (a.distanceM == null) return 1;
-
       if (b.distanceM == null) return -1;
-
       return a.distanceM - b.distanceM;
     });
 };

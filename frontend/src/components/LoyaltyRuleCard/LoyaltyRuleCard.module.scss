@@ -1,140 +1,196 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;700&display=swap');
+// LoyaltyRuleCard.module.scss
+// Component — Loyalty Rule Card | NOULE Barber
+// Design: NOULE gold/dark — đồng bộ DichVu / TongQuan
 
+$gold:        #C9A84C;
+$gold-hover:  #BA9A3E;
+$gold-dim:    #8A6A28;
+$gold-faint:  rgba(201, 168, 76, 0.12);
+$gold-border: rgba(201, 168, 76, 0.3);
+
+$ink:         #1A1612;
+$ink-soft:    #4A3728;
+$ink-muted:   #8a7060;
+
+$page-bg:     #F7F4EF;
+$card-bg:     #FFFFFF;
+$surface-2:   #F9F6F1;
+
+$divider:     rgba(0, 0, 0, 0.06);
+$border:      1px solid rgba(0, 0, 0, 0.07);
+
+$red:         #c0392b;
+$red-bg:      rgba(192, 57, 43, 0.06);
+$red-border:  rgba(192, 57, 43, 0.2);
+
+$radius-sm:   6px;
+$radius-md:   10px;
+$radius-lg:   14px;
+
+// ── Card ──────────────────────────────────────────────────────────────────────
 .card {
-  background: #ffffff;
-  border: 1px solid #eeeeee;
-  border-radius: 4px; // Bo góc nhẹ, sắc sảo
-  padding: 24px;
-  margin-bottom: 20px;
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  position: relative;
+  background: $card-bg;
+  border: $border;
+  border-radius: $radius-md;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-
-  // Hiệu ứng quy tắc mặc định (Sang trọng hơn xanh lá)
-  &.default {
-    border: 1px solid #000000;
-    border-left: 6px solid #4b382a; // Nhấn bằng màu nâu đồng
-    background: #fafafa;
-    
-    .defaultLabel {
-      background-color: #4b382a;
-      color: #ffffff;
-    }
-  }
+  transition: box-shadow 0.15s, transform 0.15s;
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-    border-color: #000000;
+    box-shadow: 0 4px 18px rgba(26, 22, 18, 0.07);
+    transform: translateY(-1px);
+  }
+
+  // Quy tắc mặc định — left accent gold
+  &.default {
+    border-left: 3px solid $gold;
+
+    .defaultLabel {
+      background: $gold-faint;
+      border: 1px solid $gold-border;
+      color: $gold-dim;
+    }
   }
 }
 
-.header {
+// ── Card header (dark bar) ────────────────────────────────────────────────────
+.cardHead {
+  background: $ink;
+  padding: 11px 16px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid $gold-border;
+}
 
-  h3 {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 13px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    margin: 0;
-    color: #999999;
-  }
+.cardHead__left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cardHead__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #F5F0E8;
+  font-family: Georgia, 'Times New Roman', serif;
+  letter-spacing: 0.01em;
 }
 
 .defaultLabel {
-  display: inline-block;
-  padding: 4px 12px;
-  border-radius: 2px;
-  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 20px;
   font-size: 10px;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.08em;
 }
 
-.body {
+// ── Card body ─────────────────────────────────────────────────────────────────
+.cardBody {
+  padding: 16px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 20px;
-  padding: 16px 0;
-  border-top: 1px solid #f5f5f5;
-
-  p {
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    font-size: 14px;
-    color: #000000;
-
-    strong {
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: #999999;
-      font-weight: 500;
-    }
-
-    // Giá trị số nổi bật bằng màu Nâu đồng
-    span.value {
-      font-family: 'Playfair Display', serif;
-      font-size: 18px;
-      font-weight: 700;
-      color: #4b382a;
-    }
-  }
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 16px;
+  background: $card-bg;
 }
 
-/* 🏆 ACTIONS - TINH GỌN */
-.actions {
+// ── Stat item ─────────────────────────────────────────────────────────────────
+.stat {
   display: flex;
-  gap: 12px;
-  margin-left: auto;
-
-  button {
-    padding: 8px 16px;
-    border-radius: 4px;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    cursor: pointer;
-    transition: 0.2s;
-  }
-
-  .btn-edit {
-    background-color: #000000;
-    color: #ffffff;
-    border: none;
-
-    &:hover {
-      background-color: #4b382a;
-    }
-  }
-
-  .btn-delete {
-    background-color: transparent;
-    color: #cccccc;
-    border: 1px solid #eeeeee;
-
-    &:hover {
-      color: #ff4d4f;
-      border-color: #ff4d4f;
-      background: rgba(255, 77, 79, 0.02);
-    }
-  }
+  flex-direction: column;
+  gap: 4px;
 }
 
+.stat__label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: #aaa;
+}
+
+.stat__value {
+  font-size: 18px;
+  font-weight: 600;
+  color: $gold-dim;
+  font-family: Georgia, 'Times New Roman', serif;
+  line-height: 1.15;
+}
+
+.stat__unit {
+  font-size: 11px;
+  color: $ink-muted;
+  margin-top: 1px;
+}
+
+// ── Time range row ────────────────────────────────────────────────────────────
 .timeRange {
   grid-column: 1 / -1;
-  font-size: 12px !important;
-  color: #888888 !important;
+  padding-top: 12px;
+  border-top: 1px dashed rgba(0, 0, 0, 0.06);
+  font-size: 12px;
+  color: $ink-muted;
   font-style: italic;
-  border-top: 1px dashed #eeeeee;
-  padding-top: 10px;
+}
+
+// ── Card footer (actions) ─────────────────────────────────────────────────────
+.cardFooter {
+  padding: 10px 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  background: $surface-2;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.btnEdit {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 14px;
+  border-radius: $radius-sm;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.12s;
+  background: $gold-faint;
+  border: 1px solid $gold-border;
+  color: $gold-dim;
+
+  &:hover {
+    background: $gold;
+    border-color: $gold;
+    color: $ink;
+  }
+}
+
+.btnDelete {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 14px;
+  border-radius: $radius-sm;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.12s;
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: #bbb;
+
+  &:hover {
+    background: $red-bg;
+    border-color: $red-border;
+    color: $red;
+  }
 }

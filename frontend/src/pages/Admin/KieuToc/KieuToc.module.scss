@@ -1186,3 +1186,19 @@ $r-xl:         18px;
     &__title { font-size: 22px; }
   }
 }
+.iconBtn__restore {
+  color: var(--gold);
+  &:hover { background: rgba(201, 168, 76, 0.15); }
+}
+.card__inactive { opacity: 0.6; }
+.listRow__inactive { opacity: 0.6; }
+.inactiveBanner {
+  position: absolute;
+  top: 8px; left: 8px;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.delBox__icon--restore { color: var(--gold); }

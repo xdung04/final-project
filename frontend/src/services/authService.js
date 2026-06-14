@@ -1,13 +1,12 @@
-import * as request from "~/apis/configs/httpRequest"; // file này export các hàm post
+import * as request from "~/apis/configs/httpRequest"; 
 
 // Đăng nhập
 export const login = async ({ email, password }) => {
   try {
     const res = await request.post("/auth/login", { email, password });
-    console.log("API login trả về:", res);
     return res;
   } catch (error) {
-    throw error;
+    throw error; // ✅ Giữ nguyên để interceptor xử lý
   }
 };
 
@@ -17,41 +16,21 @@ export const googleLogin = async ({ token }) => {
     const res = await request.post("/auth/google", { token });
     return res;
   } catch (error) {
-    throw error;
+    throw error; // ✅ Giữ nguyên
   }
 };
 
-// Gửi OTP khi đăng ký
-export const register = async ({
-  fullName,
-  email,
-  phoneNumber,
-  password,
-  confirmPassword,
-}) => {
+// Đăng ký
+export const register = async ({ fullName, email, phoneNumber, password, confirmPassword }) => {
   try {
     if (!fullName || !email || !phoneNumber || !password || !confirmPassword) {
       throw new Error("Vui lòng điền đầy đủ thông tin");
     }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) throw new Error("Email không hợp lệ");
-
-    const phoneRegex = /^[0-9]{10,15}$/;
-    if (!phoneRegex.test(phoneNumber))
-      throw new Error("Số điện thoại không hợp lệ");
-
-    if (password !== confirmPassword)
-      throw new Error("Mật khẩu và xác nhận mật khẩu không khớp");
-
     const payload = { fullName, email, phoneNumber, password };
-    console.log("Register payload gửi xuống backend:", payload);
-
     const res = await request.post("/auth/register", payload);
     return res;
   } catch (error) {
-    console.error("Lỗi khi gọi API register:", error);
-    throw error; // ✅ giữ nguyên axios error
+    throw error; // ✅ Giữ nguyên
   }
 };
 
@@ -61,7 +40,7 @@ export const verifyOtp = async ({ email, otp }) => {
     const res = await request.post("/auth/verify-otp", { email, otp });
     return res;
   } catch (error) {
-    throw error.response?.data || error;
+    throw error; // ✅ ĐÃ SỬA: Không bóc tách bậy bạ ở đây nữa
   }
 };
 
@@ -71,7 +50,7 @@ export const forgotPassword = async ({ email }) => {
     const res = await request.post("/auth/forgot-password", { email });
     return res;
   } catch (error) {
-    throw error.response?.data || error;
+    throw error; // ✅ ĐÃ SỬA
   }
 };
 
@@ -80,19 +59,16 @@ export const verifyForgotOtp = async ({ email, otp }) => {
     const res = await request.post("/auth/verify-forgot-otp", { email, otp });
     return res;
   } catch (error) {
-    throw error.response?.data || error;
+    throw error; // ✅ ĐÃ SỬA
   }
 };
 
 export const resetPassword = async ({ email, newPassword }) => {
   try {
-    const res = await request.post("/auth/reset-password", {
-      email,
-      newPassword,
-    });
+    const res = await request.post("/auth/reset-password", { email, newPassword });
     return res;
   } catch (error) {
-    throw error.response?.data || error;
+    throw error; // ✅ ĐÃ SỬA
   }
 };
 
@@ -101,7 +77,7 @@ export const refreshToken = async ({ refreshToken }) => {
     const res = await request.post("/auth/refresh", { refreshToken });
     return res;
   } catch (error) {
-    throw error.response?.data || error;
+    throw error; // ✅ ĐÃ SỬA
   }
 };
 
@@ -110,7 +86,7 @@ export const logout = async ({ refreshToken }) => {
     const res = await request.post("/auth/logout", { refreshToken });
     return res;
   } catch (error) {
-    throw error.response?.data || error;
+    throw error; // ✅ ĐÃ SỬA
   }
 };
 
@@ -118,8 +94,8 @@ export const logout = async ({ refreshToken }) => {
 export const getMe = async () => {
   try {
     const res = await request.get("/auth/me");
-    return res;
+    return res; // Trả về res (Đã được file httpRequest cấu bóc tách sẵn .data nếu chạy thành công)
   } catch (error) {
-    throw error.response?.data || error;
+    throw error; // ✅ ĐÃ SỬA THÀNH CÔNG: Trả nguyên bản lỗi Axios về cho Interceptor xử lý 401
   }
 };

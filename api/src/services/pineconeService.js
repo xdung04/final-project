@@ -26,39 +26,62 @@ export async function createEmbedding(text) {
   const output = await embed(text, { pooling: "mean", normalize: true });
   return Array.from(output.data);
 }
-
 export async function upsertBarbers(barbers) {
   try {
-    const index = getPineconeIndex(); // ← gọi ở đây, dotenv đã load rồi
-    const records = await Promise.all(
-      barbers.map(async (b) => {
-        const text = `
-          Tên barber: ${b.fullName || "Chưa có tên"}.
-          Chi nhánh: ${b.branchName || "Chưa có chi nhánh"}.
-          Mô tả: ${b.profileDescription || "Không có mô tả"}.
-          Đánh giá trung bình: ${b.avgRate ?? 0}.
-        `.trim();
+    const index = getPineconeIndex();
 
-        return {
-          id: b.idBarber.toString(),
-          values: await createEmbedding(text),
-          metadata: {
-            text,
-            metadata: JSON.stringify({
-              idBarber: b.idBarber,
-              idBranch: b.idBranch,
-              fullName: b.fullName || "",
-              branchName: b.branchName || "",
-              profileDescription: b.profileDescription || "",
-              avgRate: b.avgRate ?? 0,
-            }),
-          },
-        };
-      })
-    );
+    // Đảm bảo model load xong 1 lần duy nhất trước khi bắt đầu
+    await getEmbedder();
 
-    await index.namespace("barbers").upsert(records);
-    console.log(`✅ Upserted ${records.length} barbers`);
+    const BATCH_SIZE = 5; // xử lý 5 barber mỗi lần, tránh OOM
+    const allRecords = [];
+
+    for (let i = 0; i < barbers.length; i += BATCH_SIZE) {
+      const batch = barbers.slice(i, i + BATCH_SIZE);
+
+      const records = await Promise.all(
+        batch.map(async (b) => {
+          const text = `
+            Tên barber: ${b.fullName}.
+            Chi nhánh: ${b.branchName}.
+            Mô tả: ${b.profileDescription}.
+            Kinh nghiệm: ${b.experienceYears} năm.
+            Chuyên môn: ${b.specialty}.
+            Phong cách: ${b.style}.
+            Chứng chỉ: ${b.certificates}.
+            Triết lý: ${b.philosophy}.
+            Đánh giá trung bình: ${b.avgRate}.
+          `.trim();
+
+          return {
+            id: b.idBarber.toString(),
+            values: await createEmbedding(text),
+            metadata: {
+              text,
+              metadata: JSON.stringify({
+                idBarber:           b.idBarber,
+                idBranch:           b.idBranch,
+                fullName:           b.fullName,
+                branchName:         b.branchName,
+                profileDescription: b.profileDescription,
+                experienceYears:    b.experienceYears,
+                specialty:          b.specialty,
+                style:              b.style,
+                certificates:       b.certificates,
+                philosophy:         b.philosophy,
+                avgRate:            b.avgRate,
+              }),
+            },
+          };
+        })
+      );
+
+      allRecords.push(...records);
+      console.log(`✅ Embedded batch ${Math.floor(i / BATCH_SIZE) + 1} (${allRecords.length}/${barbers.length})`);
+    }
+
+    await index.namespace("barbers").upsert(allRecords);
+    console.log(`✅ Upserted ${allRecords.length} barbers`);
   } catch (error) {
     console.error("Upsert Barber Error:", error);
     throw new Error("Không thể upsert barbers vào Pinecone");
@@ -106,5 +129,19 @@ export async function upsertBranches(branches) {
   } catch (error) {
     console.error("Upsert Branch Error:", error);
     throw new Error("Không thể upsert branches vào Pinecone");
+  }
+}
+// pineconeService.js — thêm vào cuối
+export async function deleteNamespace(namespace) {
+  try {
+    const index = getPineconeIndex();
+    await index.namespace(namespace).deleteAll();
+    console.log(`🗑️ Đã xóa namespace ${namespace}`);
+  } catch (error) {
+    if (error.message?.includes("404")) {
+      console.log(`⚠️ Namespace ${namespace} chưa tồn tại, bỏ qua bước xóa`);
+      return;
+    }
+    throw error;
   }
 }

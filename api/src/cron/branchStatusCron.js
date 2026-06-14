@@ -6,18 +6,18 @@ const Branch = db.Branch;
 
 export default function startBranchStatusCron() {
   cron.schedule(
-    "0 0 0 * * *", // 00:00:00 mỗi ngày
+     "0 0 * * *",
     async () => {
-      console.log("Cron chạy lúc:", new Date().toLocaleString("vi-VN"));
+      const now = new Date();
+      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
-      const today = new Date().toISOString().split("T")[0];
+      console.log("Cron chạy lúc:", now.toLocaleString("vi-VN"), "| today =", today);
 
       try {
-        // 1) Kích hoạt chi nhánh khi đến resumeDate
+        
+        // BƯỚC 1: Activate — resumeDate <= hôm nay, clear suspendDate luôn
         const [activatedRows] = await Branch.update(
-          {
-            status: "Active",
-          },
+          { status: "Active", suspendDate: null, resumeDate: null },
           {
             where: {
               status: "Inactive",
@@ -25,17 +25,16 @@ export default function startBranchStatusCron() {
             },
           }
         );
+        console.log("Activated xong:", activatedRows);
 
-        // 2) Ngừng hoạt động khi đến suspendDate 
-        // ❗ chỉ ngưng nếu hôm nay < resumeDate (chưa đến ngày mở lại)
+        // BƯỚC 2: Suspend — suspendDate <= hôm nay
+        // Row vừa activate đã bị clear suspendDate nên sẽ không bị match ở đây
         const [suspendedRows] = await Branch.update(
           { status: "Inactive" },
           {
             where: {
               status: "Active",
               suspendDate: { [Op.lte]: today },
-
-              // ❗ Nếu có resumeDate thì phải đảm bảo chưa đến resumeDate
               [Op.or]: [
                 { resumeDate: null },
                 { resumeDate: { [Op.gt]: today } },
@@ -43,17 +42,13 @@ export default function startBranchStatusCron() {
             },
           }
         );
+        console.log("Suspended xong:", suspendedRows);
 
-        console.log(
-          `Cron update: activated ${activatedRows}, suspended ${suspendedRows}`
-        );
-
+        console.log(`✅ Cron update: activated ${activatedRows}, suspended ${suspendedRows}`);
       } catch (err) {
-        console.error("Lỗi cron:", err);
+        console.error("❌ Lỗi cron:", err);
       }
     },
-    {
-      timezone: "Asia/Ho_Chi_Minh",
-    }
+    { timezone: "Asia/Ho_Chi_Minh" }
   );
 }
