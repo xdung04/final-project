@@ -2,11 +2,10 @@ import { useState, useMemo, useEffect } from "react";
 import classNames from "classnames/bind";
 import {
   Search, Plus, Tag, Edit, Trash2, X, Check,
-  Upload, ChevronLeft, ChevronRight, LayoutGrid, List, Scissors
+  Upload, ChevronLeft, ChevronRight, LayoutGrid, List, Scissors, RotateCcw
 } from "lucide-react";
 import styles from "./KieuToc.module.scss";
 
-// 👑 Import API Quản lý kiểu tóc
 import { hairStyleAPI } from "~/apis/hairStyleAPI";
 
 const cx = classNames.bind(styles);
@@ -15,7 +14,7 @@ const EMPTY_FORM = {
   name: "",
   slug: "",
   idCategory: "",
-  difficultyLevel: "Medium", // Mặc định theo Tiếng Anh của DB
+  difficultyLevel: "Medium",
   maintenanceLevel: "Medium",
   suitableAge: "",
   shortDescription: "",
@@ -24,8 +23,7 @@ const EMPTY_FORM = {
   sideImage: ""
 };
 
-// 👑 Hỗ trợ map cả Tiếng Anh lẫn Tiếng Việt từ DB ra CSS class tương ứng
-const DIFF_KEY = { 
+const DIFF_KEY = {
   "Dễ": "easy", "Trung bình": "medium", "Khó": "hard",
   "Easy": "easy", "Medium": "medium", "Hard": "hard",
   "Low": "easy", "High": "hard"
@@ -38,7 +36,6 @@ function toSlug(str) {
     .trim().replace(/\s+/g, "-");
 }
 
-// ── Sub-components hiển thị ảnh đại diện ─────────────────────────────────────────
 function ImgPlaceholder({ src, alt }) {
   if (src) return <img src={src} alt={alt} className={cx("card__imgReal")} style={{ width: "100%", height: "100%", objectFit: "cover" }} />;
   return (
@@ -58,26 +55,27 @@ function ListThumbPh({ src, alt }) {
   );
 }
 
-// ── Main Component ────────────────────────────────────────────────────────────
 export default function KieuToc() {
-  const [data, setData]                 = useState([]); 
-  const [cats, setCats]                 = useState([]); 
-  const [search, setSearch]           = useState("");
-  const [catFilter, setCatFilter]     = useState("all");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [diffFilter, setDiffFilter]   = useState("");
-  const [view, setView]               = useState("grid");
-  const [page, setPage]               = useState(1);
-  const [loading, setLoading]         = useState(false);
+  const [data, setData]                   = useState([]);
+  const [cats, setCats]                   = useState([]);
+  const [search, setSearch]               = useState("");
+  const [catFilter, setCatFilter]         = useState("all");
+  const [statusFilter, setStatusFilter]   = useState("");
+  const [diffFilter, setDiffFilter]       = useState("");
+  const [view, setView]                   = useState("grid");
+  const [page, setPage]                   = useState(1);
+  const [loading, setLoading]             = useState(false);
   const PER = 8;
 
-  const [modal, setModal]         = useState(null); 
-  const [form, setForm]           = useState(EMPTY_FORM);
-  const [editId, setEditId]       = useState(null);
-  const [deleteId, setDeleteId]   = useState(null);
-  const [newCatName, setNewCatName] = useState("");
+  const [coverImageFile, setCoverImageFile] = useState(null);
+  const [sideImageFile, setSideImageFile]   = useState(null);
+  const [modal, setModal]                   = useState(null);
+  const [form, setForm]                     = useState(EMPTY_FORM);
+  const [editId, setEditId]                 = useState(null);
+  const [deleteId, setDeleteId]             = useState(null);
+  const [newCatName, setNewCatName]         = useState("");
 
-  // ── 👑 HÀM ĐỒNG BỘ DỮ LIỆU CÓ LOG CHECK LỖI ──
+  // ── Load data ──
   const loadInitialData = async () => {
     setLoading(true);
     try {
@@ -85,35 +83,24 @@ export default function KieuToc() {
         hairStyleAPI.getAdminCategories(),
         hairStyleAPI.getAdminHairstyles()
       ]);
-      
-      // 🕵️‍♂️ Bật F12 lên Tab Console để xem dữ liệu có về tới đây không bạn nhé
-      console.log("=== ĐÃ GỌI API ADMIN THÀNH CÔNG ===");
-      console.log("Dữ liệu Danh Mục (Categories):", categoriesRes);
-      console.log("Dữ liệu Kiểu Tóc (Hairstyles):", hairstylesRes);
-
-      // Bóc tách phòng hờ cấu trúc Axios bọc ngoài
       const categoriesData = categoriesRes?.data?.data || categoriesRes?.data || categoriesRes;
       const hairstylesData = hairstylesRes?.data?.data || hairstylesRes?.data || hairstylesRes;
-
       if (Array.isArray(categoriesData)) setCats(categoriesData);
       if (Array.isArray(hairstylesData)) setData(hairstylesData);
-
     } catch (error) {
-      console.error("❌ Lỗi API Admin (Check xem đã truyền Token chưa):", error);
+      console.error("❌ Lỗi load data:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    loadInitialData();
-  }, []);
+  useEffect(() => { loadInitialData(); }, []);
 
-  // ── Logic tính toán bộ lọc (Derived state) ──
+  // ── Derived state ──
   const catCounts = useMemo(() => {
     const c = { all: data.length };
-    cats.forEach((cat) => { 
-      c[cat.idCategory] = data.filter((r) => String(r.idCategory) === String(cat.idCategory)).length; 
+    cats.forEach((cat) => {
+      c[cat.idCategory] = data.filter((r) => String(r.idCategory) === String(cat.idCategory)).length;
     });
     return c;
   }, [data, cats]);
@@ -131,10 +118,13 @@ export default function KieuToc() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER));
   const pageRows   = filtered.slice((page - 1) * PER, page * PER);
   const resetPage  = () => setPage(1);
-
   const totalActive = data.filter((r) => r.status === "Active").length;
 
-  // ── Handlers ──
+  // ── Helpers ──
+  const getDeleteTarget = () => data.find((r) => r.idHairstyle === deleteId);
+  const isInactive = (idHairstyle) => data.find((r) => r.idHairstyle === idHairstyle)?.status === "Inactive";
+
+  // ── Modal handlers ──
   function openAdd() { setForm(EMPTY_FORM); setEditId(null); setModal("add"); }
 
   function openEdit(idHairstyle) {
@@ -152,12 +142,19 @@ export default function KieuToc() {
       coverImage: r.coverImage || "",
       sideImage: r.sideImage || ""
     });
-    setEditId(idHairstyle); 
+    setEditId(idHairstyle);
     setModal("edit");
   }
 
   function openDelete(idHairstyle) { setDeleteId(idHairstyle); setModal("delete"); }
-  function closeModal()   { setModal(null); setDeleteId(null); setEditId(null); }
+
+  function closeModal() {
+    setModal(null);
+    setDeleteId(null);
+    setEditId(null);
+    setCoverImageFile(null);
+    setSideImageFile(null);
+  }
 
   function handleFormChange(e) {
     const { name, value } = e.target;
@@ -171,20 +168,32 @@ export default function KieuToc() {
   const handleImageChange = (e, field) => {
     const file = e.target.files[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setForm((prev) => ({ ...prev, [field]: reader.result }));
-    };
-    reader.readAsDataURL(file);
+    if (field === "coverImage") setCoverImageFile(file);
+    if (field === "sideImage")  setSideImageFile(file);
+    const previewUrl = URL.createObjectURL(file);
+    setForm((prev) => ({ ...prev, [field]: previewUrl }));
   };
 
+  // ── CRUD handlers ──
   async function handleSave() {
     if (!form.name.trim() || !form.slug.trim()) { alert("Vui lòng nhập Tên và Slug!"); return; }
     try {
+      const formData = new FormData();
+      formData.append("name",             form.name);
+      formData.append("slug",             form.slug);
+      formData.append("idCategory",       form.idCategory);
+      formData.append("difficultyLevel",  form.difficultyLevel);
+      formData.append("maintenanceLevel", form.maintenanceLevel);
+      formData.append("suitableAge",      form.suitableAge);
+      formData.append("shortDescription", form.shortDescription);
+      formData.append("status",           form.status);
+      if (coverImageFile) formData.append("coverImage", coverImageFile);
+      if (sideImageFile)  formData.append("sideImage",  sideImageFile);
+
       if (editId) {
-        await hairStyleAPI.updateAdminHairstyle(editId, form);
+        await hairStyleAPI.updateAdminHairstyle(editId, formData);
       } else {
-        await hairStyleAPI.createAdminHairstyle(form);
+        await hairStyleAPI.createAdminHairstyle(formData);
       }
       await loadInitialData();
       closeModal();
@@ -193,14 +202,29 @@ export default function KieuToc() {
     }
   }
 
+  // Soft delete — chuyển sang Inactive
   async function handleDelete() {
     try {
       await hairStyleAPI.deleteAdminHairstyle(deleteId);
       await loadInitialData();
-      setPage(1); 
+      setPage(1);
       closeModal();
     } catch (error) {
-      alert("Không thể xóa kiểu tóc!");
+      alert("Không thể ẩn kiểu tóc!");
+    }
+  }
+
+  // Khôi phục — chuyển lại Active
+  async function handleRestore() {
+    try {
+      const formData = new FormData();
+      formData.append("status", "Active");
+      await hairStyleAPI.updateAdminHairstyle(deleteId, formData);
+      await loadInitialData();
+      setPage(1);
+      closeModal();
+    } catch (error) {
+      alert("Không thể khôi phục kiểu tóc!");
     }
   }
 
@@ -226,7 +250,9 @@ export default function KieuToc() {
     }
   }
 
-  const deleteName = data.find((r) => r.idHairstyle === deleteId)?.name || "";
+  const deleteTarget = getDeleteTarget();
+  const deleteName = deleteTarget?.name || "";
+  const deleteIsInactive = deleteTarget?.status === "Inactive";
 
   return (
     <div className={cx("page")}>
@@ -258,15 +284,15 @@ export default function KieuToc() {
           </div>
         </div>
 
-        {loading && <div style={{ color: "var(--gold)", textAlign: "center", padding: "10px" }}>Đang tải dữ liệu thực tế...</div>}
+        {loading && <div style={{ color: "var(--gold)", textAlign: "center", padding: "10px" }}>Đang tải dữ liệu...</div>}
 
         {/* Stats */}
         <div className={cx("statsStrip")}>
           {[
-            { icon: <Scissors size={18} />, num: data.length,           label: "Tổng kiểu tóc" },
-            { icon: <Check size={18} />,    num: totalActive,            label: "Đang hiển thị" },
-            { icon: <Tag size={18} />,      num: cats.length,            label: "Danh mục" },
-            { icon: <X size={18} />,        num: data.length - totalActive, label: "Tạm ẩn" },
+            { icon: <Scissors size={18} />, num: data.length,                label: "Tổng kiểu tóc" },
+            { icon: <Check size={18} />,    num: totalActive,                 label: "Đang hiển thị" },
+            { icon: <Tag size={18} />,      num: cats.length,                 label: "Danh mục" },
+            { icon: <X size={18} />,        num: data.length - totalActive,   label: "Tạm ẩn" },
           ].map((s, i) => (
             <div className={cx("statItem")} key={i}>
               <div className={cx("statItem__icon")}>{s.icon}</div>
@@ -285,8 +311,7 @@ export default function KieuToc() {
               className={cx("pill", { "pill__active": catFilter === "all" })}
               onClick={() => { setCatFilter("all"); resetPage(); }}
             >
-              Tất cả
-              <span className={cx("pillCount")}>{catCounts["all"] ?? 0}</span>
+              Tất cả <span className={cx("pillCount")}>{catCounts["all"] ?? 0}</span>
             </button>
             {cats.map((c) => (
               <button
@@ -319,7 +344,7 @@ export default function KieuToc() {
           </div>
         </div>
 
-        {/* Sub filters - Đã đồng bộ Value theo Tiếng Anh của DB */}
+        {/* Sub filters */}
         <div className={cx("filterBar")}>
           <select className={cx("filterSelect")} value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); resetPage(); }}>
             <option value="">Trạng thái</option>
@@ -355,16 +380,18 @@ export default function KieuToc() {
             ) : pageRows.map((r) => {
               const dk = DIFF_KEY[r.difficultyLevel] || "medium";
               const currentCategoryName = cats.find(c => String(c.idCategory) === String(r.idCategory))?.name || "—";
+              const inactive = r.status === "Inactive";
               return (
-                <div className={cx("card")} key={r.idHairstyle}>
+                <div className={cx("card", { "card__inactive": inactive })} key={r.idHairstyle}>
                   <div className={cx("card__imgWrap")}>
                     <ImgPlaceholder src={r.coverImage} alt={r.name} />
                     <span className={cx("catBadge")}>{currentCategoryName}</span>
-                    <span className={cx("statusDot", r.status === "Active" ? "statusDot__active" : "statusDot__inactive")} />
+                    <span className={cx("statusDot", inactive ? "statusDot__inactive" : "statusDot__active")} />
                     {r.difficultyLevel && (
-                      <span className={cx("diffBadge", `diffBadge__${dk}`)}>
-                        {r.difficultyLevel}
-                      </span>
+                      <span className={cx("diffBadge", `diffBadge__${dk}`)}>{r.difficultyLevel}</span>
+                    )}
+                    {inactive && (
+                      <span className={cx("inactiveBanner")}>Đã ẩn</span>
                     )}
                   </div>
                   <div className={cx("card__body")}>
@@ -372,7 +399,7 @@ export default function KieuToc() {
                     {r.shortDescription && <div className={cx("card__desc")}>{r.shortDescription}</div>}
                     <div className={cx("card__meta")}>
                       {r.maintenanceLevel && <span className={cx("metaChip")}>Bảo dưỡng: {r.maintenanceLevel}</span>}
-                      {r.suitableAge   && <span className={cx("metaChip")}>{r.suitableAge}</span>}
+                      {r.suitableAge      && <span className={cx("metaChip")}>{r.suitableAge}</span>}
                     </div>
                     <div className={cx("card__footer")}>
                       <span className={cx("card__slug")}>{r.slug}</span>
@@ -380,9 +407,23 @@ export default function KieuToc() {
                         <button className={cx("iconBtn")} title="Chỉnh sửa" onClick={() => openEdit(r.idHairstyle)}>
                           <Edit size={13} />
                         </button>
-                        <button className={cx("iconBtn", "iconBtn__danger")} title="Xóa" onClick={() => openDelete(r.idHairstyle)}>
-                          <Trash2 size={13} />
-                        </button>
+                        {inactive ? (
+                          <button
+                            className={cx("iconBtn", "iconBtn__restore")}
+                            title="Khôi phục"
+                            onClick={() => openDelete(r.idHairstyle)}
+                          >
+                            <RotateCcw size={13} />
+                          </button>
+                        ) : (
+                          <button
+                            className={cx("iconBtn", "iconBtn__danger")}
+                            title="Ẩn kiểu tóc"
+                            onClick={() => openDelete(r.idHairstyle)}
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -403,8 +444,9 @@ export default function KieuToc() {
             ) : pageRows.map((r) => {
               const dk = DIFF_KEY[r.difficultyLevel] || "medium";
               const currentCategoryName = cats.find(c => String(c.idCategory) === String(r.idCategory))?.name || "—";
+              const inactive = r.status === "Inactive";
               return (
-                <div className={cx("listRow")} key={r.idHairstyle}>
+                <div className={cx("listRow", { "listRow__inactive": inactive })} key={r.idHairstyle}>
                   <div className={cx("listRow__thumb")}><ListThumbPh src={r.coverImage} alt={r.name} /></div>
                   <div className={cx("listRow__main")}>
                     <div className={cx("listRow__title")}>{r.name}</div>
@@ -416,12 +458,28 @@ export default function KieuToc() {
                   </div>
                   <div className={cx("listRow__right")}>
                     {r.suitableAge && <span className={cx("metaChip")}>{r.suitableAge}</span>}
-                    <span className={cx("statusPill", r.status === "Active" ? "statusPill__active" : "statusPill__inactive")}>
+                    <span className={cx("statusPill", inactive ? "statusPill__inactive" : "statusPill__active")}>
                       <span className={cx("statusPill__dot")} />
                       {r.status}
                     </span>
                     <button className={cx("iconBtn")} onClick={() => openEdit(r.idHairstyle)}><Edit size={13} /></button>
-                    <button className={cx("iconBtn", "iconBtn__danger")} onClick={() => openDelete(r.idHairstyle)}><Trash2 size={13} /></button>
+                    {inactive ? (
+                      <button
+                        className={cx("iconBtn", "iconBtn__restore")}
+                        title="Khôi phục"
+                        onClick={() => openDelete(r.idHairstyle)}
+                      >
+                        <RotateCcw size={13} />
+                      </button>
+                    ) : (
+                      <button
+                        className={cx("iconBtn", "iconBtn__danger")}
+                        title="Ẩn kiểu tóc"
+                        onClick={() => openDelete(r.idHairstyle)}
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    )}
                   </div>
                 </div>
               );
@@ -467,13 +525,11 @@ export default function KieuToc() {
             </div>
 
             <div className={cx("modal__body")}>
-              {/* Main fields */}
               <div>
                 <div className={cx("field")}>
                   <label>Tên Kiểu Tóc <span className={cx("fieldReq")}>*</span></label>
                   <input name="name" placeholder="vd: Undercut Classic" value={form.name} onChange={handleFormChange} />
                 </div>
-
                 <div className={cx("field")}>
                   <label>Slug <span className={cx("fieldReq")}>*</span></label>
                   <div className={cx("slugRow")}>
@@ -481,7 +537,6 @@ export default function KieuToc() {
                     <input name="slug" value={form.slug} onChange={handleFormChange} />
                   </div>
                 </div>
-
                 <div className={cx("fieldGrid")}>
                   <div className={cx("field")}>
                     <label>Danh Mục</label>
@@ -514,19 +569,17 @@ export default function KieuToc() {
                     </select>
                   </div>
                 </div>
-
                 <div className={cx("field")}>
                   <label>Độ Tuổi Phù Hợp</label>
                   <input name="suitableAge" placeholder="vd: 18-35 tuổi" value={form.suitableAge} onChange={handleFormChange} />
                 </div>
-
                 <div className={cx("field")}>
                   <label>Mô Tả Ngắn</label>
                   <textarea name="shortDescription" placeholder="Mô tả..." value={form.shortDescription} onChange={handleFormChange} />
                 </div>
               </div>
 
-              {/* Sidebar tải ảnh lên */}
+              {/* Sidebar ảnh */}
               <div>
                 <div className={cx("sideCard")}>
                   <div className={cx("sideCard__title")}><Upload size={11} /> Ảnh Cover (Chính diện)</div>
@@ -534,10 +587,7 @@ export default function KieuToc() {
                     {form.coverImage ? (
                       <img src={form.coverImage} alt="Cover Preview" style={{ width: "100%", height: "100%", objectFit: "contain", maxHeight: "100px" }} />
                     ) : (
-                      <>
-                        <Upload size={20} />
-                        <span>Nhấn để tải ảnh</span>
-                      </>
+                      <><Upload size={20} /><span>Nhấn để tải ảnh</span></>
                     )}
                     <input id="fCoverImg" type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleImageChange(e, "coverImage")} />
                   </div>
@@ -548,10 +598,7 @@ export default function KieuToc() {
                     {form.sideImage ? (
                       <img src={form.sideImage} alt="Side Preview" style={{ width: "100%", height: "100%", objectFit: "contain", maxHeight: "100px" }} />
                     ) : (
-                      <>
-                        <Upload size={20} />
-                        <span>Nhấn để tải ảnh</span>
-                      </>
+                      <><Upload size={20} /><span>Nhấn để tải ảnh</span></>
                     )}
                     <input id="fSideImg" type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleImageChange(e, "sideImage")} />
                   </div>
@@ -569,20 +616,33 @@ export default function KieuToc() {
         </div>
       )}
 
-      {/* ── MODAL: DELETE ── */}
+      {/* ── MODAL: DELETE / RESTORE ── */}
       {modal === "delete" && (
         <div className={cx("overlay")} onClick={closeModal}>
           <div className={cx("delBox")} onClick={(e) => e.stopPropagation()}>
-            <div className={cx("delBox__icon")}><Trash2 size={22} /></div>
-            <div className={cx("delBox__title")}>Xác Nhận Xóa</div>
+            <div className={cx("delBox__icon", { "delBox__icon--restore": deleteIsInactive })}>
+              {deleteIsInactive ? <RotateCcw size={22} /> : <Trash2 size={22} />}
+            </div>
+            <div className={cx("delBox__title")}>
+              {deleteIsInactive ? "Khôi Phục Kiểu Tóc" : "Xác Nhận Ẩn"}
+            </div>
             <p className={cx("delBox__body")}>
-              Bạn chắc chắn muốn xóa kiểu tóc <strong>"{deleteName}"</strong>?
+              {deleteIsInactive
+                ? <>Kiểu tóc <strong>"{deleteName}"</strong> đang bị ẩn. Bạn muốn khôi phục và hiển thị lại không?</>
+                : <>Bạn chắc chắn muốn ẩn kiểu tóc <strong>"{deleteName}"</strong>? Có thể khôi phục sau.</>
+              }
             </p>
             <div className={cx("delBox__actions")}>
               <button className={cx("btnGhost")} onClick={closeModal}>Hủy</button>
-              <button className={cx("btnDanger")} onClick={handleDelete}>
-                <Trash2 size={13} /> Xóa
-              </button>
+              {deleteIsInactive ? (
+                <button className={cx("btnGold")} onClick={handleRestore}>
+                  <RotateCcw size={13} /> Khôi Phục
+                </button>
+              ) : (
+                <button className={cx("btnDanger")} onClick={handleDelete}>
+                  <Trash2 size={13} /> Ẩn
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -599,7 +659,6 @@ export default function KieuToc() {
               </div>
               <button className={cx("modal__closeBtn")} onClick={closeModal}><X size={15} /></button>
             </div>
-
             <div className={cx("catModalBody")}>
               <div className={cx("catAddRow")}>
                 <input
@@ -613,7 +672,6 @@ export default function KieuToc() {
                   <Plus size={14} /> Thêm
                 </button>
               </div>
-
               {cats.map((c) => {
                 const count = data.filter((r) => String(r.idCategory) === String(c.idCategory)).length;
                 return (
@@ -635,7 +693,6 @@ export default function KieuToc() {
                 );
               })}
             </div>
-
             <div className={cx("modal__foot")}>
               <button className={cx("btnGold")} onClick={closeModal}>
                 <Check size={14} /> Xong

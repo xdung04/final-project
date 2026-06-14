@@ -87,7 +87,7 @@ $radius-xl:   18px;
   color: $ink;
   margin: 0;
   line-height: 1.1;
-  font-family: Georgia, 'Times New Roman', serif;
+    font-family: "Merriweather", serif;
 }
 
 .headerRight {
@@ -111,7 +111,7 @@ $radius-xl:   18px;
   border: 1px solid $border-md;
   border-radius: $radius-md;
   color: $ink;
-  font-family: inherit;
+    font-family: "Merriweather", serif;
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
@@ -159,7 +159,7 @@ $radius-xl:   18px;
   font-weight: 600;
   color: $ink;
   line-height: 1;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: "Merriweather", serif;
 }
 
 .wfLabel {
@@ -202,7 +202,7 @@ $radius-xl:   18px;
   justify-content: center;
   gap: 7px;
   border-radius: $radius-md;
-  font-family: inherit;
+   font-family: "Merriweather", serif;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -287,7 +287,7 @@ $radius-xl:   18px;
   border: 1px solid $border-md;
   border-radius: 20px;
   color: $ink;
-  font-family: inherit;
+  font-family: "Merriweather", serif;
   font-size: 12px;
   outline: none;
   transition: border-color 0.15s, width 0.2s;
@@ -445,7 +445,7 @@ $radius-xl:   18px;
   font-weight: 600;
   color: $gold-dim;
   flex-shrink: 0;
-  font-family: Georgia, 'Times New Roman', serif;
+   font-family: "Merriweather", serif;
   text-transform: uppercase;
 }
 

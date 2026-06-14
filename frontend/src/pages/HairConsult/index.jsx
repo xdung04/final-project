@@ -59,17 +59,19 @@ const HairConsult = () => {
     });
   };
 
+  // 👉 SỬA: Cắt chuỗi lấy tối đa 300 ký tự phòng trường hợp khách cố tình copy paste văn bản dài
   const handleCustomInputChange = (qid, text) => {
     setAnswers({
       ...answers,
-      [qid]: { ...answers[qid], customText: text }
+      [qid]: { ...answers[qid], customText: text.slice(0, 300) }
     });
   };
 
+  // 👉 SỬA: Cắt chuỗi lấy tối đa 300 ký tự cho ô nhập văn bản thuần túy
   const handlePureTextChange = (qid, text) => {
     setAnswers({
       ...answers,
-      [qid]: { value: text, customText: "" }
+      [qid]: { value: text.slice(0, 300), customText: "" }
     });
   };
 
@@ -201,13 +203,20 @@ const HairConsult = () => {
                       </button>
                       
                       {isSelected && hasCustomInput && (
-                        <input
-                          type="text"
-                          className={styles.customInputField}
-                          placeholder="Mô tả cụ thể ý của bạn tại đây..."
-                          value={answers[currentQuestion.id]?.customText || ""}
-                          onChange={(e) => handleCustomInputChange(currentQuestion.id, e.target.value)}
-                        />
+                        <div className={styles.inputWrapper}>
+                          <input
+                            type="text"
+                            maxLength={300} // 👉 THÊM: Ngăn người dùng gõ tiếp khi chạm mốc 300 chữ
+                            className={styles.customInputField}
+                            placeholder="Mô tả cụ thể ý của bạn tại đây..."
+                            value={answers[currentQuestion.id]?.customText || ""}
+                            onChange={(e) => handleCustomInputChange(currentQuestion.id, e.target.value)}
+                          />
+                          {/* Đếm số ký tự nhỏ dưới ô input (Tùy chọn hiển thị) */}
+                          <span className={styles.charCount}>
+                            {(answers[currentQuestion.id]?.customText || "").length}/300
+                          </span>
+                        </div>
                       )}
                     </div>
                   );
@@ -216,13 +225,19 @@ const HairConsult = () => {
             )}
 
             {currentQuestion.type === "text" && (
-              <input 
-                type="text" 
-                className={styles.pureTextInput}
-                placeholder="Nhập câu trả lời của bạn..." 
-                value={answers[currentQuestion.id]?.value || ""} 
-                onChange={(e) => handlePureTextChange(currentQuestion.id, e.target.value)} 
-              />
+              <div className={styles.inputWrapper}>
+                <input 
+                  type="text" 
+                  maxLength={300} // 👉 THÊM: Ngăn gõ quá 300 chữ ở ô text thuần túy
+                  className={styles.pureTextInput}
+                  placeholder="Nhập câu trả lời của bạn..." 
+                  value={answers[currentQuestion.id]?.value || ""} 
+                  onChange={(e) => handlePureTextChange(currentQuestion.id, e.target.value)} 
+                />
+                <span className={styles.charCount}>
+                  {(answers[currentQuestion.id]?.value || "").length}/300
+                </span>
+              </div>
             )}
 
             <div className={styles.btnGroup}>
@@ -293,7 +308,6 @@ const HairConsult = () => {
         )}
       </div>
 
-      {/* Tiến độ mượt mà kẹp sát đáy màn hình */}
       {!isCameraOpen && !quizCompleted && currentFlow && (
         <div className={styles.progressContainer}>
           <div className={styles.progressFill} style={{ width: `${progress}%` }} />

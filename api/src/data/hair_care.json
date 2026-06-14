@@ -1,0 +1,106 @@
+[
+  {
+    "id": "CS01",
+    "condition": "Tóc bết dầu",
+    "symptoms": "Tóc dính bết thành từng tép sau vài tiếng gội; da đầu nhanh ngứa; đội mũ bảo hiểm xong tóc xẹp lép và bóng loáng dầu.",
+    "causes": ["Tuyến bã nhờn hoạt động quá mức", "Gội đầu bằng nước quá nóng làm khô da đầu khiến dầu tiết ra nhiều hơn để bù ẩm", "Dùng sai dầu gội (quá nhiều dưỡng chất)"],
+    "home_treatment": "Sử dụng dầu gội kiềm dầu (Oil Control/Clarifying) chứa bạc hà, tràm trà (Tea Tree) hoặc hoạt chất Salicylic Acid (BHA). Chỉ bôi dầu xả ở ngọn tóc, KHÔNG bôi vào da đầu.",
+    "dos_and_donts": {
+      "should": ["Gội đầu bằng nước mát hoặc ấm nhẹ", "Sấy khô chân tóc ngay sau khi gội bằng chế độ gió mát"],
+      "should_not": ["Không cào gãi quá mạnh làm kích thích tuyến dầu", "Không lạm dụng dầu gội khô liên tục quá nhiều ngày"]
+    },
+    "when_to_salon": "Khi tóc bết kèm theo phom tóc bị sập hoàn toàn, cần ra tiệm tẩy tế bào chết da đầu (Scalp Detox) chuyên sâu.",
+    "when_to_doctor": "Nếu da đầu bết kèm theo mụn mủ, ngứa điên cuồng, bong tróc mảng dày (dấu hiệu viêm da tiết bã)."
+  },
+  {
+    "id": "CS02",
+    "condition": "Tóc khô xơ",
+    "symptoms": "Tóc thô ráp khi sờ vào, dễ rối xù, mất độ co dãn tự nhiên, nhìn xỉn màu và phần đuôi tóc có dấu hiệu chẻ ngọn.",
+    "causes": ["Thiếu độ ẩm tự nhiên", "Thường xuyên sấy tóc ở nhiệt độ cao", "Phơi nắng nhiều hoặc gội đầu bằng nước chứa nhiều clo (nước bể bơi)"],
+    "home_treatment": "Sử dụng cặp dầu gội gội-xả giàu độ ẩm (Moisture/Hydrating) chứa Argan oil, Coconut oil hoặc Shea Butter. Thoa serum/tinh dầu dưỡng khi tóc còn ẩm 30% sau khi gội.",
+    "dos_and_donts": {
+      "should": ["Bắt buộc dùng dầu xả sau mỗi lần gội", "Dùng lược răng thưa chải nhẹ nhàng"],
+      "should_not": ["Không sấy tóc ở mức nhiệt cao nhất", "Không dùng các loại dầu gội trị gàu có tính tẩy rửa quá mạnh"]
+    },
+    "when_to_salon": "Tóc quá xơ rối, vểnh ngược không vào nếp, cần ra tiệm hấp dưỡng chất phục hồi hoặc bấm bỏ phần đuôi chẻ ngọn.",
+    "when_to_doctor": "Không cần thiết trừ khi khô xơ đi kèm rụng tóc từ nang chân tóc."
+  },
+  {
+    "id": "CS03",
+    "condition": "Tóc rụng nhiều",
+    "symptoms": "Tóc rụng trên 100 sợi/ngày; thấy tóc rụng nhiều trên gối khi ngủ dậy, trong bồn rửa mặt hoặc khi vuốt tay nhẹ qua tóc.",
+    "causes": ["Căng thẳng (Stress), thiếu ngủ", "Thiếu hụt chất dinh dưỡng (Biotin, Sắt, Kẽm)", "Sử dụng sáp vuốt tóc quá cứng và gội không sạch gây bít tắc nang tóc"],
+    "home_treatment": "Dùng dầu gội giảm rụng chứa Biotin, Vitamin B5, tinh chất bưởi hoặc Caffeine. Kết hợp xịt lotion bưởi/serum kích mọc tóc vào chân tóc hàng tối.",
+    "dos_and_donts": {
+      "should": ["Massage da đầu nhẹ nhàng hàng ngày để tăng tuần hoàn máu", "Ăn đủ chất, hạn chế thức khuya"],
+      "should_not": ["Không vuốt tóc, chải tóc khi tóc đang ướt", "Không lạm dụng các sản phẩm tạo kiểu nặng như Pomade gốc dầu lúc này"]
+    },
+    "when_to_salon": "Ra tiệm thực hiện các liệu trình điện di serum chân tóc hoặc hấp nuôi dưỡng nang tóc.",
+    "when_to_doctor": "Khi tóc rụng thành từng mảng tròn hói (Alopecia), rụng lộ rõ cả mảng da đầu hoặc rụng kèm ngứa loét."
+  },
+  {
+    "id": "CS04",
+    "condition": "Gàu",
+    "symptoms": "Xuất hiện các vảy trắng li ti rơi trên vai áo hoặc bám thành mảng trên da đầu; thường đi kèm cảm giác ngứa ngáy khó chịu.",
+    "causes": ["Do nấm da đầu Malassezia phát triển mạnh", "Da đầu quá khô hoặc quá dầu", "Xả nước không sạch sau khi gội đầu"],
+    "home_treatment": "Sử dụng dầu gội đặc trị gàu chứa hoạt chất Zinc Pyrithione, Ketoconazole, Selenium Sulfide hoặc chứa hoạt chất tự nhiên từ cây trà.",
+    "dos_and_donts": {
+      "should": ["Ủ dầu gội trị gàu trên da đầu từ 3-5 phút trước khi xả sạch", "Giặt mũ bảo hiểm và vỏ gối thường xuyên"],
+      "should_not": ["Không dùng móng tay cào bóc các mảng gàu (gây xước nhiễm trùng)", "Không gội đầu quá nhiều lần trong ngày"]
+    },
+    "when_to_salon": "Ra tiệm gội đầu dưỡng sinh kết hợp lấy mảng gàu nhẹ nhàng bằng sản phẩm chuyên dụng.",
+    "when_to_doctor": "Gàu bám thành mảng dày màu đỏ/bạc, lan ra cả vùng trán và lông mày (nghi vấn nấm nặng hoặc vảy nến)."
+  },
+  {
+    "id": "CS05",
+    "condition": "Tóc mỏng thưa",
+    "symptoms": "Sợi tóc mảnh, yếu, nhìn thấy rõ da đầu ở phần đường ngôi hoặc đỉnh đầu; tóc xẹp lép không có độ phồng.",
+    "causes": ["Yếu tố di truyền", "Nang tóc bị teo nhỏ theo thời gian", "Sử dụng sai sản phẩm tạo kiểu làm gánh nặng cho tóc"],
+    "home_treatment": "Dùng dầu gội làm phồng tóc (Volumizing Shampoos). Sử dụng các sản phẩm hỗ trợ độ phồng dạng xịt (như Salt Spray) để tạo hiệu ứng thị giác tóc dày hơn.",
+    "dos_and_donts": {
+      "should": ["Sấy ngược hướng mọc của tóc để tạo độ phồng tối đa ở chân tóc", "Chọn kiểu cắt ngắn như Buzz, Crew, Short Quiff"],
+      "should_not": ["Không dùng sáp dạng Clay quá nặng làm sập form tóc", "Không để tóc quá dài"]
+    },
+    "when_to_salon": "Cắt các kiểu tạo hiệu ứng đánh lừa thị giác (Texture) hoặc uốn phồng chân tóc (uốn lạnh nhẹ nhàng).",
+    "when_to_doctor": "Đường ngôi bị rộng ra nhanh chóng, có nguy cơ hói đầu chữ M hoặc hói đỉnh lan rộng."
+  },
+  {
+    "id": "CS06",
+    "condition": "Tóc hư do hóa chất",
+    "symptoms": "Tóc mủn, khi ướt kéo ra bị chun lại như dây chun và đứt; tóc thô ráp, xốp và cực kỳ thấm nước nhưng sấy rất lâu khô.",
+    "causes": ["Tẩy tóc nhiều lần (đặc biệt là lên các màu Bạch Kim, Khói)", "Uốn và nhuộm đồng thời trong thời gian quá ngắn"],
+    "home_treatment": "Bắt buộc chuyển sang các dòng dầu gội phục hồi liên kết tóc (Bond Builders) như Olaplex, K18 hoặc Keratin đậm đặc. Hạn chế tối đa việc gội đầu hàng ngày.",
+    "dos_and_donts": {
+      "should": ["Thấm tóc nhẹ nhàng bằng khăn sợi tre, không vò vắt tóc", "Dùng tinh dầu bảo vệ tóc trước khi ra nắng"],
+      "should_not": ["Tuyệt đối không đụng thêm bất kỳ hóa chất uốn/tẩy/nhuộm nào khác", "Không dùng máy kẹp nhiệt thẳng tại nhà"]
+    },
+    "when_to_salon": "Ra tiệm thực hiện phục hồi chuyên sâu tầng sâu (Plex Treatment) định kỳ 1-2 tuần/lần hoặc cắt bỏ hẳn phần tóc bị mủn/cháy.",
+    "when_to_doctor": "Không cần thiết trừ khi hóa chất làm bỏng rát, hoại tử da đầu."
+  },
+  {
+    "id": "CS07",
+    "condition": "Tóc cứng khó tạo kiểu",
+    "symptoms": "Sợi tóc to, thô, cứng như rễ tre; hai bên side luôn bị chỉa ngang vuông bạnh ra ngoài; vuốt sáp không chịu vào nếp.",
+    "causes": ["Cấu trúc sợi tóc có lớp biểu bì quá dày", "Tóc nguyên bản thô ráp bẩm sinh"],
+    "home_treatment": "Dầu gội làm mềm tóc (Smoothing/Softening) chứa tinh dầu quả bơ hoặc bơ hạt mỡ. Dùng dầu xả 100% trong mọi lần gội để làm mềm sợi tóc trước khi sấy vuốt.",
+    "dos_and_donts": {
+      "should": ["Sử dụng máy sấy công suất lớn kết hợp lược bán nguyệt để ép nếp", "Dùng sáp có độ dính và giữ nếp cao (Clay/Pomade gốc dầu)"],
+      "should_not": ["Không sấy tóc tự do không có hướng kiểm soát", "Không dùng các sản phẩm dạng Light Wax hoặc Cream"]
+    },
+    "when_to_salon": "Ra tiệm làm dịch vụ Ép side (Down Perm) hoặc uốn cúp nhẹ định hình để tóc ngoan ngoãn ôm vào form.",
+    "when_to_doctor": "Không cần thiết."
+  },
+  {
+    "id": "CS08",
+    "condition": "Da đầu ngứa",
+    "symptoms": "Luôn có cảm giác châm chích, ngứa ngáy âm ỉ hoặc dữ dội trên da đầu dù vừa gội đầu xong.",
+    "causes": ["Da đầu bị khô do thời tiết hoặc dị ứng với cồn/hương liệu trong sáp vuốt tóc", "Tích tụ hóa chất do không gội sạch sáp/gôm xịt"],
+    "home_treatment": "Dùng dầu gội làm dịu da đầu (Scalp Relief/Sensitive) có độ pH cân bằng (5.5), không chứa Sulfate và Paraben. Sử dụng tinh chất nha đam hoặc bạc hà làm dịu.",
+    "dos_and_donts": {
+      "should": ["Gội đầu thật kỹ bằng nước mát, xả thật sạch bọt xà phòng", "Lau khô da đầu ngay sau khi gội"],
+      "should_not": ["Tuyệt đối không cào gãi bằng móng tay sắc nhọn", "Tạm dừng sử dụng gôm xịt tóc (Hair Spray) xịt trực tiếp gần da đầu"]
+    },
+    "when_to_salon": "Ra tiệm gội trị liệu sử dụng các loại bùn khoáng thiên nhiên làm dịu da đầu.",
+    "when_to_doctor": "Ngứa kèm theo nổi mẩn đỏ, mụn nước, rỉ dịch hoặc bong tróc vảy mảng đỏ khắp đầu (dấu hiệu viêm da dị ứng hoặc chàm)."
+  }
+]

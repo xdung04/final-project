@@ -56,16 +56,15 @@ export const receptionistJoin = async (req, res) => {
 export const receptionistLeave = async (req, res) => {
   try {
     const { conversationId, receptionistId } = req.body;
+    
+    // 1. Chỉ cập nhật DB (Hàm service của bạn sẽ tự tạo systemMessage và chuyển status = "waiting")
     const result = await chatService.receptionistLeave(
       parseInt(conversationId),
       parseInt(receptionistId),
     );
-    const io = getIO();
-    if (io) {
-      if (result.systemMessage)
-        io.to(conversationId).emit("receive_message", result.systemMessage);
-      io.emit("conversation_updated"); 
-    }
+    
+    // 2. Trả về client thành công luôn, KHÔNG cần phát io.emit ở đây nữa
+    // Để tránh việc đá nhau với socket.emit ở Frontend gởi lên ngay sau đó
     res.status(200).json({ success: true, data: result });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -106,7 +105,8 @@ export const closeConversation = async (req, res) => {
     const result = await chatService.closeConversation(conversationId);
     const io = getIO();
     if (io) {
-      io.to(conversationId).emit("conversation_closed", { conversationId });
+      
+      io.to(String(conversationId)).emit("conversation_closed", { conversationId });
       io.emit("conversation_updated");
     }
     res.status(200).json({ success: true, data: result });
@@ -114,7 +114,6 @@ export const closeConversation = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-
 export const getActiveConversations = async (req, res) => {
   try {
     const receptionistId = req.query.receptionistId
@@ -138,7 +137,7 @@ export const getActiveConversations = async (req, res) => {
         : null,
       lastUpdated: conv.updatedAt,
       lastMessage: conv.lastMessage,
-      unreadCount: conv.unreadCount,
+      unreadCount: Number(conv.unread_count || conv.unreadCount || 0),
     }));
     res.status(200).json(result);
   } catch (err) {
@@ -159,7 +158,7 @@ export const getWaitingConversations = async (req, res) => {
       status: conv.status,
       createdAt: conv.createdAt,
       lastMessage: conv.lastMessage,
-      unreadCount: conv.unreadCount,
+      unreadCount: Number(conv.unread_count || conv.unreadCount || 0),
     }));
     res.status(200).json(result);
   } catch (err) {
@@ -190,7 +189,7 @@ export const searchConversations = async (req, res) => {
         : null,
       lastUpdated: conv.updatedAt,
       lastMessage: conv.lastMessage,
-      unreadCount: conv.unreadCount,
+      unreadCount:Number(conv.unread_count || conv.unreadCount || 0),
     }));
     res.status(200).json(result);
   } catch (err) {

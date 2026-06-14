@@ -2,10 +2,9 @@
 
 export async function up(queryInterface) {
   const branches = [1, 2, 3, 4];
-  const services = [1, 2, 3, 4, 5, 6, 7, 8];
+  const services = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]; // 12 dịch vụ mới
 
   const assignments = [];
-
   branches.forEach((idBranch) => {
     services.forEach((idService) => {
       assignments.push({
@@ -17,17 +16,11 @@ export async function up(queryInterface) {
     });
   });
 
-  await queryInterface.bulkInsert(
-    "service_assignments",
-    assignments,
-    { ignoreDuplicates: true }
-  );
+  await queryInterface.bulkInsert("service_assignments", assignments, {
+    ignoreDuplicates: true,
+  });
 }
 
 export async function down(queryInterface) {
-  await queryInterface.bulkDelete(
-    "service_assignments",
-    null,
-    {}
-  );
+  await queryInterface.bulkDelete("service_assignments", null, {});
 }

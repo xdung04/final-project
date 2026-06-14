@@ -4,7 +4,7 @@ import classNames from "classnames/bind";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useAuth } from "~/context/AuthContext";
 import { useNavigate } from "react-router-dom";
-
+import * as chatService from "~/services/chatService";
 import styles from "./UserMenu.module.scss";
 import { Wrapper as PopperWrapper } from "~/components/Popper";
 import {
@@ -31,10 +31,30 @@ function UserMenu({ children }) {
   const hideMenu = () => setVisible(false);
   const toggleMenu = () => setVisible((prev) => !prev);
 
-  const handleLogout = () => {
-    logout();
-    navigate("/");
-    hideMenu();
+const handleLogout = async () => {
+    try {
+      // 1. Chỉ gọi API đóng phòng đối với tài khoản có quyền "customer" (Khách hàng chat)
+      if (user?.role === "customer") {
+        // 🌟 BỔ SUNG QUAN TRỌNG: Chủ động dọn sạch sành sanh sessionStorage của Chat ngay tại đây
+        // Tránh việc component AIChat bị unmount quá nhanh không kịp chạy useEffect reset.
+        sessionStorage.removeItem("chatMessages");
+        sessionStorage.removeItem("chatSessionId");
+        sessionStorage.removeItem("chatSessionOwner");
+        sessionStorage.removeItem("chatConversationId"); // Giết ID phòng
+        sessionStorage.removeItem("chatMode");           // Giết chế độ Live
+        
+        console.log("🧹 [UserMenu] Đã chủ động dọn dẹp sạch sẽ Storage Chat của Khách.");
+        
+        await chatService.closeConversationOnLogout();
+      }
+    } catch (err) {
+      console.error("⚠️ Lỗi dọn dẹp phòng chat khi khách logout:", err);
+    } finally {
+      // 2. Dù API thành công hay lỗi, vẫn phải cho khách logout hoàn toàn ở client
+      logout();
+      navigate("/");
+      hideMenu();
+    }
   };
 
   // Cấu hình Menu theo Role

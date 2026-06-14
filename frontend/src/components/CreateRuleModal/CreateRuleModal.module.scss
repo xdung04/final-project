@@ -1,85 +1,99 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:ital,wght@0,400;0,500;1,400&display=swap');
+// CreateRuleModal.module.scss
+// Component — Create / Edit Rule Modal | NOULE Barber
+// Design: NOULE gold/dark — đồng bộ toàn hệ thống
 
-// ─── Token màu nâu đen luxury ─────────────────────────────
-$ink:          #1a1008;   // chữ chính — đen nâu sâu
-$ink-soft:     #4a3728;   // label, hint
-$ink-muted:    #8a7060;   // placeholder, sub
-$gold:         #6366f1;   // accent (giữ indigo cho button)
-$divider:      #ede5dc;
-$surface:      #faf7f4;   // nền check-item hover
+$gold:        #C9A84C;
+$gold-hover:  #BA9A3E;
+$gold-dim:    #8A6A28;
+$gold-faint:  rgba(201, 168, 76, 0.12);
+$gold-border: rgba(201, 168, 76, 0.3);
 
+$ink:         #1A1612;
+$ink-soft:    #4A3728;
+$ink-muted:   #8a7060;
+
+$card-bg:     #FFFFFF;
+$surface-2:   #F9F6F1;
+$divider:     #EDE5DC;
+
+$radius-sm:   6px;
+$radius-md:   10px;
+$radius-lg:   14px;
+
+// ── Overlay ───────────────────────────────────────────────────────────────────
+// fixed + flex căn giữa viewport, overflow-y: auto để scroll khi modal cao
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 8, 2, 0.55);
+  background: rgba(15, 8, 2, 0.6);
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;       // Bắt đầu từ trên → modal không bị "chìm" giữa overlay
+  padding: 48px 16px 48px;       // Khoảng cách top/bottom so với viewport
+  overflow-y: auto;              // Scroll overlay khi modal cao hơn màn hình
   z-index: 1000;
   animation: fadeIn 0.2s ease;
 }
 
+// ── Modal ─────────────────────────────────────────────────────────────────────
 .modal {
-  background: #fff;
-  border-radius: 12px;
-  width: 400px;
-  max-width: 90%;
-  box-shadow: 0 8px 40px rgba(26, 16, 8, 0.18);
+  background: $card-bg;
+  border-radius: $radius-lg;
+  width: 420px;
+  max-width: 100%;
+  box-shadow: 0 20px 60px rgba(26, 16, 8, 0.22);
   overflow: hidden;
-  animation: slideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-
-  // Font mặc định toàn modal
-  font-family: 'DM Sans', sans-serif;
+  font-family: inherit;
   color: $ink;
+  animation: slideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  // Không set max-height ở đây — để overlay scroll thay
+  flex-shrink: 0;                // Không bị co lại trong flex overlay
+  margin: auto;                  // Căn giữa dọc khi nội dung ngắn hơn viewport
 }
 
-// ─── Header ───────────────────────────────────────────────
-.modal-header {
-  padding: 22px 24px 16px;
+// ── Modal header (dark bar) ───────────────────────────────────────────────────
+.modalHead {
+  background: $ink;
+  padding: 16px 20px;
+  border-bottom: 1px solid $gold-border;
 
   h2 {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 26px;
-    font-weight: 700;
-    color: $ink;
-    margin: 0 0 5px;
-    letter-spacing: -0.3px;
-    line-height: 1.15;
+    font-size: 16px;
+    font-weight: 600;
+    color: #F5F0E8;
+    font-family: Georgia, 'Times New Roman', serif;
+    margin: 0 0 3px;
+    letter-spacing: 0.01em;
   }
 }
 
-.modal-sub {
-  font-family: 'DM Sans', sans-serif;
-  font-size: 12.5px;
-  font-weight: 400;
-  color: $ink-muted;
+.modalSub {
+  font-size: 11px;
+  color: rgba(245, 240, 232, 0.45);
   margin: 0;
   letter-spacing: 0.1px;
 }
 
-.divider {
-  height: 1px;
-  background: $divider;
+// ── Modal body ────────────────────────────────────────────────────────────────
+.modalBody {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
-// ─── Body ─────────────────────────────────────────────────
-.modal-body {
-  padding: 18px 24px;
-}
-
-// ─── Fields ───────────────────────────────────────────────
+// ── Field ─────────────────────────────────────────────────────────────────────
 .field {
-  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
 
-  > label {
-    display: block;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 11px;
-    font-weight: 500;
-    color: $ink-soft;
-    margin-bottom: 5px;
-    letter-spacing: 0.4px;
+  label {
+    font-size: 10px;
+    font-weight: 600;
     text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: #aaa;
   }
 
   input[type="text"],
@@ -89,62 +103,54 @@ $surface:      #faf7f4;   // nền check-item hover
     height: 38px;
     padding: 0 12px;
     border: 1px solid $divider;
-    border-radius: 6px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 14px;
-    font-weight: 400;
+    border-radius: $radius-sm;
+    font-family: inherit;
+    font-size: 13px;
     color: $ink;
-    background: #fff;
+    background: $card-bg;
     outline: none;
     box-sizing: border-box;
     transition: border-color 0.15s, box-shadow 0.15s;
 
-    &::placeholder {
-      color: $ink-muted;
-      font-size: 13px;
-    }
+    &::placeholder { color: #ccc; font-size: 12px; }
 
     &:focus {
-      border-color: darken($divider, 20%);
-      box-shadow: 0 0 0 3px rgba(74, 55, 40, 0.08);
+      border-color: $gold-border;
+      box-shadow: 0 0 0 3px $gold-faint;
     }
   }
 }
 
-.row-2 {
+.row2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
 
-// ─── Checkbox row ─────────────────────────────────────────
-.check-item {
+// ── Checkbox item ─────────────────────────────────────────────────────────────
+.checkItem {
   display: flex;
   align-items: center;
   gap: 10px;
-  width: 100%;
-  box-sizing: border-box;
   padding: 11px 13px;
-  border-radius: 8px;
+  border-radius: $radius-sm;
   border: 1px solid $divider;
   cursor: pointer;
-  margin-bottom: 8px;
   user-select: none;
   transition: background 0.15s, border-color 0.15s;
 
   &:hover {
-    background: $surface;
+    background: $surface-2;
     border-color: darken($divider, 8%);
   }
 
   &.active {
-    background: #f8f4ee;
-    border-color: #c8a882;
+    background: $gold-faint;
+    border-color: $gold-border;
   }
 }
 
-// Ô checkbox tự vẽ
-.cb-box {
+.cbBox {
   width: 17px;
   height: 17px;
   min-width: 17px;
@@ -158,13 +164,13 @@ $surface:      #faf7f4;   // nền check-item hover
   box-sizing: border-box;
   transition: background 0.15s, border-color 0.15s;
 
-  &.cb-checked {
+  &.cbChecked {
     background: $ink;
     border-color: $ink;
   }
 }
 
-.check-texts {
+.checkTexts {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -172,98 +178,92 @@ $surface:      #faf7f4;   // nền check-item hover
   flex: 1;
 }
 
-.check-name {
-  font-family: 'DM Sans', sans-serif;
-  font-size: 13.5px;
+.checkName {
+  font-size: 13px;
   font-weight: 500;
   color: $ink;
   line-height: 1.3;
 }
 
-.check-hint {
-  font-family: 'DM Sans', sans-serif;
-  font-size: 11.5px;
-  font-weight: 400;
+.checkHint {
+  font-size: 11px;
   color: $ink-muted;
   line-height: 1.3;
 }
 
-// ─── Date wrap ────────────────────────────────────────────
-.date-wrap {
+// ── Date wrap (animated show/hide) ────────────────────────────────────────────
+.dateWrap {
   overflow: hidden;
   max-height: 120px;
   opacity: 1;
-  margin-bottom: 8px;
   transition: max-height 0.35s ease, opacity 0.25s ease, margin 0.3s ease;
 
   &.hidden {
     max-height: 0;
     opacity: 0;
-    margin-bottom: 0;
     pointer-events: none;
   }
 }
 
-// ─── Error ────────────────────────────────────────────────
+// ── Error ─────────────────────────────────────────────────────────────────────
 .error {
-  font-family: 'DM Sans', sans-serif;
   font-size: 12px;
   color: #8b2020;
   background: #fff5f5;
   border: 1px solid #f5c0c0;
-  border-radius: 6px;
+  border-radius: $radius-sm;
   padding: 8px 11px;
-  margin-bottom: 4px;
 }
 
-// ─── Footer ───────────────────────────────────────────────
-.modal-footer {
-  padding: 14px 24px;
+// ── Modal footer ──────────────────────────────────────────────────────────────
+.modalFooter {
+  padding: 14px 20px;
   border-top: 1px solid $divider;
+  background: $surface-2;
   display: flex;
   justify-content: flex-end;
   gap: 8px;
 }
 
-.btn-ghost {
-  height: 37px;
-  padding: 0 18px;
-  border-radius: 8px;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 13px;
+.btnGhost {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: $radius-sm;
+  font-family: inherit;
+  font-size: 12px;
   font-weight: 500;
   cursor: pointer;
   background: transparent;
   color: $ink-soft;
   border: 1px solid $divider;
-  transition: all 0.15s;
-  letter-spacing: 0.2px;
+  transition: all 0.12s;
+  letter-spacing: 0.02em;
 
   &:hover {
-    background: $surface;
+    background: #fff;
     border-color: darken($divider, 10%);
   }
 }
 
-.btn-primary {
-  height: 37px;
+.btnPrimary {
+  height: 36px;
   padding: 0 20px;
-  border-radius: 8px;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 13px;
-  font-weight: 500;
+  border-radius: $radius-sm;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
   cursor: pointer;
-  background: $ink;
-  color: #faf7f4;
+  background: $gold;
+  color: $ink;
   border: none;
-  letter-spacing: 0.3px;
-  transition: all 0.15s;
+  letter-spacing: 0.03em;
+  transition: background 0.12s;
 
-  &:hover { background: $ink-soft; }
+  &:hover  { background: $gold-hover; }
   &:active { transform: scale(0.98); }
 }
 
-// ─── Animations ───────────────────────────────────────────
+// ── Animations ────────────────────────────────────────────────────────────────
 @keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }

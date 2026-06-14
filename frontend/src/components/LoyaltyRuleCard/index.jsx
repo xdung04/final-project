@@ -1,70 +1,76 @@
 import React from "react";
 import classNames from "classnames/bind";
 import styles from "./LoyaltyRuleCard.module.scss";
+import { Edit2, Trash2 } from "lucide-react";
 
 const cx = classNames.bind(styles);
 
-function LoyaltyRuleCard({ rule, onEdit, onDelete }) {
+export default function LoyaltyRuleCard({ rule, onEdit, onDelete }) {
   if (!rule) return null;
 
-  // Hàm hỗ trợ định dạng tiền tệ chuyên nghiệp
-  const formatVND = (amount) => {
-    return new Intl.NumberFormat("vi-VN").format(amount) + "đ";
+  const isDefault = rule.is_default;
+
+  const formatVND = (amount) =>
+    new Intl.NumberFormat("vi-VN").format(amount ?? 0) + "đ";
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return null;
+    return new Date(dateStr).toLocaleDateString("vi-VN", {
+      day: "2-digit", month: "2-digit", year: "numeric",
+    });
   };
 
+  const hasDateRange = !isDefault && (rule.start_date || rule.end_date);
+
   return (
-    <div className={cx("card", { default: rule.is_default })}>
-      {/* ===== PHẦN TIÊU ĐỀ & HÀNH ĐỘNG ===== */}
-      <div className={cx("header")}>
-        <h3>
-          {rule.is_default ? (
-            <span className={cx("defaultLabel")}>Quy tắc hệ thống</span>
-          ) : (
-            "Chiến dịch đặc biệt"
+    <div className={cx("card", { default: isDefault })}>
+
+      {/* ── Dark header ─────────────────────────────────────────── */}
+      <div className={cx("cardHead")}>
+        <div className={cx("cardHead__left")}>
+          <span className={cx("cardHead__name")}>
+            {isDefault ? "Quy tắc hệ thống" : "Chiến dịch đặc biệt"}
+          </span>
+          {isDefault && (
+            <span className={cx("defaultLabel")}>Mặc định</span>
           )}
-        </h3>
-        <div className={cx("actions")}>
-          <button className={cx("btn-edit")} onClick={() => onEdit(rule)}>
-            Sửa
-          </button>
-          <button
-            className={cx("btn-delete")}
-            onClick={() => onDelete(rule.idRule)} // Giả sử id là idRule
-          >
-            Xoá
-          </button>
         </div>
       </div>
 
-      {/* ===== PHẦN THÔNG SỐ (Dạng Grid) ===== */}
-      <div className={cx("body")}>
-        <p>
-          <strong>Giá trị 1 điểm</strong>
-          <span className={cx("value")}>{formatVND(rule.money_per_point)}</span>
-        </p>
+      {/* ── Body stats ──────────────────────────────────────────── */}
+      <div className={cx("cardBody")}>
+        <div className={cx("stat")}>
+          <span className={cx("stat__label")}>Giá trị 1 điểm</span>
+          <span className={cx("stat__value")}>{formatVND(rule.money_per_point)}</span>
+        </div>
 
-        <p>
-          <strong>Hệ số nhân</strong>
-          <span className={cx("value")}>x{rule.point_multiplier}</span>
-        </p>
+        <div className={cx("stat")}>
+          <span className={cx("stat__label")}>Hệ số nhân</span>
+          <span className={cx("stat__value")}>×{rule.point_multiplier ?? 1}</span>
+        </div>
 
-        <p>
-          <strong>Đơn tối thiểu</strong>
-          <span className={cx("value")}>{formatVND(rule.min_order_amount)}</span>
-        </p>
+        <div className={cx("stat")}>
+          <span className={cx("stat__label")}>Đơn tối thiểu</span>
+          <span className={cx("stat__value")}>{formatVND(rule.min_order_amount)}</span>
+        </div>
 
-        {/* Thời gian chỉ hiện nếu không phải quy tắc mặc định */}
-        {!rule.is_default && (
+        {hasDateRange && (
           <div className={cx("timeRange")}>
-            <strong>Thời gian áp dụng</strong>
-            <span>
-              {rule.start_date?.split("T")[0]} — {rule.end_date?.split("T")[0]}
-            </span>
+            Thời gian áp dụng:{" "}
+            {formatDate(rule.start_date)} — {formatDate(rule.end_date)}
           </div>
         )}
+      </div>
+
+      {/* ── Footer actions ──────────────────────────────────────── */}
+      <div className={cx("cardFooter")}>
+        <button className={cx("btnEdit")} onClick={() => onEdit(rule)} title="Chỉnh sửa">
+          <Edit2 size={12} strokeWidth={2} /> Sửa
+        </button>
+        <button className={cx("btnDelete")} onClick={() => onDelete(rule.idRule)} title="Xoá quy tắc">
+          <Trash2 size={12} strokeWidth={2} /> Xoá
+        </button>
       </div>
     </div>
   );
 }
-
-export default LoyaltyRuleCard;

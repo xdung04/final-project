@@ -7,14 +7,14 @@ const sequelize = new Sequelize("barbershop", "root", "123456789", {
   dialect: 'mysql',
   dialectModule: mysql2,  // Force load mysql2
   logging: console.log,   // Để debug
-  dialectOptions: {
-    ssl: {
-      require: true,
-      rejectUnauthorized: false,  
-      minVersion: 'TLSv1.2'
-    },
-    connectTimeout: 30000
-  },
+  // dialectOptions: {
+  //   ssl: {
+  //     require: true,
+  //     rejectUnauthorized: false,  
+  //     minVersion: 'TLSv1.2'
+  //   },
+  //   connectTimeout: 30000
+  // },
   pool: {
     max: 5,       // Pool nhỏ cho serverless
     min: 0,

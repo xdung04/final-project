@@ -1,5 +1,49 @@
 import bookingApi from "~/apis/bookingAPI";
 
+// 🌟 ĐÃ THÊM: Lấy branch của lễ tân
+export const fetchMyBranch = async () => {
+  try {
+    const response = await bookingApi.getMyBranch();
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching receptionist branch:", error);
+    throw error;
+  }
+};
+
+// 🌟 ĐÃ THÊM: Lấy danh sách booking theo branch và ngày
+export const fetchBookingsByBranch = async (idBranch, date) => {
+  try {
+    const response = await bookingApi.getBookingsByBranch(idBranch, date);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching branch bookings:", error);
+    throw error;
+  }
+};
+
+// 🌟 ĐÃ THÊM: Gửi yêu cầu check-in
+export const checkInBooking = async (id) => {
+  try {
+    const response = await bookingApi.checkInBooking(id);
+    return response.data;
+  } catch (error) {
+    console.error("Error checking in booking:", error);
+    throw error;
+  }
+};
+
+// 🌟 ĐÃ THÊM: Gửi yêu cầu hủy lịch
+export const cancelBooking = async (id) => {
+  try {
+    const response = await bookingApi.cancelBooking(id);
+    return response.data;
+  } catch (error) {
+    console.error("Error cancelling booking:", error);
+    throw error;
+  }
+};
+
 // Lấy tất cả booking
 export const getBooking = async () => {
   try {

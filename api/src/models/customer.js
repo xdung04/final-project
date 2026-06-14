@@ -20,6 +20,7 @@ export default (sequelize) => {
 
       Customer.hasOne(models.Conversation, {
         foreignKey: "customerId",
+        sourceKey: "idCustomer",
         as: "conversation",
       });
     }

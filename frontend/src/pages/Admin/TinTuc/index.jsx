@@ -45,7 +45,7 @@ function formatDate(iso) {
   });
 }
 
-// ── Sub-components (giữ nguyên UI) ───────────────────────────────────────────
+// ── Sub-components ────────────────────────────────────────────────────────────
 function CategoryBadge({ category }) {
   const meta = CATEGORY_META[category];
   return (
@@ -58,9 +58,7 @@ function CategoryBadge({ category }) {
 function StatusDot({ status }) {
   return (
     <span
-      className={`${styles.statusDot} ${
-        status === "PUBLISHED" ? styles.statusDot__pub : styles.statusDot__draft
-      }`}
+      className={`${styles.statusDot} ${status === "PUBLISHED" ? styles.statusDot__pub : styles.statusDot__draft}`}
       title={status === "PUBLISHED" ? "Đã đăng" : "Nháp"}
     />
   );
@@ -164,6 +162,7 @@ function ArticleRow({ article, onEdit, onDelete }) {
 function FormModal({ initial, onClose, onSave, loading }) {
   const isEdit = !!initial?.idNews;
   const [form, setForm] = useState(initial ? { ...initial } : { ...EMPTY_FORM });
+  const [thumbnailFile, setThumbnailFile] = useState(null);
 
   const set = (key, val) => setForm((f) => ({ ...f, [key]: val }));
 
@@ -171,18 +170,27 @@ function FormModal({ initial, onClose, onSave, loading }) {
     setForm((f) => ({ ...f, title: val, slug: isEdit ? f.slug : slugify(val) }));
   };
 
+  const handleThumbnailChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setThumbnailFile(file);
+    setForm((f) => ({ ...f, thumbnail: URL.createObjectURL(file) }));
+  };
+
   const handleSubmit = (publish) => {
-    if (!form.title.trim()) { alert("Vui lòng nhập tiêu đề."); return; }
+    if (!form.title.trim())   { alert("Vui lòng nhập tiêu đề."); return; }
     if (!form.content.trim()) { alert("Vui lòng nhập nội dung."); return; }
-    onSave({ ...form, status: publish ? "PUBLISHED" : form.status });
+    onSave({ ...form, status: publish ? "PUBLISHED" : form.status }, thumbnailFile);
   };
 
   return (
     <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="modalHeading">
+      <div className={styles.modal} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+
+        {/* Head */}
         <div className={styles.modal__head}>
           <div>
-            <h2 id="modalHeading" className={styles.modal__title}>
+            <h2 className={styles.modal__title}>
               {isEdit ? "Chỉnh sửa bài viết" : "Tạo bài viết mới"}
             </h2>
             <p className={styles.modal__sub}>
@@ -196,33 +204,62 @@ function FormModal({ initial, onClose, onSave, loading }) {
           </button>
         </div>
 
+        {/* Body */}
         <div className={styles.modal__body}>
+
+          {/* Main fields */}
           <div className={styles.modal__main}>
             <div className={styles.field}>
               <label htmlFor="fTitle">Tiêu đề <span className={styles.field__req}>*</span></label>
-              <input id="fTitle" type="text" placeholder="Nhập tiêu đề bài viết..." value={form.title} onChange={(e) => handleTitleChange(e.target.value)} />
+              <input
+                id="fTitle" type="text"
+                placeholder="Nhập tiêu đề bài viết..."
+                value={form.title}
+                onChange={(e) => handleTitleChange(e.target.value)}
+              />
             </div>
+
             <div className={styles.field}>
               <label htmlFor="fSlug">Slug (URL)</label>
               <div className={styles.slugRow}>
                 <span className={styles.slugRow__prefix}>/tin-tuc/</span>
-                <input id="fSlug" type="text" value={form.slug} onChange={(e) => set("slug", e.target.value)} placeholder="tu-dong-tao-tu-tieu-de" />
+                <input
+                  id="fSlug" type="text"
+                  value={form.slug}
+                  onChange={(e) => set("slug", e.target.value)}
+                  placeholder="tu-dong-tao-tu-tieu-de"
+                />
               </div>
             </div>
+
             <div className={styles.field}>
               <label htmlFor="fSummary">
                 Mô tả ngắn
                 <span className={styles.field__count}>{form.summary.length}/255</span>
               </label>
-              <textarea id="fSummary" rows={2} placeholder="Tóm tắt hiển thị ở danh sách bài viết..." value={form.summary} onChange={(e) => set("summary", e.target.value.slice(0, 255))} />
+              <textarea
+                id="fSummary" rows={2}
+                placeholder="Tóm tắt hiển thị ở danh sách bài viết..."
+                value={form.summary}
+                onChange={(e) => set("summary", e.target.value.slice(0, 255))}
+              />
             </div>
+
             <div className={styles.field}>
               <label htmlFor="fContent">Nội dung <span className={styles.field__req}>*</span></label>
-              <textarea id="fContent" rows={9} placeholder="Nội dung chính của bài viết..." value={form.content} onChange={(e) => set("content", e.target.value)} />
+              <textarea
+                id="fContent" rows={9}
+                placeholder="Nội dung chính của bài viết..."
+                value={form.content}
+                onChange={(e) => set("content", e.target.value)}
+              />
             </div>
           </div>
 
+          {/* Sidebar */}
           <div className={styles.modal__sidebar}>
+
+            {/* Phân loại */}
             <div className={styles.sideCard}>
               <p className={styles.sideCard__title}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -248,6 +285,7 @@ function FormModal({ initial, onClose, onSave, loading }) {
               </div>
             </div>
 
+            {/* Thumbnail — upload file thay vì nhập URL */}
             <div className={styles.sideCard}>
               <p className={styles.sideCard__title}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -257,19 +295,52 @@ function FormModal({ initial, onClose, onSave, loading }) {
                 </svg>
                 Thumbnail
               </p>
-              <div className={`${styles.field} ${styles.field__last}`}>
-                <label htmlFor="fThumbnail">URL ảnh</label>
-                <input id="fThumbnail" type="text" placeholder="https://..." value={form.thumbnail} onChange={(e) => set("thumbnail", e.target.value)} />
+
+              <div
+                className={styles.uploadZone}
+                onClick={() => document.getElementById("fThumbnail").click()}
+              >
+                {form.thumbnail ? (
+                  <img
+                    src={form.thumbnail}
+                    alt="Preview"
+                    style={{ width: "100%", objectFit: "cover", borderRadius: "4px", maxHeight: "130px" }}
+                  />
+                ) : (
+                  <>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="17 8 12 3 7 8" />
+                      <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                    <span>Nhấn để tải ảnh lên</span>
+                    <span style={{ fontSize: 10, opacity: 0.5 }}>JPG, PNG, WEBP · tối đa 5MB</span>
+                  </>
+                )}
+                <input
+                  id="fThumbnail"
+                  type="file"
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  onChange={handleThumbnailChange}
+                />
               </div>
+
               {form.thumbnail && (
-                <div className={styles.thumbPreview}>
-                  <img src={form.thumbnail} alt="Xem trước thumbnail" />
-                </div>
+                <button
+                  className={styles.btnGhost}
+                  style={{ marginTop: 8, fontSize: 11, padding: "4px 10px", width: "100%" }}
+                  onClick={() => { setForm((f) => ({ ...f, thumbnail: "" })); setThumbnailFile(null); }}
+                >
+                  Xóa ảnh
+                </button>
               )}
             </div>
+
           </div>
         </div>
 
+        {/* Footer */}
         <div className={styles.modal__foot}>
           <button className={styles.btnGhost} onClick={onClose} disabled={loading}>Huỷ</button>
           <div className={styles.modal__footRight}>
@@ -281,11 +352,13 @@ function FormModal({ initial, onClose, onSave, loading }) {
             </button>
           </div>
         </div>
+
       </div>
     </div>
   );
 }
 
+// ── Delete Modal ──────────────────────────────────────────────────────────────
 function DeleteModal({ article, onClose, onConfirm, loading }) {
   return (
     <div className={styles.overlay} onClick={onClose}>
@@ -310,20 +383,19 @@ function DeleteModal({ article, onClose, onConfirm, loading }) {
 export default function QuanLyTinTuc() {
   const { accessToken } = useAuth();
 
-  const [news, setNews]           = useState([]);
-  const [filterCat, setFilterCat] = useState("ALL");
-  const [searchQ, setSearchQ]     = useState("");
-  const [viewMode, setViewMode]   = useState("grid");
-  const [showForm, setShowForm]   = useState(false);
-  const [editItem, setEditItem]   = useState(null);
-  const [deleteItem, setDeleteItem] = useState(null);
+  const [news, setNews]               = useState([]);
+  const [filterCat, setFilterCat]     = useState("ALL");
+  const [searchQ, setSearchQ]         = useState("");
+  const [viewMode, setViewMode]       = useState("grid");
+  const [showForm, setShowForm]       = useState(false);
+  const [editItem, setEditItem]       = useState(null);
+  const [deleteItem, setDeleteItem]   = useState(null);
 
-  // loading riêng cho từng action
   const [loadingList, setLoadingList]     = useState(false);
   const [loadingSave, setLoadingSave]     = useState(false);
   const [loadingDelete, setLoadingDelete] = useState(false);
 
-  // ── Fetch danh sách ──
+  // ── Load data ──
   const loadNews = useCallback(async () => {
     setLoadingList(true);
     try {
@@ -339,18 +411,14 @@ export default function QuanLyTinTuc() {
     }
   }, [filterCat]);
 
-  useEffect(() => {
-    loadNews();
-  }, [loadNews]);
+  useEffect(() => { loadNews(); }, [loadNews]);
 
   // ── Derived ──
   const filtered = news.filter(
-    (n) =>
-      !searchQ ||
+    (n) => !searchQ ||
       n.title.toLowerCase().includes(searchQ.toLowerCase()) ||
       n.slug.includes(searchQ.toLowerCase())
   );
-
   const pubCount   = news.filter((n) => n.status === "PUBLISHED").length;
   const draftCount = news.filter((n) => n.status === "DRAFT").length;
 
@@ -359,19 +427,28 @@ export default function QuanLyTinTuc() {
   const openEdit   = (item) => { setEditItem(item); setShowForm(true); };
   const closeForm  = () => { setShowForm(false); setEditItem(null); };
 
-  const handleSave = async (form) => {
+  const handleSave = async (form, thumbnailFile) => {
     setLoadingSave(true);
     try {
+      const data = {
+        title:         form.title,
+        slug:          form.slug,
+        summary:       form.summary,
+        content:       form.content,
+        category:      form.category,
+        status:        form.status,
+        thumbnailFile: thumbnailFile || null, // File object — newsAPI.buildFormData xử lý
+      };
+
       if (form.idNews) {
-        await NewsAPI.updateNews(form.idNews, form);
+        await NewsAPI.updateNews(form.idNews, data);
       } else {
-        await NewsAPI.createNews(form);
+        await NewsAPI.createNews(data);
       }
       closeForm();
-      await loadNews(); // reload từ server
+      await loadNews();
     } catch (err) {
-      const msg = err?.message || "Lưu bài viết thất bại.";
-      alert(msg);
+      alert(err?.message || "Lưu bài viết thất bại.");
     } finally {
       setLoadingSave(false);
     }
@@ -383,7 +460,7 @@ export default function QuanLyTinTuc() {
     try {
       await NewsAPI.deleteNews(deleteItem.idNews);
       setDeleteItem(null);
-      await loadNews(); // reload từ server
+      await loadNews();
     } catch (err) {
       alert("Xoá bài viết thất bại.");
     } finally {
@@ -493,10 +570,9 @@ export default function QuanLyTinTuc() {
                 placeholder="Tìm bài viết..."
                 value={searchQ}
                 onChange={(e) => setSearchQ(e.target.value)}
-                aria-label="Tìm kiếm bài viết"
               />
             </div>
-            <div className={styles.viewToggle} role="group" aria-label="Chế độ xem">
+            <div className={styles.viewToggle}>
               <button className={`${styles.viewBtn} ${viewMode === "grid" ? styles.viewBtn__active : ""}`} onClick={() => setViewMode("grid")} title="Lưới">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
@@ -517,9 +593,7 @@ export default function QuanLyTinTuc() {
 
         {/* List / Grid */}
         {loadingList ? (
-          <div className={styles.empty}>
-            <p>Đang tải bài viết...</p>
-          </div>
+          <div className={styles.empty}><p>Đang tải bài viết...</p></div>
         ) : filtered.length === 0 ? (
           <div className={styles.empty}>
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">

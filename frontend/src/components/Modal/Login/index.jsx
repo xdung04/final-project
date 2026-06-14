@@ -4,7 +4,7 @@ import { useToast } from "~/context/ToastContext";
 import { useAuth } from "~/context/AuthContext";
 import { AuthAPI } from "~/apis/AuthAPI";
 import { GoogleLogin } from "@react-oauth/google";
-import { useNavigate } from "react-router-dom"; // 🔥 THÊM IMPORT NÀY
+import { useNavigate } from "react-router-dom";
 
 import Input from "~/components/Input";
 import Button from "~/components/Button";
@@ -19,21 +19,14 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
   const { showToast } = useToast();
   const navigate = useNavigate();
 
-  // 🔥 THÊM: function chào theo role
   const getWelcomeMessage = (user) => {
     const name = user.fullName || user.name || "bạn";
-
     switch (user.role) {
-      case "admin":
-        return `Chào mừng Admin ${name}, Hệ thống đã sẵn sàng!`;
-      case "barber":
-        return `Chào Barber ${name}, hôm nay có nhiều khách đang chờ bạn đó!`;
-      case "customer":
-        return `Chào ${name} đến với Barber Shop Nam, đặt lịch thôi nào!`;
-      case "receptionist":
-        return `Chào ${name}, lịch cắt tóc của chi nhánh đã sẵn sàng!`;
-      default:
-        return `Chào mừng ${name}`;
+      case "admin":       return `Chào mừng Admin ${name}, Hệ thống đã sẵn sàng!`;
+      case "barber":      return `Chào Barber ${name}, hôm nay có nhiều khách đang chờ bạn đó!`;
+      case "customer":    return `Chào ${name} đến với Barber Shop Nam, đặt lịch thôi nào!`;
+      case "receptionist":return `Chào ${name}, lịch cắt tóc của chi nhánh đã sẵn sàng!`;
+      default:            return `Chào mừng ${name}`;
     }
   };
 
@@ -41,30 +34,29 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // HÀM XỬ LÝ CHUYỂN HƯỚNG THEO ROLE
-  const handleRedirectByRole = (role) => {
-    // Luôn đóng modal login và chạy callback success trước
-    if (onLoginSuccess) onLoginSuccess();
+  /**
+   * FIX 6: Gộp tất cả logic sau login vào đây, tránh gọi onLoginSuccess / onClose 2 lần
+   * FIX 7: Chỉ navigate 1 lần tại đây, không navigate thêm ở nơi khác
+   */
+  const handlePostLogin = (userData) => {
+    // 1. Truyền userData về cho component cha (AIChat cần customerId để sync)
+    if (onLoginSuccess) onLoginSuccess(userData);
+
+    // 2. Đóng modal
     if (onClose) onClose();
 
-    // Điều hướng thẳng vào trang quản lý tương ứng
-    switch (role) {
-      case "admin":
-        navigate("/admin");
-        break;
-      case "barber":
-        navigate("/tho-cat-toc");
-        break;
-      case "receptionist":
-        navigate("/receptionist");
-        break;
+    // 3. Điều hướng theo role — chỉ chạy 1 lần duy nhất
+    switch (userData.role) {
+      case "admin":        navigate("/admin");        break;
+      case "barber":       navigate("/tho-cat-toc");  break;
+      case "receptionist": navigate("/receptionist"); break;
       default:
-        // Nếu là customer (khách hàng), cứ để họ ở lại trang hiện tại (trang chủ)
+        // customer: ở lại trang hiện tại, không redirect
         break;
     }
   };
 
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.email || !formData.password) {
       showToast({ text: "Vui lòng nhập đầy đủ thông tin", type: "error" });
@@ -90,18 +82,18 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
           avatar: result.user.image || "/user.png",
         };
 
+        // 🧹 BƯỚC 1: Xóa sạch bộ nhớ tạm chat session cũ của "guest" ở sessionStorage trước
+        sessionStorage.removeItem("chatMessages");
+        sessionStorage.removeItem("chatSessionId");
+        sessionStorage.removeItem("chatSessionOwner");
+
+        // 🚀 BƯỚC 2: Lúc này mới cập nhật trạng thái Đăng nhập để tránh AIChat bắt mạch sai dữ liệu cũ
         authLogin(userWithAvatar, result.accessToken, result.refreshToken);
+        
+        showToast({ text: getWelcomeMessage(result.user), type: "success" });
 
-        // 🔥 SỬA: toast theo role
-        showToast({
-          text: getWelcomeMessage(result.user),
-          type: "success",
-        });
-
-        handleRedirectByRole(result.user.role);
-
-        if (onLoginSuccess) onLoginSuccess();
-        if (onClose) onClose();
+        // BƯỚC 3: Điều hướng và đóng modal
+        handlePostLogin(userWithAvatar);
       }
     } catch (err) {
       const message = err.response?.data?.message || "Email hoặc mật khẩu không đúng";
@@ -111,7 +103,7 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
     }
   };
 
-  const handleGoogleSuccess = async (credentialResponse) => {
+const handleGoogleSuccess = async (credentialResponse) => {
     const googleIdToken = credentialResponse?.credential;
 
     if (!googleIdToken) {
@@ -138,30 +130,18 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
           avatar: result.user.image || "/user.png",
         };
 
-        // Lưu Auth
+        // 🧹 BƯỚC 1: Xóa sạch bộ nhớ tạm chat session cũ của "guest" ở sessionStorage trước
+        sessionStorage.removeItem("chatMessages");
+        sessionStorage.removeItem("chatSessionId");
+        sessionStorage.removeItem("chatSessionOwner");
+
+        // 🚀 BƯỚC 2: Cập nhật trạng thái đăng nhập toàn cục
         authLogin(userWithAvatar, result.accessToken, result.refreshToken);
+        
+        showToast({ text: getWelcomeMessage(result.user), type: "success" });
 
-        // 🔥 SỬA: toast theo role
-        showToast({
-          text: getWelcomeMessage(result.user),
-          type: "success",
-        });
-
-        // 🚀 redirect theo role
-        const role = result.user.role;
-
-        if (role === "admin") {
-          navigate("/admin");
-        } else if (role === "barber") {
-          navigate("/tho-cat-toc");
-        } else if (role === "receptionist") {
-          navigate("/receptionist");
-        } else {
-          navigate("/");
-        }
-
-        // 🔥 GỌI HÀM ĐIỀU HƯỚNG
-        handleRedirectByRole(result.user.role);
+        // BƯỚC 3: Điều hướng và đóng modal
+        handlePostLogin(userWithAvatar);
       }
     } catch (err) {
       const message = err.response?.data?.message || "Đăng nhập Google thất bại";

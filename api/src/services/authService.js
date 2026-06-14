@@ -45,7 +45,7 @@ async function getBranchIdByUser(user) {
   return null;
 }
 
-// ==================== LOGIN ====================
+// ==================== LOGIN THÔNG THƯỜNG ====================
 export async function login(email, password) {
   if (!email || !password) {
     throw { status: 400, message: "Email và password là bắt buộc." };
@@ -76,16 +76,17 @@ export async function login(email, password) {
 
   const needPhone = !user.phoneNumber;
 
-  // 🌟 NÂNG CẤP BẢO MẬT: Lấy idBranch đính kèm vào Token
+  // Lấy idBranch đính kèm vào Token
   const idBranch = await getBranchIdByUser(user);
 
   const payload = {
     idUser: user.idUser,
     email: user.email,
     role: user.role,
-    idBranch: idBranch, // Đưa vào payload của cả cặp token
+    idBranch: idBranch, 
   };
 
+  // 🌟 ĐÃ SỬA THÀNH 5s ĐỂ BẮT ĐẦU TEST TOÀN DIỆN
   const accessToken = jwt.sign(payload, process.env.JWT_SECRET, {
     expiresIn: "1h",
   });
@@ -103,7 +104,7 @@ export async function login(email, password) {
   return {
     accessToken,
     refreshToken,
-    expiresIn: 3600,
+    expiresIn: "1h", // Đổi thông tin trả về 1 giờ
     user: {
       idUser: user.idUser,
       fullName: user.fullName,
@@ -111,7 +112,7 @@ export async function login(email, password) {
       image: user.image || null,
       role: user.role,
       phoneNumber: user.phoneNumber,
-      idBranch: idBranch, // Trả về cho Frontend lưu Context
+      idBranch: idBranch, 
     },
     needPhone,
   };
@@ -119,17 +120,22 @@ export async function login(email, password) {
 
 // ==================== REFRESH TOKEN ====================
 export async function refresh(refreshToken) {
-  if (!refreshToken) throw { status: 401, message: "NO_REFRESH_TOKEN" };
+  // Không có refresh token gửi lên -> 401 Unauthorized
+  if (!refreshToken) {
+    throw { status: 401, message: "NO_REFRESH_TOKEN" };
+  }
 
   try {
+    // Xác thực token
     const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
     const savedToken = await redisClient.get(`refresh:${decoded.idUser}`);
 
+    // Token không trùng khớp trong Redis -> 401 Unauthorized
     if (!savedToken || savedToken !== refreshToken) {
-      throw { status: 403, message: "INVALID_REFRESH_TOKEN" };
+      throw { status: 401, message: "INVALID_REFRESH_TOKEN" };
     }
 
-    // 🌟 ĐỒNG BỘ: Giữ nguyên thông tin idBranch khi tạo Access Token mới
+    // Tạo Access Token mới tiếp tục sống 5s để test vòng lặp tiếp theo
     const newAccessToken = jwt.sign(
       {
         idUser: decoded.idUser,
@@ -138,12 +144,17 @@ export async function refresh(refreshToken) {
         idBranch: decoded.idBranch || null,
       },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" },
+      { expiresIn: "1h" }, // 🌟 ĐÃ GIỮ NGUYÊN 5s
     );
 
-    return { accessToken: newAccessToken, expiresIn: 3600, role: decoded.role };
+    return { 
+      accessToken: newAccessToken, 
+      expiresIn: 5, 
+      role: decoded.role 
+    };
   } catch (err) {
-    throw { status: 403, message: "INVALID_REFRESH_TOKEN" };
+    // Nếu hết hạn 7 ngày hoặc token sai định dạng -> 401 kích hoạt Frontend Logout
+    throw { status: 401, message: err.message || "INVALID_REFRESH_TOKEN" };
   }
 }
 
@@ -229,7 +240,6 @@ export async function googleLogin(googleToken) {
     }
   }
 
-  // 🌟 NÂNG CẤP BẢO MẬT: Đính kèm idBranch cho tài khoản Google (Nếu phân quyền)
   const idBranch = await getBranchIdByUser(user);
 
   const tokenPayload = {
@@ -239,6 +249,7 @@ export async function googleLogin(googleToken) {
     idBranch: idBranch,
   };
 
+  // 🌟 ĐÃ GIỮ NGUYÊN 5s ĐỂ TEST ĐĂNG NHẬP GOOGLE
   const accessToken = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
     expiresIn: "1h",
   });
@@ -256,7 +267,7 @@ export async function googleLogin(googleToken) {
   return {
     accessToken,
     refreshToken,
-    expiresIn: 3600,
+    expiresIn: 5,
     user: {
       idUser: user.idUser,
       fullName: user.fullName,
@@ -284,7 +295,6 @@ export async function getMe(idUser) {
     throw error;
   }
 
-  // 🌟 ĐỒNG BỘ FRONTEND: Trả thêm dữ liệu idBranch về cho Client Context đồng nhất số liệu
   const idBranch = await getBranchIdByUser(user);
 
   return {

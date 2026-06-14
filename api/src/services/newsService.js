@@ -1,4 +1,4 @@
-// services/newsService.js
+import cloudinary from "../config/cloudinary.js";// services/newsService.js
 import db from "../models/index.js";
 
 const { News } = db;
@@ -53,59 +53,47 @@ export const getAllNews = async ({ category, status } = {}) => {
 /**
  * Admin tạo bài viết mới
  */
-export const createNews = async (data) => {
-  // Kiểm tra slug trùng
-  const existing = await News.findOne({ where: { slug: data.slug } });
-  if (existing) {
-    const err = new Error("Slug đã tồn tại, vui lòng dùng slug khác.");
-    err.code = "SLUG_DUPLICATE";
-    throw err;
-  }
-
-  return await News.create({
-    title:     data.title,
-    slug:      data.slug,
-    thumbnail: data.thumbnail || null,
-    summary:   data.summary   || null,
-    content:   data.content,
-    category:  data.category  || "NEWS",
-    status:    data.status    || "DRAFT",
+const uploadToCloudinary = (buffer) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder: "news" },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result);
+      }
+    );
+    stream.end(buffer);
   });
 };
 
-/**
- * Admin cập nhật bài viết
- */
-export const updateNews = async (idNews, data) => {
-  const news = await News.findByPk(idNews);
+export const createNews = async (body, file) => {
+  let thumbnail = null;
+  if (file) {
+    const result = await uploadToCloudinary(file.buffer);
+    thumbnail = result.secure_url;
+  }
+  return await db.News.create({ ...body, thumbnail });
+};
+
+export const updateNews = async (idNews, body, file) => {
+  const news = await db.News.findByPk(idNews);
   if (!news) {
     const err = new Error("Không tìm thấy bài viết.");
     err.code = "NOT_FOUND";
     throw err;
   }
 
-  // Nếu đổi slug thì kiểm tra trùng với bài khác
-  if (data.slug && data.slug !== news.slug) {
-    const existing = await News.findOne({ where: { slug: data.slug } });
-    if (existing) {
-      const err = new Error("Slug đã tồn tại, vui lòng dùng slug khác.");
-      err.code = "SLUG_DUPLICATE";
-      throw err;
-    }
+  // Chỉ upload nếu có ảnh mới, không thì giữ URL cũ
+  let thumbnail = news.thumbnail;
+  if (file) {
+    const result = await uploadToCloudinary(file.buffer);
+    thumbnail = result.secure_url;
   }
 
-  await news.update({
-    title:     data.title     ?? news.title,
-    slug:      data.slug      ?? news.slug,
-    thumbnail: data.thumbnail ?? news.thumbnail,
-    summary:   data.summary   ?? news.summary,
-    content:   data.content   ?? news.content,
-    category:  data.category  ?? news.category,
-    status:    data.status    ?? news.status,
-  });
-
+  await news.update({ ...body, thumbnail });
   return news;
 };
+
 
 /**
  * Admin xoá bài viết

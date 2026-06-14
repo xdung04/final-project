@@ -12,13 +12,18 @@ const login = async (req, res) => {
 };
 
 // Refresh token
+// Refresh token
 const refresh = async (req, res) => {
   try {
     const { refreshToken } = req.body;
     const result = await AuthService.refresh(refreshToken);
-    res.json(result);
+    return res.json(result);
   } catch (err) {
-    res.status(err.status || 500).json({ message: err.message || "Lỗi server" });
+    // Đảm bảo trả về đúng status code từ service ném ra (401), nếu ko có thì mới dùng 500
+    const statusCode = err.status || 500;
+    return res.status(statusCode).json({ 
+      message: err.message || "Lỗi xác thực hệ thống" 
+    });
   }
 };
 
