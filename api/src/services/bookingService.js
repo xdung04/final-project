@@ -10,7 +10,15 @@ export const getBranches = async (req, res) => {
   try {
     const branches = await db.Branch.findAll({
       where: { status: "Active" },
-      attributes: ["idBranch", "name", "address", "openTime", "closeTime", "status", "slotDuration"],
+      attributes: [
+        "idBranch",
+        "name",
+        "address",
+        "openTime",
+        "closeTime",
+        "status",
+        "slotDuration",
+      ],
     });
     res.json(branches);
   } catch (error) {
@@ -21,14 +29,29 @@ export const getBranches = async (req, res) => {
 // Lấy chi tiết chi nhánh (barbers + services)
 export const getBranchDetail = async (branchId) => {
   const branch = await db.Branch.findByPk(branchId, {
-    attributes: ["idBranch", "name", "address", "openTime", "closeTime", "status", "slotDuration"],
+    attributes: [
+      "idBranch",
+      "name",
+      "address",
+      "openTime",
+      "closeTime",
+      "status",
+      "slotDuration",
+    ],
     include: [
       {
         model: db.ServiceAssignment,
         include: [
           {
             model: db.Service,
-            attributes: ["idService", "name", "description", "price", "duration", "status"],
+            attributes: [
+              "idService",
+              "name",
+              "description",
+              "price",
+              "duration",
+              "status",
+            ],
           },
           {
             model: db.Barber,
@@ -54,7 +77,10 @@ export const getBranchDetail = async (branchId) => {
 
   branch.ServiceAssignments.forEach((assign) => {
     // Chuẩn hóa dữ liệu barber
-    if (assign.Barber && !barbers.find((b) => b.idBarber === assign.Barber.idBarber)) {
+    if (
+      assign.Barber &&
+      !barbers.find((b) => b.idBarber === assign.Barber.idBarber)
+    ) {
       barbers.push({
         idBarber: assign.Barber.idBarber,
         name: assign.Barber.user?.fullName || "N/A",
@@ -63,7 +89,10 @@ export const getBranchDetail = async (branchId) => {
     }
 
     // Chuẩn hóa dữ liệu service
-    if (assign.Service && !services.find((s) => s.idService === assign.Service.idService)) {
+    if (
+      assign.Service &&
+      !services.find((s) => s.idService === assign.Service.idService)
+    ) {
       services.push({
         idService: assign.Service.idService,
         name: assign.Service.name,
@@ -128,7 +157,8 @@ export const createBookingService = async ({
   const isSuspendedNow =
     suspendDate &&
     bookingDay >= new Date(suspendDate).toISOString().split("T")[0] &&
-    (!resumeDate || bookingDay < new Date(resumeDate).toISOString().split("T")[0]);
+    (!resumeDate ||
+      bookingDay < new Date(resumeDate).toISOString().split("T")[0]);
 
   if (isSuspendedNow) {
     throw new Error(
@@ -137,7 +167,10 @@ export const createBookingService = async ({
   }
 
   // Nếu đặt trước ngày hoạt động trở lại
-  if (resumeDate && bookingDay < new Date(resumeDate).toISOString().split("T")[0]) {
+  if (
+    resumeDate &&
+    bookingDay < new Date(resumeDate).toISOString().split("T")[0]
+  ) {
     throw new Error(
       `Chi nhánh sẽ hoạt động lại từ ${formatDDMMYYYY(resumeDate)} — vui lòng chọn ngày sau thời điểm này.`,
     );
@@ -151,14 +184,21 @@ export const createBookingService = async ({
   });
 
   // Tính tổng giá
-  const originalTotal = services.reduce((sum, s) => sum + s.price * (s.quantity || 1), 0);
+  const originalTotal = services.reduce(
+    (sum, s) => sum + s.price * (s.quantity || 1),
+    0,
+  );
   let finalTotal = originalTotal;
   let discountAmount = 0;
 
   // Nếu có voucher, gọi applyVoucher để kiểm tra và cập nhật
   if (idCustomerVoucher) {
     try {
-      const applyResult = await VoucherService.applyVoucher(idCustomerVoucher, idCustomer, originalTotal);
+      const applyResult = await VoucherService.applyVoucher(
+        idCustomerVoucher,
+        idCustomer,
+        originalTotal,
+      );
       discountAmount = applyResult.discountAmount;
       finalTotal = applyResult.finalAmount;
     } catch (error) {
@@ -194,7 +234,9 @@ export const createBookingService = async ({
 
   // Lấy email khách
   const customer = await db.Customer.findByPk(idCustomer, {
-    include: [{ model: db.User, as: "user", attributes: ["email", "fullName"] }],
+    include: [
+      { model: db.User, as: "user", attributes: ["email", "fullName"] },
+    ],
   });
 
   // Gửi mail xác nhận
@@ -224,7 +266,9 @@ export const createBookingService = async ({
   });
 
   // Tạo danh sách tên dịch vụ đẹp
-  const serviceNames = services.map((s) => serviceNameMap[s.idService] || "Dịch vụ không xác định").join(", ");
+  const serviceNames = services
+    .map((s) => serviceNameMap[s.idService] || "Dịch vụ không xác định")
+    .join(", ");
 
   const formattedDate = moment(bookingDate).format("DD/MM/YYYY");
 
@@ -287,8 +331,16 @@ export const getBarberBookings = async (barberId, startDate, endDate) => {
     where: {
       idBarber: barberId,
       [Op.and]: [
-        Sequelize.where(Sequelize.fn("DATE", Sequelize.col("bookingDate")), ">=", startDate),
-        Sequelize.where(Sequelize.fn("DATE", Sequelize.col("bookingDate")), "<=", endDate),
+        Sequelize.where(
+          Sequelize.fn("DATE", Sequelize.col("bookingDate")),
+          ">=",
+          startDate,
+        ),
+        Sequelize.where(
+          Sequelize.fn("DATE", Sequelize.col("bookingDate")),
+          "<=",
+          endDate,
+        ),
       ],
     },
     include: [
@@ -323,7 +375,12 @@ export const getBarberBookings = async (barberId, startDate, endDate) => {
   });
 };
 
-export const completeBooking = async (idBooking, idBarber, uploadedImages, description) => {
+export const completeBooking = async (
+  idBooking,
+  idBarber,
+  uploadedImages,
+  description,
+) => {
   const booking = await db.Booking.findByPk(idBooking);
   if (!booking) throw new Error("Không tìm thấy lịch hẹn");
 
@@ -350,7 +407,11 @@ export const completeBooking = async (idBooking, idBarber, uploadedImages, descr
   };
 };
 
-export const getBookedSlotsByBarber = async (idBranch, idBarber, bookingDate) => {
+export const getBookedSlotsByBarber = async (
+  idBranch,
+  idBarber,
+  bookingDate,
+) => {
   try {
     const normalizedDate = moment(bookingDate).format("YYYY-MM-DD");
 
@@ -438,7 +499,12 @@ export const getBookedSlotsByBarber = async (idBranch, idBarber, bookingDate) =>
     const bookings = await db.Booking.findAll({
       where: {
         idBarber,
-        [Op.and]: [Sequelize.where(Sequelize.fn("DATE", Sequelize.col("bookingDate")), normalizedDate)],
+        [Op.and]: [
+          Sequelize.where(
+            Sequelize.fn("DATE", Sequelize.col("bookingDate")),
+            normalizedDate,
+          ),
+        ],
         status: { [Op.not]: "Cancelled" },
       },
       attributes: ["bookingTime"],
@@ -478,7 +544,12 @@ export const getBookingsByBranchService = async (idBranch, date) => {
   };
 
   if (date) {
-    whereClause[Op.and] = [db.Sequelize.where(db.Sequelize.fn("DATE", db.Sequelize.col("Booking.bookingDate")), date)];
+    whereClause[Op.and] = [
+      db.Sequelize.where(
+        db.Sequelize.fn("DATE", db.Sequelize.col("Booking.bookingDate")),
+        date,
+      ),
+    ];
   }
   console.log("✅ whereClause:", JSON.stringify(whereClause, null, 2));
   const bookings = await db.Booking.findAll({
@@ -567,7 +638,10 @@ export const getBookingsByBranchService = async (idBranch, date) => {
       try {
         const details = booking.BookingDetails || [];
 
-        const serviceTotal = details.reduce((sum, item) => sum + parseFloat(item.price) * (item.quantity || 1), 0);
+        const serviceTotal = details.reduce(
+          (sum, item) => sum + parseFloat(item.price) * (item.quantity || 1),
+          0,
+        );
 
         const tip = parseFloat(booking.BookingTip?.tipAmount || 0);
         const voucher = booking.customerVoucher?.voucher;
@@ -615,7 +689,12 @@ export const getBookingsByBranchService = async (idBranch, date) => {
               }
             : { id: 0, name: "Khách lẻ", phone: "" },
 
-          barber: booking.barber ? { id: booking.barber.idBarber, name: booking.barber.user?.fullName || "" } : null,
+          barber: booking.barber
+            ? {
+                id: booking.barber.idBarber,
+                name: booking.barber.user?.fullName || "",
+              }
+            : null,
 
           branch: booking.barber?.branch
             ? {
@@ -682,5 +761,86 @@ export const getBarberInfoForBooking = async (idBarber) => {
       startDate: u.startDate, // "YYYY-MM-DD"
       endDate: u.endDate, // "YYYY-MM-DD"
     })),
+  };
+};
+
+export const getBranchDetailsService = async (idBranch) => {
+  const branch = await db.Branch.findByPk(idBranch, {
+    include: [
+      {
+        model: db.Barber,
+        as: "barbers",
+        attributes: ["idBarber", "profileDescription", "isLocked", "lockDate"],
+        where: { isLocked: false },
+        required: false,
+        include: [
+          {
+            model: db.User,
+            as: "user",
+            attributes: ["idUser", "fullName", "email", "image"],
+          },
+        ],
+      },
+      {
+        model: db.Service,
+        as: "services",
+        attributes: [
+          "idService",
+          "name",
+          "description",
+          "price",
+          "duration",
+          "status",
+        ],
+        through: { attributes: [] },
+      },
+    ],
+  });
+
+  if (!branch) {
+    throw new Error("Không tìm thấy chi nhánh");
+  }
+
+  const branchData = branch.toJSON();
+  // Đảm bảo các trường time slot luôn có
+  return {
+    ...branchData,
+    openTime: branch.openTime,
+    closeTime: branch.closeTime,
+    slotDuration: branch.slotDuration,
+  };
+};
+export const cancelBookingService = async (idBooking) => {
+  const booking = await db.Booking.findByPk(idBooking);
+  if (!booking) {
+    throw new Error("Không tìm thấy lịch hẹn để hủy");
+  }
+  if (booking.status !== "Pending") {
+    throw new Error(
+      `Không thể hủy lịch hẹn khi trạng thái đang là '${booking.status}'. Chỉ lịch hẹn Pending mới được phép hủy.`,
+    );
+  }
+  booking.status = "Cancelled";
+  await booking.save();
+  return { message: "Đã hủy lịch hẹn thành công" };
+};
+export const checkInBookingService = async (idBooking) => {
+  const booking = await db.Booking.findByPk(idBooking);
+  if (!booking) {
+    throw new Error("Không tìm thấy lịch hẹn");
+  }
+  if (booking.status !== "Pending") {
+    throw new Error(
+      `Chỉ có lịch hẹn Pending mới được check-in. Trạng thái hiện tại: '${booking.status}'`,
+    );
+  }
+  booking.status = "InProgress";
+  await booking.save();
+  return {
+    message: "Đã check-in lịch hẹn thành công",
+    booking: {
+      idBooking: booking.idBooking,
+      status: booking.status,
+    },
   };
 };

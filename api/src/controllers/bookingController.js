@@ -20,52 +20,14 @@ export const getBranches = async (req, res) => {
 export const getBranchDetails = async (req, res) => {
   try {
     const { idBranch } = req.params;
-
-    const branch = await db.Branch.findByPk(idBranch, {
-      include: [
-        {
-          model: db.Barber,
-          as: "barbers",
-          // [FIX] Thêm isLocked, lockDate vào attributes
-          attributes: ["idBarber", "profileDescription", "isLocked", "lockDate"],
-          // [FIX] Chỉ lấy barber chưa bị khóa vĩnh viễn
-          where: { isLocked: false },
-          required: false,
-          include: [
-            {
-              model: db.User,
-              as: "user",
-              attributes: ["idUser", "fullName", "email", "image"],
-            },
-          ],
-        },
-        {
-          model: db.Service,
-          as: "services",
-          attributes: ["idService", "name", "description", "price", "duration", "status"],
-          through: { attributes: [] },
-        },
-      ],
-    });
-
-    if (!branch) {
-      return res.status(404).json({ message: "Không tìm thấy chi nhánh" });
-    }
-
-    const branchData = branch.toJSON();
-
-    res.json({
-      ...branchData,
-      // [FIX] Đảm bảo các field sinh time slot luôn có trong response
-      openTime: branch.openTime,
-      closeTime: branch.closeTime,
-      slotDuration: branch.slotDuration,
-    });
+    const branchData = await bookingService.getBranchDetailsService(idBranch);
+    res.json(branchData);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Lỗi khi lấy chi tiết chi nhánh", error });
   }
 };
+
 
 // Tạo booking
 export const createBooking = async (req, res) => {
@@ -162,7 +124,7 @@ export const getBookingsForBarber = async (req, res) => {
   }
 };
 
-const storage = new CloudinaryStorage({
+const storage = new CloudinaryStorage({ 
   cloudinary,
   params: async () => ({
     folder: "customer-gallery",
@@ -248,22 +210,8 @@ export const getBookingsByBarber = async (req, res) => {
 export const cancelBooking = async (req, res) => {
   try {
     const { idBooking } = req.params;
-    const booking = await db.Booking.findByPk(idBooking);
-
-    if (!booking) {
-      return res.status(404).json({ message: "Không tìm thấy lịch hẹn để hủy" });
-    }
-
-    if (booking.status !== "Pending") {
-      return res.status(400).json({
-        message: `Không thể hủy lịch hẹn khi trạng thái đang là '${booking.status}'. Chỉ lịch hẹn Pending mới được phép hủy.`,
-      });
-    }
-
-    booking.status = "Cancelled";
-    await booking.save();
-
-    return res.status(200).json({ message: "Đã hủy lịch hẹn thành công" });
+    const result = await bookingService.cancelBookingService(idBooking);
+    return res.status(200).json(result);
   } catch (error) {
     console.error("❌ Lỗi khi hủy lịch:", error);
     res.status(500).json({ message: "Lỗi khi hủy lịch", error: error.message });
@@ -273,28 +221,8 @@ export const cancelBooking = async (req, res) => {
 export const checkInBooking = async (req, res) => {
   try {
     const { idBooking } = req.params;
-    const booking = await db.Booking.findByPk(idBooking);
-
-    if (!booking) {
-      return res.status(404).json({ message: "Không tìm thấy lịch hẹn" });
-    }
-
-    if (booking.status !== "Pending") {
-      return res.status(400).json({
-        message: `Chỉ có lịch hẹn Pending mới được check-in. Trạng thái hiện tại: '${booking.status}'`,
-      });
-    }
-
-    booking.status = "InProgress";
-    await booking.save();
-
-    return res.status(200).json({
-      message: "Đã check-in lịch hẹn thành công",
-      booking: {
-        idBooking: booking.idBooking,
-        status: booking.status,
-      },
-    });
+    const result = await bookingService.checkInBookingService(idBooking);
+    return res.status(200).json(result);
   } catch (error) {
     console.error("❌ Lỗi khi check-in booking:", error);
     return res.status(500).json({
