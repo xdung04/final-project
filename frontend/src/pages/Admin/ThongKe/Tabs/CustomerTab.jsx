@@ -34,7 +34,6 @@ import styles from "./CustomerTab.module.scss";
 
 const cx = classNames.bind(styles);
 
-// ── Config ───────────────────────────────────────────────────────────────────
 const SEGMENT_CONFIG = {
   new: {
     label: "Khách mới",
@@ -52,16 +51,16 @@ const SEGMENT_CONFIG = {
   },
   occasional: {
     label: "Tiềm năng",
-    desc: "Khách quay lại không đều \n" +
-     "Khách mới tạo tài khoản chưa đặt lịch",
+    desc:
+      "Khách quay lại không đều \n" + "Khách mới tạo tài khoản chưa đặt lịch",
     icon: Clock,
     color: "#854F0B",
     bg: "#FAEEDA",
   },
   inactive: {
     label: "Không hoạt động",
-    desc: "Khách vắng trên 90 ngày \n" +
-     "Khách đăng ký >30 ngày chưa đặt lịch",
+    desc:
+      "Khách vắng trên 90 ngày \n" + "Khách đăng ký >30 ngày chưa đặt lịch",
     icon: UserX,
     color: "#A32D2D",
     bg: "#FCEBEB",
@@ -72,7 +71,6 @@ const VOUCHER_LABELS = { A: "Đang có voucher", B: "Đã dùng", C: "Chưa nh�
 const FILTER_TO_TYPE = { all: null, ready: "C", used: "B", active: "A" };
 const formatMoney = (v) => Number(v).toLocaleString("vi-VN") + "đ";
 
-// ── Custom tooltip biểu đồ ────────────────────────────────────────────────────
 function ChartTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   const rv =
@@ -104,7 +102,6 @@ function ChartTooltip({ active, payload, label }) {
   );
 }
 
-// ── Segment Card ──────────────────────────────────────────────────────────────
 function SegmentCard({ segKey, data, active, onClick }) {
   const cfg = SEGMENT_CONFIG[segKey];
   const Icon = cfg.icon;
@@ -159,7 +156,6 @@ function SegmentCard({ segKey, data, active, onClick }) {
   );
 }
 
-// ── Bảng chi tiết (không còn checkbox) ─────────────────────────────────────────
 function SegmentTable({ customers, segKey, onSendSingle }) {
   const isV = segKey === "occasional" || segKey === "inactive";
 
@@ -280,8 +276,10 @@ function SegmentTable({ customers, segKey, onSendSingle }) {
   );
 }
 
-// ── Main ──────────────────────────────────────────────────────────────────────
 export default function CustomerTab() {
+  // accessToken không còn cần thiết để truyền vào các service nữa (cookie tự
+  // gửi kèm). Giữ destructure phòng khi cần check trạng thái đăng nhập, có
+  // thể xoá nếu không dùng tới ở đâu khác trong file.
   const { accessToken } = useAuth();
   const { showToast } = useToast();
 
@@ -299,7 +297,6 @@ export default function CustomerTab() {
   const [occasionalMinDays, setOccasionalMinDays] = useState(60);
   const [inactiveMaxDays, setInactiveMaxDays] = useState(null);
   const [showNoBooking, setShowNoBooking] = useState(false);
-  //  "no_booking" | "has_booking"
 
   useEffect(() => {
     loadMonthly();
@@ -310,7 +307,7 @@ export default function CustomerTab() {
   const loadMonthly = async () => {
     setLoadingMonthly(true);
     try {
-      setMonthly(await fetchMonthlyStats(accessToken, 6));
+      setMonthly(await fetchMonthlyStats(6));
     } catch {
       showToast({ text: "Lỗi tải biểu đồ", type: "error" });
     } finally {
@@ -320,7 +317,7 @@ export default function CustomerTab() {
   const loadSegments = async () => {
     setLoadingSegments(true);
     try {
-      setSegmentsData(await fetchCustomerSegments(accessToken));
+      setSegmentsData(await fetchCustomerSegments());
     } catch {
       showToast({ text: "Lỗi tải phân loại", type: "error" });
     } finally {
@@ -329,7 +326,7 @@ export default function CustomerTab() {
   };
   const loadVouchers = async () => {
     try {
-      const data = await fetchAllVouchers(accessToken);
+      const data = await fetchAllVouchers();
       const rv = data.filter((v) => v.type === "RETENTION" && v.is_active);
       setVouchers(rv);
       if (rv.length) setSelectedVoucherId(String(rv[0].id));
@@ -342,12 +339,10 @@ export default function CustomerTab() {
 
     if (segKey === "occasional") {
       list = list.filter((c) => {
-        // Nếu checkbox bật: chỉ lấy khách chưa có booking
         if (showNoBooking) {
           return c.totalBookings === 0;
         }
-        // Nếu checkbox tắt: lấy tất cả nhưng phải có booking (có daysAgo) và thỏa khoảng ngày
-        if (c.totalBookings === 0) return false; // bỏ qua khách không booking
+        if (c.totalBookings === 0) return false;
         if (c.daysAgo === null) return false;
         return c.daysAgo >= occasionalMinDays && c.daysAgo <= 90;
       });
@@ -356,7 +351,6 @@ export default function CustomerTab() {
         if (showNoBooking) {
           return c.totalBookings === 0;
         }
-        // Không bật checkbox: lấy khách có booking và thỏa điều kiện inactive
         if (c.totalBookings === 0) return false;
         if (c.daysAgo === null) return false;
         if (c.daysAgo < 90) return false;
@@ -380,13 +374,12 @@ export default function CustomerTab() {
       });
     setSending(true);
     try {
-      const res = await sendRetentionVoucher(
-        accessToken,
-        selectedVoucherId,
-        ids,
-      );
-      const issuedCount = res.data.issued;
-      const skipped = res.data.skipped || [];
+      // sendRetentionVoucher giờ trả thẳng data (đã bóc .data sẵn ở
+      // voucherService.js -> httpRequest.js), nên đọc res.issued thay vì
+      // res.data.issued như trước (axios gốc).
+      const res = await sendRetentionVoucher(selectedVoucherId, ids);
+      const issuedCount = res.issued;
+      const skipped = res.skipped || [];
       const alreadyHasCount = skipped.filter(
         (s) => s.reason === "already_has_available",
       ).length;
@@ -479,7 +472,6 @@ export default function CustomerTab() {
 
   return (
     <div className={cx("wrapper")}>
-      {/* Biểu đồ */}
       <div className={cx("chartCard")}>
         <div className={cx("chartCardHead")}>
           <div>
@@ -538,7 +530,6 @@ export default function CustomerTab() {
         )}
       </div>
 
-      {/* Segment cards */}
       {loadingSegments ? (
         <div className={cx("loadingRow")}>Đang phân tích khách hàng...</div>
       ) : (
@@ -557,7 +548,6 @@ export default function CustomerTab() {
             ))}
           </div>
 
-          {/* Detail card */}
           <div className={cx("detailCard")}>
             <div className={cx("detailHead")}>
               <div className={cx("detailHeadLeft")}>
@@ -581,10 +571,8 @@ export default function CustomerTab() {
               </div>
             </div>
 
-            {/* Voucher toolbar */}
             {isVoucherSeg && (
               <div className={cx("vToolbar")}>
-                {/* HÀNG NGANG 1: Các bộ lọc tìm kiếm */}
                 <div className={cx("vRow", "vFiltersRow")}>
                   {activeSegment === "occasional" && (
                     <div className={cx("fGroup")}>
@@ -648,7 +636,6 @@ export default function CustomerTab() {
                   </div>
 
                   <div className={cx("fGroup")}>
-                    {/* Thêm label caps nhỏ phía trên cho đồng bộ cấu trúc nếu cần, hoặc để trống */}
                     <label className={cx("fLabel")}>
                       Khách chưa có đơn hàng
                     </label>
@@ -663,7 +650,6 @@ export default function CustomerTab() {
                   </div>
                 </div>
 
-                {/* HÀNG NGANG 2: Chọn Voucher & Nút gửi */}
                 <div className={cx("vRow", "vActionsRow")}>
                   <div className={cx("fGroup", "vSelectGroup")}>
                     <label className={cx("fLabel")}>Voucher gửi</label>

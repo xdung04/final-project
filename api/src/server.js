@@ -3,6 +3,7 @@ import bodyParser from "body-parser";
 import dotenv from "dotenv";
 import cors from "cors";
 import http from "http";
+import cookieParser from "cookie-parser";
 import bookingHistory from "./routes/bookingHistory.js";
 import barberRoutes from "./routes/barber.js";
 import viewEngine from "./config/viewEngine.js";
@@ -52,11 +53,13 @@ const io = initSocket(server);
 
 app.use(
   cors({
-    origin: "*", // Cho phép tất cả các nguồn
+    origin: process.env.FRONTEND_URL || "http://localhost:3000", // PHẢI là domain cụ thể, không để "*"
+    credentials: true, // cho phép gửi/nhận cookie
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
+app.use(cookieParser()); 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use((req, res, next) => {

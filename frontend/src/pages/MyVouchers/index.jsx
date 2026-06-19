@@ -232,7 +232,7 @@ function ConfirmModal({ voucher, points, onConfirm, onCancel }) {
 }
 
 function MyVouchers() {
-  const { accessToken, user } = useAuth();
+  const { user } = useAuth();
   const { showToast } = useToast();
 
   const [activeTab, setActiveTab] = useState("available");
@@ -248,14 +248,14 @@ function MyVouchers() {
   const [confirmVoucher, setConfirmVoucher] = useState(null);
 
   const loadData = async () => {
-    if (!accessToken) return;
+    if (!user) return;
     setLoading(true);
     try {
       const [av, ca, ex, pts] = await Promise.all([
-        fetchMyVouchers(accessToken),
-        fetchActiveCampaigns(accessToken),
-        fetchExchangeableVouchers(accessToken),
-        fetchCustomerPoints(accessToken),
+        fetchMyVouchers(),
+        fetchActiveCampaigns(),
+        fetchExchangeableVouchers(),
+        fetchCustomerPoints(),
       ]);
       setAvailable(av);
       setCampaigns(ca);
@@ -275,20 +275,20 @@ function MyVouchers() {
 
   useEffect(() => {
     loadData();
-  }, [accessToken]);
+  }, []);
 
   const handleCollect = async (voucherId) => {
     setCollecting(voucherId);
     try {
-      await collectCampaignVoucher(accessToken, voucherId);
+      await collectCampaignVoucher( voucherId);
       showToast({
         text: "Thu thập voucher thành công!",
         type: "success",
         duration: 3000,
       });
       const [av, ca] = await Promise.all([
-        fetchMyVouchers(accessToken),
-        fetchActiveCampaigns(accessToken),
+        fetchMyVouchers(),
+        fetchActiveCampaigns(),
       ]);
       setAvailable(av);
       setCampaigns(ca);
@@ -309,15 +309,15 @@ function MyVouchers() {
     setExchanging(id);
     setConfirmVoucher(null);
     try {
-      await exchangeVoucher(accessToken, id);
+      await exchangeVoucher( id);
       showToast({
         text: "Đổi voucher thành công!",
         type: "success",
         duration: 3000,
       });
       const [av, ex] = await Promise.all([
-        fetchMyVouchers(accessToken),
-        fetchExchangeableVouchers(accessToken),
+        fetchMyVouchers(),
+        fetchExchangeableVouchers(),
       ]);
       setAvailable(av);
       setExchangeable(ex);

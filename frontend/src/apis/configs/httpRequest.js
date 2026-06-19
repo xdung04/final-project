@@ -4,12 +4,14 @@ import axios from "axios";
 const request = axios.create({
   baseURL: process.env.REACT_APP_API_BASE_URL,
   headers: { "Content-Type": "application/json" },
+  withCredentials: true, // BẮT BUỘC để cookie (accessToken/refreshToken) được gửi kèm mỗi request
 });
 
 // 2. Instance phụ chuyên dụng để thực hiện cứu hộ (Retry)
 const retryInstance = axios.create({
   baseURL: process.env.REACT_APP_API_BASE_URL,
   headers: { "Content-Type": "application/json" },
+  withCredentials: true,
 });
 
 console.log("Axios baseURL:", request.defaults.baseURL);
@@ -18,32 +20,31 @@ console.log("Axios baseURL:", request.defaults.baseURL);
 let isRefreshing = false;
 let failedQueue = [];
 
-const processQueue = (error, token = null) => {
+const processQueue = (error) => {
   failedQueue.forEach((prom) => {
     if (error) {
       prom.reject(error);
     } else {
-      prom.resolve(token);
+      prom.resolve();
     }
   });
   failedQueue = [];
 };
 
-// === Interceptor Request: Gắn accessToken ===
-request.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("accessToken");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+// === KHÔNG còn interceptor request gắn Authorization thủ công ===
+// Cookie httpOnly tự động được browser gửi kèm mỗi request nhờ withCredentials: true.
+// Nếu cần fallback cho giai đoạn chuyển tiếp (BE vẫn còn nhận Bearer token cũ ở vài API
+// chưa kịp sửa), có thể tạm giữ đoạn dưới, nhưng nên xoá khi đã chắc chắn xong toàn bộ:
+//
+// request.interceptors.request.use((config) => {
+//   const token = localStorage.getItem("accessToken");
+//   if (token) config.headers.Authorization = `Bearer ${token}`;
+//   return config;
+// });
 
 // === Interceptor Response: Cứu hộ 401 ngầm ===
 request.interceptors.response.use(
-  (response) => response, 
+  (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
@@ -62,10 +63,11 @@ request.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    const hasAccessToken = !!localStorage.getItem("accessToken");
-
-    if (status === 401 && hasAccessToken && !originalRequest._retry) {
-      
+    // Trước đây check `hasAccessToken` qua localStorage để quyết định có nên thử refresh
+    // hay không. Giờ accessToken là httpOnly cookie, JS không đọc được nữa, nên không thể
+    // check kiểu đó. Cứ thấy 401 (và chưa retry) thì thử refresh — nếu thực sự không có
+    // cookie hợp lệ, backend sẽ tự trả 401 ở bước refresh và handleLogout sẽ chạy.
+    if (status === 401 && !originalRequest._retry) {
       // 1. Nếu chính API refresh cũng bị báo 401 -> Cả 2 token cùng chết hẳn
       if (originalRequest.url.includes("/auth/refresh")) {
         handleLogout(true);
@@ -77,14 +79,12 @@ request.interceptors.response.use(
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
-          .then((token) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-            // Kích hoạt cứu hộ bằng thực thể độc lập và lấy thẳng thuộc tính .data ra luôn
-            return retryInstance(originalRequest).then(res => res.data); 
+          .then(() => {
+            // Không cần gắn lại Authorization header, cookie mới đã tự có sẵn
+            return retryInstance(originalRequest).then((res) => res.data);
           })
           .catch(() => {
-            // Nếu có biến cố sập hệ thống, lờ đi để chuẩn bị F5 reload trang
-            return new Promise(() => {}); 
+            return new Promise(() => {});
           });
       }
 
@@ -92,62 +92,54 @@ request.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const refreshToken = localStorage.getItem("refreshToken");
-        if (!refreshToken) throw new Error("NO_REFRESH_TOKEN");
-
-        // Gọi API refresh bằng axios gốc
-        const res = await axios.post(
+        // Không cần đọc/gửi refreshToken từ localStorage nữa.
+        // Cookie refreshToken (httpOnly) tự động gửi kèm nhờ withCredentials: true.
+        await axios.post(
           `${process.env.REACT_APP_API_BASE_URL}/auth/refresh`,
-          { refreshToken }
+          {},
+          { withCredentials: true },
         );
 
-        const newAccessToken = res.data?.data?.accessToken || res.data?.accessToken;
-        if (!newAccessToken) throw new Error("REFRESH_FAILED_NO_TOKEN");
+        console.log(">>> Đổi token ngầm thành công! (cookie đã được BE set mới)");
 
-        console.log(">>> Đổi token ngầm thành công! Token mới:", newAccessToken);
-        localStorage.setItem("accessToken", newAccessToken);
+        // Giải phóng hàng đợi cho các request đang chờ
+        processQueue(null);
 
-        // Giải phóng hàng đợi, kích nổ token mới cho đám đứng chờ
-        processQueue(null, newAccessToken);
-
-        // Chạy lại chính request đầu tiên và bóc thẳng .data trả về cho wrapper
-        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-        const retryRes = await retryInstance(originalRequest); 
+        // Chạy lại chính request đầu tiên, cookie mới tự gửi kèm
+        const retryRes = await retryInstance(originalRequest);
         return retryRes.data;
-        
       } catch (err) {
-        processQueue(err, null);
-        handleLogout(true); 
-        return new Promise(() => {}); 
+        processQueue(err);
+        handleLogout(true);
+        return new Promise(() => {});
       } finally {
         isRefreshing = false;
       }
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
-// Hàm logout dọn dẹp bộ nhớ, đóng cờ và Reload lại trang cho sạch lỗi
+// Hàm logout dọn dẹp, đóng cờ và Reload lại trang cho sạch lỗi.
+// Không còn xoá accessToken/refreshToken khỏi localStorage vì chúng không còn được
+// lưu ở đó nữa — chỉ còn "user" (data hiển thị UI, không nhạy cảm) và cờ SESSION_EXPIRED_FLAG.
+// Cookie thật sự được xoá bằng cách gọi API /auth/logout (BE dùng res.clearCookie).
 const handleLogout = (isExpired = false) => {
   localStorage.removeItem("user");
-  localStorage.removeItem("accessToken");
-  localStorage.removeItem("refreshToken");
-  
+
   if (isExpired) {
     localStorage.setItem("SESSION_EXPIRED_FLAG", "true");
   }
   window.location.reload();
 };
 
-// === Wrapper Các Phương Thức API (Bảo mật tuyệt đối, nuốt trọn reject rò rỉ) ===
+// === Wrapper Các Phương Thức API ===
 export const get = async (url, options = {}) => {
   try {
     const res = await request.get(url, options);
-    // Nếu res đã là data (được cứu hộ từ tầng dưới trả lên), lấy luôn res. Ngược lại lấy res.data
     return res && res.config ? res.data : res;
   } catch (err) {
-    // Đoạn bọc thép: Nếu đang trong luồng hoán đổi token mà bị lỗi lặt vặt, chặn không cho reject lên UI
     if (isRefreshing) return new Promise(() => {});
     return Promise.reject(err);
   }

@@ -1,68 +1,47 @@
-import axios from "axios";
+import * as request from "~/apis/configs/httpRequest";
 
-const API_URL = process.env.REACT_APP_API_BASE_URL + "/reels";
+const REEL_URL = "/reels";
 
+// Không còn cần truyền token — cookie tự gửi kèm.
+// LƯU Ý: res trả về đã bóc .data sẵn, đọc thẳng res.xxx ở nơi gọi thay vì
+// res.data.xxx.
 const reelApi = {
-  getPaged: (page = 1, limit = 10, token) =>
-    axios.get(`${API_URL}?page=${page}&limit=${limit}`, {
-      headers: { Authorization: `Bearer ${token}` },
+  getPaged: (page = 1, limit = 10) =>
+    request.get(`${REEL_URL}?page=${page}&limit=${limit}`),
+
+  // Trước đây có logic "token ? header : {}" để hỗ trợ cả khách chưa đăng
+  // nhập (guest) lẫn user đã login (BE chắc dùng optionalAuthenticate cho
+  // route này). Giờ cookie tự gửi nếu có, không gửi nếu không có — backend
+  // tự xử lý đúng như trước, không cần phân nhánh ở FE nữa.
+  getByBarberId: (idBarber, page = 1, limit = 10) =>
+    request.get(`${REEL_URL}/barber/${idBarber}?page=${page}&limit=${limit}`),
+
+  getById: (id) => request.get(`${REEL_URL}/${id}`),
+
+  upload: (formData) =>
+    request.post(`${REEL_URL}/upload`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
     }),
 
-  getByBarberId: (idBarber, page = 1, limit = 10, token) => {
-    // Tận dụng logic đã có của axios để kiểm tra token
-    const headers = token ? { Authorization: `Bearer ${token}` } : {};
-    return axios.get(`${API_URL}/barber/${idBarber}?page=${page}&limit=${limit}`, {
-      headers: headers,
-    });
-  },
-  getById: (id, token) =>
-    axios.get(`${API_URL}/${id}`, { headers: { Authorization: `Bearer ${token}` } }),
+  like: (idReel) => request.post(`${REEL_URL}/${idReel}/like`, {}),
 
-  upload: (formData, token) =>
-    axios.post(`${API_URL}/upload`, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-        Authorization: `Bearer ${token}`
-      },
-    }),
+  getComments: (idReel) => request.get(`${REEL_URL}/${idReel}/comments`),
 
-  like: (idReel, token) =>
-    axios.post(`${API_URL}/${idReel}/like`, {}, {
-      headers: { Authorization: `Bearer ${token}` },
-    }),
+  addComment: (idReel, content) =>
+    request.post(`${REEL_URL}/${idReel}/comment`, { content }),
 
-  getComments: (idReel) =>
-    axios.get(`${API_URL}/${idReel}/comments`),
+  addReply: (idComment, content) =>
+    request.post(`${REEL_URL}/comment/${idComment}/reply`, { content }),
 
-  addComment: (idReel, content, token) =>
-    axios.post(`${API_URL}/${idReel}/comment`, { content }, {
-      headers: { Authorization: `Bearer ${token}` },
-    }),
+  updateComment: (idComment, content) =>
+    request.put(`${REEL_URL}/comment/${idComment}`, { content }),
 
-  addReply: (idComment, content, token) =>
-    axios.post(`${API_URL}/comment/${idComment}/reply`, { content }, {
-      headers: { Authorization: `Bearer ${token}` },
-    }),
+  deleteComment: (idComment) => request.del(`${REEL_URL}/comment/${idComment}`),
 
-  updateComment: (idComment, content, token) =>
-    axios.put(`${API_URL}/comment/${idComment}`, { content }, {
-      headers: { Authorization: `Bearer ${token}` },
-    }),
+  trackView: (idReel) => request.post(`${REEL_URL}/${idReel}/view`, {}),
 
-  deleteComment: (idComment, token) =>
-    axios.delete(`${API_URL}/comment/${idComment}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    }),
-
-  trackView: (idReel, token) =>
-    axios.post(`${API_URL}/${idReel}/view`, {}, {
-      headers: { Authorization: `Bearer ${token}` },
-    }),
-
-  search: (keyword, token) =>
-    axios.get(`${API_URL}/search?q=${encodeURIComponent(keyword)}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    }),
+  search: (keyword) =>
+    request.get(`${REEL_URL}/search?q=${encodeURIComponent(keyword)}`),
 };
 
 export default reelApi;

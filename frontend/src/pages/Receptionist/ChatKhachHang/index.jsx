@@ -80,14 +80,12 @@ const ChatKhachHang = () => {
   // Hàm load danh sách phòng chat Chờ và Đang xử lý từ API
   const loadConversations = useCallback(async () => {
     if (!receptionistId) return;
-    const currentToken = localStorage.getItem("accessToken");
-    if (!currentToken) return;
-
+    
     setLoading(true);
     try {
       const [waitingList, activeList] = await Promise.all([
-        chatLiveService.getWaitingConversations(currentToken),
-        chatLiveService.getActiveConversations(receptionistId, currentToken),
+        chatLiveService.getWaitingConversations(),
+        chatLiveService.getActiveConversations(receptionistId),
       ]);
       const currentOpenId = activeConversationIdRef.current;
       
@@ -124,10 +122,9 @@ const ChatKhachHang = () => {
   }, [receptionistId, showToast]);
 
   const loadClosedCount = useCallback(async () => {
-    const currentToken = localStorage.getItem("accessToken");
-    if (!currentToken) return;
+  
     try {
-      const data = await chatLiveService.searchConversations(currentToken, "", "closed");
+      const data = await chatLiveService.searchConversations("", "closed");
       const closedList = (data || []).map(c => ({ ...c, status: c.status || "closed" }));
       setConversations((prev) => ({ ...prev, closed: closedList }));
     } catch (error) {
@@ -137,15 +134,13 @@ const ChatKhachHang = () => {
 
   const handleSearch = useCallback(
     async (keyword) => {
-      const currentToken = localStorage.getItem("accessToken");
-      if (!currentToken) return;
       if (!keyword.trim()) {
         setIsSearching(false);
         setSearchResults([]);
         return;
       }
       try {
-        const results = await chatLiveService.searchConversations(currentToken, keyword, null);
+        const results = await chatLiveService.searchConversations(keyword, null);
         setSearchResults(results || []);
         setIsSearching(true);
       } catch (error) {
@@ -159,11 +154,9 @@ const ChatKhachHang = () => {
   const loadChatHistory = useCallback(
     async (conversationId) => {
       if (!conversationId) return;
-      const currentToken = localStorage.getItem("accessToken");
-      if (!currentToken) return;
 
       try {
-        const result = await chatLiveService.getChatHistory(conversationId, currentToken);
+        const result = await chatLiveService.getChatHistory(conversationId);
         if (result.success) {
           setMessagesMap((prev) => ({
             ...prev,
@@ -199,11 +192,9 @@ const ChatKhachHang = () => {
 
   const handleJoinConversation = useCallback(
     async (conversation) => {
-      const currentToken = localStorage.getItem("accessToken");
-      if (!currentToken) return;
       try {
         const result = await chatLiveService.receptionistJoin(
-          conversation.id, receptionistId, currentToken,
+          conversation.id, receptionistId,
         );
         if (result.success) {
           await loadConversations();
@@ -221,8 +212,6 @@ const ChatKhachHang = () => {
 
   const handleLeaveConversation = useCallback(() => {
     if (!activeConversationId) return;
-    const currentToken = localStorage.getItem("accessToken");
-    if (!currentToken) return;
 
     setConfirmModal({
       isOpen: true,
@@ -234,7 +223,7 @@ const ChatKhachHang = () => {
         closeConfirmModal();
         try {
           const currentId = activeConversationId;
-          await chatLiveService.receptionistLeave(currentId, receptionistId, currentToken);
+          await chatLiveService.receptionistLeave(currentId, receptionistId);
           
           socket.emit("send_message", {
             conversationId: currentId,
@@ -264,12 +253,11 @@ const ChatKhachHang = () => {
   const handleTransfer = useCallback(
     async (toReceptionistId) => {
       if (!activeConversationId) return;
-      const currentToken = localStorage.getItem("accessToken");
-      if (!currentToken) return;
+    
 
       try {
         await chatLiveService.transferConversation(
-          activeConversationId, receptionistId, toReceptionistId, currentToken,
+          activeConversationId, receptionistId, toReceptionistId, 
         );
         socket.emit("leave_conversation", { conversationId: activeConversationId });
         await loadConversations();
@@ -286,9 +274,7 @@ const ChatKhachHang = () => {
 
   const handleCloseConversation = useCallback(() => {
     if (!activeConversationId) return;
-    const currentToken = localStorage.getItem("accessToken");
-    if (!currentToken) return;
-
+  
     setConfirmModal({
       isOpen: true,
       title: "Đóng cuộc trò chuyện?",
@@ -299,7 +285,7 @@ const ChatKhachHang = () => {
         closeConfirmModal();
         try {
           const currentId = activeConversationId;
-          await chatLiveService.closeCustomerConversation(currentId, currentToken);
+          await chatLiveService.closeCustomerConversation(currentId);
           
           socket.emit("send_message", {
             conversationId: currentId,
@@ -327,9 +313,7 @@ const ChatKhachHang = () => {
 
   useEffect(() => {
     const loadReceptionists = async () => {
-      const currentToken = localStorage.getItem("accessToken");
-      if (!currentToken) return;
-      const res = await chatLiveService.getAllReceptionists(currentToken);
+      const res = await chatLiveService.getAllReceptionists();
       if (res.success) setReceptionists(res.data);
     };
     loadReceptionists();

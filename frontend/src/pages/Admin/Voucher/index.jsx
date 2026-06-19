@@ -123,7 +123,7 @@ function VoucherCard({ voucher, color, onEdit, onDelete }) {
 }
 
 function Voucher() {
-  const { accessToken } = useAuth();
+
   const { showToast } = useToast();
 
   const [vouchers, setVouchers] = useState([]);
@@ -136,7 +136,7 @@ function Voucher() {
   const loadVouchers = async () => {
     setLoading(true);
     try {
-      const data = await fetchAllVouchers(accessToken);
+      const data = await fetchAllVouchers();
       setVouchers(data);
     } catch (err) {
       console.error(err);
@@ -146,7 +146,7 @@ function Voucher() {
     }
   };
 
-  useEffect(() => { loadVouchers(); }, [accessToken]);
+  useEffect(() => { loadVouchers(); }, []);
 
   const handleEdit = (voucher) => {
     setEditingVoucher(voucher);
@@ -160,7 +160,7 @@ function Voucher() {
 
   const handleDelete = async (id) => {
     try {
-      await deleteVoucher(accessToken, id);
+      await deleteVoucher( id);
       showToast({ text: "Đã xoá voucher", type: "success", duration: 3000 });
       setConfirmDelete(null);
       loadVouchers();

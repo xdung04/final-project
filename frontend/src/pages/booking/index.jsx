@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import DefaultLayout from "../../layouts/DefaultLayout";
 import styles from "./Booking.module.scss";
 import VoucherPopup, { calcActualDiscount } from "../../components/VoucherPopup";
-import { fetchBookedSlots } from "~/services/bookingService";
+import { fetchBookedSlots,createBooking } from "~/services/bookingService";
 import { useToast } from "~/context/ToastContext";
 import { getCalendarLinkStatus, getGoogleAuthUrl } from "~/services/calendarService";
 import { useAuth } from "~/context/AuthContext";
@@ -27,7 +27,7 @@ function BookingPage() {
   });
 
   const [hairstylesData, setHairstylesData] = useState([]);
-  const { accessToken } = useAuth();
+  const { isLogin } = useAuth();
   const [isCheckingCalendar, setIsCheckingCalendar] = useState(false);
   const { showToast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -302,37 +302,25 @@ function BookingPage() {
       return false;
     }
     setIsLoading(true);
-    try {
-      const token = localStorage.getItem("accessToken");
-      const res = await fetch(`${API_BASE_URL}/bookings/create`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          idBranch: finalBooking.branchId,
-          idBarber: finalBooking.barberId,
-          bookingDate: finalBooking.date,
-          bookingTime: finalBooking.time,
-          services: finalBooking.services.map((s) => ({
-            idService: s.idService,
-            price: s.price,
-            quantity: 1,
-          })),
-          description: buildDescription(finalBooking),
-          idCustomerVoucher: finalBooking.idCustomerVoucher || null,
-          syncToCalendar,
-        }),
-      });
-      if (!res.ok) {
-        const e = await res.json();
-        throw new Error(e.message || "Lỗi khi tạo booking");
-      }
-      showToast({ text: "Đặt lịch thành công!", type: "success" });
-      setTimeout(() => window.location.reload(), 2500);
-      return true;
-    } catch (err) {
+try {
+  await createBooking({
+    idBranch: finalBooking.branchId,
+    idBarber: finalBooking.barberId,
+    bookingDate: finalBooking.date,
+    bookingTime: finalBooking.time,
+    services: finalBooking.services.map((s) => ({
+      idService: s.idService,
+      price: s.price,
+      quantity: 1,
+    })),
+    description: buildDescription(finalBooking),
+    idCustomerVoucher: finalBooking.idCustomerVoucher || null,
+    syncToCalendar,
+  });
+  showToast({ text: "Đặt lịch thành công!", type: "success" });
+  setTimeout(() => window.location.reload(), 2500);
+  return true;
+} catch (err) {
       showToast({
         text: err.message || "Không thể kết nối server!",
         type: "error",
@@ -494,7 +482,7 @@ function BookingPage() {
         text: "Vui lòng chọn ít nhất một dịch vụ!",
         type: "error",
       });
-    if (!accessToken) {
+    if (!isLogin) {
       showToast({ text: "Vui lòng đăng nhập để đặt lịch!", type: "error" });
       return;
     }
@@ -518,7 +506,7 @@ function BookingPage() {
 
     setIsCheckingCalendar(true);
     try {
-      const calendarStatus = await getCalendarLinkStatus(accessToken);
+      const calendarStatus = await getCalendarLinkStatus();
       if (!calendarStatus.linked) {
         setConfirmModal({
           isOpen: true,
@@ -531,7 +519,7 @@ function BookingPage() {
             closeConfirmModal();
             sessionStorage.setItem("pendingBooking", JSON.stringify(booking));
             const returnUrl = window.location.pathname + window.location.search;
-            getGoogleAuthUrl(accessToken, returnUrl).then((url) => {
+            getGoogleAuthUrl( returnUrl).then((url) => {
               window.location.href = url;
             });
           },

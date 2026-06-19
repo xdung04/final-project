@@ -1,21 +1,16 @@
-import axios from "axios";
+import * as request from "~/apis/configs/httpRequest";
 
-const API_URL = process.env.REACT_APP_API_BASE_URL + "/calendar";
+const CALENDAR_URL = "/calendar";
 
+// Không còn cần token — cookie tự gửi kèm. Lưu ý res trả về đã bóc .data sẵn
+// (xem httpRequest.js), đọc thẳng res.xxx ở nơi gọi.
 const calendarApi = {
-  getAuthUrl: (token, returnUrl) =>
-    axios.get(`${API_URL}/google/link`, {
-      headers: { Authorization: `Bearer ${token}` },
-      params: { returnUrl }
-    }),
-  getStatus: (token) =>
-    axios.get(`${API_URL}/status`, {
-      headers: { Authorization: `Bearer ${token}` },
-    }),
-  unlink: (token) =>
-    axios.delete(`${API_URL}/unlink`, {
-      headers: { Authorization: `Bearer ${token}` },
-    }),
+  getAuthUrl: (returnUrl) =>
+    request.get(`${CALENDAR_URL}/google/link`, { params: { returnUrl } }),
+
+  getStatus: () => request.get(`${CALENDAR_URL}/status`),
+
+  unlink: () => request.del(`${CALENDAR_URL}/unlink`),
 };
 
 export default calendarApi;

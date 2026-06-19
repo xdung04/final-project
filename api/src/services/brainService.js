@@ -12,225 +12,166 @@ const MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
 // ─────────────────────────────────────────────────────────────
 // Tool Definitions
 // ─────────────────────────────────────────────────────────────
-const toolDefinitions = [
-  {
-    type: "function",
-    function: {
-      name: "getBranches",
-      description: "Lấy danh sách chi nhánh đang hoạt động của Nam Barbershop.",
-      parameters: { type: "object", properties: {}, required: [] },
-    },
+ const toolDefinitions = [
+  { type: "function", function: { name: "getBranches", description: "Lấy danh sách chi nhánh.", parameters: { type: "object", properties: {}, required: [] } } },
+  { 
+    type: "function", 
+    function: { 
+      name: "getBarbers", 
+      description: "Lấy danh sách thợ của chi nhánh.", 
+      parameters: { 
+        type: "object", 
+        properties: { idBranch: { type: "number" } }, 
+        required: ["idBranch"] 
+      } 
+    } 
   },
-  {
-    type: "function",
-    function: {
-      name: "getBarbers",
-      description: "Lấy danh sách thợ cắt của một chi nhánh. Trả về stt, idBarber (số nguyên thật), name. KHÔNG được dùng stt làm idBarber.",
-      parameters: {
-        type: "object",
-        properties: {
-          idBranch: { type: "number", description: "ID chi nhánh." },
-        },
-        required: ["idBranch"],
-      },
-    },
+  { 
+    type: "function", 
+    function: { 
+      name: "getSlots", 
+      description: "Lấy khung giờ trống.", 
+      parameters: { 
+        type: "object", 
+        properties: { 
+          idBranch: { type: "number" }, 
+          idBarber: { type: "number" }, 
+          bookingDate: { type: "string" } 
+        }, 
+        required: ["idBranch", "idBarber", "bookingDate"] 
+      } 
+    } 
   },
-  {
-    type: "function",
-    function: {
-      name: "getSlots",
-      description: "Lấy khung giờ trống. idBranch và idBarber PHẢI là số nguyên thật từ tool, KHÔNG dùng số thứ tự. bookingDate định dạng YYYY-MM-DD.",
-      parameters: {
-        type: "object",
-        properties: {
-          idBranch:    { type: "number" },
-          idBarber:    { type: "number" },
-          bookingDate: { type: "string", description: "YYYY-MM-DD" },
-        },
-        required: ["idBranch", "idBarber", "bookingDate"],
-      },
-    },
+  { 
+    type: "function", 
+    function: { 
+      name: "getServices", 
+      description: "Lấy danh sách dịch vụ.", 
+      parameters: { 
+        type: "object", 
+        properties: { idBranch: { type: "number" } }, 
+        required: ["idBranch"] 
+      } 
+    } 
   },
-  {
-    type: "function",
-    function: {
-      name: "getServices",
-      description: "Lấy danh sách dịch vụ kèm giá và thời lượng tại một chi nhánh.",
-      parameters: {
-        type: "object",
-        properties: {
-          idBranch: { type: "number" },
-        },
-        required: ["idBranch"],
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "updateBookingState",
-      description: `Lưu thông tin khách vừa xác nhận vào bookingState. 
-PHẢI gọi tool này ngay sau mỗi bước khách xác nhận. Không được bỏ qua.
-
-Ví dụ luồng bắt buộc:
-1. Khách chọn chi nhánh "Quận 1"
-   → gọi getBranches() để lấy idBranch
-   → gọi updateBookingState({ fields: { idBranch: 1, branchName: "Chi nhánh Quận 1" } })
-   → gọi getBarbers(idBranch: 1)
-
-2. Khách chọn thợ "văn phong"
-   → tra danh sách getBarbers → idBarber = 36
-   → gọi updateBookingState({ fields: { idBarber: 36, barberName: "Nguyen Van Phong" } })
-   → hỏi ngày
-
-3. Khách chọn "hôm nay 12h"
-   → gọi getSlots(idBranch, idBarber, bookingDate)
-   → slot hợp lệ → gọi updateBookingState({ fields: { bookingDate: "2026-06-11", slotTime: "12:00" } })
-   → gọi getServices()
-
-4. Khách chọn dịch vụ "cắt tóc classic"
-   → tra danh sách getServices → idService = 1
-   → gọi updateBookingState({ fields: { idServices: [1], serviceNames: ["Cắt tóc Classic"] } })
-   → hiển thị tóm tắt`,
-      parameters: {
-        type: "object",
-        properties: {
-          fields: {
-            type: "object",
-            description: "Các trường cần lưu vào bookingState.",
+  { 
+    type: "function", 
+    function: { 
+      name: "updateBookingState", 
+      description: "Cập nhật thông tin bookingState sau mỗi bước khách xác nhận.", 
+      parameters: { 
+        type: "object", 
+        properties: { 
+          fields: { 
+            type: "object", 
             properties: {
               idBranch:     { type: "number" },
               branchName:   { type: "string" },
               idBarber:     { type: "number" },
               barberName:   { type: "string" },
-              bookingDate:  { type: "string", description: "YYYY-MM-DD" },
-              slotTime:     { type: "string", description: "HH:MM" },
+              bookingDate:  { type: "string" },
+              slotTime:     { type: "string" },
               idServices:   { type: "array", items: { type: "number" } },
               serviceNames: { type: "array", items: { type: "string" } },
-            },
-          },
-        },
-        required: ["fields"],
-      },
-    },
+            }
+          }
+        }, 
+        required: ["fields"] 
+      } 
+    } 
   },
-  {
-    type: "function",
-    function: {
-      name: "createBooking",
-      description: "Tạo lịch hẹn chính thức. Chỉ gọi khi khách xác nhận bằng từ khoá: xác nhận, đồng ý, ok, oke, chốt, đặt đi, đặt giúp anh.",
-      parameters: {
-        type: "object",
-        properties: {
-          state: {
-            type: "object",
-            description: "Toàn bộ bookingState gồm: idBranch, branchName, idBarber, barberName, bookingDate, slotTime, idServices, serviceNames.",
-          },
-        },
-        required: ["state"],
-      },
-    },
+  { 
+    type: "function", 
+    function: { 
+      name: "createBooking", 
+      description: "Tạo lịch hẹn chính thức.", 
+      parameters: { 
+        type: "object", 
+        properties: { 
+          state: { type: "object" } 
+        }, 
+        required: ["state"] 
+      } 
+    } 
   },
-  {
-    type: "function",
-    function: {
-      name: "resetBooking",
-      description: "Xóa một hoặc toàn bộ thông tin bookingState khi khách muốn thay đổi.",
-      parameters: {
-        type: "object",
-        properties: {
-          fields: {
-            type: "array",
-            items: { type: "string" },
-            description: "Danh sách trường cần xóa. [] = reset toàn bộ.",
-          },
-        },
-        required: [],
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "transferToReceptionist",
-      description: "Chuyển khách sang lễ tân khi khách yêu cầu gặp người thật hoặc nhân viên hỗ trợ.",
-      parameters: { type: "object", properties: {}, required: [] },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "searchKnowledge",
-      description: `Tra cứu kiến thức chuyên môn từ cơ sở dữ liệu Nam Barbershop.
-Bắt buộc dùng cho mọi câu hỏi về: kiểu tóc, màu nhuộm, sản phẩm, chăm sóc tóc, bảng giá, thông tin salon.
-Namespace:
-- hairstyles: kiểu tóc, tư vấn kiểu tóc theo khuôn mặt
-- colors: màu nhuộm, tẩy tóc, độ tôn da
-- products: sáp, pomade, gel, gôm, tinh dầu
-- haircare: rụng tóc, gàu, tóc khô xơ, phục hồi`,
-      parameters: {
-        type: "object",
-        properties: {
-          query:     { type: "string" },
-          namespace: { type: "string", enum: ["hairstyles", "colors", "products", "haircare"] },
-        },
-        required: ["query", "namespace"],
-      },
-    },
-  },
+  { type: "function", function: { name: "resetBooking", description: "Reset booking state.", parameters: { type: "object", properties: { fields: { type: "array", items: { type: "string" } } } } } },
+  { type: "function", function: { name: "transferToReceptionist", description: "Chuyển sang lễ tân.", parameters: { type: "object", properties: {} } } },
+  { type: "function", function: { name: "searchKnowledge", description: "Tra cứu kiến thức.", parameters: { type: "object", properties: { query: { type: "string" }, namespace: { type: "string", enum: ["hairstyles", "colors", "products", "haircare"] } }, required: ["query", "namespace"] } } },
 ];
 
 // ─────────────────────────────────────────────────────────────
 // coerceIds
 // ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+// Coerce IDs - PHIÊN BẢN MẠNH (Fix lỗi string/number)
+// ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+// Coerce IDs - PHIÊN BẢN MẠNH NHẤT
+// ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+// Coerce IDs - PHIÊN BẢN CUỐI CÙNG (Fix tất cả lỗi string/number)
+// ─────────────────────────────────────────────────────────────
 function coerceIds(args) {
-  const result = { ...args };
-  ["idBranch", "idBarber", "idService"].forEach((key) => {
-    if (result[key] !== undefined) {
-      const n = Number(result[key]);
-      result[key] = isNaN(n) ? result[key] : n;
-    }
-  });
-  if (Array.isArray(result.idServices)) {
-    result.idServices = result.idServices.map(Number).filter((n) => !isNaN(n));
-  }
+  if (!args || typeof args !== "object") return args || {};
+
+  // Deep clone an toàn
+  const result = JSON.parse(JSON.stringify(args));
+
+  // Helper chuyển sang number
+  const toNumber = (val) => {
+    if (val === null || val === undefined) return val;
+    const num = Number(val);
+    return isNaN(num) ? val : num;
+  };
+
+  // Root level
+  if (result.idBranch !== undefined) result.idBranch = toNumber(result.idBranch);
+  if (result.idBarber !== undefined) result.idBarber = toNumber(result.idBarber);
+
+  // Trong fields (updateBookingState)
   if (result.fields && typeof result.fields === "object") {
-    ["idBranch", "idBarber"].forEach((key) => {
-      if (result.fields[key] !== undefined) {
-        const n = Number(result.fields[key]);
-        result.fields[key] = isNaN(n) ? result.fields[key] : n;
-      }
-    });
-    if (Array.isArray(result.fields.idServices)) {
-      result.fields.idServices = result.fields.idServices.map(Number).filter((n) => !isNaN(n));
+    const f = result.fields;
+
+    if (f.idBranch !== undefined) f.idBranch = toNumber(f.idBranch);
+    if (f.idBarber !== undefined) f.idBarber = toNumber(f.idBarber);
+
+    // Xử lý mảng idServices
+    if (typeof f.idServices === "string") {
+      try {
+        f.idServices = JSON.parse(f.idServices);
+      } catch (e) {}
     }
+    if (!Array.isArray(f.idServices)) f.idServices = [];
+
+    // Xử lý mảng serviceNames
+    if (typeof f.serviceNames === "string") {
+      try {
+        f.serviceNames = JSON.parse(f.serviceNames);
+      } catch (e) {}
+    }
+    if (!Array.isArray(f.serviceNames)) f.serviceNames = [];
   }
+
   return result;
 }
-
 // ─────────────────────────────────────────────────────────────
-// executeTool
+// Execute Tool
 // ─────────────────────────────────────────────────────────────
 async function executeTool(toolName, toolArgs, context) {
   const args = coerceIds(toolArgs);
-  console.log(`🔧 [brainService] Executing tool: ${toolName}`, JSON.stringify(args));
+  
+  console.log(`🔧 [brainService] Executing ${toolName} → Final args:`, JSON.stringify(args));
 
   switch (toolName) {
     case "getBranches":            return await getBranches();
     case "getBarbers":             return await getBarbers(args);
     case "getSlots":               return await getSlots(args);
     case "getServices":            return await getServices(args);
-    case "updateBookingState":     return updateBookingState(args);
+    case "updateBookingState":     return await updateBookingState(args);
+    case "createBooking":          return await createBooking({ state: args.state || args, customerId: context.customerId });
     case "resetBooking":           return resetBooking({ fields: args.fields || [] });
     case "transferToReceptionist": return await transferToReceptionist({ customerId: context.customerId });
     case "searchKnowledge":        return await searchKnowledge(args);
-    case "createBooking": {
-      let stateArg = args.state;
-      if (typeof stateArg === "string") {
-        try { stateArg = JSON.parse(stateArg); } catch { stateArg = {}; }
-      }
-      return await createBooking({ state: stateArg, customerId: context.customerId });
-    }
     default:
       return { success: false, error: `Tool không tồn tại: ${toolName}` };
   }
@@ -373,7 +314,8 @@ Mọi câu hỏi kiến thức → gọi searchKnowledge với namespace đúng:
 Bảng giá và thông tin salon cũng phải qua searchKnowledge.
 
 PHONG CÁCH TRẢ LỜI
-- TUYỆT ĐỐI không hiển thị ID kỹ thuật (idBranch, idBarber, idService, idBooking).
+- TUYỆT ĐỐI KHÔNG ĐƯỢC hiển thị bất kỳ ID kỹ thuật nào ra màn hình chat với khách (Ví dụ: KHÔNG viết "idBarber: 36", "idBranch", "idService"). Khách hàng không cần và không được biết các con số này!
+- TUYỆT ĐỐI KHÔNG nhắc đến các từ ngữ lập trình như "bookingState", "state", "lưu vào bộ nhớ", "hệ thống đã lưu". Hãy nói chuyện tự nhiên như người thật (Ví dụ thay vì nói "Em đã lưu Quận 1 vào bookingState", hãy nói: "Dạ em đã ghi nhận anh chọn chi nhánh Quận 1 rồi ạ")
 - Xưng em. Gọi khách là anh/chị. Lịch sự. Thân thiện. Ngắn gọn.
 - Mỗi lượt chỉ hỏi đúng một thông tin cần thiết tiếp theo.`;
 }

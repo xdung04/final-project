@@ -6,7 +6,7 @@ import { fetchBookingsForBarber } from "~/services/bookingService";
 import { useAuth } from "~/context/AuthContext";
 
 function LichHen() {
-  const { user, accessToken, loading: isAuthLoading } = useAuth();
+  const { user, loading: isAuthLoading } = useAuth();
   const BARBER_ID = user?.idUser;
 
   const [calendarView, setCalendarView] = useState("day");
@@ -34,7 +34,7 @@ function LichHen() {
   };
 
   useEffect(() => {
-    if (isAuthLoading || !BARBER_ID || !accessToken) {
+    if (isAuthLoading || !BARBER_ID ) {
       if (!isAuthLoading) setLoading(false);
       return;
     }
@@ -44,7 +44,7 @@ function LichHen() {
       const { startStr, endStr } = getDatesForApi(currentDate, calendarView);
 
       try {
-        const data = await fetchBookingsForBarber(BARBER_ID, startStr, endStr, accessToken);
+        const data = await fetchBookingsForBarber(BARBER_ID, startStr, endStr);
         setAppointments(data);
       } catch (err) {
         console.error("Lỗi tải lịch hẹn:", err);
@@ -53,7 +53,7 @@ function LichHen() {
       }
     };
     loadBookings();
-  }, [currentDate, calendarView, BARBER_ID, accessToken, isAuthLoading]);
+  }, [currentDate, calendarView, BARBER_ID, isAuthLoading]);
 
   const handleViewChange = (e) => {
     setCalendarView(e.target.value);
@@ -112,7 +112,7 @@ function LichHen() {
     </div>
   );
 
-  if (!BARBER_ID || !accessToken) return (
+  if (!BARBER_ID ) return (
     <div className={styles.emptyContainer}>
       <p>Vui lòng đăng nhập để xem lịch hẹn.</p>
     </div>

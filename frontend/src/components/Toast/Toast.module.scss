@@ -1,142 +1,186 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500&family=Bebas+Neue&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=DM+Sans:wght@400;500&display=swap');
 
-:root {
-  --gold: #b8966a;
-  --gold-dark: #967a54;
-  --charcoal: #2c2c2c;
-  --bg-white: #ffffff;
-  --bg-cream: #fdfbf8;
-  --border: #e0d7cc;
-  --ff-body: 'DM Sans', sans-serif;
-  --ff-display: 'Bebas Neue', sans-serif;
-}
+// ─── Hardcoded tokens (không dùng CSS var để tránh bị override từ parent) ───
+$gold:        #b8966a;
+$gold-dim:    rgba(184, 150, 106, 0.18);
+$gold-border: rgba(184, 150, 106, 0.3);
+$bg:          #1a1714;
+$bg-hover:    #211e1a;
+$text:        #f0ebe3;
+$text-dim:    rgba(240, 235, 227, 0.45);
+
+$success-accent: #7cbd79;
+$error-accent:   #c97a6d;
+$info-accent:    #7a9fc9;
+
+$ff-body:    'DM Sans', sans-serif;
+$ff-display: 'Cormorant Garamond', Georgia, serif;
+
+// ─── Keyframes ───────────────────────────────────────────────────────────────
 
 @keyframes toastSlideIn {
-  0% { transform: translateX(120%); opacity: 0; }
-  100% { transform: translateX(0); opacity: 1; }
+  from { transform: translateX(110%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
 }
 
 @keyframes toastSlideOut {
-  0% { transform: translateX(0); opacity: 1; }
-  100% { transform: translateX(120%); opacity: 0; }
+  from { transform: translateX(0);    opacity: 1; }
+  to   { transform: translateX(110%); opacity: 0; }
 }
 
 @keyframes progressShrink {
   from { width: 100%; }
-  to { width: 0%; }
+  to   { width: 0%; }
 }
+
+// ─── Wrapper ─────────────────────────────────────────────────────────────────
 
 .wrapper {
   position: fixed;
-  top: 24px;
-  right: 24px;
+  top: 28px;
+  right: 28px;
   z-index: 10000;
-  width: 380px;
-  max-width: 90%;
-  animation: toastSlideIn 0.4s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+  width: 360px;
+  max-width: calc(100vw - 56px);
+  animation: toastSlideIn 0.45s cubic-bezier(0.23, 1, 0.32, 1) both;
 }
 
 .fade-out {
-  animation: toastSlideOut 0.4s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+  animation: toastSlideOut 0.38s cubic-bezier(0.4, 0, 1, 1) both;
 }
 
+// ─── Inner card ──────────────────────────────────────────────────────────────
+
 .inner {
-  display: flex;
-  flex-direction: column;
-  background: var(--bg-white);
-  border: 1px solid var(--gold); /* Viền vàng mảnh sang trọng */
-  padding: 16px 20px;
-  box-shadow: 0 10px 30px rgba(184, 150, 106, 0.15);
+  background: $bg;
+  border: 1px solid $gold-border;
+  border-left-width: 3px;            // mặc định, bị ghi đè bởi type bên dưới
+  border-left-color: $gold;
+  padding: 14px 16px 0;
   position: relative;
   overflow: hidden;
+
+  // Góc vàng trang trí nhỏ ở top-right
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 32px;
+    height: 32px;
+    border-top: 1px solid $gold-border;
+    border-right: 1px solid $gold-border;
+    pointer-events: none;
+  }
+
+  // ── Type variants ──
+  &.success { border-left-color: $success-accent; }
+  &.error   { border-left-color: $error-accent;   }
+  &.info    { border-left-color: $info-accent;     }
 }
+
+// ─── Body ────────────────────────────────────────────────────────────────────
 
 .body {
   display: flex;
-  align-items: center;
-  gap: 15px;
+  align-items: flex-start;
+  gap: 12px;
+  padding-bottom: 14px;
 }
 
+// ─── Icon ────────────────────────────────────────────────────────────────────
+
 .icon {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-  
-  // Tùy chỉnh màu icon để hợp với tone Gold
+  margin-top: 1px;
+
   svg {
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
   }
+
+  .success & { color: $success-accent; }
+  .error   & { color: $error-accent;   }
+  .info    & { color: $info-accent;    }
 }
 
-/* ===== TYPE STYLES ===== */
+// ─── Content ─────────────────────────────────────────────────────────────────
 
-.success {
-  border-left: 4px solid #2ecc71;
-
-  .icon {
-    color: #2ecc71;
-  }
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
 }
 
-.error {
-  border-left: 4px solid #e74c3c;
+.label {
+  font-family: $ff-display;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: $gold;
+  line-height: 1;
 
-  .icon {
-    color: #e74c3c;
-  }
-}
-
-.info {
-  border-left: 4px solid #3498db;
-
-  .icon {
-    color: #3498db;
-  }
+  .success & { color: $success-accent; }
+  .error   & { color: $error-accent;   }
+  .info    & { color: $info-accent;    }
 }
 
 .text {
-  flex: 1;
-  font-size: 14px;
-  font-family: var(--ff-body);
-  font-weight: 500;
-  color: var(--charcoal);
-  line-height: 1.4;
-  letter-spacing: 0.3px;
+  font-family: $ff-body;
+  font-size: 13.5px;
+  font-weight: 400;
+  color: $text;                        // ✅ hardcoded — không bị parent override
+  line-height: 1.45;
+  letter-spacing: 0.01em;
   white-space: pre-line;
+  word-break: break-word;
 }
 
+// ─── Close button ────────────────────────────────────────────────────────────
+
 .close {
+  flex-shrink: 0;
   background: transparent;
   border: none;
-  color: var(--text-dim);
+  padding: 2px;
   cursor: pointer;
-  padding: 5px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
-  opacity: 0.6;
+  color: $text-dim;
+  transition: color 0.2s, transform 0.25s;
+  margin-top: 1px;
+
+  svg {
+    width: 15px;
+    height: 15px;
+  }
 
   &:hover {
-    opacity: 1;
-    color: var(--gold);
+    color: $gold;
     transform: rotate(90deg);
   }
 }
+
+// ─── Progress bar ────────────────────────────────────────────────────────────
 
 .progress-bar {
   position: absolute;
   bottom: 0;
   left: 0;
-  height: 3px;
-  width: 100%;
-  background: rgba(184, 150, 106, 0.1);
+  right: 0;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .fill {
   height: 100%;
-  background: var(--gold); /* Thanh tiến trình màu vàng kim */
-  animation: progressShrink linear forwards;
+  background: linear-gradient(to right, rgba(184, 150, 106, 0.4), $gold);
+  animation: progressShrink linear both;
 }

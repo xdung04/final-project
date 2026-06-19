@@ -1,7 +1,7 @@
 import db from "../models/index.js";
 
 // 💡 Đảm bảo import đúng 2 hàm này từ file service Redis của mày
-import { getTodayChatHistory, deleteChatHistory } from "./chatService.js"; 
+import { getTodayChatHistory, deleteChatHistory } from "./chatCacheService.js.js"; 
 
 const { Conversation, Message } = db;
 

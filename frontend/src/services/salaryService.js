@@ -68,31 +68,25 @@ export const markAsPaid = async (idSalary, payload) => {
   }
 };
 
-export const fetchMyPayslips = async (accessToken) => {
+export const fetchMyPayslips = async () => {
   try {
-    return await request.get(`/salary/my-payslips`, {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    });
+    return await request.get(`/salary/my-payslips`);
   } catch (error) {
     throw error.response?.data || error;
   }
 };
 
-export const confirmMyPayslip = async (idSalary, accessToken) => {
+export const confirmMyPayslip = async (idSalary) => {
   try {
-    return await request.patch(`/salary/${idSalary}/confirm`, {}, {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    });
+    return await request.patch(`/salary/${idSalary}/confirm`, {});
   } catch (error) {
     throw error.response?.data || error;
   }
 };
 
-export const disputeMyPayslip = async (idSalary, reason, accessToken) => {
+export const disputeMyPayslip = async (idSalary, reason) => {
   try {
-    return await request.patch(`/salary/${idSalary}/dispute`, { reason }, {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    });
+    return await request.patch(`/salary/${idSalary}/dispute`, { reason });
   } catch (error) {
     throw error.response?.data || error;
   }

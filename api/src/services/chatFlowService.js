@@ -7,7 +7,7 @@ import {
   getBookingState,
   saveBookingState,
   deleteBookingState,
-} from "./chatService.js";
+} from "./chatCacheService.js";
 import db from "../models/index.js";
 import { saveMessage, getConversationHistory } from "./chatLiveService.js";
 import { getIO } from "../config/socket.js";
@@ -62,10 +62,16 @@ function parseBookingState(raw) {
 // ─────────────────────────────────────────────────────────────
 export async function processChatFlow({ sessionId, message, customerId }) {
 
+  // 💡 SỬA TẠI ĐÂY: Kiểm tra nghiêm ngặt để loại bỏ chuỗi "null", "undefined" ma từ Frontend gửi lên nếu có
+  const isStrictLoggedIn = customerId && 
+                           customerId !== "null" && 
+                           customerId !== "undefined" && 
+                           customerId !== "";
+
   // ══════════════════════════════════════════════
-  // LOGGED-IN FLOW
+  // LOGGED-IN FLOW (Thành viên - Lưu MySQL)
   // ══════════════════════════════════════════════
-  if (customerId) {
+  if (isStrictLoggedIn) {
     console.log(`➡️ [BrainService] Khách hàng ${customerId} gửi tin nhắn.`);
 
     let conversation = await Conversation.findOne({ where: { customerId } });
@@ -90,16 +96,25 @@ export async function processChatFlow({ sessionId, message, customerId }) {
     // Parse bookingState từ DB
     const bookingState = parseBookingState(conversation?.bookingState);
 
-    // Lấy lịch sử hội thoại
-    const history = conversation
-      ? (await getConversationHistory(conversation.id, 10)).messages.map((m) => ({
+    // Lấy lịch sử hội thoại (Đoạn bạn vừa sửa - Rất an toàn 👍)
+    let history = [];
+    if (conversation) {
+      const historyData = await getConversationHistory(conversation.id, 10);
+      
+      if (historyData && Array.isArray(historyData.messages)) {
+        history = historyData.messages.map((m) => ({
           role: m.senderType === "customer" ? "user" : "assistant",
           content: m.content,
-        }))
-      : [];
+        }));
+      } else if (Array.isArray(historyData)) { 
+        history = historyData.map((m) => ({
+          role: m.senderType === "customer" ? "user" : "assistant",
+          content: m.content,
+        }));
+      }
+    }
 
     // ── Gọi Brain Loop ──
-    // ← SỬA: destructure thêm needReceptionist
     const { reply, newBookingState, needLogin, needReceptionist } = await processBrainLoop({
       message,
       bookingState,
@@ -139,7 +154,6 @@ export async function processChatFlow({ sessionId, message, customerId }) {
       console.log(`✅ Đặt lịch thành công -> Đã dọn dẹp state`);
     }
 
-    // ← SỬA: forward needReceptionist ra ngoài để controller trả về frontend
     return {
       reply,
       conversationId: conversation.id,
@@ -148,15 +162,16 @@ export async function processChatFlow({ sessionId, message, customerId }) {
   }
 
   // ══════════════════════════════════════════════
-  // GUEST FLOW (chưa đăng nhập)
+  // GUEST FLOW (Khách vãng lai - Lưu Redis)
   // ══════════════════════════════════════════════
   else {
+    console.log(`➡️ [BrainService] Khách vãng lai gửi tin nhắn (Session: ${sessionId}).`);
+    
     const [history, rawGuestState] = await Promise.all([
       getTodayChatHistory(sessionId),
       getBookingState(sessionId),
     ]);
 
-    // Parse guestState từ Redis, fallback về default nếu chưa có
     const guestState = rawGuestState
       ? parseBookingState(rawGuestState)
       : createDefaultBookingState();
@@ -174,11 +189,9 @@ export async function processChatFlow({ sessionId, message, customerId }) {
     await Promise.all([
       saveChatMessage(sessionId, { role: "user", content: message }),
       saveChatMessage(sessionId, { role: "assistant", content: reply }),
-      // bookingCompleted → saveBookingState(null) tự xóa key Redis
       saveBookingState(sessionId, newBookingState.bookingCompleted ? null : newBookingState),
     ]);
 
-    // Trả needLogin nếu brainService chặn do chưa đăng nhập
     return { reply, ...(needLogin && { needLogin: true }) };
   }
 }
@@ -201,7 +214,6 @@ export async function syncPostLogin({ sessionId }) {
 
 // ─────────────────────────────────────────────────────────────
 // requestHumanSupport — Yêu cầu kết nối lễ tân từ UI button
-// (Tách biệt với transferToReceptionist tool trong brainService)
 // ─────────────────────────────────────────────────────────────
 export async function requestHumanSupport({ customerId }) {
   if (!customerId) throw new Error("Thiếu customerId");

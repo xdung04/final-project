@@ -90,7 +90,7 @@ function DeductionList({ deductions, totalDeductions }) {
 // Main Component
 // ═══════════════════════════════════════════════════════════════════════════
 function ThuNhap() {
-  const { user, accessToken } = useAuth();
+ const { user } = useAuth(); 
   const [payslips,      setPayslips]      = useState([]);
   const [loading,       setLoading]       = useState(true);
   const [expandedId,    setExpandedId]    = useState(null);
@@ -99,10 +99,10 @@ function ThuNhap() {
 
   useEffect(() => {
     const fetchMyPayslips = async () => {
-      if (!user?.idUser || !accessToken) return;
+      if (!user?.idUser) return;
       try {
         setLoading(true);
-        const response = await SalaryAPI.getMyPayslips(accessToken);
+        const response = await SalaryAPI.getMyPayslips();
         setPayslips(response.data || response);
       } catch (error) {
         console.error("Lỗi:", error);
@@ -111,14 +111,14 @@ function ThuNhap() {
       }
     };
     fetchMyPayslips();
-  }, [user, accessToken]);
+  }, [user]);
 
   const toggleExpand = (id) =>
     setExpandedId(expandedId === id ? null : id);
 
   const handleConfirm = async (id) => {
     try {
-      await SalaryAPI.confirmMyPayslip(id, accessToken);
+      await SalaryAPI.confirmMyPayslip(id);
       setPayslips((prev) =>
         prev.map((ps) => ps.idSalary === id ? { ...ps, status: "Confirmed" } : ps)
       );
@@ -130,7 +130,7 @@ function ThuNhap() {
   const handleSubmitDispute = async (id) => {
     if (!disputeText.trim()) return alert("Vui lòng nhập lý do!");
     try {
-      await SalaryAPI.disputeMyPayslip(id, disputeText, accessToken);
+      await SalaryAPI.disputeMyPayslip(id, disputeText);
       setPayslips((prev) =>
         prev.map((ps) =>
           ps.idSalary === id
