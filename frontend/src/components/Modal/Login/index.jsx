@@ -39,24 +39,55 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
    * FIX 7: Chỉ navigate 1 lần tại đây, không navigate thêm ở nơi khác
    */
   const handlePostLogin = (userData) => {
-    // 1. Truyền userData về cho component cha (AIChat cần customerId để sync)
     if (onLoginSuccess) onLoginSuccess(userData);
-
-    // 2. Đóng modal
     if (onClose) onClose();
 
-    // 3. Điều hướng theo role — chỉ chạy 1 lần duy nhất
     switch (userData.role) {
       case "admin":        navigate("/admin");        break;
       case "barber":       navigate("/tho-cat-toc");  break;
       case "receptionist": navigate("/receptionist"); break;
       default:
-        // customer: ở lại trang hiện tại, không redirect
         break;
     }
   };
 
-const handleSubmit = async (e) => {
+  // Helper chung: xử lý kết quả trả về từ login/googleLogin giống nhau,
+  // tránh lặp code giữa handleSubmit và handleGoogleSuccess.
+  //
+  // LƯU Ý CHUYỂN ĐỔI COOKIE: trước đây dùng `if (result.accessToken)` để biết
+  // login thành công, vì BE trả token trong JSON. Giờ token thật nằm trong
+  // httpOnly cookie, JS không đọc/thấy được giá trị đó nữa. BE hiện tại (giai
+  // đoạn chuyển tiếp) vẫn trả accessToken trong JSON nên check cũ còn chạy được,
+  // nhưng để không phụ thuộc vào việc BE có dọn JSON đó hay không, ta đổi sang
+  // check `result.user` — nếu có user nghĩa là login thành công (BE chỉ trả
+  // user khi xác thực đúng).
+  const handleLoginResult = (result) => {
+    if (result.needPhone) {
+      onSwitch("add-phone", {
+        user: result.user,
+      });
+      return;
+    }
+
+    if (result.user) {
+      const userWithAvatar = {
+        ...result.user,
+        avatar: result.user.image || "/user.png",
+      };
+
+      sessionStorage.removeItem("chatMessages");
+      sessionStorage.removeItem("chatSessionId");
+      sessionStorage.removeItem("chatSessionOwner");
+
+      authLogin(userWithAvatar);
+
+      showToast({ text: getWelcomeMessage(result.user), type: "success" });
+
+      handlePostLogin(userWithAvatar);
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.email || !formData.password) {
       showToast({ text: "Vui lòng nhập đầy đủ thông tin", type: "error" });
@@ -66,35 +97,7 @@ const handleSubmit = async (e) => {
     setLoading(true);
     try {
       const result = await AuthAPI.login(formData);
-
-      if (result.needPhone) {
-        onSwitch("add-phone", {
-          accessToken: result.accessToken,
-          refreshToken: result.refreshToken,
-          user: result.user,
-        });
-        return;
-      }
-
-      if (result.accessToken) {
-        const userWithAvatar = {
-          ...result.user,
-          avatar: result.user.image || "/user.png",
-        };
-
-        // 🧹 BƯỚC 1: Xóa sạch bộ nhớ tạm chat session cũ của "guest" ở sessionStorage trước
-        sessionStorage.removeItem("chatMessages");
-        sessionStorage.removeItem("chatSessionId");
-        sessionStorage.removeItem("chatSessionOwner");
-
-        // 🚀 BƯỚC 2: Lúc này mới cập nhật trạng thái Đăng nhập để tránh AIChat bắt mạch sai dữ liệu cũ
-        authLogin(userWithAvatar, result.accessToken, result.refreshToken);
-        
-        showToast({ text: getWelcomeMessage(result.user), type: "success" });
-
-        // BƯỚC 3: Điều hướng và đóng modal
-        handlePostLogin(userWithAvatar);
-      }
+      handleLoginResult(result);
     } catch (err) {
       const message = err.response?.data?.message || "Email hoặc mật khẩu không đúng";
       showToast({ text: message, type: "error" });
@@ -103,7 +106,7 @@ const handleSubmit = async (e) => {
     }
   };
 
-const handleGoogleSuccess = async (credentialResponse) => {
+  const handleGoogleSuccess = async (credentialResponse) => {
     const googleIdToken = credentialResponse?.credential;
 
     if (!googleIdToken) {
@@ -114,35 +117,7 @@ const handleGoogleSuccess = async (credentialResponse) => {
     setLoading(true);
     try {
       const result = await AuthAPI.googleLogin(googleIdToken);
-
-      if (result.needPhone) {
-        onSwitch("add-phone", {
-          accessToken: result.accessToken,
-          refreshToken: result.refreshToken,
-          user: result.user,
-        });
-        return;
-      }
-
-      if (result.accessToken) {
-        const userWithAvatar = {
-          ...result.user,
-          avatar: result.user.image || "/user.png",
-        };
-
-        // 🧹 BƯỚC 1: Xóa sạch bộ nhớ tạm chat session cũ của "guest" ở sessionStorage trước
-        sessionStorage.removeItem("chatMessages");
-        sessionStorage.removeItem("chatSessionId");
-        sessionStorage.removeItem("chatSessionOwner");
-
-        // 🚀 BƯỚC 2: Cập nhật trạng thái đăng nhập toàn cục
-        authLogin(userWithAvatar, result.accessToken, result.refreshToken);
-        
-        showToast({ text: getWelcomeMessage(result.user), type: "success" });
-
-        // BƯỚC 3: Điều hướng và đóng modal
-        handlePostLogin(userWithAvatar);
-      }
+      handleLoginResult(result);
     } catch (err) {
       const message = err.response?.data?.message || "Đăng nhập Google thất bại";
       showToast({ text: message, type: "error" });

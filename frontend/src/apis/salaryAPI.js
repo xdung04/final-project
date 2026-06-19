@@ -32,16 +32,15 @@ removeDeduction: async (idDeduction, deleteReason) => {
   markAsPaid: async (idSalary, payload) => {
     return await salaryService.markAsPaid(idSalary, payload);
   },
-
-  getMyPayslips: async (accessToken) => {
-    return await salaryService.fetchMyPayslips(accessToken);
+  getMyPayslips: async () => {
+    return await salaryService.fetchMyPayslips();
   },
 
-  confirmMyPayslip: async (idSalary, accessToken) => {
-    return await salaryService.confirmMyPayslip(idSalary, accessToken);
+  confirmMyPayslip: async (idSalary) => {
+    return await salaryService.confirmMyPayslip(idSalary);
   },
 
-  disputeMyPayslip: async (idSalary, reason, accessToken) => {
-    return await salaryService.disputeMyPayslip(idSalary, reason, accessToken);
+  disputeMyPayslip: async (idSalary, reason) => {
+    return await salaryService.disputeMyPayslip(idSalary, reason);
   },
 };

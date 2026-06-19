@@ -42,7 +42,6 @@ const DEFAULT_VALUES = {
 };
 
 function VoucherForm({ voucher, onClose, onSuccess }) {
-  const { accessToken } = useAuth();
   const { showToast } = useToast();
 
   const [form, setForm] = useState(DEFAULT_VALUES);
@@ -192,10 +191,10 @@ function VoucherForm({ voucher, onClose, onSuccess }) {
     setLoading(true);
     try {
       if (isEdit) {
-        await updateVoucher(accessToken, voucher.id, payload);
+        await updateVoucher( voucher.id, payload);
         showToast({ text: "Cập nhật voucher thành công!", type: "success", duration: 3000 });
       } else {
-        await createVoucher(accessToken, payload);
+        await createVoucher( payload);
         showToast({ text: "Phát hành voucher thành công!", type: "success", duration: 3000 });
       }
       onSuccess?.();

@@ -17,7 +17,7 @@ const cx = classNames.bind(styles);
 function Header() {
   const [showModal, setShowModal] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const { user, isLogin, accessToken } = useAuth();
+  const { user, isLogin } = useAuth(); 
   const { showToast } = useToast(); // 🌟 ĐÃ THÊM: Sử dụng bộ Toast của hệ thống
 
   const [showNotify, setShowNotify] = useState(false);
@@ -45,7 +45,7 @@ function Header() {
         type: "warning", // Hoặc "error" tùy màu sắc bộ Toast của anh
       });
 
-      // 4. 🔴 CỰC KỲ QUAN TRỌNG: Xóa cờ ngay để tránh bị lặp lại vô duyên khi user tự F5 bằng tay sau này
+      // 
       localStorage.removeItem("SESSION_EXPIRED_FLAG");
     }
   }, [showToast]);
@@ -62,18 +62,17 @@ function Header() {
 
   // Fetch thông báo
   useEffect(() => {
-    if (isLogin && accessToken) {
+    if (isLogin ) {
       loadNotifications();
     } else {
       setNotifications([]);
       setUnreadCount(0);
     }
-  }, [isLogin, accessToken]);
+  }, [isLogin]);
 
   const loadNotifications = async () => {
-    if (!accessToken) return;
     setLoadingNotify(true);
-    const { unreadCount: count, notifications: list } = await fetchMyNotifications(accessToken);
+    const { unreadCount: count, notifications: list } = await fetchMyNotifications();
     setUnreadCount(count);
     setNotifications(list);
     setLoadingNotify(false);
@@ -81,8 +80,8 @@ function Header() {
 
   const handleNotificationClick = async (noti) => {
     setSelectedNotification(noti);
-    if (!noti.isRead && accessToken) {
-      const success = await markNotificationAsRead(noti.idNotification, accessToken);
+    if (!noti.isRead ) {
+      const success = await markNotificationAsRead(noti.idNotification);
       if (success) {
         setNotifications((prev) =>
           prev.map((n) =>

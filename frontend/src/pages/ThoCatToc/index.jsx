@@ -49,7 +49,7 @@ const menuItems = [
 ];
 
 function ThoCatToc() {
-    const { user, accessToken, loading: isAuthLoading } = useAuth();
+    const { user,loading: isAuthLoading } = useAuth();
     const location = useLocation();
     const navigate = useNavigate();
     
@@ -78,7 +78,7 @@ function ThoCatToc() {
     };
 
     useEffect(() => {
-        if (isAuthLoading || !idBarber || !accessToken) {
+        if (isAuthLoading || !idBarber ) {
             if (!isAuthLoading) setLoadingStats(false);
             return;
         }
@@ -87,8 +87,8 @@ function ThoCatToc() {
             setLoadingStats(true);
             try {
                 const [statsData, notifyData] = await Promise.all([
-                    fetchBarberDashboardStats(idBarber, accessToken),
-                    fetchMyNotifications(accessToken)
+                    fetchBarberDashboardStats(idBarber),
+                    fetchMyNotifications()
                 ]);
                 
                 setStats(statsData);
@@ -106,7 +106,7 @@ function ThoCatToc() {
         };
 
         loadData();
-    }, [idBarber, accessToken, isAuthLoading]);
+    }, [idBarber, isAuthLoading]);
 
     useEffect(() => {
         function handleClickOutside(event) {
@@ -124,8 +124,8 @@ function ThoCatToc() {
 
     const handleNotificationClick = async (noti) => {
         setSelectedNotification(noti);
-        if (!noti.isRead && accessToken) {
-            const success = await markNotificationAsRead(noti.idNotification, accessToken);
+        if (!noti.isRead ) {
+            const success = await markNotificationAsRead(noti.idNotification);
             if (success) {
                 setNotifications((prev) =>
                     prev.map((n) =>

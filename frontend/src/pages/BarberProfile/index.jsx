@@ -16,7 +16,7 @@ function renderStars(avg) {
 function BarberProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { accessToken, isLogin, loading: isAuthLoading } = useAuth();
+  const { isLogin, loading: isAuthLoading } = useAuth();
   const { showToast } = useToast();
 
   const [barber, setBarber] = useState(null);
@@ -31,7 +31,7 @@ function BarberProfile() {
       try {
         const [profile, videos] = await Promise.all([
           BarberAPI.getProfile(id),
-          fetchReelsByBarberId(id, 1, 20, accessToken),
+          fetchReelsByBarberId(id, 1, 20),
         ]);
         setBarber(profile);
         setReels(videos);
@@ -42,7 +42,7 @@ function BarberProfile() {
       }
     };
     loadData();
-  }, [id, accessToken, isAuthLoading]);
+  }, [id, isAuthLoading]);
 
   const handleHashtagClick = (tag) => navigate("/reels", { state: { keyword: `#${tag}` } });
 
@@ -207,7 +207,6 @@ function BarberProfile() {
           currentIndex={currentIndex}
           onChangeVideo={(newIdx) => setCurrentIndex(newIdx)}
           onClose={() => setCurrentIndex(null)}
-          token={accessToken}
           globalMuted={globalMuted}
           onToggleLike={handleLike}
           onToggleGlobalMuted={() => setGlobalMuted((prev) => !prev)}

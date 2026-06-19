@@ -7,6 +7,12 @@ import VoucherService from "./voucherService.js";
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+// Thời gian sống token, để 1 nơi duy nhất tránh lệch nhau giữa các hàm
+const ACCESS_TOKEN_EXPIRES_IN = "1h";
+const ACCESS_TOKEN_EXPIRES_IN_SECONDS = 60 * 60; // 3600s — khớp với "1h" phía trên
+const REFRESH_TOKEN_EXPIRES_IN = "7d";
+const REFRESH_TOKEN_EXPIRES_IN_SECONDS = 7 * 24 * 60 * 60;
+
 // ==================== HELPER ====================
 async function ensureCustomer(userId, transaction = null) {
   const existingCustomer = await db.Customer.findOne({
@@ -43,6 +49,28 @@ async function getBranchIdByUser(user) {
     return barber ? barber.idBranch : null;
   }
   return null;
+}
+
+/**
+ * Helper tạo cặp access/refresh token + lưu refresh token vào Redis.
+ * Gộp lại để login(), googleLogin() không lặp code giống nhau.
+ */
+async function issueTokens(payload, idUser) {
+  const accessToken = jwt.sign(payload, process.env.JWT_SECRET, {
+    expiresIn: ACCESS_TOKEN_EXPIRES_IN,
+  });
+  const refreshToken = jwt.sign(payload, process.env.JWT_REFRESH_SECRET, {
+    expiresIn: REFRESH_TOKEN_EXPIRES_IN,
+  });
+
+  await redisClient.set(
+    `refresh:${idUser}`,
+    refreshToken,
+    "EX",
+    REFRESH_TOKEN_EXPIRES_IN_SECONDS,
+  );
+
+  return { accessToken, refreshToken };
 }
 
 // ==================== LOGIN THÔNG THƯỜNG ====================
@@ -83,28 +111,15 @@ export async function login(email, password) {
     idUser: user.idUser,
     email: user.email,
     role: user.role,
-    idBranch: idBranch, 
+    idBranch: idBranch,
   };
 
-  // 🌟 ĐÃ SỬA THÀNH 5s ĐỂ BẮT ĐẦU TEST TOÀN DIỆN
-  const accessToken = jwt.sign(payload, process.env.JWT_SECRET, {
-    expiresIn: "1h",
-  });
-  const refreshToken = jwt.sign(payload, process.env.JWT_REFRESH_SECRET, {
-    expiresIn: "7d",
-  });
-
-  await redisClient.set(
-    `refresh:${user.idUser}`,
-    refreshToken,
-    "EX",
-    7 * 24 * 60 * 60,
-  );
+  const { accessToken, refreshToken } = await issueTokens(payload, user.idUser);
 
   return {
     accessToken,
     refreshToken,
-    expiresIn: "1h", // Đổi thông tin trả về 1 giờ
+    expiresIn: ACCESS_TOKEN_EXPIRES_IN_SECONDS,
     user: {
       idUser: user.idUser,
       fullName: user.fullName,
@@ -112,7 +127,7 @@ export async function login(email, password) {
       image: user.image || null,
       role: user.role,
       phoneNumber: user.phoneNumber,
-      idBranch: idBranch, 
+      idBranch: idBranch,
     },
     needPhone,
   };
@@ -135,7 +150,6 @@ export async function refresh(refreshToken) {
       throw { status: 401, message: "INVALID_REFRESH_TOKEN" };
     }
 
-    // Tạo Access Token mới tiếp tục sống 5s để test vòng lặp tiếp theo
     const newAccessToken = jwt.sign(
       {
         idUser: decoded.idUser,
@@ -144,13 +158,13 @@ export async function refresh(refreshToken) {
         idBranch: decoded.idBranch || null,
       },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" }, // 🌟 ĐÃ GIỮ NGUYÊN 5s
+      { expiresIn: ACCESS_TOKEN_EXPIRES_IN },
     );
 
-    return { 
-      accessToken: newAccessToken, 
-      expiresIn: 5, 
-      role: decoded.role 
+    return {
+      accessToken: newAccessToken,
+      expiresIn: ACCESS_TOKEN_EXPIRES_IN_SECONDS,
+      role: decoded.role,
     };
   } catch (err) {
     // Nếu hết hạn 7 ngày hoặc token sai định dạng -> 401 kích hoạt Frontend Logout
@@ -249,25 +263,12 @@ export async function googleLogin(googleToken) {
     idBranch: idBranch,
   };
 
-  // 🌟 ĐÃ GIỮ NGUYÊN 5s ĐỂ TEST ĐĂNG NHẬP GOOGLE
-  const accessToken = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
-    expiresIn: "1h",
-  });
-  const refreshToken = jwt.sign(tokenPayload, process.env.JWT_REFRESH_SECRET, {
-    expiresIn: "7d",
-  });
-
-  await redisClient.set(
-    `refresh:${user.idUser}`,
-    refreshToken,
-    "EX",
-    7 * 24 * 60 * 60,
-  );
+  const { accessToken, refreshToken } = await issueTokens(tokenPayload, user.idUser);
 
   return {
     accessToken,
     refreshToken,
-    expiresIn: 5,
+    expiresIn: ACCESS_TOKEN_EXPIRES_IN_SECONDS,
     user: {
       idUser: user.idUser,
       fullName: user.fullName,

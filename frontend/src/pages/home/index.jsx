@@ -231,7 +231,7 @@ const HairCatalog = ({ onBook }) => {
 
 // ── Component Home (Giữ nguyên không thay đổi gì) ─────────────────────────────
 const Home = () => {
-  const { isLogin, user, accessToken } = useAuth();
+  const { isLogin, user } = useAuth();
   const navigate = useNavigate();
 
   const [hot, setHot] = useState([]);
@@ -298,14 +298,14 @@ const Home = () => {
   useEffect(() => {
     const loadReels = async () => {
       try {
-        const data = await fetchReelsPaged(1, 4, accessToken);
+        const data = await fetchReelsPaged(1, 4);
         setReels(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("Lỗi load reels:", err);
       }
     };
     loadReels();
-  }, [accessToken]);
+  }, []);
 
   useEffect(() => {
     let mx = 0,
@@ -727,7 +727,7 @@ const Home = () => {
             />
           )}
           {chatOpen && chatType === "live" && (
-            <LiveChat customerId={user?.idUser} token={accessToken} />
+            <LiveChat customerId={user?.idUser}  />
           )}
         </div>
 

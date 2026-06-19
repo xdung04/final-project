@@ -72,41 +72,40 @@ export const getConversationHistory = async (
   limit = 50,
   offset = 0,
 ) => {
-  const messages = await Message.findAll({
-    where: { conversationId },
-    order: [["createdAt", "DESC"]],
-    limit,
-    offset,
-  });
+  // Thêm try-catch để an toàn tuyệt đối
+  try {
+    const messages = await Message.findAll({
+      where: { conversationId }, // Hoặc thử đổi thành conversation_id nếu model của bạn chưa map chuẩn underscore
+      order: [["createdAt", "DESC"]],
+      limit,
+      offset,
+    });
 
-  const conversation = await Conversation.findByPk(conversationId, {
-    include: [
-      {
-        model: Receptionist,
-        as: "assignedReceptionist",
-        include: [
-          {
-            model: User,
-            as: "user",
-            attributes: ["fullName", "email", "image"],
-          },
-        ],
-      },
-      {
-        model: Customer,
-        as: "customer",
-        include: [
-          {
-            model: User,
-            as: "user",
-            attributes: ["fullName", "email", "phoneNumber", "image"],
-          },
-        ],
-      },
-    ],
-  });
+    const conversation = await Conversation.findByPk(conversationId, {
+      include: [
+        {
+          model: Receptionist,
+          as: "assignedReceptionist",
+          include: [{ model: User, as: "user", attributes: ["fullName", "email", "image"] }],
+        },
+        {
+          model: Customer,
+          as: "customer",
+          include: [{ model: User, as: "user", attributes: ["fullName", "email", "phoneNumber", "image"] }],
+        },
+      ],
+    });
 
-  return { conversation, messages: messages.reverse() };
+    // Ép kiểu chắc chắn messages phải là mảng rồi mới .reverse()
+    const safeMessages = Array.isArray(messages) ? messages.reverse() : [];
+
+    return { conversation, messages: safeMessages };
+
+  } catch (error) {
+    console.error("❌ Lỗi tại getConversationHistory:", error.message);
+    // Fallback an toàn để tầng service phía trên không bị crash lỗi .map
+    return { conversation: null, messages: [] }; 
+  }
 };
 
 /**

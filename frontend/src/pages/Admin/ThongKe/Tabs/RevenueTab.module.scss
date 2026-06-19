@@ -54,6 +54,107 @@ $transition:   0.18s ease;
   animation: fadeSlideIn 0.22s ease;
 }
 
+// ─── Thanh Bộ Lọc Tổng (Global Filter Bar) ───────────────────
+.globalFilterBar {
+  background: $card-bg;
+  border-radius: $radius-xl;
+  box-shadow: $shadow-card;
+  padding: 14px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  border-bottom: 2px solid $gold-faint;
+}
+
+.filterGroup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+
+  label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: $text-muted;
+  }
+
+  select {
+    padding: 6px 12px;
+    border-radius: $radius-md;
+    border: 1px solid rgba(0, 0, 0, 0.10);
+    background: $input-bg;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: $text-primary;
+    cursor: pointer;
+    outline: none;
+    transition: border $transition, background $transition, box-shadow $transition;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%237A7068' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 28px;
+
+    &:hover,
+    &:focus {
+      border-color: $gold;
+      background-color: $card-bg;
+      box-shadow: 0 0 0 3px $gold-faint;
+    }
+  }
+}
+
+// Nút kích hoạt AI phân tích toàn trang
+button.aiTriggerBtn {
+  background: linear-gradient(135deg, $ink-2 0%, #3d352e 100%);
+  color: $gold;
+  border: 1px solid $gold-border;
+  padding: 8px 18px;
+  border-radius: $radius-md;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: all $transition;
+  white-space: nowrap;
+  box-shadow: $shadow-sm;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  &:hover:not(:disabled) {
+    background: $ink;
+    color: #fff;
+    border-color: $gold;
+    box-shadow: 0 4px 12px rgba(28, 24, 20, 0.15);
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+// Thông báo loading dữ liệu biểu đồ
+.globalLoading {
+  font-size: 12px;
+  color: $teal;
+  font-weight: 500;
+  background: $teal-faint;
+  border: 1px dashed $teal-border;
+  padding: 8px 16px;
+  border-radius: $radius-md;
+  text-align: center;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
 // ─── Chart Box ───────────────────────────────────────────────
 .chartBox {
   background: $card-bg;
@@ -68,25 +169,10 @@ $transition:   0.18s ease;
     transform: translateY(-1px);
   }
 
-  // Biểu đồ 1 — doanh thu thợ: gold
-  &:nth-child(1) {
-    border-left-color: $gold;
-  }
-
-  // Biểu đồ 2 — chi nhánh: teal
-  &:nth-child(2) {
-    border-left-color: $teal;
-  }
-
-  // Biểu đồ 3 — đánh giá: gold dim
-  &:nth-child(3) {
-    border-left-color: $gold-dim;
-  }
-
-  // Cross insight: teal
-  &:nth-child(4) {
-    border-left-color: $teal;
-  }
+  &:nth-child(3) { border-left-color: $gold; }      // Biểu đồ thợ (vị trí child thứ 3 sau loading)
+  &:nth-child(4) { border-left-color: $teal; }      // Biểu đồ năm
+  &:nth-child(5) { border-left-color: $gold-dim; }  // Biểu đồ đánh giá
+  &:nth-child(6) { border-left-color: $teal; }      // Cross insight
 }
 
 // ─── Box Header ──────────────────────────────────────────────
@@ -95,10 +181,8 @@ $transition:   0.18s ease;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
   background: $header-bg;
   border-bottom: $border-base;
-  flex-wrap: wrap;
 }
 
 .chartTitle {
@@ -112,7 +196,6 @@ $transition:   0.18s ease;
   align-items: center;
   gap: 7px;
 
-  // dot accent trước title
   &::before {
     content: "";
     display: inline-block;
@@ -124,95 +207,10 @@ $transition:   0.18s ease;
   }
 }
 
-// title biểu đồ 2 dùng teal dot
-.chartBox:nth-child(2) .chartTitle::before,
-.chartBox:nth-child(4) .chartTitle::before {
+// Dot xanh cho biểu đồ năm và cross insight
+.chartBox:nth-child(4) .chartTitle::before,
+.chartBox:nth-child(6) .chartTitle::before {
   background: $teal;
-}
-
-// ─── Filter Box ──────────────────────────────────────────────
-.filterBox {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-
-  select {
-    padding: 6px 10px;
-    border-radius: $radius-md;
-    border: 1px solid rgba(0, 0, 0, 0.10);
-    background: $input-bg;
-    font-size: 12px;
-    font-weight: 500;
-    color: $text-primary;
-    cursor: pointer;
-    outline: none;
-    transition: border $transition, background $transition, box-shadow $transition;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%237A7068' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 9px center;
-    padding-right: 26px;
-
-    &:hover,
-    &:focus {
-      border-color: $gold;
-      background-color: $card-bg;
-      box-shadow: 0 0 0 3px $gold-faint;
-    }
-  }
-
-  // "Xem & Phân tích"
-  button.update {
-    background: $gold;
-    color: #fff;
-    padding: 6px 15px;
-    border-radius: $radius-md;
-    border: none;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.03em;
-    cursor: pointer;
-    transition: background $transition, box-shadow $transition;
-    white-space: nowrap;
-    box-shadow: 0 2px 8px rgba(201, 168, 76, 0.35);
-
-    &:hover:not(:disabled) {
-      background: $gold-hover;
-      box-shadow: 0 3px 12px rgba(201, 168, 76, 0.45);
-    }
-
-    &:disabled {
-      opacity: 0.55;
-      cursor: not-allowed;
-      box-shadow: none;
-    }
-  }
-
-  // "Xuất Excel"
-  button.excel {
-    background: transparent;
-    border: 1px solid rgba(0, 0, 0, 0.12);
-    color: $text-muted;
-    padding: 6px 13px;
-    border-radius: $radius-md;
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background $transition, border $transition, color $transition;
-    white-space: nowrap;
-
-    &:hover:not(:disabled) {
-      background: $teal-faint;
-      border-color: $teal-border;
-      color: $teal;
-    }
-
-    &:disabled {
-      opacity: 0.45;
-      cursor: not-allowed;
-    }
-  }
 }
 
 // ─── Chart Content ───────────────────────────────────────────
@@ -238,7 +236,6 @@ $transition:   0.18s ease;
   position: relative;
   overflow: hidden;
 
-  // subtle noise texture overlay
   &::before {
     content: "";
     position: absolute;
@@ -259,8 +256,6 @@ $transition:   0.18s ease;
     align-items: center;
     gap: 6px;
     position: relative;
-
-    // gold label biểu đồ 1, 3
     color: $gold;
 
     &::after {
@@ -280,7 +275,6 @@ $transition:   0.18s ease;
     position: relative;
   }
 
-  // loading state
   .loading-text {
     opacity: 0.45;
     font-style: italic;
@@ -288,15 +282,12 @@ $transition:   0.18s ease;
   }
 }
 
-// panel AI biểu đồ 2 và cross insight — teal accent
-.chartBox:nth-child(2) .aiAnalysis,
-.chartBox:nth-child(4) .aiAnalysis {
+// Panel AI nhận diện màu Teal cho biểu đồ 2 và Cross Insight
+.chartBox:nth-child(4) .aiAnalysis,
+.chartBox:nth-child(6) .aiAnalysis {
   h4 {
     color: $teal;
-
-    &::after {
-      background: $teal-border;
-    }
+    &::after { background: $teal-border; }
   }
 
   &::before {
@@ -306,7 +297,7 @@ $transition:   0.18s ease;
   }
 }
 
-// ─── Cross Insight full-width ─────────────────────────────────
+// ─── Cross Insight full-width ở đáy trang ─────────────────────
 .crossInsight {
   border-left: none !important;
   border-top: 1px solid rgba(255,255,255,0.06);
@@ -315,29 +306,6 @@ $transition:   0.18s ease;
   p {
     font-size: 13px;
     max-width: 900px;
-  }
-}
-
-// ─── Badge helper (tuỳ chọn dùng trong JSX) ──────────────────
-.badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 8px;
-  border-radius: 99px;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-
-  &.gold {
-    background: $gold-faint;
-    color: $gold-dim;
-    border: 1px solid $gold-border;
-  }
-
-  &.teal {
-    background: $teal-faint;
-    color: $teal;
-    border: 1px solid $teal-border;
   }
 }
 
@@ -361,30 +329,25 @@ $transition:   0.18s ease;
 }
 
 @media (max-width: 768px) {
-  .thongke {
-    gap: 14px;
-  }
-
-  .boxHeader {
+  .globalFilterBar {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
+    align-items: stretch;
+    gap: 12px;
   }
 
-  .filterBox {
-    width: 100%;
-
-    select { flex: 1; min-width: 0; }
-    button { flex-shrink: 0; }
+  .filterGroup {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 8px;
+    align-items: center;
   }
 
-  .chartWrapper {
-    padding: 14px 12px;
+  button.aiTriggerBtn {
+    justify-content: center;
   }
 
-  .aiAnalysis {
-    padding: 16px 14px;
-  }
+  .chartWrapper { padding: 14px 12px; }
+  .aiAnalysis { padding: 16px 14px; }
 }
 
 // ─── Animations ──────────────────────────────────────────────

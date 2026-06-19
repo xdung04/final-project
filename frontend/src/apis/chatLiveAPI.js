@@ -1,97 +1,62 @@
-// client/src/apis/chatLiveAPI.js
-import axios from "axios";
+import * as request from "~/apis/configs/httpRequest";
 
-const API_URL = process.env.REACT_APP_API_BASE_URL + "/chat-live";
+const CHAT_LIVE_URL = "/chat-live";
 
+// Không còn cần truyền token làm tham số ở bất kỳ hàm nào — cookie tự gửi
+// kèm nhờ withCredentials: true ở httpRequest.js.
+// LƯU Ý: res trả về đã bóc .data sẵn (xem httpRequest.js), đọc thẳng res.xxx
+// ở nơi gọi thay vì res.data.xxx.
 const chatLiveAPI = {
   // ============ Customer APIs ============
-  getOrCreateConversation: (customerId, token) =>
-    axios.get(`${API_URL}/conversation/${customerId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    }),
+  getOrCreateConversation: (customerId) =>
+    request.get(`${CHAT_LIVE_URL}/conversation/${customerId}`),
 
-  getHistory: (conversationId, token, limit = 50, offset = 0) =>
-    axios.get(
-      `${API_URL}/history/${conversationId}?limit=${limit}&offset=${offset}`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      },
+  getHistory: (conversationId, limit = 50, offset = 0) =>
+    request.get(
+      `${CHAT_LIVE_URL}/history/${conversationId}?limit=${limit}&offset=${offset}`,
     ),
 
-  closeConversation: (conversationId, token) =>
-    axios.post(
-      `${API_URL}/close/${conversationId}`,
-      {},
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      },
-    ),
+  closeConversation: (conversationId) =>
+    request.post(`${CHAT_LIVE_URL}/close/${conversationId}`, {}),
 
   // ============ Receptionist APIs ============
-  receptionistJoin: (conversationId, receptionistId, token) =>
-    axios.post(
-      `${API_URL}/receptionist/join`,
-      { conversationId, receptionistId },
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      },
-    ),
-
-  receptionistLeave: (conversationId, receptionistId, token) =>
-    axios.post(
-      `${API_URL}/receptionist/leave`,
-      { conversationId, receptionistId },
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      },
-    ),
-
-  transferConversation: (
-    conversationId,
-    fromReceptionistId,
-    toReceptionistId,
-    token,
-  ) =>
-    axios.post(
-      `${API_URL}/transfer`,
-      { conversationId, fromReceptionistId, toReceptionistId },
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      },
-    ),
-
-  getActiveConversations: (receptionistId, token) =>
-    axios.get(
-      `${API_URL}/active-conversations${receptionistId ? `?receptionistId=${receptionistId}` : ""}`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      },
-    ),
-
-  getWaitingConversations: (token) =>
-    axios.get(`${API_URL}/waiting-conversations`, {
-      headers: { Authorization: `Bearer ${token}` },
+  receptionistJoin: (conversationId, receptionistId) =>
+    request.post(`${CHAT_LIVE_URL}/receptionist/join`, {
+      conversationId,
+      receptionistId,
     }),
 
-  getAllConversations: (token, status = null) =>
-    axios.get(
-      `${API_URL}/all-conversations${status ? `?status=${status}` : ""}`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      },
-    ),
-
-  getAllReceptionists: (token) =>
-    axios.get(`${API_URL}/receptionists`, {
-      headers: { Authorization: `Bearer ${token}` },
+  receptionistLeave: (conversationId, receptionistId) =>
+    request.post(`${CHAT_LIVE_URL}/receptionist/leave`, {
+      conversationId,
+      receptionistId,
     }),
 
-  searchConversations: (token, keyword = "", status = null) =>
-    axios.get(
-      `${API_URL}/search?keyword=${encodeURIComponent(keyword)}${status ? `&status=${status}` : ""}`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      },
+  transferConversation: (conversationId, fromReceptionistId, toReceptionistId) =>
+    request.post(`${CHAT_LIVE_URL}/transfer`, {
+      conversationId,
+      fromReceptionistId,
+      toReceptionistId,
+    }),
+
+  getActiveConversations: (receptionistId) =>
+    request.get(
+      `${CHAT_LIVE_URL}/active-conversations${receptionistId ? `?receptionistId=${receptionistId}` : ""}`,
+    ),
+
+  getWaitingConversations: () =>
+    request.get(`${CHAT_LIVE_URL}/waiting-conversations`),
+
+  getAllConversations: (status = null) =>
+    request.get(
+      `${CHAT_LIVE_URL}/all-conversations${status ? `?status=${status}` : ""}`,
+    ),
+
+  getAllReceptionists: () => request.get(`${CHAT_LIVE_URL}/receptionists`),
+
+  searchConversations: (keyword = "", status = null) =>
+    request.get(
+      `${CHAT_LIVE_URL}/search?keyword=${encodeURIComponent(keyword)}${status ? `&status=${status}` : ""}`,
     ),
 };
 

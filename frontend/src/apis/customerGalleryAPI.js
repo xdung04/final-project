@@ -1,12 +1,12 @@
-import axios from "axios";
+import * as request from "~/apis/configs/httpRequest";
 
-const API_URL = process.env.REACT_APP_API_BASE_URL + "/customer-galleries";
+const GALLERY_URL = "/customer-galleries";
+
+// getByBarber là API public, không cần auth, giữ nguyên không đổi gì.
+// getByCustomer cần đăng nhập — không còn truyền token, cookie tự gửi kèm.
 const customerGalleryApi = {
-  getByBarber: (barberId) => axios.get(`${API_URL}/barber/${barberId}`),
-  getByCustomer: (token) =>
-    axios.get(`${API_URL}/customer`, {
-      headers: { Authorization: `Bearer ${token}` },
-    }),
+  getByBarber: (barberId) => request.get(`${GALLERY_URL}/barber/${barberId}`),
+  getByCustomer: () => request.get(`${GALLERY_URL}/customer`),
 };
 
 export default customerGalleryApi;

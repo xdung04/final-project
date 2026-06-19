@@ -55,7 +55,7 @@ function StarRow({ score, max = 5 }) {
 
 // ─── Main Component ───────────────────────────────────────────
 function HoSoCaNhan() {
-  const { user, accessToken, loading: isAuthLoading } = useAuth();
+  const { user,  loading: isAuthLoading } = useAuth();
   const { showToast } = useToast();
   const idBarber = user?.idUser;
 
@@ -141,7 +141,7 @@ function HoSoCaNhan() {
 
   // ─── Save ──────────────────────────────────────────────────
   const handleSave = async () => {
-    if (!idBarber || !accessToken) return;
+    if (!idBarber ) return;
 
     const errs = validate();
     if (Object.keys(errs).length) {
@@ -164,7 +164,7 @@ function HoSoCaNhan() {
       form.append("philosophy", formData.philosophy || "");
       if (selectedImg) form.append("image", selectedImg);
 
-      await BarberAPI.updateProfile(idBarber, form, accessToken);
+      await BarberAPI.updateProfile(idBarber, form);
 
       const updated = {
         ...barber,

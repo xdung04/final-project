@@ -1,25 +1,25 @@
 import * as request from "~/apis/configs/httpRequest";
 
-// Lấy thông tin user hiện tại
-export const getProfile = async (token) => {
+// Lấy thông tin user hiện tại.
+// Không còn cần truyền token để tự gắn Authorization header — cookie httpOnly
+// tự động gửi kèm nhờ withCredentials: true đã cấu hình ở httpRequest.js.
+export const getProfile = async () => {
   try {
-    const res = await request.get("/user/profile", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await request.get("/user/profile");
     console.log("API getProfile trả về:", res);
     return res;
   } catch (error) {
     throw error.response?.data || error;
   }
 };
-export const updateProfile = async (token, data) => {
+
+export const updateProfile = async (data) => {
   try {
     const res = await request.put("/user/profile", data, {
       headers: {
-        Authorization: `Bearer ${token}`,
         "Content-Type": "multipart/form-data",
       },
-      transformRequest: [(formData) => formData], // ⚡ Thêm dòng này để axios không stringify FormData
+      transformRequest: [(formData) => formData], // ⚡ axios không stringify FormData
     });
     console.log("API updateProfile trả về:", res);
     return res;
@@ -27,16 +27,11 @@ export const updateProfile = async (token, data) => {
     throw error.response?.data || error;
   }
 };
+
 // ====== Update phone riêng ======
-export const updatePhone = async (token, phoneNumber) => {
+export const updatePhone = async (phoneNumber) => {
   try {
-    const res = await request.put(
-      "/user/profile/phone",
-      { phoneNumber },
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
+    const res = await request.put("/user/profile/phone", { phoneNumber });
     console.log("API updatePhone trả về:", res);
     return res;
   } catch (error) {

@@ -50,7 +50,7 @@ const menuItems = [
 ];
 
 function Admin() {
-  const { user, accessToken } = useAuth();
+  const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -88,12 +88,12 @@ function Admin() {
 
   // ✅ TỐI ƯU: Thêm cờ dọn dẹp (isMounted) tránh leak và crash khi React bóc tách component đột ngột
   useEffect(() => {
-    if (!accessToken) return;
+    
     let isMounted = true;
 
     const loadData = async () => {
       try {
-        const notifyData = await fetchMyNotifications(accessToken);
+        const notifyData = await fetchMyNotifications();
         if (notifyData && isMounted) {
           setUnreadCount(notifyData.unreadCount || 0);
           setNotifications(notifyData.notifications || []);
@@ -108,7 +108,7 @@ function Admin() {
     return () => {
       isMounted = false; // Ngắt cập nhật state nếu component đã bị unmount
     };
-  }, [accessToken]);
+  }, []);
 
   // Đóng thông báo khi click ngoài
   useEffect(() => {
@@ -124,8 +124,8 @@ function Admin() {
 
   const handleNotificationClick = async (noti) => {
     setSelectedNotification(noti);
-    if (!noti.isRead && accessToken) {
-      const success = await markNotificationAsRead(noti.idNotification, accessToken);
+    if (!noti.isRead ) {
+      const success = await markNotificationAsRead(noti.idNotification);
       if (success) {
         setNotifications(prev => prev.map(n => n.idNotification === noti.idNotification ? { ...n, isRead: true } : n));
         setUnreadCount(prev => Math.max(0, prev - 1));
