@@ -13,4 +13,9 @@ router.put("/", authenticate, uploadBasic.single("avatar"), profileController.up
 
 router.put("/phone", authenticate, profileController.updatePhone);
 
+router.put(
+   "/change-password",
+   authenticate,
+   profileController.changePassword
+);
 export default router;

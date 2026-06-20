@@ -29,6 +29,12 @@ function Profile() {
 
   const [isEditing, setIsEditing] = useState(false);
 
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+
   useEffect(() => {
     if (!isLogin) return;
 
@@ -144,12 +150,67 @@ function Profile() {
       });
     }
   };
-  const handleChangePassword = () => {
-    showToast({
-      text: "Đổi mật khẩu thành công!",
-      type: "success",
-      duration: 3000,
-    });
+
+  const handlePasswordInput = (e) => {
+    const { name, value } = e.target;
+
+    setPasswordData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+  const handleChangePassword = async () => {
+    const { currentPassword, newPassword, confirmPassword } = passwordData;
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      showToast({
+        text: "Vui lòng nhập đầy đủ",
+        type: "error",
+      });
+
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      showToast({
+        text: "Mật khẩu tối thiểu 6 ký tự",
+        type: "error",
+      });
+
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      showToast({
+        text: "Mật khẩu xác nhận không khớp",
+        type: "error",
+      });
+
+      return;
+    }
+
+    try {
+      const res = await ProfileAPI.changePassword(accessToken, {
+        currentPassword,
+        newPassword,
+      });
+
+      showToast({
+        text: res.message || "Đổi mật khẩu thành công",
+        type: "success",
+      });
+
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    } catch (err) {
+      showToast({
+        text: err.message || "Đổi mật khẩu thất bại",
+        type: "error",
+      });
+    }
   };
 
   if (loading) return <div className={cx("loading")}>Đang tải...</div>;
@@ -177,12 +238,16 @@ function Profile() {
             >
               Hồ sơ
             </button>
-            <button
-              className={cx("menu-item", { active: activeTab === "password" })}
-              onClick={() => setActiveTab("password")}
-            >
-              Đổi mật khẩu
-            </button>
+            {profile?.authProvider !== "google" && (
+              <button
+                className={cx("menu-item", {
+                  active: activeTab === "password",
+                })}
+                onClick={() => setActiveTab("password")}
+              >
+                Đổi mật khẩu
+              </button>
+            )}
           </div>
 
           {/* Content */}
@@ -263,19 +328,48 @@ function Profile() {
               </div>
             )}
 
-            {activeTab === "password" && (
+            {activeTab === "password" && profile?.authProvider !== "google" && (
               <div className={cx("password-card")}>
                 <h2>
                   Thay đổi <em>Mật khẩu</em>
                 </h2>
+
+                <div className={cx("form-group")}>
+                  <label>Mật khẩu hiện tại</label>
+
+                  <input
+                    type="password"
+                    name="currentPassword"
+                    value={passwordData.currentPassword}
+                    onChange={handlePasswordInput}
+                    placeholder="Nhập mật khẩu hiện tại..."
+                  />
+                </div>
+
                 <div className={cx("form-group")}>
                   <label>Mật khẩu mới</label>
-                  <input type="password" placeholder="Nhập mật khẩu mới..." />
+
+                  <input
+                    type="password"
+                    name="newPassword"
+                    value={passwordData.newPassword}
+                    onChange={handlePasswordInput}
+                    placeholder="Nhập mật khẩu mới..."
+                  />
                 </div>
+
                 <div className={cx("form-group")}>
                   <label>Xác nhận mật khẩu</label>
-                  <input type="password" placeholder="Nhập lại mật khẩu..." />
+
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    value={passwordData.confirmPassword}
+                    onChange={handlePasswordInput}
+                    placeholder="Nhập lại mật khẩu..."
+                  />
                 </div>
+
                 <button
                   className={cx("save-btn")}
                   onClick={handleChangePassword}

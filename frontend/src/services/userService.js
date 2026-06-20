@@ -38,3 +38,29 @@ export const updatePhone = async (phoneNumber) => {
     throw error.response?.data || error;
   }
 };
+
+export const changePassword = async (
+  token,
+  data
+) => {
+  try {
+    const res = await request.put(
+      "/user/profile/change-password",
+      data,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    console.log(
+      "API changePassword trả về:",
+      res
+    );
+
+    return res;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+};
