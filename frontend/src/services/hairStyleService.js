@@ -47,21 +47,14 @@ export const getClientHairstyleDetail = async (slug) => {
 
 export const getAdminCategories = async () => {
   try {
-    // 🕵️‍♂️ Log nhanh để kiểm tra xem Interceptor sẽ lấy được token tên gì
-    console.log("Check token hiện tại trong localStorage:", localStorage.getItem("accessToken"));
-
     const res = await request.get("/hairstyles/admin/categories");
-    
-    // Đồng bộ cấu trúc kiểm tra dữ liệu trả về
     if (res && res.success) return res.data;
-    
     throw new Error(res?.message || "Lấy danh sách danh mục thất bại");
   } catch (error) {
     console.error("Lỗi getAdminCategories:", error);
     throw error;
   }
 };
-
 export const createAdminCategory = async (data) => {
   try {
     const res = await request.post("/hairstyles/admin/categories", data);
@@ -110,9 +103,11 @@ export const getAdminHairstyles = async () => {
   }
 };
 
-export const createAdminHairstyle = async (data) => {
+export const createAdminHairstyle = async (formData) => {
   try {
-    const res = await request.post("/hairstyles/admin/hairstyles", data);
+    const res = await request.post("/hairstyles/admin/hairstyles", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
     if (res && res.success) return res.data;
     throw new Error(res?.message || "Tạo kiểu tóc thất bại");
   } catch (error) {
@@ -121,9 +116,11 @@ export const createAdminHairstyle = async (data) => {
   }
 };
 
-export const updateAdminHairstyle = async (idHairstyle, data) => {
+export const updateAdminHairstyle = async (idHairstyle, formData) => {
   try {
-    const res = await request.put(`/hairstyles/admin/hairstyles/${idHairstyle}`, data);
+    const res = await request.put(`/hairstyles/admin/hairstyles/${idHairstyle}`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
     if (res && res.success) return res.data;
     throw new Error(res?.message || "Cập nhật kiểu tóc thất bại");
   } catch (error) {

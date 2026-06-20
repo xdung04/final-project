@@ -1,13 +1,37 @@
-// src/apis/chatAPI.js
 import * as request from "~/apis/configs/httpRequest";
 
-const API_URL = process.env.REACT_APP_API_BASE_URL + "/chat";
-export const sendMessage = async ({ message }) => {
+export const sendMessage = async ({ message, image, sessionId }) => {
   try {
-    const payload = { sessionId: "test-session-123", message };
-    const res = await request.post(API_URL, payload);
+    const res = await request.post("/chat", { message, image, sessionId });
     return res;
   } catch (err) {
-    throw err.response?.data || err;
+    throw err;
+  }
+};
+
+export const syncPostLogin = async ({ sessionId }) => {
+  try {
+    const res = await request.post("/chat/sync", { sessionId });
+    return res;
+  } catch (err) {
+    throw err;
+  }
+};
+
+export const requestHumanSupport = async () => {
+  try {
+    const res = await request.post("/chat/request-human", {});
+    return res;
+  } catch (err) {
+    throw err;
+  }
+};
+
+export const closeConversationOnLogout = async () => {
+  try {
+    const res = await request.post("/chat/logout-clean", {});
+    return res;
+  } catch (err) {
+    throw err;
   }
 };

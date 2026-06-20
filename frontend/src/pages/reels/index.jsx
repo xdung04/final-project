@@ -14,7 +14,7 @@ const SCROLL_COOLDOWN_MS = 1500;
 
 function Reel() {
   const location = useLocation();
-  const { accessToken, isLogin, loading: isAuthLoading } = useAuth();
+  const {  isLogin, loading: isAuthLoading } = useAuth();
   const { showToast } = useToast();
 
   const [hashtagSuggestions, setHashtagSuggestions] = useState([]);
@@ -48,7 +48,7 @@ function Reel() {
     isFetchingRef.current = true;
     setLoading(true);
     try {
-      const data = await fetchReelsPaged(page, PAGE_SIZE, accessToken);
+      const data = await fetchReelsPaged(page, PAGE_SIZE);
       if (data.length === 0) setHasMore(false);
       else {
         setReels((prev) => {
@@ -127,17 +127,17 @@ function Reel() {
   }, [isAuthLoading]);
 
   useEffect(() => {
-    if (accessToken && page === 1 && reels.length > 0) {
+    if (isLogin && page === 1 && reels.length > 0) {
       setReels([]);
       setPage(1);
       setHasMore(true);
       setCurrentIndex(0);
       loadMore();
-    } else if (accessToken && currentIndex >= reels.length - 2 && hasMore && !loading) {
+    } else if (isLogin && currentIndex >= reels.length - 2 && hasMore && !loading) {
       loadMore();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentIndex, accessToken, loading]);
+  }, [currentIndex, isLogin, loading]);
 
   const handleLike = (idReel, liked, count) => {
     if (!isLogin) {
@@ -201,7 +201,7 @@ function Reel() {
     if (!q) return;
     try {
       setSearchLoading(true);
-      const data = await searchReels(q, accessToken);
+      const data = await searchReels(q);
       setSearchResults(data || []);
       setIsSearching(true);
       setTimeout(() => {
@@ -414,7 +414,7 @@ function Reel() {
                 <div className={styles.videoHighlightContainer}>
                   <ReelPlayer
                     reel={reel}
-                    token={accessToken}
+                  
                     isActive={i === currentIndex && !showDetail}
                     globalMuted={globalMuted}
                     onToggleGlobalMuted={() => setGlobalMuted((prev) => !prev)}
@@ -439,7 +439,6 @@ function Reel() {
               onClose={() => setShowDetail(false)}
               onToggleLike={handleLike}
               onChangeVideo={handleChangeVideo}
-              token={accessToken}
               globalMuted={globalMuted}
               onToggleGlobalMuted={() => setGlobalMuted((prev) => !prev)}
               fromReelPlayer={!isSearching}

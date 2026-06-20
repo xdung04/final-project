@@ -1,67 +1,36 @@
-import axios from "axios";
+import * as request from "~/apis/configs/httpRequest";
 
-const API_URL = process.env.REACT_APP_API_BASE_URL + "/bookings";
+const BOOKING_URL = "/bookings";
 
-// Lấy access token từ localStorage
-const getAuthHeader = () => {
-  const token = localStorage.getItem("accessToken");
-
-  return {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  };
-};
-
+// Không còn cần getAuthHeader() — cookie tự gửi kèm nhờ withCredentials: true
+// ở httpRequest.js. LƯU Ý: res trả về đã bóc .data sẵn, đọc thẳng res.xxx ở
+// nơi gọi thay vì res.data.xxx.
 const bookingApi = {
-  // Lấy tất cả booking
-  getBooking: () => {
-    return axios.get(API_URL, getAuthHeader());
-  },
+  getMyBranch: () => request.get(`/receptionist/my-branch`),
 
-  // Lấy booking của barber theo khoảng ngày
-  getForBarber: (idBarber, start, end) => {
-    return axios.get(`${API_URL}/barber`, {
-      params: {
-        idBarber,
-        start,
-        end,
-      },
-      ...getAuthHeader(),
-    });
-  },
+  getBookingsByBranch: (idBranch, date) =>
+    request.get(`${BOOKING_URL}/branch/${idBranch}`, { params: { date } }),
 
-  // Hoàn tất booking (upload ảnh)
-  completeBooking: (idBooking, data) => {
-    return axios.post(`${API_URL}/${idBooking}/complete`, data, {
-      headers: {
-        ...getAuthHeader().headers,
-        "Content-Type": "multipart/form-data",
-      },
-    });
-  },
+  checkInBooking: (id) => request.put(`${BOOKING_URL}/${id}/checkin`, {}),
 
-  // Lấy booked slots của barber theo ngày
-  getBookedSlots: (idBarber, branchId, date) => {
-    return axios.get(
-      `${API_URL}/barbers/${idBarber}/booked-slots`,
-      {
-        params: {
-          branchId,
-          date,
-        },
-        ...getAuthHeader(),
-      }
-    );
-  },
+  cancelBooking: (id) => request.put(`${BOOKING_URL}/${id}/cancel`, {}),
 
-  // Tạo booking mới
-   createBooking: (data) => {
-    const token = localStorage.getItem("accessToken");
-    return axios.post(`${API_URL}/create`, data, {
-      headers: { Authorization: `Bearer ${token}` }
-    });  
-  },
+  getBooking: () => request.get(BOOKING_URL),
+
+  getForBarber: (idBarber, start, end) =>
+    request.get(`${BOOKING_URL}/barber`, { params: { idBarber, start, end } }),
+
+  completeBooking: (idBooking, data) =>
+    request.post(`${BOOKING_URL}/${idBooking}/complete`, data, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+
+  getBookedSlots: (idBarber, branchId, date) =>
+    request.get(`${BOOKING_URL}/barbers/${idBarber}/booked-slots`, {
+      params: { branchId, date },
+    }),
+
+  createBooking: (data) => request.post(`${BOOKING_URL}/create`, data),
 };
 
 export default bookingApi;

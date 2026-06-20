@@ -1,147 +1,198 @@
-/* ── VoucherForm.module.scss ─────────────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@300;400;500;700&display=swap');
+// Admin — Form Quản Lý Phát Hành Voucher Cổ Điển | NOULE Barber Premium Form
+
+$gold:        #C9A84C;
+$gold-hover:  #BA9A3E;
+$gold-dim:    #8A6A28;
+$gold-faint:  rgba(201, 168, 76, 0.08);
+
+$ink:         #1A1612;
+$ink-light:   #332C25;
+$ink-text:    #F5F0E8;
+
+$page-bg:     #F7F4EF;
+$card-bg:     #FFFFFF;
+$surface-2:   #F9F6F1;
+$border-color: rgba(0, 0, 0, 0.07);
+
+$radius-sm:   6px;
+$radius-md:   12px;
+$radius-lg:   16px;
 
 .overlay {
   position: fixed; inset: 0;
-  background: rgba(0,0,0,0.6);
-  backdrop-filter: blur(4px);
+  background: rgba(26, 22, 18, 0.5);
+  backdrop-filter: blur(3px);
   display: flex; align-items: center; justify-content: center;
   z-index: 9999;
-  animation: fadeIn 0.25s ease;
+  animation: fadeInForm 0.2s ease forwards;
 }
 
 .modal {
-  background: #fff;
-  border: 1px solid #000;
+  background: $card-bg;
+  border: 1px solid rgba(201, 168, 76, 0.2);
+  border-radius: $radius-lg;
   width: 680px;
-  max-width: 96%;
-  max-height: 90vh;
+  max-width: 94%;
+  max-height: 85vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 30px 60px rgba(0,0,0,0.25);
-  animation: slideUp 0.35s cubic-bezier(0.16,1,0.3,1);
-  font-family: 'DM Sans', sans-serif;
+  box-shadow: 0 20px 50px rgba(26, 22, 18, 0.15);
+  animation: slideUpForm 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  color: $ink;
 }
 
-/* Header */
-.modal-header {
+/* Header đậm chất Barber */
+.modalHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 24px 32px;
-  border-bottom: 1px solid #eee;
+  padding: 20px 28px;
+  background: $ink;
+  color: $ink-text;
   flex-shrink: 0;
 
   h3 {
-    font-family: 'Playfair Display', serif;
-    font-size: 24px;
-    font-weight: 800;
-    color: #000;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 18px;
+    font-weight: 600;
     margin: 0;
+    letter-spacing: 0.02em;
   }
 }
 
-.close-btn {
-  width: 36px; height: 36px;
-  border: 1px solid #eee;
+.closeBtn {
+  width: 28px; height: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: $radius-sm;
   background: transparent;
   cursor: pointer;
-  font-size: 16px;
-  color: #999;
+  color: #c4beb7;
   display: flex; align-items: center; justify-content: center;
   transition: all 0.2s;
-  &:hover { border-color: #000; color: #000; }
+  
+  &:hover { 
+    background: rgba(255, 255, 255, 0.1); 
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.25);
+  }
 }
 
-/* Body */
-.modal-body {
+/* Body cuộn mượt */
+.modalBody {
   flex: 1;
   overflow-y: auto;
-  padding: 28px 32px;
+  padding: 24px 28px;
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 24px;
+  background: #fdfcf9; // Nền giấy ngà nhẹ nhàng
 }
 
-/* Section */
+/* Phân khu Group */
 .section {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
-.section-title {
-  font-size: 10px;
+.sectionTitle {
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 2.5px;
+  letter-spacing: 1.5px;
   text-transform: uppercase;
-  color: #999;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #f0f0f0;
+  color: $gold-dim;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
-/* Type grid */
-.type-grid {
+/* Grid Chọn Loại Voucher (Đã Refactor đổi màu bốc theo Từng Tab bên ngoài) */
+.typeGrid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
+  gap: 12px;
 
   @media (max-width: 500px) { grid-template-columns: 1fr; }
 }
 
-.type-option {
-  padding: 14px 16px;
-  border: 1.5px solid #eee;
-  background: #fafafa;
+.typeOption {
+  padding: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  background: $card-bg;
+  border-radius: $radius-md;
   cursor: pointer;
   text-align: left;
-  transition: all 0.2s;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
   display: flex;
   flex-direction: column;
   gap: 4px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.01);
+
+  .optionHeader {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    
+    .optIcon {
+      color: var(--opt-color, #{$gold});
+    }
+  }
 
   &:hover:not(:disabled) {
-    border-color: #000;
-    background: #fff;
+    border-color: rgba(0, 0, 0, 0.15);
+    background: #faf8f5;
+    transform: translateY(-1px);
   }
 
   &.selected {
-    border-color: #000;
-    background: #fff;
-    border-left: 4px solid #4b382a;
+    border-color: var(--opt-color, #{$gold});
+    background: $card-bg;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    // Thanh chặn màu đậm đà bên hông tương ứng phân khu ngoài danh sách
+    border-left: 4.5px solid var(--opt-color, #{$gold}); 
+    
+    .typeOptionLabel {
+      color: $ink;
+    }
   }
 
   &:disabled {
     cursor: not-allowed;
-    &.selected { border-left: 4px solid #4b382a; }
+    opacity: 0.6;
   }
 
-  .type-option-label {
+  .typeOptionLabel {
     font-size: 13px;
-    font-weight: 700;
-    color: #000;
+    font-weight: 600;
+    color: #555;
   }
-  .type-option-desc {
+  
+  .typeOptionDesc {
     font-size: 11px;
-    color: #999;
+    color: #8c867e;
     line-height: 1.4;
+    padding-left: 24px;
   }
 }
 
-.type-locked-note {
+.typeLockedNote {
   font-size: 11px;
-  color: #f59e0b;
+  color: #c67a00;
   margin: 0;
-  padding: 8px 12px;
-  background: rgba(245,158,11,0.08);
-  border-left: 3px solid #f59e0b;
+  padding: 8px 14px;
+  background: rgba(245, 158, 11, 0.05);
+  border-left: 3px solid #e28900;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-/* Field */
-.field-row {
+/* Ô dữ liệu nhập vào (Inputs) */
+.fieldRow {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
@@ -154,139 +205,141 @@
   flex-direction: column;
   gap: 6px;
 
-  &.error .field-input {
-    border-color: #ff4d4f !important;
+  &.error .fieldInput {
+    border-color: #d32f2f !important;
+    background: #fff8f8 !important;
   }
 }
 
 .field-label {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  color: #666;
+  font-size: 11px;
+  font-weight: 600;
+  color: $ink-light;
 }
 
 .optional {
   font-weight: 400;
   text-transform: none;
-  letter-spacing: 0;
-  font-size: 10px;
-  color: #bbb;
+  font-size: 10.5px;
+  color: #a09990;
 }
 
-.field-input {
+.fieldInput {
   width: 100%;
-  height: 44px;
-  padding: 0 14px;
-  background: #fff !important;
-  border: 1px solid #e0e0e0 !important;
-  font-size: 14px;
-  color: #000 !important;
-  font-family: 'DM Sans', sans-serif;
-  transition: border-color 0.2s;
+  height: 40px;
+  padding: 0 12px;
+  background: $card-bg !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  border-radius: $radius-sm;
+  font-size: 13.5px;
+  color: $ink !important;
+  transition: all 0.15s ease;
 
-  &::placeholder { color: #ccc !important; }
-  &:focus { outline: none; border-color: #000 !important; }
-  &[type="date"] { cursor: pointer; }
+  &::placeholder { color: #b8b2aa !important; }
+  &:focus { 
+    outline: none; 
+    border-color: $gold !important; 
+    box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.12);
+  }
+  &[type="date"] { cursor: pointer; color-scheme: light; }
 }
 
-.field-hint {
+.fieldHint {
   font-size: 10px;
-  color: #bbb;
-  letter-spacing: 0.5px;
+  color: #9c958c;
 }
 
-.field-error {
+.fieldError {
   font-size: 11px;
-  color: #ff4d4f;
+  color: #d32f2f;
   font-weight: 500;
-
-  &.inline { margin-left: 8px; }
+  &.inline { margin-left: 8px; text-transform: none; letter-spacing: 0; }
 }
 
-/* Footer */
-.modal-footer {
+/* Footer điều hướng */
+.modalFooter {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  padding: 20px 32px;
-  border-top: 1px solid #eee;
+  padding: 16px 28px;
+  background: $surface-2;
+  border-top: 1px solid $border-color;
   flex-shrink: 0;
 }
 
-.btn-cancel {
-  padding: 12px 24px;
-  border: 1px solid #eee;
+.btnCancel {
+  padding: 9px 20px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
   background: transparent;
-  color: #999;
+  color: #6e6861;
+  border-radius: $radius-sm;
   cursor: pointer;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  transition: all 0.2s;
-  &:hover { border-color: #000; color: #000; }
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.15s;
+  
+  &:hover { border-color: $ink; color: $ink; background: rgba(0, 0, 0, 0.01); }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
-.btn-submit {
-  padding: 12px 28px;
+.btnSubmit {
+  padding: 9px 24px;
   border: none;
-  background: #000;
-  color: #fff;
+  background: $ink;
+  color: $ink-text;
+  border-radius: $radius-sm;
   cursor: pointer;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  transition: all 0.2s;
-  &:hover:not(:disabled) { background: #4b382a; }
-  &:disabled { background: #ccc; cursor: not-allowed; }
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.15s;
+  
+  &:hover:not(:disabled) { background: $gold; color: $ink; }
+  &:disabled { background: #dcd7cf; color: #a09a91; cursor: not-allowed; }
 }
 
-.checkbox-group {
+/* Checkbox hàng ngang */
+.checkboxRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin: 4px 0 4px;
+}
+
+.checkboxLabel {
   display: inline-flex;
   align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  color: #4a453f;
+  user-select: none;
 
-  .checkbox-label {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
+  input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+    margin: 0;
+    accent-color: $gold; // Đổi lõi chọn sang màu vàng Gold tinh tế
     cursor: pointer;
-    font-size: 12px;
-    font-weight: 500;
-    color: #333;
-    user-select: none;
-
-    input[type="checkbox"] {
-      width: 14px;
-      height: 14px;
-      margin: 0;
-      accent-color: #000;
-      cursor: pointer;
-    }
   }
 }
 
-.checkbox-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  margin: 8px 0 12px;
+.subField {
+  margin-top: -4px;
+  padding: 12px;
+  background: rgba(0,0,0,0.01);
+  border-radius: $radius-sm;
+  border-left: 2px solid rgba(0,0,0,0.04);
+  animation: slideDownSub 0.2s ease;
 }
 
-.sub-field {
-  margin-left: 24px;
-  margin-top: 8px;
-}
-
-.form-group-last {
-  margin-top: 12px;
+.formGroupLast {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
-/* Animations */
-@keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
-@keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Hiệu ứng đóng mở mượt mà */
+@keyframes fadeInForm  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUpForm { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideDownSub { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }

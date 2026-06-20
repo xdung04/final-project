@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import classNames from "classnames/bind";
 import {
@@ -8,14 +8,16 @@ import {
   Bell,
   LogOut,
   MapPin,
-  Phone,
 } from "lucide-react";
 
 import styles from "./Receptionist.module.scss";
 // Import component logic cũ của bạn
 import DatLichThanhToan from "./DatLichThanhToan";
-import ChatKhachHang from "./ChatKhachHang"; // Giả định bạn đã có hoặc sẽ tách ra
-import LichSuGiaoDich from "./LichSuGiaoDich"; // Giả định bạn đã có hoặc sẽ tách ra
+import ChatKhachHang from "./ChatKhachHang"; 
+import LichSuGiaoDich from "./LichSuGiaoDich"; 
+
+// 🌟 IMPORT HÀM LẤY CHI NHÁNH TỪ SERVICE (ĐÃ ĐƯỢC CONFIG AXIOS INTERCEPTOR)
+import { fetchMyBranch } from "~/services/bookingService"; 
 
 const cx = classNames.bind(styles);
 
@@ -45,12 +47,26 @@ function Receptionist() {
   const navigate = useNavigate();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  // Thông tin chi nhánh lấy từ AuthContext hoặc hardcode tạm thời
-  const currentBranch = {
-    name: "Luxury Barber Lab - Q1",
-    address: "123 Lê Lợi, TP.HCM",
-    phone: "0901.234.567",
-  };
+  // 🌟 KHỞI TẠO STATE ĐỂ LƯU THÔNG TIN CHI NHÁNH ĐỘNG
+  const [branchInfo, setBranchInfo] = useState(null);
+  const [loadingBranch, setLoadingBranch] = useState(true);
+
+  // 🌟 EFFECT: Tự động chạy khi Component được mount để gọi API lấy chi nhánh
+  useEffect(() => {
+    const getBranchData = async () => {
+      try {
+        setLoadingBranch(true);
+        const data = await fetchMyBranch();
+        setBranchInfo(data); // Đổ dữ liệu thật từ backend vào state
+      } catch (error) {
+        console.error("❌ Không lấy được thông tin chi nhánh cho Header:", error);
+      } finally {
+        setLoadingBranch(false);
+      }
+    };
+
+    getBranchData();
+  }, []);
 
   const currentMenuItem =
     menuItems.find((item) => item.path === location.pathname) || menuItems[0];
@@ -104,16 +120,22 @@ function Receptionist() {
           <div className={cx("headerLeft")}>
             <h1 className={cx("pageTitle")}>{currentMenuItem.label}</h1>
             <div className={cx("breadcrumb")}>
-              <span>{currentBranch.name}</span>
+              {/* 🌟 ĐỘNG: Hiển thị tên chi nhánh thật hoặc trạng thái đang tải */}
+              <span>
+                {loadingBranch ? "Đang tải chi nhánh..." : (branchInfo?.branchName || "Chi nhánh chưa xác định")}
+              </span>
               <span className={cx("separator")}>/</span>
               <span className={cx("current")}>{currentMenuItem.label}</span>
             </div>
           </div>
 
           <div className={cx("headerRight")}>
-            <div className={cx("branchBadge")}>
-              <MapPin size={14} /> <span>{currentBranch.address}</span>
-            </div>
+            {/* 🌟 ĐỘNG: Đổ địa chỉ thật từ backend vào badge */}
+            {!loadingBranch && branchInfo?.address && (
+              <div className={cx("branchBadge")}>
+                <MapPin size={14} /> <span>{branchInfo.address}</span>
+              </div>
+            )}
             <button className={cx("notifBtn")}>
               <Bell size={20} strokeWidth={1.5} />
             </button>
@@ -124,33 +146,28 @@ function Receptionist() {
         </header>
 
         <main className={cx("contentArea")}>
-          {/* HIỂN THỊ COMPONENT THEO TAB CHỌN */}
-
-          {/* Tab chính: Tái sử dụng component DatLichThanhToan của bạn */}
           {activeId === "operations" && (
             <div className="fade-in">
               <DatLichThanhToan />
             </div>
           )}
 
-          {/* Tab Chat */}
           {activeId === "chat" && (
             <div
               className="admin-card fade-in"
               style={{
-                height: "100%", // 👈 đổi calc(...) → 100%
+                height: "100%", 
                 display: "flex",
                 flexDirection: "column",
                 marginBottom: 0,
-                padding: 0, // 👈 thêm: admin-card có padding 25px sẽ cắt chiều cao
-                overflow: "hidden", // 👈 thêm
+                padding: 0, 
+                overflow: "hidden", 
               }}
             >
               <ChatKhachHang />
             </div>
           )}
 
-          {/* Tab Lịch sử */}
           {activeId === "history" && (
             <div className="admin-card fade-in">
               <LichSuGiaoDich />

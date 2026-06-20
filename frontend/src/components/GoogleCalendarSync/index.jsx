@@ -13,7 +13,7 @@ import ConfirmModal from "../ComfirmModal/index";
 import styles from "./GoogleCalendarSync.module.scss";
 
 function GoogleCalendarSync({ onCloseMenu, isMenuOpen }) {
-  const { accessToken } = useAuth();
+  const { isLogin } = useAuth();
   const { showToast } = useToast();
   const [status, setStatus] = useState({ linked: false, email: null });
   const [loading, setLoading] = useState(false);
@@ -31,15 +31,15 @@ function GoogleCalendarSync({ onCloseMenu, isMenuOpen }) {
     setConfirmModal((prev) => ({ ...prev, isOpen: false }));
 
   // ========== ĐỊNH NGHĨA fetchStatus TRƯỚC KHI DÙNG ==========
-  const fetchStatus = async () => {
-    if (!accessToken) return;
-    try {
-      const data = await getCalendarLinkStatus(accessToken);
-      setStatus(data);
-    } catch (err) {
-      console.error(err);
-    }
-  };
+const fetchStatus = async () => {
+  if (!isLogin) return;        // thay !accessToken
+  try {
+    const data = await getCalendarLinkStatus(); // bỏ accessToken
+    setStatus(data);
+  } catch (err) {
+    console.error(err);
+  }
+};
 
   // ========== XỬ LÝ CALLBACK TỪ GOOGLE (CHẠY 1 LẦN) ==========
   useEffect(() => {
@@ -70,20 +70,20 @@ function GoogleCalendarSync({ onCloseMenu, isMenuOpen }) {
 
   // ========== CẬP NHẬT STATUS KHI MỞ MENU ==========
   useEffect(() => {
-    if (isMenuOpen && accessToken) {
+    if (isMenuOpen && isLogin) {
       fetchStatus();
     }
-  }, [isMenuOpen, accessToken]);
+  }, [isMenuOpen, isLogin]);
 
   const handleLink = async () => {
-    if (!accessToken) {
+    if (!isLogin) {
       showToast({ text: "Vui lòng đăng nhập", type: "error" });
       return;
     }
     setLoading(true);
     try {
       const returnUrl = window.location.pathname + window.location.search;
-      const url = await getGoogleAuthUrl(accessToken, returnUrl);
+      const url = await getGoogleAuthUrl( returnUrl);
       window.location.href = url;
     } catch (err) {
       showToast({ text: "Không thể tạo link liên kết", type: "error" });
@@ -103,7 +103,7 @@ function GoogleCalendarSync({ onCloseMenu, isMenuOpen }) {
         closeConfirmModal();
         setLoading(true);
         try {
-          await unlinkCalendar(accessToken);
+          await unlinkCalendar();
           showToast({
             text: "Đã hủy liên kết Google Calendar",
             type: "success",
@@ -120,7 +120,7 @@ function GoogleCalendarSync({ onCloseMenu, isMenuOpen }) {
     });
   };
 
-  if (!accessToken) return null;
+  if (!isLogin) return null;
 
   return (
     <>

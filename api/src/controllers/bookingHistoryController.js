@@ -8,10 +8,16 @@ const getBookingHistory = async (req, res) => {
     const idCustomer = req.user?.idUser;
     if (!idCustomer) return res.status(401).json({ message: "Unauthorized" });
 
-    // Gọi service để lấy lịch sử booking
-    const bookings = await BookingHistoryService.getBookingsByCustomer(idCustomer);
+    // 👉 Hứng type và page từ query params do Frontend gửi lên (ví dụ: ?type=upcoming&page=1)
+    // Nếu FE không truyền lên thì mặc định sẽ là "upcoming" và trang 1
+    const { type = "upcoming", page = 1 } = req.query;
 
-    res.status(200).json({ success: true, data: bookings });
+    // Gọi service để lấy lịch sử booking (nhớ truyền thêm type và page vào đây)
+    const bookings = await BookingHistoryService.getBookingsByCustomer(idCustomer, type, page);
+
+    // Trả về dữ liệu (Biến bookings lúc này đã bao gồm cả { data, pagination } từ Service)
+    res.status(200).json({ success: true, ...bookings });
+    
   } catch (error) {
     console.error("Lỗi getBookingHistory:", error);
     res.status(500).json({ success: false, message: error.message });

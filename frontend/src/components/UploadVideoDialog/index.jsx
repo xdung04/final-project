@@ -6,7 +6,7 @@ import { useAuth } from "~/context/AuthContext";
 import { X, Film, Image as ImageIcon, Loader2, UploadCloud } from "lucide-react";
 
 function UploadVideoDialog({ open, onClose, onUpload }) {
-  const { accessToken, user, isLogin } = useAuth();
+  const { user, isLogin } = useAuth();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [videoFile, setVideoFile] = useState(null);
@@ -53,7 +53,7 @@ function UploadVideoDialog({ open, onClose, onUpload }) {
         return;
       }
 
-      if (!accessToken) {
+      if (!isLogin) {
         alert("Vui lòng đăng nhập để tải video lên!");
         return;
       }
@@ -73,7 +73,7 @@ function UploadVideoDialog({ open, onClose, onUpload }) {
       formData.append("hashtags", JSON.stringify(extractedTags));
 
       try {
-        const newReel = await uploadReel(formData, accessToken);
+        const newReel = await uploadReel(formData);
         onUpload(newReel);
         onClose();
       } catch (err) {

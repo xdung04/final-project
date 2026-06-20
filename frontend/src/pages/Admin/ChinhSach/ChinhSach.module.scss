@@ -54,7 +54,7 @@ $purple-bg:   #F3EDFA;
   padding: 28px 32px 48px;
   background: $page-bg;
   min-height: 100vh;
-  font-family: inherit;
+  font-family: "Merriweather", serif;
   color: $ink;
   animation: fadeInPage 0.4s ease forwards;
 }
@@ -91,7 +91,7 @@ $purple-bg:   #F3EDFA;
   color: $ink;
   margin: 0 0 4px;
   line-height: 1.1;
-  font-family: Georgia, 'Times New Roman', serif;
+ font-family: "Merriweather", serif;
 }
 
 .pageDesc {
@@ -113,7 +113,7 @@ $purple-bg:   #F3EDFA;
   border: none;
   border-radius: $radius-md;
   cursor: pointer;
-  font-family: inherit;
+  font-family: "Merriweather", serif;
   transition: background 0.15s;
 
   &:hover:not(:disabled) { background: $gold-hover; }
@@ -140,7 +140,7 @@ $purple-bg:   #F3EDFA;
   font-weight: 500;
   color: #666;
   cursor: pointer;
-  font-family: inherit;
+  font-family: "Merriweather", serif;
   transition: all 0.15s;
 
   &:hover:not(.active) {
@@ -217,7 +217,7 @@ $purple-bg:   #F3EDFA;
   border-radius: $radius-md;
   color: #777;
   cursor: pointer;
-  font-family: inherit;
+  font-family: "Merriweather", serif;
   transition: all 0.15s;
 
   &:hover { border-color: $gold-border; color: $ink; }
@@ -362,7 +362,7 @@ $purple-bg:   #F3EDFA;
   font-weight: 600;
   color: $ink;
   margin-bottom: 10px;
-  font-family: Georgia, 'Times New Roman', serif;
+ font-family: "Merriweather", serif;
 }
 
 .planStats {
@@ -530,7 +530,7 @@ $purple-bg:   #F3EDFA;
   cursor: pointer;
   border: 1px solid transparent;
   background: transparent;
-  font-family: inherit;
+  font-family: "Merriweather", serif;
   text-align: left;
   transition: all 0.12s;
 
@@ -608,7 +608,7 @@ $purple-bg:   #F3EDFA;
   font-size: 13px;
   font-weight: 600;
   color: $ink-text;
-  font-family: Georgia, 'Times New Roman', serif;
+ font-family: "Merriweather", serif;
 }
 
 .rulesPlanTag {
@@ -618,7 +618,7 @@ $purple-bg:   #F3EDFA;
   border-radius: 20px;
   padding: 2px 8px;
   color: $gold;
-  font-family: inherit;
+  font-family: "Merriweather", serif;
   font-weight: 600;
   letter-spacing: 0.05em;
 }
@@ -635,7 +635,7 @@ $purple-bg:   #F3EDFA;
   border-radius: $radius-sm;
   color: $gold;
   cursor: pointer;
-  font-family: inherit;
+  font-family: "Merriweather", serif;
   transition: all 0.15s;
 
   &:hover {
@@ -722,7 +722,7 @@ $purple-bg:   #F3EDFA;
   border: 1px solid $border-md;
   border-radius: $radius-sm;
   color: $ink;
-  font-family: inherit;
+  font-family: "Merriweather", serif;
   font-size: 13px;
   outline: none;
   transition: border-color 0.15s;
@@ -841,7 +841,7 @@ $purple-bg:   #F3EDFA;
   border: none;
   border-radius: $radius-md;
   cursor: pointer;
-  font-family: inherit;
+  font-family: "Merriweather", serif;
   transition: background 0.15s;
 
   &:hover:not(:disabled) { background: $gold-hover; }
@@ -1034,7 +1034,7 @@ $purple-bg:   #F3EDFA;
   font-weight: 600;
   color: $gold-dim;
   flex-shrink: 0;
-  font-family: Georgia, 'Times New Roman', serif;
+ font-family: "Merriweather", serif;
 }
 
 .barberName {
@@ -1129,7 +1129,7 @@ $purple-bg:   #F3EDFA;
   align-items: center;
   gap: 6px;
   border-radius: $radius-md;
-  font-family: inherit;
+  font-family: "Merriweather", serif;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -1290,7 +1290,7 @@ $purple-bg:   #F3EDFA;
   font-size: 16px;
   font-weight: 600;
   color: $ink-text;
-  font-family: Georgia, 'Times New Roman', serif;
+ font-family: "Merriweather", serif;
   margin-bottom: 3px;
 }
 
@@ -1370,7 +1370,7 @@ $purple-bg:   #F3EDFA;
   border: 1px solid $border-md;
   border-radius: $radius-md;
   color: $ink;
-  font-family: inherit;
+  font-family: "Merriweather", serif;
   font-size: 13px;
   outline: none;
   transition: border-color 0.15s, background 0.15s;
@@ -1617,7 +1617,7 @@ $purple-bg:   #F3EDFA;
   font-size: 22px;
   font-weight: 600;
   color: $gold;
-  font-family: Georgia, 'Times New Roman', serif;
+ font-family: "Merriweather", serif;
 
   &.red { color: #F09595; }
 }

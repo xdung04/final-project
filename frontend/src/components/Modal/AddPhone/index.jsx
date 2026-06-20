@@ -4,7 +4,6 @@ import { useToast } from "~/context/ToastContext";
 import { useAuth } from "~/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { ProfileAPI } from "~/apis/profileApi";
-import { AuthAPI } from "~/apis/AuthAPI";
 import Input from "~/components/Input";
 import Button from "~/components/Button";
 import styles from "./AddPhone.module.scss";
@@ -16,15 +15,15 @@ function AddPhone({ onClose, onSuccess, initialData }) {
   const navigate = useNavigate();
   const { showToast } = useToast();
 
-  const accessToken = initialData?.accessToken;
-  const refreshToken = initialData?.refreshToken;
+  // Không còn nhận accessToken/refreshToken từ initialData — Login.jsx giờ chỉ
+  // truyền { user } qua onSwitch("add-phone", { user }), vì token thật nằm ở
+  // cookie, không cần (và không thể) truyền tay qua object như trước.
   const user = initialData?.user;
 
   const [phoneNumber, setPhoneNumber] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
-    // Kiểm tra định dạng 10 chữ số bắt đầu bằng 0
     const phoneRegex = /^0[0-9]{9}$/;
 
     if (!phoneNumber || !phoneRegex.test(phoneNumber)) {
@@ -37,7 +36,8 @@ function AddPhone({ onClose, onSuccess, initialData }) {
 
     setLoading(true);
     try {
-      await ProfileAPI.updatePhone(accessToken, phoneNumber);
+      // Không còn truyền accessToken — cookie tự gửi kèm nhờ withCredentials.
+      await ProfileAPI.updatePhone(phoneNumber);
 
       const userUpdated = {
         ...user,
@@ -45,14 +45,13 @@ function AddPhone({ onClose, onSuccess, initialData }) {
         avatar: user.image || "/user.png",
       };
 
-      authLogin(userUpdated, accessToken, refreshToken);
+      authLogin(userUpdated);
 
       showToast({
         text: "Cập nhật số điện thoại thành công!",
         type: "success",
       });
 
-      // Redirect theo role
       if (user.role === "admin") {
         navigate("/admin");
       } else if (user.role === "barber") {

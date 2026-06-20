@@ -81,23 +81,23 @@ export const hairStyleAPI = {
     }
   },
 
-  createAdminHairstyle: async (data) => {
-    try {
-      return await hairstyleService.createAdminHairstyle(data);
-    } catch (error) {
-      console.error("hairStyleAPI.createAdminHairstyle lỗi:", error);
-      throw error;
-    }
-  },
+createAdminHairstyle: async (formData) => {
+  try {
+    return await hairstyleService.createAdminHairstyle(formData);
+  } catch (error) {
+    console.error("hairStyleAPI.createAdminHairstyle lỗi:", error);
+    throw error;
+  }
+},
 
-  updateAdminHairstyle: async (idHairstyle, data) => {
-    try {
-      return await hairstyleService.updateAdminHairstyle(idHairstyle, data);
-    } catch (error) {
-      console.error("hairStyleAPI.updateAdminHairstyle lỗi:", error);
-      throw error;
-    }
-  },
+updateAdminHairstyle: async (idHairstyle, formData) => {
+  try {
+    return await hairstyleService.updateAdminHairstyle(idHairstyle, formData);
+  } catch (error) {
+    console.error("hairStyleAPI.updateAdminHairstyle lỗi:", error);
+    throw error;
+  }
+},
 
   deleteAdminHairstyle: async (idHairstyle) => {
     try {

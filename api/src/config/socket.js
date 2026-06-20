@@ -46,7 +46,7 @@ const initSocket = (server) => {
       });
     });
 
-    // ✅ Ép string để đảm bảo room name nhất quán
+    // ✅ Ép string để đảm bảo room name nhất quán giữa Khách và Lễ tân
     socket.on("join_conversation", ({ conversationId }) => {
       if (!conversationId) return;
       const roomId = String(conversationId);
@@ -64,11 +64,12 @@ const initSocket = (server) => {
     socket.on("send_message", async (msg) => {
       try {
         if (!msg?.conversationId) return;
-        const roomId = String(msg.conversationId); // ✅ ép string
+        const roomId = String(msg.conversationId); // Ép chuỗi nhất quán
 
         const convBefore = await chatLiveService.getConversationById(msg.conversationId);
         const wasClosed = convBefore?.status === "closed";
 
+        // 1. Lưu tin nhắn vào MySQL (Lưu đủ eventType và metadata từ Client đẩy lên)
         const savedMessage = await chatLiveService.saveMessage({
           conversationId: msg.conversationId,
           senderType: msg.senderType,
@@ -86,22 +87,31 @@ const initSocket = (server) => {
           clientId: msg.clientId,
         };
 
-        // ✅ Emit vào đúng room string
+        // 2. ⚡ PHÁT REALTIME VÀO ROOM CHAT (Cả Khách và Lễ tân trong phòng cùng hứng)
         io.to(roomId).emit("receive_message", payload);
-        console.log(`📨 Emitted to room ${roomId}:`, payload.content);
+        console.log(`📨 [Room ${roomId}] Người gửi [${msg.senderType}]:`, payload.content);
 
+        // 3. ⚡ CẬP NHẬT THANH SIDEBAR (Tin nhắn cuối + Đếm số tin chưa đọc)
+        io.emit("conversation_new_message", {
+          conversationId: msg.conversationId,
+          lastMessage: msg.content || "",
+          senderType: msg.senderType,
+          clientId: msg.clientId,
+        });
+
+        // 4. ⚡ ĐỒNG BỘ ĐỔI TAB / REFRESH DANH SÁCH TOÀN HỆ THỐNG LỄ TÂN
         if (msg.senderType === "customer") {
-          io.emit("conversation_new_message", {
-            conversationId: msg.conversationId,
-            lastMessage: msg.content || "",
-            senderType: msg.senderType,
-            clientId: msg.clientId,
-          });
-        }
-
-        if (wasClosed && msg.senderType === "customer") {
+          // Khách nhắn tin lúc phòng đang đợi hoặc từ phòng cũ đã đóng -> Báo Lễ tân tải lại danh sách hàng chờ
+          if (wasClosed || convBefore?.status === "waiting") {
+            io.emit("conversation_updated");
+          }
+        } 
+        // 🌟 VÁ LỖI TẠI ĐÂY: Nếu là tin nhắn SYSTEM (Do Lễ tân kích hoạt nút Rời hoặc Đóng từ Client)
+        else if (msg.senderType === "system" && (msg.eventType === "leave" || msg.eventType === "close")) {
+          console.log(`🔄 [Socket Backend] Đẩy lệnh làm mới danh sách công khai cho Lễ tân do sự kiện: ${msg.eventType}`);
           io.emit("conversation_updated");
         }
+
       } catch (error) {
         console.error("❌ send_message error:", error.message);
         socket.emit("message_error", { error: error.message });

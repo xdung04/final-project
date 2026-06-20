@@ -4,7 +4,7 @@ import { useToast } from "~/context/ToastContext";
 import { useAuth } from "~/context/AuthContext";
 import { AuthAPI } from "~/apis/AuthAPI";
 import { GoogleLogin } from "@react-oauth/google";
-import { useNavigate } from "react-router-dom"; // 🔥 THÊM IMPORT NÀY
+import { useNavigate } from "react-router-dom";
 
 import Input from "~/components/Input";
 import Button from "~/components/Button";
@@ -19,21 +19,14 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
   const { showToast } = useToast();
   const navigate = useNavigate();
 
-  // 🔥 THÊM: function chào theo role
   const getWelcomeMessage = (user) => {
     const name = user.fullName || user.name || "bạn";
-
     switch (user.role) {
-      case "admin":
-        return `Chào mừng Admin ${name}, Hệ thống đã sẵn sàng!`;
-      case "barber":
-        return `Chào Barber ${name}, hôm nay có nhiều khách đang chờ bạn đó!`;
-      case "customer":
-        return `Chào ${name} đến với Barber Shop Nam, đặt lịch thôi nào!`;
-      case "receptionist":
-        return `Chào ${name}, lịch cắt tóc của chi nhánh đã sẵn sàng!`;
-      default:
-        return `Chào mừng ${name}`;
+      case "admin":       return `Chào mừng Admin ${name}, Hệ thống đã sẵn sàng!`;
+      case "barber":      return `Chào Barber ${name}, hôm nay có nhiều khách đang chờ bạn đó!`;
+      case "customer":    return `Chào ${name} đến với Barber Shop Nam, đặt lịch thôi nào!`;
+      case "receptionist":return `Chào ${name}, lịch cắt tóc của chi nhánh đã sẵn sàng!`;
+      default:            return `Chào mừng ${name}`;
     }
   };
 
@@ -41,26 +34,56 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // HÀM XỬ LÝ CHUYỂN HƯỚNG THEO ROLE
-  const handleRedirectByRole = (role) => {
-    // Luôn đóng modal login và chạy callback success trước
-    if (onLoginSuccess) onLoginSuccess();
+  /**
+   * FIX 6: Gộp tất cả logic sau login vào đây, tránh gọi onLoginSuccess / onClose 2 lần
+   * FIX 7: Chỉ navigate 1 lần tại đây, không navigate thêm ở nơi khác
+   */
+  const handlePostLogin = (userData) => {
+    if (onLoginSuccess) onLoginSuccess(userData);
     if (onClose) onClose();
 
-    // Điều hướng thẳng vào trang quản lý tương ứng
-    switch (role) {
-      case "admin":
-        navigate("/admin");
-        break;
-      case "barber":
-        navigate("/tho-cat-toc");
-        break;
-      case "receptionist":
-        navigate("/receptionist");
-        break;
+    switch (userData.role) {
+      case "admin":        navigate("/admin");        break;
+      case "barber":       navigate("/tho-cat-toc");  break;
+      case "receptionist": navigate("/receptionist"); break;
       default:
-        // Nếu là customer (khách hàng), cứ để họ ở lại trang hiện tại (trang chủ)
         break;
+    }
+  };
+
+  // Helper chung: xử lý kết quả trả về từ login/googleLogin giống nhau,
+  // tránh lặp code giữa handleSubmit và handleGoogleSuccess.
+  //
+  // LƯU Ý CHUYỂN ĐỔI COOKIE: trước đây dùng `if (result.accessToken)` để biết
+  // login thành công, vì BE trả token trong JSON. Giờ token thật nằm trong
+  // httpOnly cookie, JS không đọc/thấy được giá trị đó nữa. BE hiện tại (giai
+  // đoạn chuyển tiếp) vẫn trả accessToken trong JSON nên check cũ còn chạy được,
+  // nhưng để không phụ thuộc vào việc BE có dọn JSON đó hay không, ta đổi sang
+  // check `result.user` — nếu có user nghĩa là login thành công (BE chỉ trả
+  // user khi xác thực đúng).
+  const handleLoginResult = (result) => {
+    if (result.needPhone) {
+      onSwitch("add-phone", {
+        user: result.user,
+      });
+      return;
+    }
+
+    if (result.user) {
+      const userWithAvatar = {
+        ...result.user,
+        avatar: result.user.image || "/user.png",
+      };
+
+      sessionStorage.removeItem("chatMessages");
+      sessionStorage.removeItem("chatSessionId");
+      sessionStorage.removeItem("chatSessionOwner");
+
+      authLogin(userWithAvatar);
+
+      showToast({ text: getWelcomeMessage(result.user), type: "success" });
+
+      handlePostLogin(userWithAvatar);
     }
   };
 
@@ -74,35 +97,7 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
     setLoading(true);
     try {
       const result = await AuthAPI.login(formData);
-
-      if (result.needPhone) {
-        onSwitch("add-phone", {
-          accessToken: result.accessToken,
-          refreshToken: result.refreshToken,
-          user: result.user,
-        });
-        return;
-      }
-
-      if (result.accessToken) {
-        const userWithAvatar = {
-          ...result.user,
-          avatar: result.user.image || "/user.png",
-        };
-
-        authLogin(userWithAvatar, result.accessToken, result.refreshToken);
-
-        // 🔥 SỬA: toast theo role
-        showToast({
-          text: getWelcomeMessage(result.user),
-          type: "success",
-        });
-
-        handleRedirectByRole(result.user.role);
-
-        if (onLoginSuccess) onLoginSuccess();
-        if (onClose) onClose();
-      }
+      handleLoginResult(result);
     } catch (err) {
       const message = err.response?.data?.message || "Email hoặc mật khẩu không đúng";
       showToast({ text: message, type: "error" });
@@ -122,47 +117,7 @@ function Login({ onSwitch, onClose, onLoginSuccess }) {
     setLoading(true);
     try {
       const result = await AuthAPI.googleLogin(googleIdToken);
-
-      if (result.needPhone) {
-        onSwitch("add-phone", {
-          accessToken: result.accessToken,
-          refreshToken: result.refreshToken,
-          user: result.user,
-        });
-        return;
-      }
-
-      if (result.accessToken) {
-        const userWithAvatar = {
-          ...result.user,
-          avatar: result.user.image || "/user.png",
-        };
-
-        // Lưu Auth
-        authLogin(userWithAvatar, result.accessToken, result.refreshToken);
-
-        // 🔥 SỬA: toast theo role
-        showToast({
-          text: getWelcomeMessage(result.user),
-          type: "success",
-        });
-
-        // 🚀 redirect theo role
-        const role = result.user.role;
-
-        if (role === "admin") {
-          navigate("/admin");
-        } else if (role === "barber") {
-          navigate("/tho-cat-toc");
-        } else if (role === "receptionist") {
-          navigate("/receptionist");
-        } else {
-          navigate("/");
-        }
-
-        // 🔥 GỌI HÀM ĐIỀU HƯỚNG
-        handleRedirectByRole(result.user.role);
-      }
+      handleLoginResult(result);
     } catch (err) {
       const message = err.response?.data?.message || "Đăng nhập Google thất bại";
       showToast({ text: message, type: "error" });

@@ -122,22 +122,14 @@ export const getProfile = async (idBarber) => {
   }
 };
 
-export const updateProfile = async (idBarber, payload, token) => {
-  if (!token) {
-    throw new Error("Authentication token is required for updating profile.");
-  }
-
+export const updateProfile = async (idBarber, payload) => {
   try {
     const isFormData = payload instanceof FormData;
-
     const res = await request.put(`/barbers/profile/${idBarber}`, payload, {
       headers: {
-        Authorization: `Bearer ${token}`,
-
         "Content-Type": isFormData ? "multipart/form-data" : "application/json",
       },
     });
-
     console.log("API updateProfile trả về:", res.data);
     return res.data;
   } catch (error) {
@@ -146,20 +138,11 @@ export const updateProfile = async (idBarber, payload, token) => {
   }
 };
 
-export const fetchBarberDashboardStats = async (idBarber, token) => {
-  if (!token) {
-    throw new Error("Authentication token is required to fetch dashboard stats.");
-  }
-
+export const fetchBarberDashboardStats = async (idBarber) => {
   try {
-    const res = await request.get(`/barbers/stats/${idBarber}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
+    const res = await request.get(`/barbers/stats/${idBarber}`);
     console.log("API fetchBarberDashboardStats trả về:", res);
-    return res; // Giả định res chứa data thống kê trực tiếp
+    return res;
   } catch (error) {
     console.error("Lỗi khi gọi API fetchBarberDashboardStats:", error.response?.data || error);
     throw error.response?.data || error;

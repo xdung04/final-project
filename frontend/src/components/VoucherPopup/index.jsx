@@ -306,7 +306,7 @@ function ConfirmExchange({ voucher, onConfirm, onCancel, loading }) {
  *   invoiceAmount  — tổng tiền dịch vụ hiện tại từ BookingPage (dùng để check & sort)
  */
 function VoucherPopup({ onClose, onSelect, defaultVoucher, invoiceAmount = 0 }) {
-  const { accessToken } = useAuth();
+  const { isLogin } = useAuth();
 
   const [availableVouchers,    setAvailableVouchers]    = useState([]);
   const [exchangeableVouchers, setExchangeableVouchers] = useState([]);
@@ -316,13 +316,13 @@ function VoucherPopup({ onClose, onSelect, defaultVoucher, invoiceAmount = 0 }) 
   const [exchanging,           setExchanging]           = useState(false);
 
   useEffect(() => {
-    if (!accessToken) return;
+    if (!isLogin) return;
     const fetchVouchers = async () => {
       setLoading(true);
       try {
         const [myVouchers, exchangeable] = await Promise.all([
-          voucherService.fetchMyVouchers(accessToken),
-          voucherService.fetchExchangeableVouchers(accessToken),
+          voucherService.fetchMyVouchers(),
+          voucherService.fetchExchangeableVouchers(),
         ]);
         setAvailableVouchers(myVouchers || []);
         setExchangeableVouchers(exchangeable || []);
@@ -333,7 +333,7 @@ function VoucherPopup({ onClose, onSelect, defaultVoucher, invoiceAmount = 0 }) 
       }
     };
     fetchVouchers();
-  }, [accessToken]);
+  }, [isLogin]);
 
   /**
    * Sort voucher: applicable lên trước, trong applicable sort theo actual discount giảm dần.
@@ -371,10 +371,10 @@ function VoucherPopup({ onClose, onSelect, defaultVoucher, invoiceAmount = 0 }) 
     if (!confirmVoucher) return;
     setExchanging(true);
     try {
-      await voucherService.exchangeVoucher(accessToken, confirmVoucher.id);
+      await voucherService.exchangeVoucher( confirmVoucher.id);
       const [updatedMy, updatedExchange] = await Promise.all([
-        voucherService.fetchMyVouchers(accessToken),
-        voucherService.fetchExchangeableVouchers(accessToken),
+        voucherService.fetchMyVouchers(),
+        voucherService.fetchExchangeableVouchers(),
       ]);
       setAvailableVouchers(updatedMy || []);
       setExchangeableVouchers(updatedExchange || []);

@@ -7,6 +7,12 @@ import VoucherService from "./voucherService.js";
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+// Thời gian sống token, để 1 nơi duy nhất tránh lệch nhau giữa các hàm
+const ACCESS_TOKEN_EXPIRES_IN = "1h";
+const ACCESS_TOKEN_EXPIRES_IN_SECONDS = 60 * 60; // 3600s — khớp với "1h" phía trên
+const REFRESH_TOKEN_EXPIRES_IN = "7d";
+const REFRESH_TOKEN_EXPIRES_IN_SECONDS = 7 * 24 * 60 * 60;
+
 // ==================== HELPER ====================
 async function ensureCustomer(userId, transaction = null) {
   const existingCustomer = await db.Customer.findOne({
@@ -45,7 +51,29 @@ async function getBranchIdByUser(user) {
   return null;
 }
 
-// ==================== LOGIN ====================
+/**
+ * Helper tạo cặp access/refresh token + lưu refresh token vào Redis.
+ * Gộp lại để login(), googleLogin() không lặp code giống nhau.
+ */
+async function issueTokens(payload, idUser) {
+  const accessToken = jwt.sign(payload, process.env.JWT_SECRET, {
+    expiresIn: ACCESS_TOKEN_EXPIRES_IN,
+  });
+  const refreshToken = jwt.sign(payload, process.env.JWT_REFRESH_SECRET, {
+    expiresIn: REFRESH_TOKEN_EXPIRES_IN,
+  });
+
+  await redisClient.set(
+    `refresh:${idUser}`,
+    refreshToken,
+    "EX",
+    REFRESH_TOKEN_EXPIRES_IN_SECONDS,
+  );
+
+  return { accessToken, refreshToken };
+}
+
+// ==================== LOGIN THÔNG THƯỜNG ====================
 export async function login(email, password) {
   if (!email || !password) {
     throw { status: 400, message: "Email và password là bắt buộc." };
@@ -76,34 +104,22 @@ export async function login(email, password) {
 
   const needPhone = !user.phoneNumber;
 
-  // 🌟 NÂNG CẤP BẢO MẬT: Lấy idBranch đính kèm vào Token
+  // Lấy idBranch đính kèm vào Token
   const idBranch = await getBranchIdByUser(user);
 
   const payload = {
     idUser: user.idUser,
     email: user.email,
     role: user.role,
-    idBranch: idBranch, // Đưa vào payload của cả cặp token
+    idBranch: idBranch,
   };
 
-  const accessToken = jwt.sign(payload, process.env.JWT_SECRET, {
-    expiresIn: "1h",
-  });
-  const refreshToken = jwt.sign(payload, process.env.JWT_REFRESH_SECRET, {
-    expiresIn: "7d",
-  });
-
-  await redisClient.set(
-    `refresh:${user.idUser}`,
-    refreshToken,
-    "EX",
-    7 * 24 * 60 * 60,
-  );
+  const { accessToken, refreshToken } = await issueTokens(payload, user.idUser);
 
   return {
     accessToken,
     refreshToken,
-    expiresIn: 3600,
+    expiresIn: ACCESS_TOKEN_EXPIRES_IN_SECONDS,
     user: {
       idUser: user.idUser,
       fullName: user.fullName,
@@ -111,7 +127,7 @@ export async function login(email, password) {
       image: user.image || null,
       role: user.role,
       phoneNumber: user.phoneNumber,
-      idBranch: idBranch, // Trả về cho Frontend lưu Context
+      idBranch: idBranch,
     },
     needPhone,
   };
@@ -119,17 +135,21 @@ export async function login(email, password) {
 
 // ==================== REFRESH TOKEN ====================
 export async function refresh(refreshToken) {
-  if (!refreshToken) throw { status: 401, message: "NO_REFRESH_TOKEN" };
+  // Không có refresh token gửi lên -> 401 Unauthorized
+  if (!refreshToken) {
+    throw { status: 401, message: "NO_REFRESH_TOKEN" };
+  }
 
   try {
+    // Xác thực token
     const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
     const savedToken = await redisClient.get(`refresh:${decoded.idUser}`);
 
+    // Token không trùng khớp trong Redis -> 401 Unauthorized
     if (!savedToken || savedToken !== refreshToken) {
-      throw { status: 403, message: "INVALID_REFRESH_TOKEN" };
+      throw { status: 401, message: "INVALID_REFRESH_TOKEN" };
     }
 
-    // 🌟 ĐỒNG BỘ: Giữ nguyên thông tin idBranch khi tạo Access Token mới
     const newAccessToken = jwt.sign(
       {
         idUser: decoded.idUser,
@@ -138,12 +158,17 @@ export async function refresh(refreshToken) {
         idBranch: decoded.idBranch || null,
       },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" },
+      { expiresIn: ACCESS_TOKEN_EXPIRES_IN },
     );
 
-    return { accessToken: newAccessToken, expiresIn: 3600, role: decoded.role };
+    return {
+      accessToken: newAccessToken,
+      expiresIn: ACCESS_TOKEN_EXPIRES_IN_SECONDS,
+      role: decoded.role,
+    };
   } catch (err) {
-    throw { status: 403, message: "INVALID_REFRESH_TOKEN" };
+    // Nếu hết hạn 7 ngày hoặc token sai định dạng -> 401 kích hoạt Frontend Logout
+    throw { status: 401, message: err.message || "INVALID_REFRESH_TOKEN" };
   }
 }
 
@@ -229,7 +254,6 @@ export async function googleLogin(googleToken) {
     }
   }
 
-  // 🌟 NÂNG CẤP BẢO MẬT: Đính kèm idBranch cho tài khoản Google (Nếu phân quyền)
   const idBranch = await getBranchIdByUser(user);
 
   const tokenPayload = {
@@ -239,24 +263,12 @@ export async function googleLogin(googleToken) {
     idBranch: idBranch,
   };
 
-  const accessToken = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
-    expiresIn: "1h",
-  });
-  const refreshToken = jwt.sign(tokenPayload, process.env.JWT_REFRESH_SECRET, {
-    expiresIn: "7d",
-  });
-
-  await redisClient.set(
-    `refresh:${user.idUser}`,
-    refreshToken,
-    "EX",
-    7 * 24 * 60 * 60,
-  );
+  const { accessToken, refreshToken } = await issueTokens(tokenPayload, user.idUser);
 
   return {
     accessToken,
     refreshToken,
-    expiresIn: 3600,
+    expiresIn: ACCESS_TOKEN_EXPIRES_IN_SECONDS,
     user: {
       idUser: user.idUser,
       fullName: user.fullName,
@@ -284,7 +296,6 @@ export async function getMe(idUser) {
     throw error;
   }
 
-  // 🌟 ĐỒNG BỘ FRONTEND: Trả thêm dữ liệu idBranch về cho Client Context đồng nhất số liệu
   const idBranch = await getBranchIdByUser(user);
 
   return {

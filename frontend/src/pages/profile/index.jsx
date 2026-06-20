@@ -10,7 +10,7 @@ import { fetchCustomerGallery } from "~/services/customerGalleryService";
 const cx = classNames.bind(styles);
 
 function Profile() {
-  const { accessToken, setUser } = useAuth();
+ const { isLogin, setUser } = useAuth(); 
   const { showToast } = useToast();
 
   const [profile, setProfile] = useState(null);
@@ -36,12 +36,12 @@ function Profile() {
   });
 
   useEffect(() => {
-    if (!accessToken) return;
+    if (!isLogin) return;
 
     const fetchProfile = async () => {
       setLoading(true);
       try {
-        const res = await ProfileAPI.getProfile(accessToken);
+        const res = await ProfileAPI.getProfile();
         const userProfile = res.profile;
 
         setProfile(userProfile);
@@ -61,15 +61,15 @@ function Profile() {
     };
 
     fetchProfile();
-  }, [accessToken]);
+  }, [isLogin]);
 
   useEffect(() => {
-    if (!accessToken) return;
+    if (!isLogin) return;
 
     const loadGallery = async () => {
       setGalleryLoading(true);
       try {
-        const data = await fetchCustomerGallery(accessToken);
+        const data = await fetchCustomerGallery();
 
         const grouped = {};
         data.forEach((item) => {
@@ -97,7 +97,7 @@ function Profile() {
     };
 
     loadGallery();
-  }, [accessToken]);
+  }, [isLogin]);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -123,7 +123,7 @@ function Profile() {
       formData.append("phoneNumber", phoneNumber);
       if (avatarFile) formData.append("avatar", avatarFile);
 
-      const res = await ProfileAPI.updateProfile(accessToken, formData);
+      const res = await ProfileAPI.updateProfile(formData);
       const updatedProfile = res.profile || res;
 
       setProfile(updatedProfile);

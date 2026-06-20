@@ -1,81 +1,46 @@
-import axios from "axios";
+import * as request from "~/apis/configs/httpRequest";
 
-const API_URL = process.env.REACT_APP_API_BASE_URL + "/vouchers";
+const VOUCHER_URL = "/vouchers";
 
+// Không còn cần truyền token làm tham số — cookie (httpOnly) tự gửi kèm nhờ
+// withCredentials: true ở httpRequest.js.
+//
+// LƯU Ý: request.get/post/put/delete đã TỰ BÓC .data ra rồi (xem httpRequest.js),
+// nên kết quả trả về ở nơi gọi các hàm dưới đây giờ KHÔNG còn là object axios
+// đầy đủ — đọc thẳng res.xxx thay vì res.data.xxx.
 const voucherApi = {
   // ── ADMIN ──────────────────────────────────────────────────────────────────
-  getAll: (token) =>
-    axios.get(API_URL, {
-      headers: { Authorization: `Bearer ${token}` },
-    }),
+  getAll: () => request.get(VOUCHER_URL),
 
-  getById: (token, id) =>
-    axios.get(`${API_URL}/${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    }),
+  getById: (id) => request.get(`${VOUCHER_URL}/${id}`),
 
-  create: (token, data) =>
-    axios.post(API_URL, data, {
-      headers: { Authorization: `Bearer ${token}` },
-    }),
+  create: (data) => request.post(VOUCHER_URL, data),
 
-  update: (token, id, data) =>
-    axios.put(`${API_URL}/${id}`, data, {
-      headers: { Authorization: `Bearer ${token}` },
-    }),
+  update: (id, data) => request.put(`${VOUCHER_URL}/${id}`, data),
 
-  delete: (token, id) =>
-    axios.delete(`${API_URL}/${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    }),
+  delete: (id) => request.del(`${VOUCHER_URL}/${id}`),
 
   // ── CUSTOMER: Kho voucher ──────────────────────────────────────────────────
-  getMyVouchers: (token) =>
-    axios.get(`${API_URL}/customer/available`, {
-      headers: { Authorization: `Bearer ${token}` },
-    }),
+  getMyVouchers: () => request.get(`${VOUCHER_URL}/customer/available`),
 
-  getMyVoucherHistory: (token) =>
-    axios.get(`${API_URL}/customer/history`, {
-      headers: { Authorization: `Bearer ${token}` },
-    }),
+  getMyVoucherHistory: () => request.get(`${VOUCHER_URL}/customer/history`),
 
   // ── CUSTOMER: Campaign ─────────────────────────────────────────────────────
-  getActiveCampaigns: (token) =>
-    axios.get(`${API_URL}/customer/campaigns`, {
-      headers: { Authorization: `Bearer ${token}` },
-    }),
+  getActiveCampaigns: () => request.get(`${VOUCHER_URL}/customer/campaigns`),
 
-  collectCampaign: (token, voucherId) =>
-    axios.post(
-      `${API_URL}/customer/collect`,
-      { voucherId },
-      { headers: { Authorization: `Bearer ${token}` } },
-    ),
+  collectCampaign: (voucherId) =>
+    request.post(`${VOUCHER_URL}/customer/collect`, { voucherId }),
 
   // ── CUSTOMER: Đổi điểm ────────────────────────────────────────────────────
-  getExchangeableVouchers: (token) =>
-    axios.get(`${API_URL}/customer/exchangeable`, {
-      headers: { Authorization: `Bearer ${token}` },
-    }),
+  getExchangeableVouchers: () => request.get(`${VOUCHER_URL}/customer/exchangeable`),
 
-  exchangeVoucher: (token, voucherId) =>
-    axios.post(
-      `${API_URL}/customer/exchange`,
-      { voucherId },
-      { headers: { Authorization: `Bearer ${token}` } },
-    ),
-  getCustomerPoints: (token) =>
-    axios.get(`${API_URL}/customer/points`, {
-      headers: { Authorization: `Bearer ${token}` },
-    }),
+  exchangeVoucher: (voucherId) =>
+    request.post(`${VOUCHER_URL}/customer/exchange`, { voucherId }),
 
-  sendRetention: (token, voucherId, customerIds) =>
-    axios.post(
-      `${API_URL}/retention/issue`,
-      { voucherId, customerIds },
-      { headers: { Authorization: `Bearer ${token}` } },
-    ),
+  getCustomerPoints: () => request.get(`${VOUCHER_URL}/customer/points`),
+
+  sendRetention: (voucherId, customerIds) =>
+    request.post(`${VOUCHER_URL}/retention/issue`, { voucherId, customerIds }),
 };
 
 export default voucherApi;

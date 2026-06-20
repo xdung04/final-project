@@ -50,7 +50,7 @@ function useToast() {
   const ToastContainer = () =>
     toasts.length > 0
       ? createPortal(
-          <div style={{ position: "fixed", top: 16, right: 16, zIndex: 9999, display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ position: "fixed", top: 16, right: 16, zIndex: 9999, display: "flex", flexDirection: "column", gap: 8 ,color: "#1A1612",fontFamily: '"Merriweather", serif'}}>
             {toasts.map((t) => (
               <Toast key={t.id} type={t.type} message={t.message} />
             ))}

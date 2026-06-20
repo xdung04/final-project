@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { Film, UploadCloud, Loader2 } from "lucide-react"; // Thêm icons
 
 function VideoTayNghe() {
-  const { accessToken, user, loading: isAuthLoading } = useAuth();
+  const {  user, loading: isAuthLoading } = useAuth();
   const { showToast } = useToast();
   const [reels, setReels] = useState([]);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
@@ -39,7 +39,7 @@ function VideoTayNghe() {
     const loadReels = async () => {
       setLoading(true);
       try {
-        const data = await fetchReelsByBarberId(idBarber, 1, 20, accessToken);
+        const data = await fetchReelsByBarberId(idBarber, 1, 20);
         setReels(data);
       } catch (error) {
         console.error("Lỗi khi tải reels của Barber:", error);
@@ -49,7 +49,7 @@ function VideoTayNghe() {
       }
     };
     loadReels();
-  }, [idBarber, accessToken, isAuthLoading, showToast]);
+  }, [idBarber,isAuthLoading, showToast]);
 
   const toggleLike = (idReel, isLiked, likesCount) => {
     setReels((prev) =>
@@ -110,7 +110,7 @@ function VideoTayNghe() {
           onChangeVideo={(newIdx) => setCurrentIndex(newIdx)}
           onClose={() => setCurrentIndex(null)}
           onToggleLike={toggleLike}
-          token={accessToken}
+      
           globalMuted={globalMuted}
           onToggleGlobalMuted={() => setGlobalMuted((prev) => !prev)}
           fromReelPlayer={false}

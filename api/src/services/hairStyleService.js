@@ -1,7 +1,7 @@
 "use strict";
 import db from "../models/index.js";
 import slugify from "slugify";
-
+import cloudinary from "../config/cloudinary.js";
 const { Category, Hairstyle } = db;
 
 // ==========================================
@@ -12,6 +12,18 @@ const { Category, Hairstyle } = db;
  * Lấy danh sách toàn bộ danh mục đang hoạt động kèm các kiểu tóc đang hoạt động
  * Hệ thống tự lọc các mục có status là "Active"
  */
+const uploadToCloudinary = (buffer) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder: "hairstyles" },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result);
+      }
+    );
+    stream.end(buffer);
+  });
+};
 export const getActiveCategoriesWithHairstyles = async () => {
   return await Category.findAll({
     where: { status: "Active" },
@@ -157,36 +169,41 @@ export const adminGetAllHairstyles = async () => {
 /**
  * Admin thêm kiểu tóc mới
  */
-export const adminCreateHairstyle = async (data) => {
-  if (!data.name) throw new Error("Tên kiểu tóc không được để trống");
-  if (!data.idCategory) throw new Error("Vui lòng chọn danh mục cho kiểu tóc");
+export const adminCreateHairstyle = async (body, files) => {
+  // Upload 2 ảnh song song
+  const [coverImageResult, sideImageResult] = await Promise.all([
+    files?.coverImage?.[0] ? uploadToCloudinary(files.coverImage[0].buffer) : null,
+    files?.sideImage?.[0] ? uploadToCloudinary(files.sideImage[0].buffer) : null,
+  ]);
 
-  const slug = slugify(data.name, { lower: true, locale: "vi" });
-
-  const exist = await Hairstyle.findOne({ where: { slug } });
-  if (exist) throw new Error("Tên kiểu tóc này đã tồn tại trên hệ thống");
-
-  return await Hairstyle.create({ ...data, slug });
-};
-
-/**
- * Admin cập nhật kiểu tóc
- */
-export const adminUpdateHairstyle = async (idHairstyle, data) => {
-  const hairstyle = await Hairstyle.findByPk(idHairstyle);
-  if (!hairstyle) throw new Error("Không tìm thấy kiểu tóc cần chỉnh sửa");
-
-  const updateData = { ...data };
-  if (data.name && data.name !== hairstyle.name) {
-    updateData.slug = slugify(data.name, { lower: true, locale: "vi" });
-
-    const exist = await Hairstyle.findOne({ where: { slug: updateData.slug } });
-    if (exist && exist.idHairstyle !== idHairstyle) {
-      throw new Error("Tên kiểu tóc chỉnh sửa bị trùng với kiểu tóc khác");
-    }
+  if (!coverImageResult || !sideImageResult) {
+    throw new Error("Vui lòng upload đủ coverImage và sideImage");
   }
 
-  return await hairstyle.update(updateData);
+  return await db.Hairstyle.create({
+    ...body,
+    coverImage: coverImageResult.secure_url,
+    sideImage: sideImageResult.secure_url,
+  });
+};
+
+export const adminUpdateHairstyle = async (idHairstyle, body, files) => {
+  const hairstyle = await db.Hairstyle.findByPk(idHairstyle);
+  if (!hairstyle) throw new Error("Không tìm thấy kiểu tóc");
+
+  // Chỉ upload nếu có ảnh mới, không thì giữ URL cũ
+  const [coverImageResult, sideImageResult] = await Promise.all([
+    files?.coverImage?.[0] ? uploadToCloudinary(files.coverImage[0].buffer) : null,
+    files?.sideImage?.[0] ? uploadToCloudinary(files.sideImage[0].buffer) : null,
+  ]);
+
+  await hairstyle.update({
+    ...body,
+    coverImage: coverImageResult ? coverImageResult.secure_url : hairstyle.coverImage,
+    sideImage: sideImageResult ? sideImageResult.secure_url : hairstyle.sideImage,
+  });
+
+  return hairstyle;
 };
 
 /**
