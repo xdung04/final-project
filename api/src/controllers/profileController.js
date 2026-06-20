@@ -39,6 +39,7 @@ const getProfile = async (req, res) => {
       phoneNumber: plain.phoneNumber,
       image: plain.image,
       role: plain.role,
+      authProvider: plain.authProvider,
       createdAt: plain.createdAt,
       updatedAt: plain.updatedAt,
       profileDetail:
@@ -142,8 +143,37 @@ const updatePhone = async (req, res) => {
     });
   }
 };
+
+const changePassword = async (req,res)=>{
+   try{
+
+      const {
+        currentPassword,
+        newPassword
+      } = req.body;
+
+      const result =
+      await profileService.changePassword(
+          req.user.idUser,
+          currentPassword,
+          newPassword
+      );
+
+      return res.status(200).json(result);
+
+   }catch(err){
+
+      return res.status(
+        err.status || 500
+      ).json({
+         message: err.message
+      });
+
+   }
+}
 export default {
   getProfile,
   updateProfile,
   updatePhone,
+  changePassword,
 };
