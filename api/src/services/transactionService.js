@@ -3,35 +3,42 @@ import db from "../models/index.js";
 
 class TransactionService {
   /**
-   * Lấy danh sách giao dịch cho Lễ tân theo Chi nhánh (Mặc định là ngày hôm nay)
+   * Helper xử lý khoảng thời gian (Từ dateFrom đến hết ngày hôm nay)
    */
-  async getTransactionsForReceptionist({ idBranch, search, dateFrom, dateTo, statusFilter, methodFilter, page, limit }) {
+_buildDateCondition(dateFrom) {
+  // Lấy thời mốc hiện tại theo múi giờ VN
+  const nay = new Date();
+  
+  // Tạo mốc kết thúc là 23:59:59 ngày hôm nay (Tính theo giờ VN)
+  const endOfToday = new Date(nay.getFullYear(), nay.getMonth(), nay.getDate(), 23, 59, 59, 999);
+
+  if (!dateFrom) {
+    // Mặc định: Lấy từ 00:00:00 hôm nay -> 23:59:59 hôm nay
+    const startOfToday = new Date(nay.getFullYear(), nay.getMonth(), nay.getDate(), 0, 0, 0, 0);
+    return {
+      [Op.between]: [startOfToday, endOfToday]
+    };
+  } else {
+    // Nếu có dateFrom (Dạng chuỗi "YYYY-MM-DD" từ frontend gửi lên)
+    const [year, month, day] = dateFrom.split("-").map(Number);
+    // Tạo mốc từ 00:00:00 của ngày được chọn
+    const startOfSelectedDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+    
+    return {
+      [Op.between]: [startOfSelectedDate, endOfToday]
+    };
+  }
+}
+
+  /**
+   * Lấy danh sách giao dịch cho Lễ tân theo Chi nhánh
+   */
+  async getTransactionsForReceptionist({ idBranch, search, dateFrom, statusFilter, methodFilter, page, limit }) {
     const offset = (page - 1) * limit;
     const bookingWhere = {};
 
-    // 🌟 ĐỒNG BỘ MÚI GIỜ: Nếu không chọn bộ lọc, ép về ngày hôm nay bằng DATE_FORMAT của MySQL
-    if (!dateFrom && !dateTo && !search) { 
-      const today = new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Ho_Chi_Minh" }); // "2026-05-13"
-      
-      // Tạo điều kiện: WHERE DATE_FORMAT(bookingDate, '%Y-%m-%d') = '2026-05-13'
-      bookingWhere[Op.and] = [
-        db.sequelize.where(
-          fn("DATE_FORMAT", col("bookingDate"), "%Y-%m-%d"),
-          today
-        )
-      ];
-    } else {
-      // Nếu có chọn bộ lọc ngày cụ thể từ giao diện
-      if (dateFrom || dateTo) {
-        if (dateFrom && dateTo) {
-          bookingWhere.bookingDate = { [Op.between]: [`${dateFrom} 00:00:00`, `${dateTo} 23:59:59`] };
-        } else if (dateFrom) {
-          bookingWhere.bookingDate = { [Op.gte]: `${dateFrom} 00:00:00` };
-        } else if (dateTo) {
-          bookingWhere.bookingDate = { [Op.lte]: `${dateTo} 23:59:59` };
-        }
-      }
-    }
+    // 🌟 Áp dụng logic thời gian mới
+    bookingWhere.bookingDate = this._buildDateCondition(dateFrom);
 
     // Lọc theo trạng thái
     if (statusFilter && statusFilter !== "all") {
@@ -55,14 +62,18 @@ class TransactionService {
       }
     }
 
-    // Tách riêng đếm để tăng tốc độ
+    // Tách riêng đếm & tối ưu hóa include
     const count = await db.Booking.count({
       where: bookingWhere,
       include: [
         {
           model: db.Customer,
-          required: search && isNaN(search) ? true : false,
-          include: [{ model: db.User, as: "user", where: userCustomerWhere }]
+          required: !!(search && isNaN(search)),
+          include: [{ 
+            model: db.User, 
+            as: "user", 
+            where: Object.keys(userCustomerWhere).length ? userCustomerWhere : undefined 
+          }]
         },
         {
           model: db.Barber,
@@ -101,7 +112,6 @@ class TransactionService {
       ]
     });
 
-    // Mapping dữ liệu cho Frontend
     const transactions = rows.map((b) => ({
       id: b.idBooking,
       customer: b.Customer?.user?.fullName || "Khách vãng lai",
@@ -122,31 +132,22 @@ class TransactionService {
   }
 
   /**
-   * Thống kê tài chính cho Lễ tân tại Chi nhánh
+   * Thống kê tài chính cho Lễ tân tại Chi nhánh (Đồng bộ bộ lọc)
    */
-  async getStatsForReceptionist(idBranch, { dateFrom, dateTo, search } = {}) {
+  async getStatsForReceptionist(idBranch, { dateFrom, search, statusFilter, methodFilter } = {}) {
     const bookingWhere = {};
 
-    // 🌟 ĐỒNG BỘ: Ép tính toán thống kê ngày hôm nay bằng DATE_FORMAT
-    if (!dateFrom && !dateTo && !search) {
-      const today = new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Ho_Chi_Minh" });
-      
-      bookingWhere[Op.and] = [
-        db.sequelize.where(
-          fn("DATE_FORMAT", col("bookingDate"), "%Y-%m-%d"),
-          today
-        )
-      ];
-    } else {
-      if (dateFrom || dateTo) {
-        if (dateFrom && dateTo) {
-          bookingWhere.bookingDate = { [Op.between]: [`${dateFrom} 00:00:00`, `${dateTo} 23:59:59`] };
-        } else if (dateFrom) {
-          bookingWhere.bookingDate = { [Op.gte]: `${dateFrom} 00:00:00` };
-        } else if (dateTo) {
-          bookingWhere.bookingDate = { [Op.lte]: `${dateTo} 23:59:59` };
-        }
-      }
+    // 🌟 Sử dụng chung hàm xử lý ngày để đảm bảo đồng bộ
+    bookingWhere.bookingDate = this._buildDateCondition(dateFrom);
+
+    // Đồng bộ thêm các bộ lọc từ frontend nếu có
+    if (methodFilter && methodFilter !== "all") {
+      const methodMap = { cash: "Cash", transfer: "Transfer" };
+      bookingWhere.paymentMethod = methodMap[methodFilter];
+    }
+    
+    if (search && !isNaN(search)) {
+      bookingWhere.idBooking = Number(search);
     }
 
     const [stats, cancelCount] = await Promise.all([
@@ -157,6 +158,7 @@ class TransactionService {
           [fn("SUM", literal("CASE WHEN paymentMethod = 'Cash' THEN total ELSE 0 END")), "cashRev"],
           [fn("SUM", literal("CASE WHEN paymentMethod = 'Transfer' THEN total ELSE 0 END")), "transRev"]
         ],
+        // Giữ nguyên tính toán doanh thu cho đơn "Completed"
         where: { ...bookingWhere, status: "Completed" },
         include: [{
           model: db.Barber,
@@ -168,6 +170,7 @@ class TransactionService {
         raw: true
       }),
       db.Booking.count({
+        // Giữ nguyên đếm số đơn "Cancelled"
         where: { ...bookingWhere, status: "Cancelled" },
         include: [{
           model: db.Barber,

@@ -3,7 +3,7 @@
 import db from "../models/index.js";
 import { fn, col, Op } from "sequelize";
 import { createNotification } from "./notificationService.js";
-
+import moment from "moment"
 // ═══════════════════════════════════════════════════════════════════════════
 // HELPER: Tính lại deductions + netSalary từ bảng salary_deductions
 // Dùng chung cho addDeduction và removeDeduction
@@ -47,16 +47,19 @@ const buildContractWhereForMonth = (month, year) => {
 export const calculateRealtimeSalaries = async (month, year) => {
   const startDate = new Date(year, month - 1, 1);
   const endDate   = new Date(year, month, 1);
-
-  // ✅ Lấy idBarber đã có SETTLEMENT tháng này → skip
+ 
+  // Tổng số ngày trong tháng (VD: tháng 6 = 30, tháng 1 = 31)
+  const totalDaysInMonth = new Date(year, month, 0).getDate();
+ 
+  // ── Lấy idBarber đã có SETTLEMENT tháng này → skip ──
   const settlements = await db.Salary.findAll({
     where: { month, year, calculationType: "SETTLEMENT" },
     attributes: ["idBarber"],
     raw: true,
   });
   const settledBarberIds = new Set(settlements.map((s) => s.idBarber));
-
-  // ── BƯỚC 1: Lấy Thống Kê ──
+ 
+  // ── BƯỚC 1: Lấy thống kê doanh thu / tip / customer ──
   const stats = await db.Barber.findAll({
     attributes: [
       "idBarber",
@@ -78,7 +81,7 @@ export const calculateRealtimeSalaries = async (month, year) => {
     group: ["Barber.idBarber"],
     raw: true,
   });
-
+ 
   const statsMap = {};
   stats.forEach((s) => {
     statsMap[s.idBarber] = {
@@ -87,14 +90,14 @@ export const calculateRealtimeSalaries = async (month, year) => {
       customerCount:  parseInt(s.customerCount    || 0),
     };
   });
-
-  // ── BƯỚC 2: Lấy Thợ + Hợp đồng ──
+ 
+  // ── BƯỚC 2: Lấy thợ + hợp đồng ──
   const whereBarber = settledBarberIds.size > 0
     ? { idBarber: { [Op.notIn]: [...settledBarberIds] } }
     : {};
-
+ 
   const barbers = await db.Barber.findAll({
-    where: whereBarber, // ✅ Loại bỏ barber đã có SETTLEMENT
+    where: whereBarber,
     include: [
       {
         model: db.User,
@@ -129,75 +132,101 @@ export const calculateRealtimeSalaries = async (month, year) => {
       },
     ],
   });
-
-  // ── BƯỚC 3: Tính lương từng thợ ── (giữ nguyên)
-  return barbers.map((b) => {
-    const bStats         = statsMap[b.idBarber] || { serviceRevenue: 0, tipAmount: 0, customerCount: 0 };
-    const serviceRevenue = bStats.serviceRevenue;
-    const tipAmount      = bStats.tipAmount;
-    const customerCount  = bStats.customerCount;
-    const averageRating  = b.ratingSummary ? parseFloat(b.ratingSummary.avgRate || 0) : 0;
-
-    let baseSalary = 0;
-    let commission = 0;
-    let bonus      = 0;
-
-    const contract = b.contracts?.[0] || null;
-    if (contract) {
-      baseSalary = parseFloat(contract.actualBaseSalary || 0);
-
-      const plan = contract.plan;
-      if (plan) {
-        if (plan.commissionRules?.length > 0) {
-          const matched = plan.commissionRules.find(
-            (r) =>
-              serviceRevenue >= parseFloat(r.minRevenueStep) &&
-              (r.maxRevenueStep == null || serviceRevenue <= parseFloat(r.maxRevenueStep))
-          );
-          if (matched) commission = serviceRevenue * (parseFloat(matched.commissionRate) / 100);
-        }
-
-        if (plan.bonusRules?.length > 0) {
-          plan.bonusRules.forEach((rule) => {
-            if (
-              customerCount >= rule.minCustomerCount &&
-              averageRating >= parseFloat(rule.minAverageRating)
-            ) {
-              bonus += parseFloat(rule.rewardAmount);
-            }
-          });
+ 
+  // ── BƯỚC 3: Tính lương từng thợ — dùng Promise.all để await ngày nghỉ ──
+  return Promise.all(
+    barbers.map(async (b) => {
+      const bStats         = statsMap[b.idBarber] || { serviceRevenue: 0, tipAmount: 0, customerCount: 0 };
+      const serviceRevenue = bStats.serviceRevenue;
+      const tipAmount      = bStats.tipAmount;
+      const customerCount  = bStats.customerCount;
+      const averageRating  = b.ratingSummary ? parseFloat(b.ratingSummary.avgRate || 0) : 0;
+ 
+      let baseSalary = 0;
+      let commission = 0;
+      let bonus      = 0;
+ 
+      const contract = b.contracts?.[0] || null;
+      if (contract) {
+        baseSalary = parseFloat(contract.actualBaseSalary || 0);
+ 
+        const plan = contract.plan;
+        if (plan) {
+          // Tính hoa hồng theo bậc doanh thu
+          if (plan.commissionRules?.length > 0) {
+            const matched = plan.commissionRules.find(
+              (r) =>
+                serviceRevenue >= parseFloat(r.minRevenueStep) &&
+                (r.maxRevenueStep == null || serviceRevenue <= parseFloat(r.maxRevenueStep))
+            );
+            if (matched) commission = serviceRevenue * (parseFloat(matched.commissionRate) / 100);
+          }
+ 
+          // Tính thưởng KPI theo số khách + rating
+          if (plan.bonusRules?.length > 0) {
+            plan.bonusRules.forEach((rule) => {
+              if (
+                customerCount >= rule.minCustomerCount &&
+                averageRating >= parseFloat(rule.minAverageRating)
+              ) {
+                bonus += parseFloat(rule.rewardAmount);
+              }
+            });
+          }
         }
       }
-    }
-
-    const totalSalary = baseSalary + commission + tipAmount + bonus;
-
-    return {
-      idBarber:       b.idBarber,
-      idUser:         b.user?.idUser,
-      barberName:     b.user?.fullName || "N/A",
-      branchName:     b.branch?.name  || "",
-      month,
-      year,
-      customerCount,
-      averageRating,
-      serviceRevenue,
-      baseSalary,
-      commission,
-      tip:            tipAmount,
-      bonus,
-      totalSalary,
-      idSalary:       null,
-      deductions:     0,
-      netSalary:      totalSalary,
-      DeductionsList: [],
-      status:         "Realtime",
-      disputeCount:   0,
-      disputeReason:  null,
-      deadlineAt:     null,
-      paidAmount:     0,
-    };
-  });
+ 
+      // ── Tính khấu trừ ngày nghỉ ──────────────────────────────────────────
+      // Công thức: (baseSalary / totalDaysInMonth) * workingDays
+      const dayOffDays  = await calcDayOffDays(b.idBarber, month, year);
+      const workingDays = Math.max(totalDaysInMonth - dayOffDays, 0);
+ 
+      const effectiveBase   = dayOffDays > 0
+        ? Math.round((baseSalary / totalDaysInMonth) * workingDays)
+        : baseSalary;
+      const dayOffDeduction = baseSalary - effectiveBase;
+ 
+      // Tổng lương thực nhận
+      const totalSalary = effectiveBase + commission + tipAmount + bonus;
+ 
+      return {
+        idBarber:           b.idBarber,
+        idUser:             b.user?.idUser,
+        barberName:         b.user?.fullName || "N/A",
+        branchName:         b.branch?.name  || "",
+        month,
+        year,
+        customerCount,
+        averageRating,
+        serviceRevenue,
+ 
+        // ── Thông tin ngày công ──
+        totalDaysInMonth,           // tổng ngày trong tháng
+        dayOffDays,                 // số ngày nghỉ
+        workingDays,                // số ngày đi làm thực tế
+ 
+        // ── Lương ──
+        originalBaseSalary: baseSalary,     // lương cứng gốc hợp đồng (để đối chiếu)
+        baseSalary:         effectiveBase,  // lương cứng sau khi trừ ngày nghỉ
+        dayOffDeduction,                    // số tiền bị trừ do nghỉ
+        commission,
+        tip:                tipAmount,
+        bonus,
+        totalSalary,
+ 
+        // ── Fields DB/UI ──
+        idSalary:      null,
+        deductions:    dayOffDeduction,  // hiển thị ngay trên UI realtime
+        netSalary:     totalSalary,
+        DeductionsList: [],
+        status:        "Realtime",
+        disputeCount:  0,
+        disputeReason: null,
+        deadlineAt:    null,
+        paidAmount:    0,
+      };
+    })
+  );
 };
  
 // ═══════════════════════════════════════════════════════════════════════════
@@ -294,53 +323,74 @@ export const createDraftSalaries = async (month, year) => {
   const today        = new Date();
   const currentMonth = today.getMonth() + 1;
   const currentYear  = today.getFullYear();
-
+ 
   if (year > currentYear || (year === currentYear && month >= currentMonth)) {
     throw new Error("Không thể tính lương cho tháng hiện tại hoặc tương lai!");
   }
-
+ 
   const existing = await db.Salary.findAll({ where: { month, year } });
   if (existing.length > 0) throw new Error("Tháng này đã tính lương rồi! Không thể tính lại.");
-
-  // ✅ Lấy idBarber đã có SETTLEMENT tháng này → skip
+ 
+  // ── Lấy idBarber đã có SETTLEMENT tháng này → skip ──
   const settlements = await db.Salary.findAll({
     where: { month, year, calculationType: "SETTLEMENT" },
     attributes: ["idBarber"],
     raw: true,
   });
   const settledBarberIds = new Set(settlements.map((s) => s.idBarber));
-
+ 
+  // calculateRealtimeSalaries đã tính sẵn dayOffDeduction bên trong
   const realtimeData = await calculateRealtimeSalaries(month, year);
-
-  // ✅ Lọc bỏ barber đã có SETTLEMENT
+ 
+  // Lọc bỏ barber đã có SETTLEMENT
   const filteredData = realtimeData.filter((s) => !settledBarberIds.has(s.idBarber));
-
+ 
   if (filteredData.length === 0) {
     throw new Error("Không có thợ nào cần tính lương MONTHLY tháng này.");
   }
-
+ 
   const transaction = await db.sequelize.transaction();
   try {
-    const salariesToCreate = filteredData.map((s) => ({
-      idBarber:        s.idBarber,
-      month,
-      year,
-      calculationType: "MONTHLY", // ✅ Thêm calculationType
-      serviceRevenue:  s.serviceRevenue,
-      baseSalary:      s.baseSalary,
-      commission:      s.commission,
-      tips:            s.tip,
-      bonus:           s.bonus,
-      totalSalary:     s.baseSalary + s.commission + s.tip + s.bonus,
-      deductions:      0,
-      netSalary:       s.baseSalary + s.commission + s.tip + s.bonus,
-      status:          "Draft",
-      disputeCount:    0,
-    }));
-
+    const salariesToCreate = filteredData.map((s) => {
+      // baseSalary lúc này đã là effectiveBase (đã trừ ngày nghỉ)
+      const grossSalary = s.baseSalary + s.commission + s.tip + s.bonus;
+      const netSalary   = grossSalary; // deductions thủ công sẽ được cộng thêm sau qua DeductionModal
+ 
+      return {
+        idBarber:           s.idBarber,
+        month,
+        year,
+        calculationType:    "MONTHLY",
+        serviceRevenue:     s.serviceRevenue,
+ 
+        // Lưu lương cứng gốc để thợ đối chiếu khi khiếu nại
+        originalBaseSalary: s.originalBaseSalary,
+ 
+        // Lưu thông tin ngày công để hiển thị trong phiếu lương
+        totalDaysInMonth:   s.totalDaysInMonth,
+        dayOffDays:         s.dayOffDays,
+        workingDays:        s.workingDays,
+ 
+        // effectiveBase = (originalBaseSalary / totalDaysInMonth) * workingDays
+        baseSalary:         s.baseSalary,
+        commission:         s.commission,
+        tips:               s.tip,
+        bonus:              s.bonus,
+        totalSalary:        grossSalary,
+ 
+        // dayOffDeduction lưu riêng, cộng thêm deductions thủ công sau
+        dayOffDeduction:    s.dayOffDeduction,
+        deductions:         s.dayOffDeduction, // khấu trừ ban đầu = tiền nghỉ
+ 
+        netSalary,
+        status:          "Draft",
+        disputeCount:    0,
+      };
+    });
+ 
     await db.Salary.bulkCreate(salariesToCreate, { transaction });
     await transaction.commit();
-
+ 
     return { success: true, count: salariesToCreate.length };
   } catch (err) {
     await transaction.rollback();
@@ -523,7 +573,6 @@ export const getMyPayslips = async (idBarber) => {
         as: "DeductionsList",
         where: { deletedAt: null },
         required: false,
-        // 🆕 Thêm violationDate để frontend hiển thị ngày vi phạm
         attributes: ["idDeduction", "amount", "reason", "violationDate", "createdAt"],
       },
     ],
@@ -534,7 +583,9 @@ export const getMyPayslips = async (idBarber) => {
     salaries.map(async (salary) => {
       const startDate = new Date(salary.year, salary.month - 1, 1);
       const endDate   = new Date(salary.year, salary.month,     1);
+      const monthEnd  = new Date(salary.year, salary.month,     0); // ngày cuối tháng
 
+      // ── Bookings ──────────────────────────────────────────────────────────
       const bookings = await db.Booking.findAll({
         where: {
           idBarber: salary.idBarber,
@@ -561,8 +612,41 @@ export const getMyPayslips = async (idBarber) => {
         order: [["bookingDate", "ASC"]],
       });
 
+      // ── Lịch nghỉ trong tháng — clamp về đúng biên tháng ─────────────────
+      const dayOffs = await db.BarberDayOff.findAll({
+        where: {
+          idBarber,
+          startDate: { [Op.lte]: monthEnd  },
+          endDate:   { [Op.gte]: startDate },
+        },
+        attributes: ["idUnavailable", "startDate", "endDate", "reason"],
+        order: [["startDate", "ASC"]],
+        raw: true,
+      });
+
+      // Map lại để trả về ngày đã clamp + số ngày nghỉ thực tế trong tháng
+      const dayOffList = dayOffs.map((d) => {
+        const clampedStart = new Date(Math.max(new Date(d.startDate), startDate));
+        const clampedEnd   = new Date(Math.min(new Date(d.endDate),   monthEnd));
+        const days = Math.floor((clampedEnd - clampedStart) / 86_400_000) + 1;
+
+        return {
+          idUnavailable: d.idUnavailable,
+          startDate:     d.startDate,   // ngày gốc (để hiển thị)
+          endDate:       d.endDate,
+          reason:        d.reason || null,
+          daysInMonth:   days,           // số ngày nghỉ thực tế tính trong tháng này
+        };
+      });
+
       return {
         ...salary.get({ plain: true }),
+
+        // ── Thông tin ngày công ──
+        dayOffList,                                              // chi tiết từng đợt nghỉ
+        totalDayOffDays: dayOffList.reduce((s, d) => s + d.daysInMonth, 0), // tổng ngày nghỉ
+
+        // ── Lịch sử booking ──
         workHistory: bookings.map((b) => ({
           idBooking:    b.idBooking,
           date:         b.bookingDate,
@@ -632,203 +716,35 @@ export const disputePayslipByBarber = async (idSalary, idBarber, reason) => {
 
   return salary;
 };
-// salaryService.js — THÊM HÀM NÀY
 
-export const calculateSettlement = async (idContract, deductions = []) => {
-  const t = await db.sequelize.transaction();
-  try {
-    // ── BƯỚC 1: Lấy HĐ + Plan + Barber ──────────────────────────────────
-    const contract = await db.SalaryContract.findByPk(idContract, {
-      include: [
-        {
-          model: db.CompensationPlan,
-          as: "plan",
-          include: [
-            { model: db.CommissionRule, as: "commissionRules" },
-            { model: db.BonusRule,      as: "bonusRules" },
-          ],
-        },
-      ],
-      transaction: t,
-    });
+const calcDayOffDays = async (idBarber, month, year) => {
+  const monthStart = new Date(year, month - 1, 1);
+  const monthEnd   = new Date(year, month, 0); // ngày cuối tháng
 
-    if (!contract) throw new Error("Không tìm thấy hợp đồng.");
-    if (contract.status !== "active") throw new Error("Hợp đồng không còn active.");
-    if (!contract.endDate) throw new Error("Hợp đồng chưa có endDate, vui lòng thiết lập ngày nghỉ trước.");
+  // ✅ Chỉ đếm những ngày đã thực sự qua
+  // Tháng đã qua   → effectiveEnd = monthEnd   (không đổi gì)
+  // Tháng hiện tại → effectiveEnd = today       (bỏ ngày nghỉ tương lai)
+  const todayDate  = new Date();
+  todayDate.setHours(0, 0, 0, 0);
+  const effectiveEnd = new Date(Math.min(monthEnd, todayDate));
 
-    const { idBarber, actualBaseSalary, endDate, plan } = contract;
-
-    // ── BƯỚC 2: Xác định khoảng thời gian tính lương ─────────────────────
-    const endMoment      = moment(endDate);
-    const month          = endMoment.month() + 1;         // tháng của endDate
-    const year           = endMoment.year();
-    const firstDayOfMonth = moment(`${year}-${month}`, "YYYY-M").startOf("month");
-    const daysInMonth    = endMoment.daysInMonth();
-    const daysWorked     = endMoment.diff(firstDayOfMonth, "days") + 1; // tính cả ngày cuối
-
-    // ── BƯỚC 3: Kiểm tra chưa có Salary SETTLEMENT tháng này ─────────────
-    const existingSettlement = await db.Salary.findOne({
-      where: { idBarber, month, year, calculationType: "SETTLEMENT" },
-      transaction: t,
-    });
-    if (existingSettlement) {
-      throw new Error(`Barber này đã có phiếu quyết toán tháng ${month}/${year} rồi.`);
-    }
-
-    // ── BƯỚC 4: Lấy doanh thu, tips, số khách từ ngày 1 → endDate ────────
-    const startDate = firstDayOfMonth.toDate();
-    const endDateObj = endMoment.toDate();
-
-    const revenueData = await db.Barber.findOne({
-      where: { idBarber },
-      attributes: [
-        [fn("COALESCE", fn("SUM", col("Bookings.BookingDetails.price")), 0), "serviceRevenue"],
-        [fn("COALESCE", fn("SUM", col("Bookings.BookingTip.tipAmount")),   0), "tipAmount"],
-        [fn("COUNT",    fn("DISTINCT", col("Bookings.idBooking"))),            "customerCount"],
-      ],
-      include: [{
-        model: db.Booking,
-        as: "Bookings",
-        required: false,
-        where: {
-          isPaid:      true,
-          bookingDate: { [Op.gte]: startDate, [Op.lte]: endDateObj },
-        },
-        attributes: [],
-        include: [
-          { model: db.BookingDetail, as: "BookingDetails", attributes: [] },
-          { model: db.BookingTip,    as: "BookingTip",     attributes: [] },
-        ],
-      }],
-      raw: true,
-      transaction: t,
-    });
-
-    const serviceRevenue = parseFloat(revenueData?.serviceRevenue || 0);
-    const tipAmount      = parseFloat(revenueData?.tipAmount      || 0);
-    const customerCount  = parseInt(revenueData?.customerCount    || 0);
-
-    // ── BƯỚC 5: Lấy rating trung bình ────────────────────────────────────
-    const ratingSummary = await db.BarberRatingSummary.findOne({
-      where: { idBarber },
-      transaction: t,
-    });
-    const averageRating = parseFloat(ratingSummary?.avgRate || 0);
-
-    // ── BƯỚC 6: Tính lương ────────────────────────────────────────────────
-    // Lương cứng theo tỷ lệ ngày
-    const baseSalary = (parseFloat(actualBaseSalary) / daysInMonth) * daysWorked;
-
-    // Hoa hồng bậc thang — 100% doanh thu từ ngày 1 → endDate
-    let commission = 0;
-    if (plan?.commissionRules?.length > 0) {
-      const matched = plan.commissionRules.find(
-        (r) =>
-          serviceRevenue >= parseFloat(r.minRevenueStep) &&
-          (r.maxRevenueStep == null || serviceRevenue <= parseFloat(r.maxRevenueStep))
-      );
-      if (matched) commission = serviceRevenue * (parseFloat(matched.commissionRate) / 100);
-    }
-
-    // Thưởng KPI — vẫn tính nếu đạt
-    let bonus = 0;
-    if (plan?.bonusRules?.length > 0) {
-      plan.bonusRules.forEach((rule) => {
-        if (
-          customerCount >= rule.minCustomerCount &&
-          averageRating >= parseFloat(rule.minAverageRating)
-        ) {
-          bonus += parseFloat(rule.rewardAmount);
-        }
-      });
-    }
-
-    const totalSalary = baseSalary + commission + tipAmount + bonus;
-
-    // ── BƯỚC 7: Tạo Salary SETTLEMENT ────────────────────────────────────
-    const salary = await db.Salary.create(
-      {
-        idBarber,
-        idContract,
-        month,
-        year,
-        calculationType: "SETTLEMENT",
-        daysWorked,
-        serviceRevenue,
-        baseSalary:      Math.round(baseSalary),
-        commission:      Math.round(commission),
-        tips:            tipAmount,
-        bonus:           Math.round(bonus),
-        totalSalary:     Math.round(totalSalary),
-        deductions:      0,
-        netSalary:       Math.round(totalSalary),
-        status:          "Paid", // Quyết toán → Paid ngay
-        disputeCount:    0,
-      },
-      { transaction: t }
-    );
-
-    // ── BƯỚC 8: Tạo SalaryDeduction records ──────────────────────────────
-    if (deductions.length > 0) {
-      await db.SalaryDeduction.bulkCreate(
-        deductions.map((d) => ({
-          idSalary:      salary.idSalary,
-          amount:        Number(d.amount),
-          reason:        d.reason?.trim(),
-          violationDate: d.violationDate || null,
-        })),
-        { transaction: t }
-      );
-
-      // Tính lại deductions + netSalary sau khi tạo xong
-      const totalDeductions = deductions.reduce((sum, d) => sum + Number(d.amount), 0);
-      const netSalary       = Math.round(totalSalary) - totalDeductions;
-
-      await salary.update(
-        { deductions: totalDeductions, netSalary },
-        { transaction: t }
-      );
-    }
-
-    // ── BƯỚC 9: Đóng HĐ + Khóa Barber ────────────────────────────────────
-    await contract.update(
-      { status: "terminated" },
-      { transaction: t }
-    );
-
-    await db.Barber.update(
-      { isLocked: true },
-      { where: { idBarber }, transaction: t }
-    );
-
-    await t.commit();
-
-    // ── BƯỚC 10: Notify barber (sau commit) ───────────────────────────────
-    const { notifySettlementDone } = await import("./notificationService.js");
-    await notifySettlementDone({
+  const dayOffs = await db.BarberDayOff.findAll({
+    where: {
       idBarber,
-      netSalary: salary.netSalary,
-      idSalary:  salary.idSalary,
-    });
+      startDate: { [Op.lte]: effectiveEnd }, // ← dùng effectiveEnd thay monthEnd
+      endDate:   { [Op.gte]: monthStart    },
+    },
+    attributes: ["startDate", "endDate"],
+    raw: true,
+  });
 
-    return {
-      salary,
-      summary: {
-        month,
-        year,
-        daysWorked,
-        daysInMonth,
-        baseSalary:   Math.round(baseSalary),
-        commission:   Math.round(commission),
-        tips:         tipAmount,
-        bonus:        Math.round(bonus),
-        totalSalary:  Math.round(totalSalary),
-        deductions:   salary.deductions,
-        netSalary:    salary.netSalary,
-      },
-    };
-  } catch (error) {
-    await t.rollback();
-    throw error;
+  let totalDayOff = 0;
+  for (const d of dayOffs) {
+    const clampedStart = new Date(Math.max(new Date(d.startDate), monthStart));
+    const clampedEnd   = new Date(Math.min(new Date(d.endDate), effectiveEnd)); // ← clamp luôn
+    const days = Math.floor((clampedEnd - clampedStart) / 86_400_000) + 1;
+    if (days > 0) totalDayOff += days;
   }
+
+  return totalDayOff;
 };

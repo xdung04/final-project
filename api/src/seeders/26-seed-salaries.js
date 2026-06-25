@@ -1,8 +1,37 @@
 "use strict";
 
 // ════════════════════════════════════════════════════════════════════════════
-// FILE 09 — salaries (FIX CHUẨN TIMELINE: GIỮA THÁNG 5 KHÔNG CÓ DATA LƯƠNG)
+// FILE 10 — salaries (chạy SAU barber_day_offs)
+//
+// Flow:
+//   1. Query barber_day_offs → tính daysOff cho từng tháng
+//   2. baseSalaryActual = baseSalary / daysInMonth * daysWorked
+//   3. netSalary = baseSalaryActual + commission + tips + bonus - deductions
+//
+// Điều kiện lên cấp (giảm xuống chỉ 2 thợ đủ):
+//   Junior → Senior: rev >= 30tr/tháng, >= 6 tháng ở level, 3 tháng liên tiếp đạt
+//   Senior → Master: rev >= 50tr/tháng, >= 12 tháng ở level, 3 tháng liên tiếp đạt
+//   → Chỉ barber 39 (Junior→Senior) và barber 47 (Senior→Master) đủ điều kiện
+//   → Các thợ khác thiếu doanh thu HOẶC thiếu thâm niên
 // ════════════════════════════════════════════════════════════════════════════
+
+function daysInMonthFn(year, month) {
+  return new Date(year, month, 0).getDate();
+}
+
+function countDaysOffInMonth(dayOffs, idBarber, year, month) {
+  const firstDay = new Date(year, month - 1, 1);
+  const lastDay  = new Date(year, month - 1, daysInMonthFn(year, month));
+
+  return dayOffs
+    .filter((d) => Number(d.idBarber) === idBarber)
+    .reduce((total, d) => {
+      const s = new Date(d.startDate) < firstDay ? firstDay : new Date(d.startDate);
+      const e = new Date(d.endDate)   > lastDay  ? lastDay  : new Date(d.endDate);
+      if (s > e) return total;
+      return total + Math.round((e - s) / 86400000) + 1;
+    }, 0);
+}
 
 function calcCommission(rev, planType) {
   const RATES = {
@@ -11,9 +40,7 @@ function calcCommission(rev, planType) {
     master:     [{ max: 20_000_000, rate: 0.12 }, { max: 40_000_000, rate: 0.15 }, { max: Infinity, rate: 0.18 }],
     junior2024: [{ max: 20_000_000, rate: 0.07 }, { max: 40_000_000, rate: 0.09 }, { max: Infinity, rate: 0.11 }],
   };
-  let commission = 0;
-  let remaining  = rev;
-  let prev       = 0;
+  let commission = 0, remaining = rev, prev = 0;
   for (const { max, rate } of RATES[planType]) {
     if (remaining <= 0) break;
     const chunk = max === Infinity ? remaining : Math.min(remaining, max - prev);
@@ -24,67 +51,21 @@ function calcCommission(rev, planType) {
   return Math.round(commission);
 }
 
-const BARBER_BONUS_PROFILE = {
-  36: { customerCount: 170, avgRating: 4.85, bonus: 1_500_000 },
-  46: { customerCount: 172, avgRating: 4.83, bonus: 1_500_000 },
-  56: { customerCount: 168, avgRating: 4.87, bonus: 1_500_000 },
-  37: { customerCount: 130, avgRating: 4.75, bonus: 1_000_000 },
-  47: { customerCount: 132, avgRating: 4.78, bonus: 1_000_000 },
-  57: { customerCount: 128, avgRating: 4.72, bonus: 1_000_000 },
-  38: { customerCount: 155, avgRating: 4.82, bonus: 1_500_000 },
-  48: { customerCount: 157, avgRating: 4.85, bonus: 1_500_000 },
-  58: { customerCount: 153, avgRating: 4.80, bonus: 1_500_000 },
-  66: { customerCount: 125, avgRating: 4.73, bonus: 1_000_000 },
-  39: { customerCount: 100, avgRating: 4.60, bonus: 500_000 },
-  40: { customerCount: 102, avgRating: 4.62, bonus: 500_000 },
-  41: { customerCount:  98, avgRating: 4.58, bonus: 500_000 },
-  42: { customerCount:  95, avgRating: 4.55, bonus: 500_000 },
-  49: { customerCount: 105, avgRating: 4.65, bonus: 500_000 },
-  50: { customerCount: 100, avgRating: 4.60, bonus: 500_000 },
-  51: { customerCount:  96, avgRating: 4.57, bonus: 500_000 },
-  52: { customerCount:  93, avgRating: 4.52, bonus: 500_000 },
-  59: { customerCount: 101, avgRating: 4.61, bonus: 500_000 },
-  60: { customerCount:  99, avgRating: 4.59, bonus: 500_000 },
-  61: { customerCount:  97, avgRating: 4.56, bonus: 500_000 },
-  62: { customerCount:  94, avgRating: 4.53, bonus: 500_000 },
-  67: { customerCount:  92, avgRating: 4.55, bonus: 500_000 },
-  68: { customerCount:  90, avgRating: 4.52, bonus: 500_000 },
-  69: { customerCount:  88, avgRating: 4.50, bonus: 500_000 },
-  70: { customerCount:  86, avgRating: 4.55, bonus: 500_000 },
-  71: { customerCount:  84, avgRating: 4.52, bonus: 500_000 },
-  72: { customerCount:  82, avgRating: 4.50, bonus: 500_000 },
-  43: { customerCount: 75, avgRating: 4.20, bonus: 0 },
-  53: { customerCount: 72, avgRating: 4.15, bonus: 0 },
-  63: { customerCount: 70, avgRating: 4.10, bonus: 0 },
-  73: { customerCount: 68, avgRating: 4.05, bonus: 0 },
-  44: { customerCount: 85, avgRating: 4.55, bonus: 500_000 },
-  54: { customerCount: 83, avgRating: 4.52, bonus: 500_000 },
-  64: { customerCount: 81, avgRating: 4.50, bonus: 500_000 },
-  74: { customerCount: 80, avgRating: 4.50, bonus: 500_000 },
-  45: { customerCount: 70, avgRating: 4.50, bonus: 0 },
-  55: { customerCount: 68, avgRating: 4.45, bonus: 0 },
-  65: { customerCount: 66, avgRating: 4.40, bonus: 0 },
-  75: { customerCount: 65, avgRating: 4.35, bonus: 0 },
-};
-
 function estimateTips(monthlyRev) {
-  const dailyCount = Math.min(6, Math.max(2, Math.round(monthlyRev / 22 / 130_000)));
+  const dailyCount      = Math.min(6, Math.max(2, Math.round(monthlyRev / 22 / 130_000)));
   const bookingsPerMonth = Math.round(dailyCount * 22 * 0.9);
-  const tipsCount  = Math.round(bookingsPerMonth * 0.40);
-  const avgTip     = 60_000;
-  return Math.round(tipsCount * avgTip);
+  const tipsCount       = Math.round(bookingsPerMonth * 0.40);
+  return Math.round(tipsCount * 60_000);
 }
 
-// FIX LOGIC TRẠNG THÁI: Theo đúng luồng vận hành thực tế
 function getSalaryStatus(year, month) {
   if (year === 2025)                return "Paid";
-  if (year === 2026 && month <= 3)  return "Paid";      // Admin đã chuyển khoản xong
-  if (year === 2026 && month === 4) return "Pending";   // Tháng gần nhất: Admin đã tính (Draft), đang chờ thợ xác nhận
+  if (year === 2026 && month <= 3)  return "Paid";
+  if (year === 2026 && month === 4) return "Pending";
   return "Draft";
 }
 
 function getSentAt(year, month, status) {
-  // Chỉ có trạng thái từ khi gửi cho thợ duyệt (Pending) trở đi mới có ngày gửi
   if (status === "Draft") return null;
   return new Date(year, month - 1, 28, 9, 0, 0);
 }
@@ -94,10 +75,68 @@ function getDeadlineAt(sentAt) {
   return new Date(sentAt.getTime() + 48 * 60 * 60 * 1000);
 }
 
-function getPaidAmount(status, netSalary) {
-  if (status === "Paid") return netSalary;
-  return null;
-}
+// ── Bonus profile — giảm số thợ đủ điều kiện lên cấp ───────────────────────
+// Điều kiện lên cấp Junior→Senior: rev >= 30tr + >= 6 tháng + 3 tháng liên tiếp đạt
+// Điều kiện lên cấp Senior→Master: rev >= 50tr + >= 12 tháng + 3 tháng liên tiếp đạt
+//
+// Chỉ 2 thợ ĐỦ điều kiện:
+//   Barber 39: Junior, rev=35tr ✅, join 2025-01 (>6 tháng) ✅  → đủ lên Senior
+//   Barber 47: Senior, rev=41tr < 50tr ❌                       → KHÔNG đủ lên Master
+//   Barber 37: Senior, rev=42tr < 50tr ❌                       → KHÔNG đủ lên Master
+//
+// Vậy thực tế CHỈ 1 thợ đủ điều kiện: Barber 39 (Junior → Senior)
+// Barber 36, 46, 56 là Master rồi → không lên được nữa
+//
+// Bonus KPI vẫn giữ (khác với điều kiện lên cấp):
+
+const BARBER_BONUS_PROFILE = {
+  // Master — không lên cấp được
+  36: { bonus: 1_500_000 },
+  46: { bonus: 1_500_000 },
+  56: { bonus: 1_500_000 },
+  // Senior — rev < 50tr → không đủ lên Master
+  37: { bonus: 1_000_000 },
+  47: { bonus: 1_000_000 },
+  57: { bonus: 1_000_000 },
+  38: { bonus: 1_500_000 },
+  48: { bonus: 1_500_000 },
+  58: { bonus: 1_500_000 },
+  66: { bonus: 1_000_000 },
+  // Junior active — chỉ barber 39 đủ điều kiện lên cấp
+  39: { bonus: 500_000  }, // ← ĐỦ điều kiện Junior→Senior
+  40: { bonus: 500_000  }, // join 2025-01 nhưng rev=33tr, cần thêm 3 tháng liên tiếp
+  41: { bonus: 500_000  }, // join 2025-02
+  42: { bonus: 500_000  }, // join 2025-03
+  49: { bonus: 500_000  },
+  50: { bonus: 500_000  },
+  51: { bonus: 500_000  },
+  52: { bonus: 500_000  },
+  59: { bonus: 500_000  },
+  60: { bonus: 500_000  },
+  61: { bonus: 500_000  },
+  62: { bonus: 500_000  },
+  67: { bonus: 500_000  },
+  68: { bonus: 500_000  },
+  69: { bonus: 500_000  },
+  70: { bonus: 500_000  },
+  71: { bonus: 500_000  },
+  72: { bonus: 500_000  },
+  // Junior low rev — không đủ điều kiện
+  43: { bonus: 0 },
+  53: { bonus: 0 },
+  63: { bonus: 0 },
+  73: { bonus: 0 },
+  // Junior chưa đủ tháng
+  44: { bonus: 500_000 },
+  54: { bonus: 500_000 },
+  64: { bonus: 500_000 },
+  74: { bonus: 500_000 },
+  // Junior newest
+  45: { bonus: 0 },
+  55: { bonus: 0 },
+  65: { bonus: 0 },
+  75: { bonus: 0 },
+};
 
 const BARBER_CONFIGS = [
   // Branch 1
@@ -151,65 +190,67 @@ const BRANCH4_LAST_MONTH = { year: 2026, month: 3 };
 export async function up(queryInterface) {
   await queryInterface.bulkDelete("salaries", null, {});
 
-  // 1. ĐỌC DB ĐỂ LẤY ID THẬT CỦA CÁC HỢP ĐỒNG
+  // ── 1. Query contracts từ DB ──────────────────────────────────────────────
   const dbContracts = await queryInterface.sequelize.query(
-    `SELECT idContract, idBarber, idPlan, actualBaseSalary, startDate, endDate FROM salary_contracts`,
+    `SELECT idContract, idBarber, idPlan, actualBaseSalary, startDate, endDate
+     FROM salary_contracts`,
     { type: queryInterface.sequelize.QueryTypes.SELECT }
   );
 
+  // ── 2. Query tất cả barber_day_offs ──────────────────────────────────────
+  const allDayOffs = await queryInterface.sequelize.query(
+    `SELECT idUnavailable, idBarber, startDate, endDate
+     FROM barber_day_offs`,
+    { type: queryInterface.sequelize.QueryTypes.SELECT }
+  );
+
+  console.log(`   Loaded ${dbContracts.length} contracts, ${allDayOffs.length} day_offs`);
+
   function getContractForMonth(idBarber, year, month) {
-    const barberContracts = dbContracts.filter(c => Number(c.idBarber) === Number(idBarber));
-    const targetDate = new Date(year, month - 1, 1);
+    const barberContracts = dbContracts.filter((c) => Number(c.idBarber) === Number(idBarber));
+    const targetDate      = new Date(year, month - 1, 1);
 
     for (const c of barberContracts) {
-      const from = new Date(c.startDate);
+      const from          = new Date(c.startDate);
       const fromMonthStart = new Date(from.getFullYear(), from.getMonth(), 1);
-
-      let toMonthEnd = null;
+      let toMonthEnd      = null;
       if (c.endDate) {
-        const to = new Date(c.endDate);
+        const to  = new Date(c.endDate);
         toMonthEnd = new Date(to.getFullYear(), to.getMonth(), 1);
       }
-
-      const isAfterStart = targetDate >= fromMonthStart;
-      const isBeforeEnd = !toMonthEnd || targetDate <= toMonthEnd;
-
-      if (isAfterStart && isBeforeEnd) {
-        let planType = 'junior';
-        const planId = Number(c.idPlan);
-        if (planId === 1) planType = 'junior';
-        if (planId === 2) planType = 'senior';
-        if (planId === 3) planType = 'master';
-        if (planId === 4) planType = 'junior2024';
-
-        return { 
-          planType, 
-          contractId: Number(c.idContract), 
-          baseSalary: Number(c.actualBaseSalary) 
+      if (targetDate >= fromMonthStart && (!toMonthEnd || targetDate <= toMonthEnd)) {
+        const planId   = Number(c.idPlan);
+        const planType = planId === 2 ? "senior" : planId === 3 ? "master" : planId === 4 ? "junior2024" : "junior";
+        return {
+          planType,
+          contractId: Number(c.idContract),
+          baseSalary: Number(c.actualBaseSalary),
         };
       }
     }
     return null;
   }
 
-  // CẬP NHẬT: Loại bỏ hoàn toàn tháng 5/2026 ra khỏi danh sách tạo dữ liệu seed
+  // ── 3. Build salary records ───────────────────────────────────────────────
   const salaries = [];
-  const periods = [];
+  const periods  = [];
   for (let m = 1; m <= 12; m++) periods.push({ year: 2025, month: m });
-  for (let m = 1; m <=  4; m++) periods.push({ year: 2026, month: m }); // Chỉ chạy đến hết tháng 4
+  for (let m = 1; m <=  4; m++) periods.push({ year: 2026, month: m });
 
   for (const cfg of BARBER_CONFIGS) {
-    const startDate   = new Date(cfg.startKey);
+    const startDate    = new Date(cfg.startKey);
     const bonusProfile = BARBER_BONUS_PROFILE[cfg.idBarber];
 
     for (const { year, month } of periods) {
       const periodStart = new Date(year, month - 1, 1);
 
+      // Branch 4 cutoff
       if (cfg.branch === 4) {
         if (year > BRANCH4_LAST_MONTH.year) continue;
         if (year === BRANCH4_LAST_MONTH.year && month > BRANCH4_LAST_MONTH.month) continue;
       }
 
+      // Barber chưa join
       const joinMonth = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
       if (periodStart < joinMonth) continue;
 
@@ -217,29 +258,44 @@ export async function up(queryInterface) {
       if (!contract) continue;
 
       const { planType, contractId, baseSalary } = contract;
-      const serviceRevenue = cfg.monthlyRev;
-      const commission     = calcCommission(serviceRevenue, planType);
-      const tips           = estimateTips(serviceRevenue);
-      const bonus          = bonusProfile?.bonus ?? 0;
 
-      const deductions  = 0;
-      const totalSalary = baseSalary + commission + tips + bonus;
+      // ── Tính ngày nghỉ trong tháng ────────────────────────────────────
+      const totalDays  = daysInMonthFn(year, month);
+      const daysOff    = countDaysOffInMonth(allDayOffs, cfg.idBarber, year, month);
+      const daysWorked = totalDays - daysOff;
+
+      // ── Tính lương cứng theo ngày thực làm ────────────────────────────
+      const baseSalaryActual = daysOff > 0
+        ? Math.round((baseSalary / totalDays) * daysWorked)
+        : baseSalary;
+
+      // ── Commission tính trên doanh thu thực (tỉ lệ ngày làm) ─────────
+      const revenueActual = daysOff > 0
+        ? Math.round((cfg.monthlyRev / totalDays) * daysWorked)
+        : cfg.monthlyRev;
+
+      const commission = calcCommission(revenueActual, planType);
+      const tips       = estimateTips(revenueActual);
+      const bonus      = bonusProfile?.bonus ?? 0;
+      const deductions = 0;
+
+      const totalSalary = baseSalaryActual + commission + tips + bonus;
       const netSalary   = totalSalary - deductions;
 
       const status     = getSalaryStatus(year, month);
       const sentAt     = getSentAt(year, month, status);
       const deadlineAt = getDeadlineAt(sentAt);
-      const paidAmount = getPaidAmount(status, netSalary);
+      const paidAmount = status === "Paid" ? netSalary : null;
 
       salaries.push({
         idBarber:        cfg.idBarber,
         idContract:      contractId,
         calculationType: "MONTHLY",
-        daysWorked:      null,
+        daysWorked:      daysWorked,
         month,
         year,
-        serviceRevenue,
-        baseSalary,
+        serviceRevenue:  revenueActual,
+        baseSalary:      baseSalaryActual,
         commission,
         tips,
         bonus,
@@ -252,27 +308,44 @@ export async function up(queryInterface) {
         sentAt,
         deadlineAt,
         paidAmount,
-        paymentProofUrl: (status === "Paid") ? `https://proof.barber.com/salary/${cfg.idBarber}_${year}_${month}.jpg` : null,
-        createdAt:       new Date(year, month - 1, 28),
-        updatedAt:       new Date(year, month - 1, 28),
+        paymentProofUrl: status === "Paid"
+          ? `https://proof.barber.com/salary/${cfg.idBarber}_${year}_${month}.jpg`
+          : null,
+        createdAt: new Date(year, month - 1, 28),
+        updatedAt: new Date(year, month - 1, 28),
       });
     }
   }
 
+  // ── 4. Insert ─────────────────────────────────────────────────────────────
   const CHUNK = 200;
   for (let i = 0; i < salaries.length; i += CHUNK) {
     await queryInterface.bulkInsert("salaries", salaries.slice(i, i + CHUNK));
   }
 
+  // ── 5. Summary ───────────────────────────────────────────────────────────
   const byStatus = salaries.reduce((acc, s) => {
     acc[s.status] = (acc[s.status] || 0) + 1;
     return acc;
   }, {});
 
-  console.log(`✅ [09] Inserted ${salaries.length} salary records`);
+  const withDayOff = salaries.filter((s) => s.daysWorked < daysInMonthFn(s.year, s.month));
+
+  console.log(`✅ [10] Inserted ${salaries.length} salary records`);
   console.log("   Status breakdown:", JSON.stringify(byStatus));
+  console.log(`   Records có ngày nghỉ: ${withDayOff.length}`);
+  withDayOff.forEach((s) => {
+    const total = daysInMonthFn(s.year, s.month);
+    console.log(
+      `   → Barber ${s.idBarber} | ${s.year}/${String(s.month).padStart(2,"0")}` +
+      ` | daysWorked=${s.daysWorked}/${total}` +
+      ` | baseSalary=${s.baseSalary.toLocaleString()}đ` +
+      ` | net=${s.netSalary.toLocaleString()}đ`
+    );
+  });
 }
 
 export async function down(queryInterface) {
-  await queryInterface.sequelize.query("TRUNCATE TABLE salaries RESTART IDENTITY CASCADE;");
+  await queryInterface.bulkDelete("salaries", null, {});
+  console.log("↩️  [10] Rolled back salaries");
 }

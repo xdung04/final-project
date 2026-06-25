@@ -9,7 +9,10 @@ export const TransactionAPI = {
     return await transactionService.fetchTransactions(filters);
   },
 
-  getSummaryStats: async () => {
-    return await transactionService.fetchSummaryStats();
+  /**
+   * 🌟 CẬP NHẬT: Nhận filters từ React Component và chuyển tiếp vào Service
+   */
+  getSummaryStats: async (filters) => {
+    return await transactionService.fetchSummaryStats(filters);
   },
 };

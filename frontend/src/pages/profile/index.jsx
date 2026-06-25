@@ -190,7 +190,7 @@ function Profile() {
     }
 
     try {
-      const res = await ProfileAPI.changePassword(accessToken, {
+      const res = await ProfileAPI.changePassword({
         currentPassword,
         newPassword,
       });

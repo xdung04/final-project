@@ -36,49 +36,86 @@ function ChinhSach() {
     return { month: month === 0 ? 12 : month, year };
   };
 
-  const loadInitialData = async () => {
-    setIsLoading(true);
-    try {
-      const [plansRes, barbersRes, promotionRes] = await Promise.all([
-        HrPolicyAPI.getActivePlans(),
-        HrPolicyAPI.getBarbersContracts(),
-        HrPolicyAPI.getPromotionAlerts(), // ✅ thêm
-      ]);
+ const loadInitialData = async () => {
+  setIsLoading(true);
+  try {
+    const [plansRes, barbersRes, promotionRes] = await Promise.all([
+      HrPolicyAPI.getActivePlans(),
+      HrPolicyAPI.getBarbersContracts(),
+      HrPolicyAPI.getPromotionAlerts(),
+    ]);
 
-      const plansData = plansRes.data || plansRes || [];
-      const plansWithColors = plansData.map((p, i) => ({
-        ...p,
-        color: p.color || PLAN_COLORS[i % PLAN_COLORS.length],
-      }));
-      setPlans(plansWithColors);
+    // ===== 1) Plans =====
+    const plansData = plansRes.data || plansRes || [];
+    const plansWithColors = plansData.map((p, i) => ({
+      ...p,
+      color: p.color || PLAN_COLORS[i % PLAN_COLORS.length],
+    }));
+    setPlans(plansWithColors);
 
-      const rawBarbers = barbersRes.data || barbersRes || [];
-     const mappedBarbers = rawBarbers.map((b) => {
-  const activeContract = b.contracts?.find((c) => c.status === "active");
-  return {
-    idBarber:           b.idBarber,
-    name:               b.user?.fullName || "Thợ chưa có tên",
-    avatar:             (b.user?.fullName || "T").charAt(0).toUpperCase(),
-    branch:             b.branch?.name || "Chi nhánh chính",
-    idSalaryContract:   activeContract?.idSalaryContract  ?? null, // ✅ đúng tên JS
-    idCompensationPlan: activeContract?.idCompensationPlan ?? null, // ✅ đúng
-    actualBaseSalary:   activeContract?.actualBaseSalary   ?? null,
-    startDate:          activeContract?.startDate          ?? null,
-    endDate:            activeContract?.endDate            ?? null,
-    contractStatus:     activeContract?.status             ?? null, // ✅ có rồi
-  };
-});
-      setBarbers(mappedBarbers);
+    // ===== 2) Helper chọn contract để hiển thị =====
+    const pickDisplayContract = (contracts = []) => {
+      if (!Array.isArray(contracts) || contracts.length === 0) return null;
 
-      // ✅ Map promotion alerts
-      setPromotionList(promotionRes.data || []);
+      const priority = {
+        pending: 4,
+        active: 3,
+        closed: 2,
+        terminated: 1,
+      };
 
-    } catch (err) {
-      console.error("Lỗi tải dữ liệu:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      return [...contracts].sort((a, b) => {
+        const statusA = (a?.status || "").toLowerCase();
+        const statusB = (b?.status || "").toLowerCase();
+
+        const pa = priority[statusA] || 0;
+        const pb = priority[statusB] || 0;
+
+        // Ưu tiên status quan trọng hơn trước
+        if (pb !== pa) return pb - pa;
+
+        // Nếu cùng status thì ưu tiên contract mới hơn
+        const dateA = new Date(a?.startDate || 0).getTime();
+        const dateB = new Date(b?.startDate || 0).getTime();
+        return dateB - dateA;
+      })[0];
+    };
+
+    // ===== 3) Map barbers =====
+    const rawBarbers = barbersRes.data || barbersRes || [];
+
+    const mappedBarbers = rawBarbers.map((b) => {
+      const displayContract = pickDisplayContract(b.contracts);
+
+      return {
+        idBarber: b.idBarber,
+        name: b.user?.fullName || "Thợ chưa có tên",
+        avatar: (b.user?.fullName || "T").charAt(0).toUpperCase(),
+        branch: b.branch?.name || "Chi nhánh chính",
+
+        // contract đang dùng để HIỂN THỊ ở UI
+        idSalaryContract: displayContract?.idSalaryContract ?? null,
+        idCompensationPlan: displayContract?.idCompensationPlan ?? null,
+        actualBaseSalary: displayContract?.actualBaseSalary ?? null,
+        startDate: displayContract?.startDate ?? null,
+        endDate: displayContract?.endDate ?? null,
+        contractStatus: displayContract?.status ?? null,
+
+        // giữ full contracts để ContractsTab có thể dùng khi cần
+        contracts: b.contracts || [],
+      };
+    });
+
+    setBarbers(mappedBarbers);
+
+    // ===== 4) Promotion alerts =====
+    setPromotionList(promotionRes.data || []);
+  } catch (err) {
+    console.error("Lỗi tải dữ liệu:", err);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   useEffect(() => {
     loadInitialData();

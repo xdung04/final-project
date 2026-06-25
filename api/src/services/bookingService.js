@@ -414,88 +414,86 @@ export const getBookedSlotsByBarber = async (
 ) => {
   try {
     const normalizedDate = moment(bookingDate).format("YYYY-MM-DD");
-
+ 
+    // ❌ Kiểm tra ngày book không được là quá khứ
+    const today = moment().format("YYYY-MM-DD");
+    if (normalizedDate < today) {
+      throw new Error("Không thể đặt lịch cho ngày trong quá khứ");
+    }
+ 
     // 1. Kiểm tra thợ có tồn tại không
     const barber = await db.Barber.findByPk(idBarber);
     if (!barber) throw new Error("Không tìm thấy thợ có ID này");
-
-    // [FIX] 2. Check lockDate — nếu ngày đặt >= lockDate thì barber không làm việc nữa
-    if (barber.lockDate) {
-      const lockDay = new Date(barber.lockDate);
-      lockDay.setHours(0, 0, 0, 0);
-      const selectedDay = new Date(normalizedDate);
-      selectedDay.setHours(0, 0, 0, 0);
-
-      if (selectedDay >= lockDay) {
-        // Lấy chi nhánh để trả về allSlots hợp lệ
-        const branch = await db.Branch.findByPk(idBranch);
-        if (branch) {
-          const openTime = moment(branch.openTime, "HH:mm");
-          const closeTime = moment(branch.closeTime, "HH:mm");
-          const slotDuration = branch.slotDuration;
-          const allSlots = [];
-          let current = openTime.clone();
-          while (current.isBefore(closeTime)) {
-            allSlots.push(current.format("HH:mm"));
-            current.add(slotDuration, "minutes");
-          }
-          return {
-            barberId: idBarber,
-            branchId: idBranch,
-            date: normalizedDate,
-            isUnavailable: true,
-            reason: "lockDate",
-            lockDate: barber.lockDate,
-            bookedSlots: allSlots,
-            availableSlots: [],
-          };
-        }
-      }
-    }
-
-    // 3. Kiểm tra thợ có thuộc chi nhánh này không
+ 
+    // 2. Kiểm tra thợ có thuộc chi nhánh này không
     if (Number(barber.idBranch) !== Number(idBranch)) {
       throw new Error("Thợ không thuộc chi nhánh này");
     }
-
-    // 4. Kiểm tra chi nhánh có tồn tại không
+ 
+    // 3. Kiểm tra chi nhánh có tồn tại không
     const branch = await db.Branch.findByPk(idBranch);
     if (!branch) throw new Error("Không tìm thấy chi nhánh");
-
-    // 5. Sinh toàn bộ khung giờ trong ngày
+ 
+    // 4. Sinh toàn bộ khung giờ trong ngày
     const openTime = moment(branch.openTime, "HH:mm");
     const closeTime = moment(branch.closeTime, "HH:mm");
     const slotDuration = branch.slotDuration;
-
+ 
     const allSlots = [];
     let current = openTime.clone();
     while (current.isBefore(closeTime)) {
       allSlots.push(current.format("HH:mm"));
       current.add(slotDuration, "minutes");
     }
-
-    // 6. Kiểm tra thợ có nghỉ trong ngày không
-    const isUnavailable = await db.BarberUnavailability.findOne({
+ 
+    // [SỬAM] 5. Kiểm tra thợ có nằm trong lịch nghỉ (BarberDayOff) không
+    const dayOff = await db.BarberDayOff.findOne({
       where: {
         idBarber,
         startDate: { [Op.lte]: normalizedDate },
         endDate: { [Op.gte]: normalizedDate },
       },
     });
-
-    if (isUnavailable) {
+ 
+    if (dayOff) {
       return {
         barberId: idBarber,
         branchId: idBranch,
         date: normalizedDate,
         isUnavailable: true,
-        reason: "unavailability",
+        reason: "dayoff", // ← Thay từ "unavailability" → "dayoff"
+        dayOffReason: dayOff.reason || "Thợ đang nghỉ", // ← Thêm reason từ BarberDayOff
+        dayOffId: dayOff.idUnavailable,
+        dayOffRange: {
+          startDate: dayOff.startDate,
+          endDate: dayOff.endDate,
+        },
         bookedSlots: allSlots,
         availableSlots: [],
       };
     }
-
-    // 7. Lấy các booking hợp lệ trong ngày (không Cancelled)
+ 
+    // [FIX] 6. Check lockDate — nếu ngày đặt >= lockDate thì barber không làm việc nữa
+    // ⚠️ Note: lockDate là gì? Cần thêm comment hoặc xác định logic này
+    if (barber.lockDate) {
+      const lockDay = moment(barber.lockDate).format("YYYY-MM-DD");
+      if (normalizedDate >= lockDay) {
+        return {
+          barberId: idBarber,
+          branchId: idBranch,
+          date: normalizedDate,
+          isUnavailable: true,
+          reason: "locked",
+          lockDate: barber.lockDate,
+          message: "Thợ đã bị khóa hoặc không còn làm việc từ ngày này",
+          bookedSlots: allSlots,
+          availableSlots: [],
+        };
+      }
+    }
+ 
+    // 7. Lấy các booking hợp lệ trong ngày (không Cancelled, không Completed?)
+    // ⚠️ Câu hỏi: Completed bookings có nên tính là "booked" không?
     const bookings = await db.Booking.findAll({
       where: {
         idBarber,
@@ -505,14 +503,14 @@ export const getBookedSlotsByBarber = async (
             normalizedDate,
           ),
         ],
-        status: { [Op.not]: "Cancelled" },
+        status: { [Op.not]: "Cancelled" }, // ✓ Chỉ exclude Cancelled, vẫn tính Pending, Confirmed, NoShow
       },
       attributes: ["bookingTime"],
       logging: false,
     });
-
+ 
     const bookedSlots = bookings.map((b) => b.bookingTime);
-
+ 
     return {
       barberId: idBarber,
       branchId: idBranch,
@@ -523,7 +521,7 @@ export const getBookedSlotsByBarber = async (
       availableSlots: allSlots.filter((s) => !bookedSlots.includes(s)),
     };
   } catch (error) {
-    console.error("❌ Lỗi khi lấy khung giờ booking:", error);
+    console.error("❌ Lỗi khi lấy khung giờ booking:", error.message);
     throw error;
   }
 };

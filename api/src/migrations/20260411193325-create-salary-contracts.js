@@ -34,7 +34,7 @@ export async function up(queryInterface, Sequelize) {
       comment: "Null = vo thoi han. Chi set khi barber nghi viec hoac len cap",
     },
     status: {
-      type: Sequelize.ENUM("active", "closed", "terminated"),
+      type: Sequelize.ENUM("pending","active", "closed", "terminated"),
       defaultValue: "active",
       comment: "active = dang chay | closed = dong do len cap | terminated = nghi viec",
     },

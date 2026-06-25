@@ -212,7 +212,7 @@ export const getBarbersWithContracts = async () => {
       {
         model: db.SalaryContract,
         as: "contracts",
-        where: { status: "active" },
+        where: { status: { [Op.in]: ["pending", "active"] } },
         required: false,
         include: [{
           model: db.CompensationPlan,
@@ -237,26 +237,39 @@ export const assignContract = async (idBarber, contractData) => {
     throw new Error(`startDate phai tu mung 1 thang sau. Som nhat: ${firstDayNextMonth}`);
   }
 
-  // Guard 3: Barber chua co HD active
+  // 🌟 Guard 3 CẬP NHẬT: Barber chưa có HD active HOẶC đang chờ kích hoạt (pending)
   const existing = await db.SalaryContract.findOne({
-    where: { idBarber, status: "active" },
+    where: { 
+      idBarber, 
+      status: { [Op.in]: ["active", "pending"] } // Kiểm tra cả 2 trạng thái
+    },
   });
+  
   if (existing) {
-    throw new Error(
-      "Barber nay da co hop dong active. Dung 'Len cap' hoac 'Quyet toan' thay vi ky moi."
-    );
+    if (existing.status === "active") {
+      throw new Error(
+        "Barber nay da co hop dong active. Dung 'Len cap' hoac 'Quyet toan' thay vi ky moi."
+      );
+    } else {
+      throw new Error(
+        `Barber nay da co mot hop dong dang cho kich hoat (bắt đầu từ ngày ${existing.startDate}). Khong the ky chong len nhau.`
+      );
+    }
   }
 
+  // 🌟 CẬP NHẬT: Tạo hợp đồng với trạng thái "pending" thay vì "active"
   const newContract = await db.SalaryContract.create({
     idBarber,
     idCompensationPlan: contractData.idCompensationPlan,
     actualBaseSalary:   contractData.actualBaseSalary,
     startDate:          contractData.startDate,
     endDate:            null,
-    status:             "active",
+    status:             "pending", 
   });
 
   const plan = await db.CompensationPlan.findByPk(contractData.idCompensationPlan);
+  
+  // Vẫn gửi thông báo bình thường để Barber biết mình đã được lên lịch ký HD
   await notifyContractAssigned({
     idBarber,
     planName:  plan?.displayName || "",
@@ -344,64 +357,88 @@ export const confirmSetEndDate = async (idContract, endDate) => {
     if (!contract) throw new Error("Khong tim thay hop dong.");
     if (contract.status !== "active") throw new Error("Chi thiet lap ngay nghi cho HD dang active.");
 
-    // ✅ endDate phai sau startDate
-    if (endDate <= contract.startDate) {
-      throw new Error("endDate phai sau ngay bat dau hop dong.");
+    const toVNDateOnly = (dateInput) => {
+      return new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Ho_Chi_Minh",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(new Date(dateInput));
+    };
+
+    const contractStartVN = toVNDateOnly(contract.startDate);
+    const endDateVN = toVNDateOnly(endDate);
+    const todayVN = toVNDateOnly(new Date());
+
+    if (endDateVN <= contractStartVN) {
+      throw new Error("Ngày kết thúc phải sau ngày bắt đầu hợp đồng.");
     }
 
-    // ✅ Canh bao neu da co endDate roi (tranh ghi de nham)
+    if (endDateVN <= todayVN) {
+      throw new Error("Ngày kết thúc hợp đồng phải lớn hơn ngày hiện tại.");
+    }
+
     if (contract.endDate) {
       throw new Error(
         `HD nay da co ngay ket thuc: ${contract.endDate}. Hay huy ngay nghi truoc khi thiet lap lai.`
       );
     }
 
+    // 1. Cập nhật ngày kết thúc trên Hợp đồng
     await contract.update({ endDate }, { transaction: t });
 
+    // 2. Đồng bộ lockDate cho Barber
+    await db.Barber.update(
+      { lockDate: endDate },
+      {
+        where: { idBarber: contract.idBarber },
+        transaction: t,
+      }
+    );
+
+    // 3. Tìm các lịch hẹn bị ảnh hưởng sau ngày nghỉ việc
     const affectedBookings = await db.Booking.findAll({
       where: {
-        idBarber:    contract.idBarber,
+        idBarber: contract.idBarber,
         bookingDate: { [Op.gt]: endDate },
-status: { [Op.notIn]: ["Cancelled", "Completed"] },
+        status: { [Op.notIn]: ["Cancelled", "Completed"] },
       },
       transaction: t,
     });
-if (affectedBookings.length > 0) {
-  await db.Booking.update(
-    { status: "Cancelled" },
-    {
-      where: { idBooking: { [Op.in]: affectedBookings.map((b) => b.idBooking) } },
-      transaction: t,
+
+    if (affectedBookings.length > 0) {
+      await db.Booking.update(
+        { status: "Cancelled" },
+        {
+          where: { idBooking: { [Op.in]: affectedBookings.map((b) => b.idBooking) } },
+          transaction: t,
+        }
+      );
+
+      const bookingsWithCustomer = await db.Booking.findAll({
+        where: { idBooking: { [Op.in]: affectedBookings.map((b) => b.idBooking) } },
+        include: [{
+          model: db.Customer,
+          as: "Customer",
+          attributes: ["idCustomer"],
+        }],
+        transaction: t,
+      });
+
+      const customerNotifications = bookingsWithCustomer.map((b) => ({
+        type: "BOOKING",
+        title: "Lịch hẹn đã bị hủy",
+        content: `Lịch hẹn của bạn vào ngày ${new Date(b.bookingDate).toLocaleDateString("vi-VN")} đã được hủy bởi hệ thống. Chúng tôi xin lỗi vì sự bất tiện này và mong quý khách thông cảm. Vui lòng liên hệ hoặc đặt lại lịch hẹn với thợ khác tại hệ thống.`,
+        targetRole: "customer",
+        targetId: b.Customer?.idCustomer,
+        referenceId: b.idBooking,
+        isRead: false,
+      }));
+
+      await db.Notification.bulkCreate(customerNotifications, { transaction: t });
     }
-  );
-
-  // ✅ Lấy thông tin khách để gửi notification
-  const bookingsWithCustomer = await db.Booking.findAll({
-    where: { idBooking: { [Op.in]: affectedBookings.map((b) => b.idBooking) } },
-    include: [{
-      model: db.Customer,
-      as:    "Customer",
-      attributes: ["idCustomer"],
-    }],
-    transaction: t,
-  });
-
-  // Gửi notification cho từng khách — dùng bulkCreate cho gọn
-  const customerNotifications = bookingsWithCustomer.map((b) => ({
-    type:        "BOOKING",
-    title:       "Lịch hẹn đã bị hủy",
-    content:    `Lịch hẹn của bạn vào ngày ${new Date(b.bookingDate).toLocaleDateString("vi-VN")} đã được hủy bởi hệ thống. Chúng tôi xin lỗi vì sự bất tiện này và mong quý khách thông cảm. Vui lòng liên hệ hoặc đặt lại lịch hẹn với thợ khác tại hệ thống.`,
-    targetRole:  "customer",
-    targetId:    b.Customer?.idCustomer,
-    referenceId: b.idBooking,
-    isRead:      false,
-  }));
-
-  await db.Notification.bulkCreate(customerNotifications, { transaction: t });
-}
 
     await t.commit();
-
     await notifyEndDateSet({ idBarber: contract.idBarber, endDate });
 
     return { contract, cancelledCount: affectedBookings.length };
@@ -415,14 +452,56 @@ if (affectedBookings.length > 0) {
 // Set endDate = null
 // Booking da huy KHONG tu dong khoi phuc
 export const cancelEndDate = async (idContract) => {
-  const contract = await db.SalaryContract.findByPk(idContract);
-  if (!contract) throw new Error("Khong tim thay hop dong.");
-  if (!contract.endDate) throw new Error("HD nay chua co ngay ket thuc de huy.");
+  const t = await db.sequelize.transaction();
 
-  await contract.update({ endDate: null });
-  await notifyCancelEndDate({ idBarber: contract.idBarber });
+  try {
+    const contract = await db.SalaryContract.findByPk(idContract, { transaction: t });
 
-  return contract;
+    if (!contract) {
+      throw new Error("Không tìm thấy hợp đồng.");
+    }
+
+    // chỉ cho hủy nếu đang có ngày kết thúc
+    if (!contract.endDate) {
+      throw new Error("Hợp đồng này chưa có ngày kết thúc để hủy.");
+    }
+
+    // nên chặn nếu HĐ không còn active
+    if (contract.status !== "active") {
+      throw new Error("Chỉ có thể hủy ngày kết thúc với hợp đồng đang active.");
+    }
+
+    // 1) Xóa ngày kết thúc của hợp đồng
+    await contract.update(
+      { endDate: null },
+      { transaction: t }
+    );
+
+    // 2) Đồng bộ mở khóa barber
+    await db.Barber.update(
+      { lockDate: null },
+      {
+        where: { idBarber: contract.idBarber },
+        transaction: t,
+      }
+    );
+
+    await t.commit();
+
+    // 3) Notification sau commit
+    await notifyCancelEndDate({
+      idBarber: contract.idBarber,
+    });
+
+    return {
+      message: "Đã hủy ngày kết thúc hợp đồng.",
+      contract,
+      note: "Các booking đã bị hủy trước đó sẽ không được tự động khôi phục.",
+    };
+  } catch (error) {
+    await t.rollback();
+    throw error;
+  }
 };
 
 export const promoteBarber = async (idBarber, contractData, salaryPeriod) => {
@@ -500,7 +579,7 @@ export const promoteBarber = async (idBarber, contractData, salaryPeriod) => {
     throw error;
   }
 };
-// salaryService.js — THÊM HÀM NÀY
+
 
 export const calculateSettlement = async (idContract, deductions = []) => {
   const t = await db.sequelize.transaction();
@@ -527,12 +606,15 @@ export const calculateSettlement = async (idContract, deductions = []) => {
     const { idBarber, actualBaseSalary, endDate, plan } = contract;
 
     // ── BƯỚC 2: Xác định khoảng thời gian tính lương ─────────────────────
-    const endMoment      = moment(endDate);
-    const month          = endMoment.month() + 1;         // tháng của endDate
-    const year           = endMoment.year();
-    const firstDayOfMonth = moment(`${year}-${month}`, "YYYY-M").startOf("month");
-    const daysInMonth    = endMoment.daysInMonth();
-    const daysWorked     = endMoment.diff(firstDayOfMonth, "days") + 1; // tính cả ngày cuối
+    const endMoment        = moment(endDate);
+    const month            = endMoment.month() + 1;         // tháng của endDate
+    const year             = endMoment.year();
+    const firstDayOfMonth  = moment(`${year}-${month}`, "YYYY-M").startOf("month");
+    const lastDayOfMonth   = moment(`${year}-${month}`, "YYYY-M").endOf("month");
+    const daysInMonth      = lastDayOfMonth.date(); // Số ngày trong tháng
+
+    // Nếu endDate < cuối tháng, chỉ tính đến endDate
+    const actualEndDate = endMoment.isBefore(lastDayOfMonth) ? endMoment : lastDayOfMonth;
 
     // ── BƯỚC 3: Kiểm tra chưa có Salary SETTLEMENT tháng này ─────────────
     const existingSettlement = await db.Salary.findOne({
@@ -543,9 +625,70 @@ export const calculateSettlement = async (idContract, deductions = []) => {
       throw new Error(`Barber này đã có phiếu quyết toán tháng ${month}/${year} rồi.`);
     }
 
-    // ── BƯỚC 4: Lấy doanh thu, tips, số khách từ ngày 1 → endDate ────────
+    // ── BƯỚC 4: ✅ LẤY NGÀY NGHỈ (BarberDayOff) TRONG THÁNG ──────────────
+    const dayOffs = await db.BarberDayOff.findAll({
+      where: {
+        idBarber,
+        // Lấy những dayoff có overlap với tháng này
+        // startDate <= endDate tháng & endDate >= startDate tháng
+        [Op.and]: [
+          { startDate: { [Op.lte]: actualEndDate.format("YYYY-MM-DD") } },
+          { endDate:   { [Op.gte]: firstDayOfMonth.format("YYYY-MM-DD") } },
+        ],
+      },
+      attributes: ["idUnavailable", "startDate", "endDate"],
+      transaction: t,
+    });
+
+    // ✅ Tính tổng ngày nghỉ trong tháng
+    let totalDaysOff = 0;
+    const daysOffDetails = [];
+
+    dayOffs.forEach((dayOff) => {
+      // Xác định khoảng overlap giữa dayOff và tháng này
+      const dayOffStart = moment(dayOff.startDate);
+      const dayOffEnd   = moment(dayOff.endDate);
+
+      // Ngày bắt đầu: max(dayOffStart, firstDayOfMonth)
+      const actualStart = dayOffStart.isBefore(firstDayOfMonth) 
+        ? firstDayOfMonth.clone() 
+        : dayOffStart;
+
+      // Ngày kết thúc: min(dayOffEnd, actualEndDate)
+      const actualEnd = dayOffEnd.isAfter(actualEndDate) 
+        ? actualEndDate.clone() 
+        : dayOffEnd;
+
+      // Số ngày overlap
+      const daysCount = actualEnd.diff(actualStart, "days") + 1;
+
+      if (daysCount > 0) {
+        totalDaysOff += daysCount;
+        daysOffDetails.push({
+          period: `${actualStart.format("DD/MM/YYYY")} → ${actualEnd.format("DD/MM/YYYY")}`,
+          days: daysCount,
+          original: `${dayOff.startDate} → ${dayOff.endDate}`,
+        });
+      }
+    });
+
+    // ✅ Tính ngày làm việc thực tế
+    const maxDaysInPeriod = actualEndDate.diff(firstDayOfMonth, "days") + 1;
+    const daysWorked = maxDaysInPeriod - totalDaysOff;
+
+    console.log(`📅 Tính lương tháng ${month}/${year}`);
+    console.log(`   - Ngày trong tháng: ${daysInMonth}`);
+    console.log(`   - Khoảng tính: ${firstDayOfMonth.format("DD/MM")} → ${actualEndDate.format("DD/MM")}`);
+    console.log(`   - Tổng ngày: ${maxDaysInPeriod}`);
+    console.log(`   - Ngày nghỉ: ${totalDaysOff}`);
+    console.log(`   - Ngày làm: ${daysWorked}`);
+    if (daysOffDetails.length > 0) {
+      console.log(`   - Chi tiết nghỉ:`, daysOffDetails);
+    }
+
+    // ── BƯỚC 5: Lấy doanh thu, tips, số khách từ ngày 1 → endDate ────────
     const startDate = firstDayOfMonth.toDate();
-    const endDateObj = endMoment.toDate();
+    const endDateObj = actualEndDate.toDate();
 
     const revenueData = await db.Barber.findOne({
       where: { idBarber },
@@ -576,16 +719,16 @@ export const calculateSettlement = async (idContract, deductions = []) => {
     const tipAmount      = parseFloat(revenueData?.tipAmount      || 0);
     const customerCount  = parseInt(revenueData?.customerCount    || 0);
 
-    // ── BƯỚC 5: Lấy rating trung bình ────────────────────────────────────
+    // ── BƯỚC 6: Lấy rating trung bình ────────────────────────────────────
     const ratingSummary = await db.BarberRatingSummary.findOne({
       where: { idBarber },
       transaction: t,
     });
     const averageRating = parseFloat(ratingSummary?.avgRate || 0);
 
-    // ── BƯỚC 6: Tính lương ────────────────────────────────────────────────
+    // ── BƯỚC 7: ✅ Tính lương (dựa vào daysWorked sau trừ dayoff) ────────
     // Lương cứng theo tỷ lệ ngày
-    const baseSalary = (parseFloat(actualBaseSalary) / daysInMonth) * daysWorked;
+    const baseSalary = (parseFloat(actualBaseSalary) / maxDaysInPeriod) * daysWorked;
 
     // Hoa hồng bậc thang — 100% doanh thu từ ngày 1 → endDate
     let commission = 0;
@@ -613,7 +756,7 @@ export const calculateSettlement = async (idContract, deductions = []) => {
 
     const totalSalary = baseSalary + commission + tipAmount + bonus;
 
-    // ── BƯỚC 7: Tạo Salary SETTLEMENT ────────────────────────────────────
+    // ── BƯỚC 8: Tạo Salary SETTLEMENT ────────────────────────────────────
     const salary = await db.Salary.create(
       {
         idBarber,
@@ -621,22 +764,22 @@ export const calculateSettlement = async (idContract, deductions = []) => {
         month,
         year,
         calculationType: "SETTLEMENT",
-        daysWorked,
+        daysWorked,       // ✅ Ngày làm việc thực tế (đã trừ dayoff)
         serviceRevenue,
-        baseSalary:      Math.round(baseSalary),
-        commission:      Math.round(commission),
-        tips:            tipAmount,
-        bonus:           Math.round(bonus),
-        totalSalary:     Math.round(totalSalary),
-        deductions:      0,
-        netSalary:       Math.round(totalSalary),
-        status:          "Paid", // Quyết toán → Paid ngay
-        disputeCount:    0,
+        baseSalary:       Math.round(baseSalary),
+        commission:       Math.round(commission),
+        tips:             tipAmount,
+        bonus:            Math.round(bonus),
+        totalSalary:      Math.round(totalSalary),
+        deductions:       0,
+        netSalary:        Math.round(totalSalary),
+        status:           "Paid", // Quyết toán → Paid ngay
+        disputeCount:     0,
       },
       { transaction: t }
     );
 
-    // ── BƯỚC 8: Tạo SalaryDeduction records ──────────────────────────────
+    // ── BƯỚC 9: Tạo SalaryDeduction records ──────────────────────────────
     if (deductions.length > 0) {
       await db.SalaryDeduction.bulkCreate(
         deductions.map((d) => ({
@@ -658,41 +801,49 @@ export const calculateSettlement = async (idContract, deductions = []) => {
       );
     }
 
-    // ── BƯỚC 9: Đóng HĐ + Khóa Barber ────────────────────────────────────
+    // ── BƯỚC 10: Đóng HĐ + Khóa Barber ──────────────────────────────────
     await contract.update(
       { status: "terminated" },
       { transaction: t }
     );
 
     await db.Barber.update(
-      { isLocked: true },
+      { lockDate: moment().format("YYYY-MM-DD") }, // ✅ Set lockDate thay vì isLocked
       { where: { idBarber }, transaction: t }
     );
 
     await t.commit();
 
-    // ── BƯỚC 10: Notify barber (sau commit) ───────────────────────────────
-    const { notifySettlementDone } = await import("./notificationService.js");
-    await notifySettlementDone({
-      idBarber,
-      netSalary: salary.netSalary,
-      idSalary:  salary.idSalary,
-    });
+    // ── BƯỚC 11: Notify barber (sau commit) ───────────────────────────────
+    try {
+      const { notifySettlementDone } = await import("./notificationService.js");
+      await notifySettlementDone({
+        idBarber,
+        netSalary: salary.netSalary,
+        idSalary:  salary.idSalary,
+      });
+    } catch (notifyErr) {
+      console.error("⚠️ Lỗi gửi notification:", notifyErr.message);
+      // Không throw - quyết toán đã thành công
+    }
 
     return {
       salary,
       summary: {
         month,
         year,
-        daysWorked,
-        daysInMonth,
-        baseSalary:   Math.round(baseSalary),
-        commission:   Math.round(commission),
-        tips:         tipAmount,
-        bonus:        Math.round(bonus),
-        totalSalary:  Math.round(totalSalary),
-        deductions:   salary.deductions,
-        netSalary:    salary.netSalary,
+        daysInMonth,           // Tổng ngày trong tháng
+        periodDays: maxDaysInPeriod,  // Ngày từ 1 → endDate
+        daysOff: totalDaysOff,        // Ngày thợ nghỉ
+        daysWorked,            // Ngày thợ làm việc thực tế
+        daysOffDetails,        // Chi tiết các khoảng nghỉ
+        baseSalary:            Math.round(baseSalary),
+        commission:            Math.round(commission),
+        tips:                  tipAmount,
+        bonus:                 Math.round(bonus),
+        totalSalary:           Math.round(totalSalary),
+        deductions:            salary.deductions,
+        netSalary:             salary.netSalary,
       },
     };
   } catch (error) {

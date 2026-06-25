@@ -5,7 +5,7 @@ import { Check } from "lucide-react";
 
 const cx = classNames.bind(styles);
 
-export default function CreateRuleModal({ initialData, onClose, onCreate }) {
+export default function CreateRuleModal({ initialData, onClose, onCreate, showToast }) {
   const isEdit = !!initialData;
 
   const [form, setForm] = useState({
@@ -22,38 +22,81 @@ export default function CreateRuleModal({ initialData, onClose, onCreate }) {
 
   useEffect(() => {
     if (initialData) {
+      const toDateStr = (val) => {
+      if (!val) return "";
+      return val.substring(0, 10); // cắt lấy "YYYY-MM-DD"
+    };
       setForm({
-        name:          initialData.name          ?? "",
-        minSpend:      initialData.minSpend       ?? "",
-        pointsAwarded: initialData.pointsAwarded  ?? "",
-        multiplier:    initialData.multiplier      ?? "1",
-        isDefault:     initialData.isDefault       ?? false,
-        hasDateRange:  !!(initialData.startDate || initialData.endDate),
-        startDate:     initialData.startDate       ?? "",
-        endDate:       initialData.endDate          ?? "",
+        name:          initialData.name           ?? "",
+        minSpend:      initialData.min_order_amount ?? "",
+        pointsAwarded: initialData.money_per_point  ?? "",
+        multiplier:    initialData.point_multiplier ?? "1",
+        isDefault:     initialData.is_default       ?? false,
+        hasDateRange:  !!(initialData.start_date || initialData.end_date),
+        startDate:     toDateStr(initialData.start_date),
+        endDate:       toDateStr(initialData.end_date),
       });
     }
   }, [initialData]);
 
+  // ✅ Bật default → tắt dateRange + clear dates
+  const handleToggleDefault = () => {
+    const newVal = !form.isDefault;
+    setForm((prev) => ({
+      ...prev,
+      isDefault:    newVal,
+      hasDateRange: newVal ? false : prev.hasDateRange,
+      startDate:    newVal ? "" : prev.startDate,
+      endDate:      newVal ? "" : prev.endDate,
+    }));
+  };
+
+  // ✅ Bật dateRange → tắt default
+  const handleToggleDateRange = () => {
+    const newVal = !form.hasDateRange;
+    setForm((prev) => ({
+      ...prev,
+      hasDateRange: newVal,
+      isDefault:    newVal ? false : prev.isDefault,
+    }));
+  };
+
   const set = (key, val) => setForm((prev) => ({ ...prev, [key]: val }));
 
-  const handleSubmit = () => {
-    if (!form.name.trim())        return setError("Vui lòng nhập tên quy tắc.");
-    if (!form.pointsAwarded)      return setError("Vui lòng nhập số điểm thưởng.");
-    if (form.hasDateRange && !form.startDate) return setError("Vui lòng chọn ngày bắt đầu.");
 
-    setError("");
-    const payload = {
-      name:          form.name.trim(),
-      minSpend:      Number(form.minSpend) || 0,
-      pointsAwarded: Number(form.pointsAwarded),
-      multiplier:    Number(form.multiplier) || 1,
-      isDefault:     form.isDefault,
-      startDate:     form.hasDateRange ? form.startDate : null,
-      endDate:       form.hasDateRange ? form.endDate   : null,
-    };
-    onCreate(payload);
+// Thay thế hàm handleSubmit cũ bằng code này:
+const handleSubmit = async (e) => {
+  if (e && typeof e.preventDefault === "function") {
+    e.preventDefault();
+  }
+
+  // Validate inline
+  if (!form.name.trim()) return setError("Vui lòng nhập tên quy tắc.");
+  if (!form.pointsAwarded) return setError("Vui lòng nhập số điểm thưởng.");
+  if (form.hasDateRange && (!form.startDate || !form.endDate))
+    return setError("Vui lòng chọn cả ngày bắt đầu và kết thúc.");
+
+  setError("");
+
+  const payload = {
+    name:             form.name.trim(),
+    min_order_amount: Number(form.minSpend) || 0,
+    money_per_point:  Number(form.pointsAwarded),
+    point_multiplier: Number(form.multiplier) || 1,
+    is_default:       form.isDefault,
+    start_date:       form.hasDateRange ? form.startDate : null,
+    end_date:         form.hasDateRange ? form.endDate   : null,
   };
+
+  // Gọi hàm từ cha và chờ kết quả boolean
+  const isSuccess = await onCreate(payload);
+
+  // Nếu cha xử lý thành công (true), thì mới đóng modal
+  // Nếu lỗi (false), thì không làm gì cả (modal vẫn mở để sửa lỗi)
+  if (isSuccess) {
+    onClose();
+  }
+};
 
   return (
     <div className={cx("overlay")} onClick={(e) => e.target === e.currentTarget && onClose()}>
@@ -63,7 +106,9 @@ export default function CreateRuleModal({ initialData, onClose, onCreate }) {
         <div className={cx("modalHead")}>
           <h2>{isEdit ? "Chỉnh sửa quy tắc" : "Tạo quy tắc tích điểm"}</h2>
           <p className={cx("modalSub")}>
-            {isEdit ? "Cập nhật thông tin quy tắc tích điểm" : "Thiết lập điều kiện và phần thưởng điểm mới"}
+            {isEdit
+              ? "Cập nhật thông tin quy tắc tích điểm"
+              : "Thiết lập điều kiện và phần thưởng điểm mới"}
           </p>
         </div>
 
@@ -121,7 +166,7 @@ export default function CreateRuleModal({ initialData, onClose, onCreate }) {
           {/* Quy tắc mặc định */}
           <div
             className={cx("checkItem", { active: form.isDefault })}
-            onClick={() => set("isDefault", !form.isDefault)}
+            onClick={handleToggleDefault}
           >
             <div className={cx("cbBox", { cbChecked: form.isDefault })}>
               {form.isDefault && <Check size={11} color="#F5F0E8" strokeWidth={3} />}
@@ -135,7 +180,7 @@ export default function CreateRuleModal({ initialData, onClose, onCreate }) {
           {/* Giới hạn thời gian */}
           <div
             className={cx("checkItem", { active: form.hasDateRange })}
-            onClick={() => set("hasDateRange", !form.hasDateRange)}
+            onClick={handleToggleDateRange}
           >
             <div className={cx("cbBox", { cbChecked: form.hasDateRange })}>
               {form.hasDateRange && <Check size={11} color="#F5F0E8" strokeWidth={3} />}
@@ -146,7 +191,7 @@ export default function CreateRuleModal({ initialData, onClose, onCreate }) {
             </div>
           </div>
 
-          {/* Date range — animated show/hide */}
+          {/* Date range */}
           <div className={cx("dateWrap", { hidden: !form.hasDateRange })}>
             <div className={cx("row2")}>
               <div className={cx("field")}>
@@ -168,16 +213,16 @@ export default function CreateRuleModal({ initialData, onClose, onCreate }) {
             </div>
           </div>
 
-          {/* Error */}
+          {/* ✅ Lỗi validate inline */}
           {error && <div className={cx("error")}>{error}</div>}
         </div>
 
         {/* ── Footer ──────────────────────────────────────────────── */}
         <div className={cx("modalFooter")}>
           <button className={cx("btnGhost")} onClick={onClose}>Huỷ</button>
-          <button className={cx("btnPrimary")} onClick={handleSubmit}>
-            {isEdit ? "Lưu thay đổi" : "Tạo quy tắc"}
-          </button>
+         <button className={cx("btnPrimary")} onClick={(e) => handleSubmit(e)}>
+  {isEdit ? "Lưu thay đổi" : "Tạo quy tắc"}
+</button>
         </div>
       </div>
     </div>

@@ -2,7 +2,7 @@
 "use strict";
 
 export async function up(queryInterface, Sequelize) {
-  await queryInterface.createTable("barber_unavailabilities", {
+  await queryInterface.createTable("barber_day_offs", {
     idUnavailable: { type: Sequelize.INTEGER, autoIncrement: true, primaryKey: true },
     idBarber: {
       type: Sequelize.INTEGER,
@@ -23,5 +23,5 @@ export async function up(queryInterface, Sequelize) {
 }
 
 export async function down(queryInterface) {
-  await queryInterface.dropTable("barber_unavailabilities");
+  await queryInterface.dropTable("barber_day_offs");
 }

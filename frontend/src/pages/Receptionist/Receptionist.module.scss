@@ -339,3 +339,308 @@
     color: var(--gold-main);
   }
 }
+/* ── Paste vào cuối Receptionist.module.scss ─────────────────────────────── */
+
+/* Header Right */
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.branchBadge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: var(--bg-muted);
+  border: 1px solid var(--border-sharp);
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-family: var(--ff-body);
+  letter-spacing: 0.3px;
+
+  svg { color: var(--gold-main); flex-shrink: 0; }
+}
+
+/* ── Notification Wrapper ─────────────────────────────────────────────────── */
+.notificationWrapper {
+  position: relative;
+}
+
+.notifBtn {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  background: transparent;
+  border: 2px solid var(--border-sharp);
+  border-radius: 0;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: var(--black);
+    border-color: var(--black);
+    color: var(--gold-main);
+  }
+}
+
+/* Badge số lượng chưa đọc */
+.badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  background: var(--gold-main);
+  color: var(--black);
+  font-size: 10px;
+  font-weight: 700;
+  font-family: var(--ff-body);
+  border-radius: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0;
+  line-height: 1;
+}
+
+/* ── Dropdown ─────────────────────────────────────────────────────────────── */
+.notifyDropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 360px;
+  background: var(--bg-surface);
+  border: 2px solid var(--black);
+  border-top: 3px solid var(--gold-main);
+  box-shadow: 6px 6px 0 var(--black);
+  z-index: 500;
+  animation: dropIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes dropIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.notifyHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border-sharp);
+  font-family: var(--ff-serif);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: 0.3px;
+}
+
+.notifyUnreadBadge {
+  font-family: var(--ff-display);
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  background: var(--gold-main);
+  color: var(--black);
+  padding: 3px 8px;
+  font-weight: 400;
+}
+
+/* ── Danh sách ────────────────────────────────────────────────────────────── */
+.notifyList {
+  max-height: 380px;
+  overflow-y: auto;
+
+  &::-webkit-scrollbar { width: 3px; }
+  &::-webkit-scrollbar-thumb { background: var(--border-sharp); }
+}
+
+.notifyEmpty {
+  padding: 32px 18px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted);
+  font-style: italic;
+  font-family: var(--ff-body);
+}
+
+.notifyItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border-sharp);
+  cursor: pointer;
+  transition: background 0.15s ease;
+  background: var(--bg-surface);
+
+  &:last-child { border-bottom: none; }
+
+  &:hover { background: var(--bg-muted); }
+
+  /* Chưa đọc — nền gold nhạt + border trái */
+  &.unread {
+    background: var(--gold-light);
+    border-left: 3px solid var(--gold-main);
+    padding-left: 15px;
+
+    &:hover { background: #fdf0d0; }
+  }
+}
+
+.notifyDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--gold-main);
+  flex-shrink: 0;
+  margin-top: 5px;
+
+  .notifyItem:not(.unread) & {
+    background: var(--border-sharp);
+  }
+}
+
+.notifyItemBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.notifyTitle {
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  font-family: var(--ff-body);
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notifyPreview {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: var(--ff-body);
+  line-height: 1.5;
+  white-space: pre-line; /* giữ xuống dòng cho danh sách khách */
+}
+
+/* ── Dialog chi tiết ──────────────────────────────────────────────────────── */
+.customDialogOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 17, 17, 0.6);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.customDialog {
+  background: var(--bg-surface);
+  border: 2px solid var(--black);
+  border-top: 4px solid var(--gold-main);
+  box-shadow: 8px 8px 0 var(--black);
+  width: 480px;
+  max-width: 100%;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  animation: dialogIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes dialogIn {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0)   scale(1); }
+}
+
+.dialogHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 22px 16px;
+  border-bottom: 1px solid var(--border-sharp);
+  flex-shrink: 0;
+}
+
+.dialogTitle {
+  margin: 0;
+  font-family: var(--ff-serif);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.2px;
+  line-height: 1.3;
+}
+
+.dialogCloseIcon {
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: 1px solid var(--border-sharp);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: var(--black);
+    border-color: var(--black);
+    color: var(--gold-main);
+  }
+}
+
+.dialogContent {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px 22px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-family: var(--ff-body);
+  line-height: 1.75;
+  white-space: pre-line; /* giữ xuống dòng danh sách khách */
+  margin: 0;
+
+  &.noContent {
+    color: var(--text-hint);
+    font-style: italic;
+  }
+
+  &::-webkit-scrollbar { width: 3px; }
+  &::-webkit-scrollbar-thumb { background: var(--border-sharp); }
+}
+
+.dialogCloseBtn {
+  flex-shrink: 0;
+  margin: 0 22px 20px;
+  padding: 10px 0;
+  background: var(--black);
+  color: var(--gold-main);
+  border: 2px solid var(--black);
+  font-family: var(--ff-display);
+  font-size: 13px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  width: calc(100% - 44px);
+
+  &:hover {
+    background: var(--gold-main);
+    color: var(--black);
+    border-color: var(--gold-main);
+  }
+}

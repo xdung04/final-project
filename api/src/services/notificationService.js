@@ -254,3 +254,85 @@ export const notifySettlementDone = async ({ idBarber, netSalary, idSalary }) =>
     referenceId: idSalary,
   });
 };
+// ═══════════════════════════════════════════════════════════════════════════
+// BARBER DAY OFF EVENTS — Paste vào cuối notificationService.js
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Hủy booking do thợ nghỉ → notify khách
+ * Gửi cho từng khách bị ảnh hưởng
+ * Best-effort — lỗi chỉ log, không block
+ */
+export const notifyBookingCancelledDueToDayOff = async ({
+  bookings,      // array: [{ idBooking, bookingDate, idCustomer }]
+  barberName,
+}) => {
+  if (!bookings?.length) return;
+
+  const notifications = bookings.map((b) => {
+    const dateStr = new Date(b.bookingDate).toLocaleDateString("vi-VN");
+    return {
+      type:        "BOOKING",
+      title:       "Lịch hẹn bị hủy",
+      content:     `Lịch hẹn ngày ${dateStr} với thợ ${barberName} đã bị hủy do thợ nghỉ phép. Vui lòng đặt lại lịch hoặc liên hệ chi nhánh để được hỗ trợ.`,
+      targetRole:  "customer",
+      targetId:    b.idCustomer,
+      referenceId: b.idBooking,
+      isRead:      false,
+    };
+  });
+
+  try {
+    await bulkCreateNotifications(notifications);
+  } catch (err) {
+    console.error("Lỗi gửi thông báo hủy booking cho khách:", err);
+  }
+};
+
+/**
+ * Hủy booking do thợ nghỉ → notify lễ tân chi nhánh đó
+ * Gửi 1 thông báo tổng hợp cho lễ tân, kèm danh sách khách
+ * Best-effort — lỗi chỉ log, không block
+ */
+export const notifyReceptionistBookingsCancelled = async ({
+  idBranch,      // để tìm lễ tân chi nhánh
+  bookings,      // array: [{ idBooking, bookingDate, customerName, phoneNumber }]
+  barberName,
+  startDate,
+  endDate,
+}) => {
+  if (!bookings?.length) return;
+
+  try {
+    // Tìm lễ tân của chi nhánh đó
+    const receptionist = await db.Receptionist.findOne({
+      where: { idBranch },
+      attributes: ["idReceptionist"],
+    });
+
+    if (!receptionist) return; // Chi nhánh chưa có lễ tân → bỏ qua
+
+    const startStr = new Date(startDate).toLocaleDateString("vi-VN");
+    const endStr   = new Date(endDate).toLocaleDateString("vi-VN");
+
+    // Tóm tắt danh sách khách bị hủy
+    const customerList = bookings
+      .map((b) => {
+        const dateStr = new Date(b.bookingDate).toLocaleDateString("vi-VN");
+        return `• ${b.customerName} (${b.phoneNumber}) — ${dateStr}`;
+      })
+      .join("\n");
+
+    await createNotification({
+      type:        "BOOKING",
+      title:       `${bookings.length} booking bị hủy do thợ nghỉ`,
+      content:     `Thợ ${barberName} nghỉ từ ${startStr} đến ${endStr}. Danh sách khách cần liên hệ:\n${customerList}`,
+      targetRole:  "receptionist",  // ⚠️ Nếu ENUM chưa có "receptionist" thì đổi thành "admin"
+      targetId:    receptionist.idReceptionist,
+      referenceId: null,
+      isRead:      false,
+    });
+  } catch (err) {
+    console.error("Lỗi gửi thông báo cho lễ tân:", err);
+  }
+};
