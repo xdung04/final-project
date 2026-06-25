@@ -10,8 +10,6 @@ router.get("/",
   authenticate, adminOnly,
   barberDayOffController.getAll
 );
-
-
 router.post("/preview",
   authenticate, adminOnly,
   barberDayOffController.preview

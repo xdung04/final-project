@@ -89,7 +89,7 @@ const BARBER_CONFIGS = [
 ];
 
 // Ca làm việc trong ngày
-const SHIFTS = ["09:00", "10:30", "13:00", "14:30", "16:00", "17:30", "19:00"];
+const SHIFTS = ["09:00", "10:00", "13:00", "14:00", "16:00", "17:00", "19:00"];
 
 // Danh sách customer để random (idCustomer 2–25)
 const CUSTOMER_IDS = [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25];

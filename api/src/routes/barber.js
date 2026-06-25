@@ -15,8 +15,6 @@ router.get("/reward/:idBarber", barberController.getBarberReward);
 
 router.post("/create", barberController.createBarberWithUser);
 router.put("/update/:idBarber", barberController.updateBarber);
-router.post("/unavailability", barberController.addBarberUnavailability);
-router.get("/unavailability/:idBarber", barberController.getBarberUnavailabilities);
 
 router.get("/profile/:idBarber", barberController.getBarberProfile);
 router.put(

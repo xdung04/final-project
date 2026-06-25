@@ -6,16 +6,15 @@ import Step1_BookingInfo from "./BookingInfo";
 import socket from "../../utils/socket";
 import { PaymentAPI } from "~/apis/paymentAPI";
 
-// --- COMPONENT PHỤ: MONITOR VIEW (ĐÃ TỐI ƯU) ---
+// --- COMPONENT PHỤ: MONITOR VIEW ---
 const MonitoringView = ({ guestProgress, onCancel, onCashPayment }) => {
   const totalPayment = (guestProgress.total || 0) + (guestProgress.tip || 0);
 
-  // Hàm xử lý text trạng thái thông minh
   const getStatusInfo = (progress) => {
     if (progress.isPaid) {
       return {
         text: "✅ KHÁCH ĐÃ THANH TOÁN THÀNH CÔNG!",
-        className: monitorStyles.statusSuccess, // Ông thêm class này trong CSS màu xanh lá
+        className: monitorStyles.statusSuccess,
         isDone: true,
       };
     }
@@ -46,7 +45,6 @@ const MonitoringView = ({ guestProgress, onCancel, onCashPayment }) => {
 
   return (
     <div className={monitorStyles.monitoringContent}>
-      {/* Badge trạng thái đổi màu tùy theo tình huống */}
       <div className={`${monitorStyles.statusBadge} ${status.className}`}>
         {!guestProgress.isPaid && (
           <div className={monitorStyles.pulseDot}></div>
@@ -72,7 +70,6 @@ const MonitoringView = ({ guestProgress, onCancel, onCashPayment }) => {
           </span>
         </div>
 
-        {/* Luôn hiển thị tổng tiền nếu có để lễ tân đối soát */}
         <div
           className={monitorStyles.statItem}
           style={{ gridColumn: "1 / -1" }}
@@ -96,7 +93,6 @@ const MonitoringView = ({ guestProgress, onCancel, onCashPayment }) => {
 
       <div className={monitorStyles.actionGroup}>
         {guestProgress.isPaid ? (
-          // Nếu đã trả tiền xong, chỉ hiện 1 nút duy nhất để đóng modal và cập nhật list
           <button
             onClick={onCashPayment}
             className={monitorStyles.btnSuccess}
@@ -112,7 +108,7 @@ const MonitoringView = ({ guestProgress, onCancel, onCashPayment }) => {
             <button
               onClick={onCashPayment}
               className={monitorStyles.btnCash}
-              disabled={guestProgress.step !== 6} 
+              disabled={guestProgress.step !== 6}
             >
               Xác nhận thu tiền mặt
             </button>
@@ -126,6 +122,7 @@ const MonitoringView = ({ guestProgress, onCancel, onCashPayment }) => {
 // --- COMPONENT CHÍNH ---
 export default function ReceptionistPayment({
   booking,
+  idBranch,
   onClose,
   onPushSuccess,
 }) {
@@ -137,9 +134,55 @@ export default function ReceptionistPayment({
     rating: 0,
     tip: 0,
     total: 0,
-    isPaid: false, // Cờ quan trọng
+    isPaid: false,
   });
 
+  // ✅ FIX 1: Join room ngay khi mở modal + rejoin khi socket reconnect
+  useEffect(() => {
+    if (!idBranch) return;
+
+    const joinRoom = () => {
+      socket.emit("receptionist_join_checkout", {
+        idBranch,
+        receptionistId: "receptionist",
+      });
+      console.log(`👤 Lễ tân joined checkout room: checkout_branch_${idBranch}`);
+    };
+
+    // Join ngay lập tức
+    joinRoom();
+
+    // Tự động rejoin nếu socket bị ngắt rồi kết nối lại
+    socket.on("connect", joinRoom);
+
+    return () => {
+      socket.off("connect", joinRoom);
+    };
+  }, [idBranch]);
+
+  // ✅ FIX 2: Lắng nghe socket event riêng, không phụ thuộc vào booking thay đổi
+  useEffect(() => {
+    const handleProgress = (data) => {
+      console.log("📱 Nhận tiến độ từ iPad:", data);
+      setGuestProgress((prev) => ({ ...prev, ...data }));
+    };
+
+    const handleCashPayment = (data) => {
+      console.log("💵 Nhận yêu cầu thanh toán tiền mặt:", data);
+      setCashPayload(data);
+      setGuestProgress((prev) => ({ ...prev, ...data, step: 6 }));
+    };
+
+    socket.on("receive_customer_progress", handleProgress);
+    socket.on("customer_choose_cash_payment", handleCashPayment);
+
+    return () => {
+      socket.off("receive_customer_progress", handleProgress);
+      socket.off("customer_choose_cash_payment", handleCashPayment);
+    };
+  }, []); // Chỉ chạy 1 lần khi mount
+
+  // Setup formData khi booking thay đổi
   useEffect(() => {
     if (!booking) return;
 
@@ -152,66 +195,76 @@ export default function ReceptionistPayment({
         barber: booking.barber?.name || "Chưa chỉ định",
         time: booking.bookingTime || "Không rõ",
         branch: booking.branch?.name || "",
-        branchId: booking.branch?.id || null, // ← dùng branch.id
+        branchId: booking.branch?.id || null,
       },
       services:
         booking.services?.map((s) => ({
-          id: s.id, // API trả về s.id
+          id: s.id,
           name: s.name,
           price: parseFloat(s.price) || 0,
           selected: true,
         })) || [],
-      voucher: booking.voucher || null, // truyền thẳng object voucher
+      voucher: booking.voucher || null,
       serviceRating: 0,
       tip: parseFloat(booking.tip || 0),
       note: booking.description || "",
     };
 
     setFormData(initialData);
-
-    const handleProgress = (data) => {
-      setGuestProgress((prev) => ({ ...prev, ...data }));
-    };
-    socket.on("customer_choose_cash_payment", (data) => {
-      setCashPayload(data);
-      setGuestProgress((prev) => ({ ...prev, ...data, step: 6 }));
-    });
-
-    return () => {
-      socket.off("receive_customer_progress", handleProgress);
-      socket.off("customer_choose_cash_payment");
-    };
   }, [booking]);
 
   const handlePushToKiosk = (finalData) => {
+    if (!idBranch) {
+      console.error("❌ Missing idBranch - cannot push to kiosk");
+      alert("Lỗi: Không tìm thấy thông tin chi nhánh");
+      return;
+    }
+
+    console.log(`📤 Push bill tới iPad chi nhánh ${idBranch}`);
     socket.emit("admin_push_checkout", {
+      idBranch,
       bookingId: finalData.booking.idBooking,
       formData: finalData,
+      timestamp: new Date().toISOString(),
     });
     setMode("MONITOR");
   };
 
   const handleCancelMonitoring = () => {
+    if (!idBranch) {
+      console.error("❌ Missing idBranch - cannot cancel checkout");
+      alert("Lỗi: Không tìm thấy thông tin chi nhánh");
+      return;
+    }
+
+    console.log(`❌ Hủy bill của chi nhánh ${idBranch}`);
     socket.emit("admin_cancel_checkout", {
+      idBranch,
       bookingId: formData.booking.idBooking,
+      timestamp: new Date().toISOString(),
     });
     setMode("EDIT");
   };
 
-  // Hàm này dùng chung cho cả khi Lễ tân thu tiền mặt HOẶC xác nhận sau khi VNPAY xong
   const handleFinalize = async () => {
     if (guestProgress.isPaid) {
       if (onPushSuccess) onPushSuccess();
       onClose();
       return;
     }
+
     if (guestProgress.step === 6 && cashPayload) {
       try {
-        await PaymentAPI.create(formData.booking.idBooking, cashPayload);
+        await PaymentAPI.create(formData.booking.idBooking, {
+          ...cashPayload,
+          idBranch,
+        });
+
+        console.log("✅ Thanh toán CASH thành công");
         if (onPushSuccess) onPushSuccess();
         onClose();
       } catch (error) {
-        console.error("Lỗi thanh toán CASH", error);
+        console.error("❌ Lỗi thanh toán CASH:", error);
         alert("Xác nhận thất bại, vui lòng thử lại");
       }
     } else {

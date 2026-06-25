@@ -5,8 +5,13 @@ import BookingList from "~/components/BookingList";
 import ReceptionistPayment from "~/components/ReceptionistPayment";
 import DirectBooking from "~/components/DirectBooking";
 import socket from "~/utils/socket";
+import { useAuth } from "~/context/AuthContext"; // ← Adjust path based on your project
 
 export default function PaymentBookingPage() {
+  // ✅ Lấy auth info (idBranch, userId, ...)
+  const { user} = useAuth();
+
+  
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -20,7 +25,31 @@ export default function PaymentBookingPage() {
     reloadRef.current = reloadFunc;
   };
 
-  // Logic xử lý Socket
+  // ✅ BƯỚC 1: Socket - Join room thanh toán khi component mount
+  useEffect(() => {
+    // Kiểm tra auth info đã sẵn sàng
+    if (!user?.id || !user?.idBranch) {
+      console.warn("⚠️ Auth info chưa sẵn sàng");
+      return;
+    }
+
+    // ✅ Join vào room thanh toán của chi nhánh
+    socket.emit("receptionist_join_checkout", {
+      idBranch: user.idBranch,
+      receptionistId: user.id,
+    });
+
+    console.log(`✅ Lễ tân [${user.id}] joined checkout room for branch [${user.idBranch}]`);
+
+    // Cleanup: leave room khi component unmount
+    return () => {
+      // Nếu socket hỗ trợ, có thể emit leave event
+      // socket.emit("receptionist_leave_checkout", { idBranch: branch.idBranch });
+      console.log(`👋 Lễ tân [${user.id}] leaving checkout room`);
+    };
+  }, [user?.id, user?.idBranch]);
+
+  // ✅ BƯỚC 2: Socket - Lắng nghe receive_customer_progress (từ iPad)
   useEffect(() => {
     const handlePaymentProgress = (data) => {
       // Log để debug khi test
@@ -50,6 +79,21 @@ export default function PaymentBookingPage() {
     // Cleanup socket khi chuyển trang hoặc đóng component
     return () => {
       socket.off("receive_customer_progress", handlePaymentProgress);
+    };
+  }, []);
+
+  // ✅ BƯỚC 3: Socket - Lắng nghe receive_checkout_request (từ receptionist/admin)
+  useEffect(() => {
+    const handleCheckoutRequest = (data) => {
+      console.log("Socket nhận yêu cầu checkout:", data);
+      // Tùy chọn: cập nhật UI hoặc notification
+      // Ví dụ: hiển thị thông báo có bill mới cần xử lý
+    };
+
+    socket.on("receive_checkout_request", handleCheckoutRequest);
+
+    return () => {
+      socket.off("receive_checkout_request", handleCheckoutRequest);
     };
   }, []);
 
@@ -118,6 +162,8 @@ export default function PaymentBookingPage() {
         {selectedBooking && (
           <ReceptionistPayment
             booking={selectedBooking}
+            // ✅ Pass branch info để ReceptionistPayment có thể dùng khi emit socket
+            idBranch={user?.idBranch}
             onClose={() => setSelectedBooking(null)}
             onPushSuccess={() => {
               // Khi lễ tân chủ động đẩy bill sang iPad
@@ -130,6 +176,8 @@ export default function PaymentBookingPage() {
 
       {showBookingForm && (
         <DirectBooking
+          // ✅ Pass branch info để DirectBooking có thể dùng
+          idBranch={user?.idBranch}
           onClose={() => setShowBookingForm(false)}
           onSuccess={() => {
             // Khi tạo mới booking trực tiếp thành công
