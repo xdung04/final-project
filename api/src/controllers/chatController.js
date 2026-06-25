@@ -1,9 +1,6 @@
 // src/controllers/chatController.js
 import { processChatFlow, syncPostLogin,requestHumanSupport,closeConversationOnLogout } from "../services/chatFlowService.js";
 
-/**
- * 🚀 API 1: Xử lý hội thoại chat chính (Tự động nhận diện qua Token)
- */
 export async function handleChat(req, res) {
   try {
     const { sessionId, message } = req.body;

@@ -2,40 +2,49 @@ import cron from "node-cron";
 import db from "../models/index.js";
 import { Op } from "sequelize";
 
-// --- BƯỚC 1: ĐỊNH NGHĨA CÁI "RUỘT" (LOGIC) ---
-// Tách ra hàm riêng và export để tí nữa gọi ở đâu cũng được
+// ─────────────────────────────────────────────────────────────
+// LOGIC: Tự động xác nhận phiếu lương quá 48h
+// ─────────────────────────────────────────────────────────────
 export const checkAndAutoConfirmSalaries = async () => {
-  console.log("=== [CRON LOGIC] ĐANG QUÉT CÁC PHIẾU LƯƠNG QUÁ HẠN... ===");
-  const now = new Date();
+  console.log("=== [CRON] Quét phiếu lương quá hạn 48h... ===");
 
   try {
     const [updatedCount] = await db.Salary.update(
-      { 
-        status: "AutoConfirmed"
-      },
+      { status: "AutoConfirmed" },
       {
         where: {
-          status: "Pending",
-          deadlineAt: { [Op.lte]: now }
-        }
+          status:     "Pending",
+          deadlineAt: { [Op.lte]: new Date() },
+        },
       }
     );
 
+    console.log(`>>> Đã tự động xác nhận ${updatedCount} phiếu.`);
     return updatedCount;
-  } catch (error) {
-    console.error(">>> [CRON LOGIC LỖI]:", error);
-    throw error;
+  } catch (err) {
+    console.error("❌ [CRON] Lỗi auto-confirm lương:", err.message);
+    throw err;
   }
 };
-// --- BƯỚC 2: CÁI "VỎ" (HẸN GIỜ) ---
+
+// ─────────────────────────────────────────────────────────────
+// SCHEDULER
+// ─────────────────────────────────────────────────────────────
 export default function startSalaryCron() {
-  // Thêm tham số timezone ở cuối
+  // Chạy mỗi giờ — đủ chính xác cho window 48h
   cron.schedule("0 * * * *", async () => {
-    console.log("--- [Hệ thống GMT+7] Bắt đầu quét lương tự động... ---");
-    const count = await checkAndAutoConfirmSalaries();
-    console.log(`>>> Kết quả: Đã tự động chốt ${count} phiếu.`);
+    console.log("--- [Cron GMT+7] Chạy job tự động xác nhận lương ---");
+    try {
+      const count = await checkAndAutoConfirmSalaries();
+      console.log(`>>> Kết quả: ${count} phiếu được chốt.`);
+    } catch (err) {
+      console.error("❌ [Cron] Job thất bại:", err.message);
+      // Không throw — tránh crash toàn bộ cron process
+    }
   }, {
     scheduled: true,
-    timezone: "Asia/Ho_Chi_Minh" // 🇻🇳 Ép cron chạy theo giờ VN
+    timezone:  "Asia/Ho_Chi_Minh",
   });
+
+  console.log("✅ [Cron] startSalaryCron đã khởi động.");
 }

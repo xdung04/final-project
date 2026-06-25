@@ -29,7 +29,6 @@ function LichSuGiaoDich() {
   // ── States cho Bộ lọc ──────────────────────────────────────────────────
   const [search,         setSearch]         = useState("");
   const [dateFrom,       setDateFrom]       = useState("");
-  const [dateTo,         setDateTo]         = useState("");
   const [statusFilter,   setStatusFilter]   = useState("all");
   const [methodFilter,   setMethodFilter]   = useState("all");
   const [page,           setPage]           = useState(1);
@@ -43,36 +42,40 @@ function LichSuGiaoDich() {
   const [loading,        setLoading]        = useState(false);
   const [selectedTx,     setSelectedTx]     = useState(null);
 
-  // ── 1. Lấy danh sách giao dịch ──────────────────────────────────────────
-  const loadTransactions = useCallback(async () => {
-    setLoading(true);
-    try {
-      const filters = { search, dateFrom, dateTo, statusFilter, methodFilter, page, limit: PAGE_SIZE };
-      const res = await TransactionAPI.getTransactions(filters);
-      if (res.success) {
-        setTransactions(res.data);
-        setTotalPages(res.totalPages);
-        setTotalItems(res.totalItems);
-      }
-    } catch (error) {
-      console.error("Lỗi khi tải giao dịch:", error.message);
-    } finally {
-      setLoading(false);
+const loadTransactions = useCallback(async () => {
+  setLoading(true);
+  try {
+    // Chỉ truyền dateFrom lên API
+    const filters = { search, dateFrom, statusFilter, methodFilter, page, limit: PAGE_SIZE };
+    const res = await TransactionAPI.getTransactions(filters);
+    if (res.success) {
+      setTransactions(res.data);
+      setTotalPages(res.totalPages);
+      setTotalItems(res.totalItems);
     }
-  }, [search, dateFrom, dateTo, statusFilter, methodFilter, page]);
+  } catch (error) {
+    console.error("Lỗi khi tải giao dịch:", error.message);
+  } finally {
+    setLoading(false);
+  }
+}, [search, dateFrom, statusFilter, methodFilter, page]);
 
-  // ── 2. Lấy thống kê tổng hợp ────────────────────────────────────────────
-  const loadStats = async () => {
-    try {
-      const res = await TransactionAPI.getSummaryStats();
-      if (res.success) setStatsData(res.data);
-    } catch (error) {
-      console.error("Lỗi khi tải thống kê:", error.message);
-    }
-  };
+// ── 2. Lấy thống kê tổng hợp ────────────────────────────────────────────
+const loadStats = async () => {
+  try {
+    // ĐỒNG BỘ: Truyền các bộ lọc hiện tại lên để Stats chạy khớp với bảng
+    const filters = { search, dateFrom, statusFilter, methodFilter };
+    const res = await TransactionAPI.getSummaryStats(filters);
+    if (res.success) setStatsData(res.data);
+  } catch (error) {
+    console.error("Lỗi khi tải thống kê:", error.message);
+  }
+};
 
-  useEffect(() => { loadTransactions(); }, [loadTransactions]);
-  useEffect(() => { loadStats(); }, [statusFilter, dateFrom, dateTo]);
+useEffect(() => { loadTransactions(); }, [loadTransactions]);
+
+// ĐỒNG BỘ: Cập nhật lại stats mỗi khi các bộ lọc chính thay đổi
+useEffect(() => { loadStats(); }, [search, dateFrom, statusFilter, methodFilter]);
 
   const handleFilterChange = (setter, value) => {
     setter(value);
@@ -149,11 +152,15 @@ function LichSuGiaoDich() {
               onChange={(e) => handleFilterChange(setSearch, e.target.value)}
             />
           </div>
-          <div className={cx("dateRange")}>
-            <input type="date" className={cx("dateInput")} value={dateFrom} onChange={(e) => handleFilterChange(setDateFrom, e.target.value)} />
-            <span>—</span>
-            <input type="date" className={cx("dateInput")} value={dateTo} onChange={(e) => handleFilterChange(setDateTo, e.target.value)} />
-          </div>
+          <div className={cx("dateSingle")}>
+  <label className={cx("dateLabel")}>Từ ngày:</label>
+  <input 
+    type="date" 
+    className={cx("dateInput")} 
+    value={dateFrom} 
+    onChange={(e) => handleFilterChange(setDateFrom, e.target.value)} 
+  />
+</div>
         </div>
 
         <div className={cx("filterRight")}>

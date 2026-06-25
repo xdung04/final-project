@@ -269,32 +269,6 @@ function ThoCatToc() {
 
                 {/* Content Area */}
                 <main className={cx("contentArea")}>
-                    <div className={cx("statsGrid")}>
-                        <StatCard
-                            title="Lịch hẹn tuần này"
-                            value={stats?.totalAppointmentsThisWeek?.toLocaleString("vi-VN") || "0"}
-                            desc="Pending + Completed"
-                            accent="black"
-                        />
-                        <StatCard
-                            title="Lượt xem Reels"
-                            value={stats?.totalReelViews?.toLocaleString("vi-VN") || "0"}
-                            desc="Tổng lượt tương tác"
-                            accent="gold"
-                        />
-                        <StatCard
-                            title="Doanh thu tháng"
-                            value={formatCurrency(stats?.monthlyRevenue)}
-                            desc="Bao gồm tiền tip"
-                            accent="amber"
-                        />
-                        <StatCard
-                            title="Đánh giá trung bình"
-                            value={stats?.avgRating ? Number(stats.avgRating).toFixed(1) : "0.0"}
-                            desc="Từ khách hàng"
-                            accent="gold"
-                        />
-                    </div>
 
                     <div className={cx("tabContainer")}>
                         {activeId === "lichhen" && <LichHen />}

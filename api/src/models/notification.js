@@ -32,7 +32,7 @@ export default (sequelize) => {
         allowNull: true,
       },
       targetRole: {
-        type: DataTypes.ENUM("customer", "barber", "admin"), // Bổ sung admin
+        type: DataTypes.ENUM("customer", "barber", "admin","receptionist"), // Bổ sung admin
         allowNull: false,
       },
       targetId: {

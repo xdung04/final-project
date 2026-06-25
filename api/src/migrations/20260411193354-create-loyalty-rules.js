@@ -4,6 +4,7 @@
 export async function up(queryInterface, Sequelize) {
   await queryInterface.createTable("loyalty_rules", {
     id: { type: Sequelize.INTEGER, autoIncrement: true, primaryKey: true },
+    name: { type: Sequelize.STRING, allowNull: true },
     money_per_point: { type: Sequelize.INTEGER, allowNull: false },
     point_multiplier: { type: Sequelize.DECIMAL(4, 2), allowNull: false, defaultValue: 1.0 },
     min_order_amount: { type: Sequelize.INTEGER, allowNull: false, defaultValue: 0 },

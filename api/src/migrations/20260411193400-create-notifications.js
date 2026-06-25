@@ -12,7 +12,7 @@ export async function up(queryInterface, Sequelize) {
     content: { type: Sequelize.TEXT, allowNull: true },
     
     // BỔ SUNG "admin" ĐỂ THỢ CÓ THỂ GỬI KHIẾU NẠI LÊN QUẢN LÝ
-    targetRole: { type: Sequelize.ENUM("customer", "barber", "admin"), allowNull: false }, 
+    targetRole: { type: Sequelize.ENUM("customer", "barber", "admin","receptionist"), allowNull: false }, 
     targetId: { type: Sequelize.INTEGER, allowNull: true }, // ID của User/Barber/Admin nhận
     
     // BỔ SUNG CỘT CHUYỂN HƯỚNG (DEEP-LINK)

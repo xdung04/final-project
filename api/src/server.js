@@ -29,6 +29,7 @@ import hashtagRoutes from "./routes/hashtag.js";
 import hairConsultRoutes from "./routes/hairConsult.js";
 import transactionRoutes from "./routes/transaction.js";
 import hairstyleRoutes from "./routes/hairStyle.js";
+import barberDayOffRoutes from "./routes/barberDayOff.js";
 import startBranchStatusCron from "./cron/branchStatusCron.js";
 import startSalaryCron from "./cron/salaryCron.js";
 import startBarberLockCron from "./cron/barberStatusCron.js";
@@ -73,7 +74,7 @@ app.use("/api/chat-live", chatLiveRoute);
 app.use("/api/barbers", barberRoutes);
 app.use("/api/branches", branchRoutes);
 app.use("/api/ratings", ratingRoutes);
-
+app.use("/api/barber-day-offs", barberDayOffRoutes);
 app.use("/api/hairstyles", hairstyleRoutes);
 app.use("/api/bookings", bookingRoute);
 app.use("/api/payment", paymentRoute);

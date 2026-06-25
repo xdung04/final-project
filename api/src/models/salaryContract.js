@@ -9,12 +9,13 @@ export default (sequelize, DataTypes) => {
         foreignKey: "idBarber",
         as: "barber",
       });
+      
       SalaryContract.hasMany(models.Salary, {
-  foreignKey: "idContract",
-  as: "salaries",
-});
+        foreignKey: "idContract",
+        as: "salaries",
+      });
+      
       // Liên kết tới cấp bậc lương (Plan)
-      // Lưu ý: foreignKey ở đây khớp với idBarber/idPlan trong DB
       SalaryContract.belongsTo(models.CompensationPlan, {
         foreignKey: "idCompensationPlan",
         targetKey: "idCompensationPlan", 
@@ -42,12 +43,10 @@ export default (sequelize, DataTypes) => {
         field: "idPlan", // Khớp với idPlan trong migration
       },
       actualBaseSalary: {
-        // Giữ DECIMAL(10, 2) theo migration ông gửi
-        // (Nếu muốn đổi sang INTEGER thì ông sửa ở cả 2 file nhé)
         type: DataTypes.DECIMAL(10, 2),
         allowNull: false,
       },
-       terminationReason: {
+      terminationReason: {
         type: DataTypes.TEXT,
         allowNull: true,
       },
@@ -60,9 +59,9 @@ export default (sequelize, DataTypes) => {
         allowNull: true,
       },
       status: {
-        // Khớp hoàn toàn với ENUM trong migration: active, closed, terminated
-        type: DataTypes.ENUM("active", "closed", "terminated"),
-        defaultValue: "active",
+        // 🌟 CẬP NHẬT: Thêm "pending" vào ENUM và đặt làm mặc định cho hợp đồng tương lai
+        type: DataTypes.ENUM("pending", "active", "closed", "terminated"),
+        defaultValue: "pending",
       },
     },
     {

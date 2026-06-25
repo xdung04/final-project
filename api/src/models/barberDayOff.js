@@ -2,12 +2,12 @@
 import { Model } from "sequelize";
 
 export default (sequelize, DataTypes) => {
-  class BarberUnavailability extends Model {
+  class BarberDayOff extends Model {
     static associate(models) {
-      BarberUnavailability.belongsTo(models.Barber, { foreignKey: "idBarber" });
+      BarberDayOff.belongsTo(models.Barber, { foreignKey: "idBarber" });
     }
   }
-  BarberUnavailability.init(
+  BarberDayOff.init(
     {
       idUnavailable: {
         type: DataTypes.INTEGER,
@@ -33,10 +33,10 @@ export default (sequelize, DataTypes) => {
     },
     {
       sequelize,
-      modelName: "BarberUnavailability",
-      tableName: "barber_unavailabilities",
+      modelName: "BarberDayOff",
+      tableName: "barber_day_offs",
       timestamps: true,
     }
   );
-  return BarberUnavailability;
+  return BarberDayOff;
 };

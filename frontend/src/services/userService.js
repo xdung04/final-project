@@ -39,26 +39,10 @@ export const updatePhone = async (phoneNumber) => {
   }
 };
 
-export const changePassword = async (
-  token,
-  data
-) => {
+export const changePassword = async (data) => {
   try {
-    const res = await request.put(
-      "/user/profile/change-password",
-      data,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-
-    console.log(
-      "API changePassword trả về:",
-      res
-    );
-
+    const res = await request.put("/user/profile/change-password", data);
+    console.log("API changePassword trả về:", res);
     return res;
   } catch (error) {
     throw error.response?.data || error;

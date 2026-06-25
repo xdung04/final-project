@@ -25,17 +25,18 @@ export default function LoyaltyRuleCard({ rule, onEdit, onDelete }) {
   return (
     <div className={cx("card", { default: isDefault })}>
 
-      {/* ── Dark header ─────────────────────────────────────────── */}
-      <div className={cx("cardHead")}>
-        <div className={cx("cardHead__left")}>
-          <span className={cx("cardHead__name")}>
-            {isDefault ? "Quy tắc hệ thống" : "Chiến dịch đặc biệt"}
-          </span>
-          {isDefault && (
-            <span className={cx("defaultLabel")}>Mặc định</span>
-          )}
-        </div>
-      </div>
+  {/* ── Dark header ─────────────────────────────────────────── */}
+<div className={cx("cardHead")}>
+  <div className={cx("cardHead__left")}>
+    <span className={cx("cardHead__name")}>
+      {/* HIỂN THỊ TÊN TỪ DB */}
+      {rule.name || (isDefault ? "Quy tắc mặc định" : "Chiến dịch đặc biệt")}
+    </span>
+    {isDefault && (
+      <span className={cx("defaultLabel")}>Mặc định</span>
+    )}
+  </div>
+</div>
 
       {/* ── Body stats ──────────────────────────────────────────── */}
       <div className={cx("cardBody")}>
@@ -67,7 +68,8 @@ export default function LoyaltyRuleCard({ rule, onEdit, onDelete }) {
         <button className={cx("btnEdit")} onClick={() => onEdit(rule)} title="Chỉnh sửa">
           <Edit2 size={12} strokeWidth={2} /> Sửa
         </button>
-        <button className={cx("btnDelete")} onClick={() => onDelete(rule.idRule)} title="Xoá quy tắc">
+        {/* ✅ FIX: Dùng rule.id thay vì rule.idRule */}
+        <button className={cx("btnDelete")} onClick={() => onDelete(rule.id)} title="Xoá quy tắc">
           <Trash2 size={12} strokeWidth={2} /> Xoá
         </button>
       </div>

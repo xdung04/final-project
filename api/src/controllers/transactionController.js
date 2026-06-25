@@ -1,3 +1,4 @@
+"use strict";
 import transactionService from "../services/transactionService.js";
 
 /**
@@ -5,8 +6,6 @@ import transactionService from "../services/transactionService.js";
  */
 const getAllTransactions = async (req, res) => {
   try {
-    // 🌟 BẢO MẬT TUYỆT ĐỐI: Lấy trực tiếp idBranch từ Token đã kiểm tra ở Middleware.
-    // Lễ tân không thể tự sửa đổi giá trị này từ Client.
     const idBranch = req.user.idBranch;
 
     if (!idBranch) {
@@ -16,16 +15,15 @@ const getAllTransactions = async (req, res) => {
       });
     }
 
-    // Ép kiểu dữ liệu nghiêm ngặt đầu vào để chống SQL Injection hoặc ép kiểu lỗi
+    // Ép kiểu dữ liệu nghiêm ngặt đầu vào (ĐÃ BỎ dateTo theo logic mới)
     const queryParams = {
       idBranch: Number(idBranch),
       search: req.query.search ? String(req.query.search).trim() : undefined,
       dateFrom: req.query.dateFrom ? String(req.query.dateFrom) : undefined,
-      dateTo: req.query.dateTo ? String(req.query.dateTo) : undefined,
       statusFilter: req.query.statusFilter ? String(req.query.statusFilter) : "all",
       methodFilter: req.query.methodFilter ? String(req.query.methodFilter) : "all",
       page: Math.max(1, parseInt(req.query.page) || 1),
-      limit: Math.max(1, Math.min(50, parseInt(req.query.limit) || 6)) // Giới hạn limit tối đa 50 để chống spam sập DB
+      limit: Math.max(1, Math.min(50, parseInt(req.query.limit) || 6))
     };
 
     const result = await transactionService.getTransactionsForReceptionist(queryParams);
@@ -37,9 +35,7 @@ const getAllTransactions = async (req, res) => {
     });
 
   } catch (error) {
-    // Bảo mật: Ghi nhận lỗi chi tiết ở Server log, che giấu lỗi hệ thống khi trả về Client
     console.error(`[Security Log] Lỗi tại getAllTransactions bởi User ${req.user?.idUser}:`, error);
-    
     return res.status(500).json({
       success: false,
       message: "Đã xảy ra sự cố hệ thống khi truy xuất dữ liệu tài chính."
@@ -61,11 +57,12 @@ const getSummaryStats = async (req, res) => {
       });
     }
 
-    // Đồng bộ an toàn bộ lọc thông tin
+    // 🌟 ĐỒNG BỘ: Hứng đầy đủ tất cả các filter từ FE gửi lên để truyền xuống Service
     const filters = {
       dateFrom: req.query.dateFrom ? String(req.query.dateFrom) : undefined,
-      dateTo: req.query.dateTo ? String(req.query.dateTo) : undefined,
       search: req.query.search ? String(req.query.search).trim() : undefined,
+      statusFilter: req.query.statusFilter ? String(req.query.statusFilter) : "all",
+      methodFilter: req.query.methodFilter ? String(req.query.methodFilter) : "all"
     };
 
     const stats = await transactionService.getStatsForReceptionist(Number(idBranch), filters);

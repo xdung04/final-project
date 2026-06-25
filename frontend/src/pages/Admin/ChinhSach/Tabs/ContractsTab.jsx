@@ -39,14 +39,20 @@ const safeFormatDate = (dateStr) => {
 };
 
 const getContractState = (barber) => {
-  const today = getTodayStr();
-  if (!barber.idSalaryContract)                                     return "none";
-  if (barber.contractStatus === "closed")                           return "closed";
-  if (barber.contractStatus === "terminated")                       return "terminated";
-  if (barber.startDate > today)                                     return "pending";
-  if (barber.startDate <= today && !barber.endDate)                 return "active";
-  if (barber.startDate <= today && barber.endDate >= today)         return "active_with_end";
-  return "none";
+  // Support cả 2 cấu trúc: flat và nested
+  const contract = barber.contracts?.[0] || null;
+  const status   = barber.contractStatus || contract?.status || null;
+  const id       = barber.idSalaryContract || contract?.idSalaryContract || null;
+
+  if (!id) return "none";
+
+  switch (status) {
+    case "pending":     return "pending";
+    case "active":      return contract?.endDate || barber.endDate ? "active_with_end" : "active";
+    case "closed":      return "closed";
+    case "terminated":  return "terminated";
+    default:            return "none";
+  }
 };
 
 // ─── Toast hook ───────────────────────────────────────────────────────────────
@@ -89,7 +95,7 @@ function ConfirmModal({ open, title, message, confirmLabel = "Xác nhận", dang
           <button className={cx("modalCloseBtn")} onClick={onCancel}><X size={16} /></button>
         </div>
         <div className={cx("modalBody")}>
-          <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6 }}>{message}</p>
+          <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6 ,color: "#1f2937"}}>{message}</p>
         </div>
         <div className={cx("modalFooter")}>
           <button className={cx("btn", "ghost")} onClick={onCancel}>
@@ -174,8 +180,9 @@ function PromotionAlert({ promotionList, onPromote }) {
 
 // ─── Barber Contract Row ──────────────────────────────────────────────────────
 function BarberContractRow({ barber, plans, onAction }) {
+ const contract    = barber.contracts?.[0] || barber; // fallback về flat
   const state       = getContractState(barber);
-  const currentPlan = plans.find((p) => p.idCompensationPlan === barber.idCompensationPlan);
+  const currentPlan = plans.find((p) => p.idCompensationPlan === (barber.idCompensationPlan || contract.idCompensationPlan))
 
   const statusLabel = {
     none:            <span className={cx("contractStatus", "inactive")}>Chưa có HĐ</span>,

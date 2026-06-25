@@ -626,4 +626,873 @@ $transition:  0.15s;
 @keyframes spin {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
+}/* ThuNhap.module.scss
+   NOULE Admin — Phiếu Lương Chi tiết (Barber)
+---------------------------------------------------------------- */
+
+// ─── Tokens ──────────────────────────────────────────────────
+$gold:        #C9A84C;
+$gold-hover:  #BA9A3E;
+$gold-dim:    #8A6A28;
+$gold-faint:  rgba(201, 168, 76, 0.12);
+$gold-border: rgba(201, 168, 76, 0.3);
+
+$ink:         #1A1612;
+$ink-2:       #2C2720;
+$ink-text:    #F5F0E8;
+$ink-muted:   rgba(245, 240, 232, 0.5);
+
+$card-bg:     #FFFFFF;
+$input-bg:    #F9F6F1;
+$page-bg:     #F7F4EF;
+
+$border:      1px solid rgba(0, 0, 0, 0.07);
+$border-hover: 1px solid rgba(201, 168, 76, 0.5);
+
+$green:       #63C142;
+$green-bg:    #EAF3DE;
+$green-text:  #3B6D11;
+
+$danger:      #E24B4A;
+$danger-bg:   #FCEBEB;
+$danger-border: #F09595;
+$danger-text: #A32D2D;
+
+$amber:       #C97C2A;
+$amber-bg:    #FAEEDA;
+
+// ngày nghỉ — dùng teal
+$teal:        #0F6E56;
+$teal-bg:     #E1F5EE;
+$teal-border: rgba(15, 110, 86, 0.2);
+$teal-dim:    #085041;
+
+$ff-serif:    Georgia, 'Times New Roman', serif;
+$radius-sm:   6px;
+$radius-md:   10px;
+$radius-lg:   14px;
+$transition:  0.15s;
+
+// ─── Loading / Empty ─────────────────────────────────────────
+.loadingContainer,
+.emptyContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 60px 20px;
+  background: $card-bg;
+  border: $border;
+  border-radius: $radius-lg;
+
+  .loadingIcon { color: $gold; animation: spin 0.9s linear infinite; }
+  svg          { color: #ccc; }
+  p {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #888;
+    margin: 0;
+  }
+}
+
+// ─── Container ───────────────────────────────────────────────
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  color: $ink;
+}
+
+// ─── Header ──────────────────────────────────────────────────
+.headerInfo {
+  background: $ink;
+  border: 1px solid $gold-border;
+  border-radius: $radius-lg;
+  padding: 24px 28px;
+}
+
+.title {
+  font-family: $ff-serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: $ink-text;
+  margin: 0 0 6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  .titleIcon { color: $gold; }
+}
+
+.subtitle {
+  font-size: 11px;
+  color: $ink-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin: 0;
+}
+
+// ─── Payslip List ────────────────────────────────────────────
+.payslipList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+// ─── Payslip Card ────────────────────────────────────────────
+.payslipCard {
+  background: $card-bg;
+  border: $border;
+  border-radius: $radius-lg;
+  overflow: hidden;
+  transition: border $transition;
+  &:hover    { border: $border-hover; }
+  &.expanded { border: $border-hover; }
+}
+
+// ─── Card Summary ────────────────────────────────────────────
+.cardSummary {
+  padding: 18px 22px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  h3 {
+    font-family: $ff-serif;
+    font-size: 16px;
+    font-weight: 600;
+    color: $ink;
+    margin: 0;
+    letter-spacing: 0.01em;
+  }
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 11px;
+  border-radius: $radius-sm;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  &.pending       { background: $amber-bg;   color: $amber;       }
+  &.confirmed,
+  &.autoconfirmed { background: $green-bg;   color: $green-text;  }
+  &.disputed      { background: $danger-bg;  color: $danger-text; border: 1px solid $danger-border; }
+  &.paid          { background: $gold-faint; color: $gold-dim;    border: 1px solid $gold-border; }
+  &.locked        { background: $input-bg;   color: #777; }
+}
+
+.summaryMain {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  svg { color: #aaa; flex-shrink: 0; }
+}
+
+.netPayBox {
+  flex: 1;
+  .label {
+    display: block;
+    font-size: 10px;
+    font-weight: 600;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 4px;
+  }
+  .value {
+    display: block;
+    font-family: $ff-serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: $gold-dim;
+    line-height: 1;
+  }
+}
+
+// Mini ngày công trên card tóm tắt
+.summaryDayOff {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #888;
+  flex-shrink: 0;
+  svg { color: $teal; }
+}
+
+.summaryDayOffBadge {
+  display: inline-block;
+  background: $teal-bg;
+  color: $teal;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 20px;
+  margin-left: 4px;
+  border: 1px solid $teal-border;
+}
+
+// ─── Card Details ────────────────────────────────────────────
+.cardDetails {
+  padding: 0 22px 22px;
+  border-top: $border;
+  animation: fadeSlideIn 0.2s ease;
+}
+
+// ─── Stats Grid ──────────────────────────────────────────────
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  padding: 18px 0 0;
+}
+
+.statCard {
+  background: $input-bg;
+  border: $border;
+  border-radius: $radius-md;
+  padding: 13px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: border $transition;
+  &:hover { border: $border-hover; }
+
+  .statLabel {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #888;
+  }
+  .statValue {
+    font-family: $ff-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: $ink;
+    line-height: 1;
+  }
+  // lương gốc nhỏ bên dưới
+  .statSub {
+    font-size: 10px;
+    color: #aaa;
+    text-decoration: line-through;
+    line-height: 1;
+  }
+}
+
+// ─── Income / Net rows ───────────────────────────────────────
+.incomeRow,
+.netRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  font-size: 13px;
+  border-top: $border;
+  margin-top: 2px;
+
+  span:first-child {
+    font-weight: 500;
+    color: #666;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+  }
+}
+
+.netRow {
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  margin-top: 4px;
+}
+
+.cGreen { font-family: $ff-serif; font-size: 16px; font-weight: 700; color: $green-text; }
+.cGold  { font-family: $ff-serif; font-size: 20px; font-weight: 700; color: $gold-dim; }
+
+// ════════════════════════════════════════════════════════════
+// ─── Day Off Section ─────────────────────────────────────────
+// ════════════════════════════════════════════════════════════
+.dayOffSection {
+  margin: 10px 0;
+  border: 1px solid $teal-border;
+  border-radius: $radius-md;
+  overflow: hidden;
+  background: $card-bg;
+}
+
+.dayOffHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: $teal-bg;
+  border-bottom: 1px solid $teal-border;
+}
+
+.dayOffHeaderTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: $teal-dim;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.dayOffHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dayOffStat {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  font-size: 13px;
+}
+
+.dayOffStatNum {
+  font-family: $ff-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: $teal-dim;
+  line-height: 1;
+}
+
+.dayOffStatSep {
+  font-size: 13px;
+  color: $teal;
+  opacity: 0.5;
+}
+
+.dayOffStatTotal {
+  font-size: 12px;
+  color: $teal;
+}
+
+.dayOffDeductBadge {
+  display: inline-flex;
+  align-items: center;
+  background: rgba($danger, 0.08);
+  color: $danger-text;
+  border: 1px solid rgba($danger, 0.2);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 20px;
+}
+
+// ─── Progress bar ngày công ───────────────────────────────────
+.dayOffProgress {
+  height: 3px;
+  background: rgba($teal, 0.1);
+  border-radius: 0;
+
+  .dayOffProgressFill {
+    height: 100%;
+    background: $teal;
+    border-radius: 0 2px 2px 0;
+    transition: width 0.5s ease;
+  }
+}
+
+// ─── Danh sách đợt nghỉ ──────────────────────────────────────
+.dayOffList {
+  display: flex;
+  flex-direction: column;
+}
+
+.dayOffItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba($teal, 0.08);
+  &:last-child { border-bottom: none; }
+  &:hover { background: rgba($teal, 0.03); }
+}
+
+.dayOffItemLeft {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.dayOffItemIcon {
+  color: $teal;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.dayOffItemInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.dayOffItemRange {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 13px;
+  font-weight: 600;
+  color: $ink;
+  svg { color: #bbb; }
+}
+
+.dayOffItemReason {
+  font-size: 11px;
+  color: #888;
+  font-style: italic;
+}
+
+.dayOffItemDays {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: $teal-dim;
+  background: $teal-bg;
+  border: 1px solid $teal-border;
+  padding: 2px 9px;
+  border-radius: 20px;
+}
+
+// ─── Empty / Formula ─────────────────────────────────────────
+.dayOffEmpty {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 14px;
+  font-size: 12px;
+  color: #aaa;
+  font-style: italic;
+}
+
+.dayOffFormula {
+  padding: 8px 14px;
+  font-size: 11px;
+  color: $teal;
+  background: rgba($teal, 0.04);
+  border-top: 1px solid $teal-border;
+  letter-spacing: 0.01em;
+}
+
+// ─── Deduction ───────────────────────────────────────────────
+.deductionEmpty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  background: $input-bg;
+  border: $border;
+  border-radius: $radius-md;
+  font-size: 12px;
+  color: #aaa;
+  font-style: italic;
+  margin: 8px 0;
+}
+
+.deductionSection {
+  margin: 8px 0;
+  border: 1px solid $danger-border;
+  border-radius: $radius-md;
+  overflow: hidden;
+}
+
+.deductionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: $danger-bg;
+  border-bottom: 1px solid $danger-border;
+}
+
+.deductionHeaderTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: $danger-text;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.deductionHeaderTotal {
+  font-size: 13px;
+  font-weight: 700;
+  color: $danger-text;
+}
+
+.deductionList { display: flex; flex-direction: column; }
+
+.deductionItem {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px 14px;
+  background: $card-bg;
+  border-bottom: 1px solid rgba($danger, 0.1);
+  &:last-child { border-bottom: none; }
+}
+
+.deductionLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+  min-width: 0;
+}
+
+.deductionReason {
+  font-size: 13px;
+  font-weight: 600;
+  color: $ink;
+  line-height: 1.35;
+}
+
+.deductionMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.deductionViolation {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: $amber;
+  background: $amber-bg;
+  border: 1px solid rgba($amber, 0.3);
+  padding: 2px 8px;
+  border-radius: $radius-sm;
+  width: fit-content;
+}
+
+.deductionCreated {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #aaa;
+  font-style: italic;
+}
+
+.deductionAmount {
+  font-family: $ff-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: $danger-text;
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+// ════════════════════════════════════════════════════════════
+// ─── Work History Table ──────────────────────────────────────
+// ════════════════════════════════════════════════════════════
+.tableSection {
+  margin-top: 18px;
+
+  h3 {
+    font-size: 10px;
+    font-weight: 600;
+    color: $gold-dim;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    margin: 0 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    &::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(0, 0, 0, 0.07);
+    }
+  }
+}
+
+.tableWrapper {
+  border: $border;
+  border-radius: $radius-md;
+  overflow: hidden;
+  // Không scroll — dùng show more thay thế
+}
+
+.rewardTable {
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    background: $ink;
+    color: $gold;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 11px 14px;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 11px 14px;
+    border-bottom: $border;
+    font-size: 13px;
+    color: #555;
+    transition: background $transition;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td      { background: $input-bg; }
+}
+
+.serviceCell {
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.amountCol {
+  font-family: $ff-serif;
+  font-weight: 700;
+  color: $gold-dim !important;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.emptyRow {
+  text-align: center;
+  color: #bbb;
+  font-size: 12px;
+  padding: 20px !important;
+  font-style: italic;
+}
+
+// ─── Show more button ─────────────────────────────────────────
+.showMoreBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 100%;
+  padding: 9px;
+  margin-top: 6px;
+  background: $input-bg;
+  border: $border;
+  border-radius: $radius-md;
+  font-size: 12px;
+  font-weight: 500;
+  color: #888;
+  cursor: pointer;
+  transition: background $transition, color $transition, border $transition;
+
+  &:hover {
+    background: $gold-faint;
+    border: 1px solid $gold-border;
+    color: $gold-dim;
+  }
+
+  svg { opacity: 0.7; }
+}
+
+// ─── Action Section ──────────────────────────────────────────
+.actionSection {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: $border;
+}
+
+.countdownWarning {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: $amber;
+  background: $amber-bg;
+  border: 1px solid rgba($amber, 0.25);
+  padding: 9px 12px;
+  border-radius: $radius-md;
+  margin-bottom: 12px;
+  svg { flex-shrink: 0; }
+}
+
+.countdown {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: $amber;
+  margin-bottom: 12px;
+  svg { flex-shrink: 0; }
+}
+
+.btnGroup {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btnMain {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: $gold;
+  color: $ink;
+  border: none;
+  padding: 9px 20px;
+  border-radius: $radius-md;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: background $transition;
+  &:hover { background: $gold-hover; }
+}
+
+.btnOutline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  color: #666;
+  padding: 9px 18px;
+  border-radius: $radius-md;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background $transition, color $transition;
+  &:hover { background: $input-bg; color: $ink; }
+}
+
+.btnText {
+  display: inline-flex;
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: #888;
+  padding: 8px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  &:hover { color: $ink; }
+}
+
+.btnDanger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: $danger;
+  color: #fff;
+  border: none;
+  padding: 9px 18px;
+  border-radius: $radius-md;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity $transition;
+  &:hover { opacity: 0.88; }
+}
+
+// ─── Dispute Form ────────────────────────────────────────────
+.disputeForm {
+  background: $gold-faint;
+  border: 1px solid $gold-border;
+  border-radius: $radius-md;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  textarea {
+    width: 100%;
+    padding: 8px 11px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: $radius-md;
+    background: $card-bg;
+    font-size: 13px;
+    font-family: inherit;
+    resize: vertical;
+    outline: none;
+    box-sizing: border-box;
+    line-height: 1.6;
+    &:focus { border-color: $gold; }
+    &::placeholder { color: #c0b8ae; }
+  }
+}
+
+// ─── Status Info ─────────────────────────────────────────────
+.statusInfo {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: $radius-md;
+  font-size: 13px;
+  line-height: 1.5;
+
+  &.warning {
+    background: $amber-bg;
+    color: $amber;
+    border: 1px solid rgba($amber, 0.3);
+  }
+
+  &.success {
+    background: $green-bg;
+    color: $green-text;
+    border: 1px solid rgba($green, 0.3);
+  }
+}
+
+// ─── Responsive ──────────────────────────────────────────────
+@media (max-width: 1024px) {
+  .statsGrid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+  .statsGrid { grid-template-columns: 1fr 1fr; }
+
+  .cardSummary { padding: 14px 16px; }
+  .cardDetails { padding: 0 16px 16px; }
+
+  .netPayBox .value { font-size: 22px; }
+  .summaryDayOff    { display: none; } // quá chật trên mobile
+
+  .btnGroup         { flex-direction: column; }
+  .btnMain,
+  .btnOutline       { width: 100%; justify-content: center; }
+}
+
+// ─── Animations ──────────────────────────────────────────────
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }

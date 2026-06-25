@@ -19,6 +19,11 @@ export default (sequelize, DataTypes) => {
         autoIncrement: true,
         primaryKey: true,
       },
+      name: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: "Tên quy tắc tích điểm hoặc tên chiến dịch",
+      },
       money_per_point: {
         type: DataTypes.INTEGER,
         allowNull: false,
