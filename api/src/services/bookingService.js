@@ -832,6 +832,16 @@ export const checkInBookingService = async (idBooking) => {
       `Chỉ có lịch hẹn Pending mới được check-in. Trạng thái hiện tại: '${booking.status}'`,
     );
   }
+
+  // ← THÊM: kiểm tra ngày hôm nay
+  const today = new Date().toISOString().split("T")[0];
+  const bookingDate = new Date(booking.bookingDate).toISOString().split("T")[0];
+  if (bookingDate !== today) {
+    throw new Error(
+      `Chỉ có thể check-in vào đúng ngày hẹn. Ngày hẹn: ${new Date(booking.bookingDate).toLocaleDateString("vi-VN")}`,
+    );
+  }
+
   booking.status = "InProgress";
   await booking.save();
   return {

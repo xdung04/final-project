@@ -483,64 +483,8 @@ export const updateBarber = async (idBarber, data) => {
   }
 };
 
-export const addBarberUnavailability = async (data) => {
-  const { idBarber, startDate, endDate, reason } = data;
 
-  if (!idBarber || !startDate || !endDate || !reason) {
-    throw new Error("Thiếu thông tin yêu cầu.");
-  }
 
-  const barber = await db.Barber.findByPk(idBarber);
-  if (!barber) {
-    throw new Error("Không tìm thấy thợ cắt tóc.");
-  }
-
-  // 🔹 Kiểm tra trùng lịch nghỉ
-  const overlap = await db.BarberUnavailability.findOne({
-    where: {
-      idBarber,
-      [db.Sequelize.Op.or]: [
-        {
-          startDate: { [db.Sequelize.Op.between]: [startDate, endDate] },
-        },
-        {
-          endDate: { [db.Sequelize.Op.between]: [startDate, endDate] },
-        },
-        {
-          [db.Sequelize.Op.and]: [
-            { startDate: { [db.Sequelize.Op.lte]: startDate } },
-            { endDate: { [db.Sequelize.Op.gte]: endDate } },
-          ],
-        },
-      ],
-    },
-  });
-
-  if (overlap) {
-    throw new Error("❌ Thợ này đã có lịch nghỉ trong khoảng thời gian này!");
-  }
-
-  // 🔹 Tạo mới nếu không trùng
-  const record = await db.BarberUnavailability.create({
-    idBarber,
-    startDate,
-    endDate,
-    reason,
-  });
-
-  return {
-    message: " Đã thêm lịch nghỉ phép thành công.",
-    record,
-  };
-};
-
-export const getUnavailabilitiesByBarber = async (idBarber) => {
-  const records = await db.BarberUnavailability.findAll({
-    where: { idBarber },
-    order: [["startDate", "ASC"]],
-  });
-  return records;
-};
 
 export const getProfile = async (idBarber) => {
   const barber = await Barber.findOne({

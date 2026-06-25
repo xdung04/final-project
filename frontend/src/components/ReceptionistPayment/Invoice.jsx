@@ -1,29 +1,28 @@
 import React, { useState } from "react";
 import styles from "./Invoice.module.scss";
 
-// --- Import Kiến trúc mới ---
 import { PaymentAPI } from "~/apis/paymentAPI";
 import socket from "../../utils/socket";
 
 /**
  * Step4_Invoice: Màn hình chốt hóa đơn & thanh toán
- * @param {Object} data - Dữ liệu từ các bước trước (booking, services, tip, voucher)
+ * @param {Object} data - Dữ liệu từ các bước trước
+ * @param {number} idBranch - ID chi nhánh (để emit socket)
  * @param {Function} onBack - Quay lại bước trước
  * @param {Function} onClose - Đóng modal/kiosk
  * @param {Function} onPaidSuccess - Callback khi thanh toán thành công
  */
 export default function Step4_Invoice({
   data,
+  idBranch,           // ✅ Thêm
   onBack,
   onClose,
   onPaidSuccess,
 }) {
-  // 1. Quản lý State
-  const [selectedMethod, setSelectedMethod] = useState(null); // "VNPAY" | "CASH"
+  const [selectedMethod, setSelectedMethod] = useState(null);
   const [loading, setLoading] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
 
-  // 2. Destructure & Tính toán dữ liệu hóa đơn
   const { booking = {}, services = [], tip = 0, voucher = null } = data || {};
 
   const selectedServices = services.filter((s) => s.selected);
@@ -49,12 +48,10 @@ export default function Step4_Invoice({
 
   const totalPaid = totalServicePrice - discount + (Number(tip) || 0);
 
-  // 3. Helper format tiền tệ
   const formatVND = (num) =>
     num.toLocaleString("vi-VN", { style: "currency", currency: "VND" });
 
-  // 4. XỬ LÝ THANH TOÁN CHÍNH
-  // 4. XỬ LÝ THANH TOÁN CHÍNH
+  // ✅ FIX: Thêm idBranch vào socket emit
   const handlePayment = async () => {
     if (!selectedMethod || loading) return;
 
@@ -62,7 +59,6 @@ export default function Step4_Invoice({
     setLoading(true);
 
     try {
-      // Chuẩn bị payload khớp với Backend Service
       const payload = {
         method: selectedMethod,
         totalServicePrice: Math.round(totalServicePrice),
@@ -74,29 +70,30 @@ export default function Step4_Invoice({
           idService: s.idService || s.id,
           quantity: s.quantity || 1,
         })),
-        voucherReverted: data.voucherReverted || false, // ← thêm
+        voucherReverted: data.voucherReverted || false,
         customerVoucherId: data.voucherReverted
           ? data.revokedVoucherCustomerId || null
           : null,
       };
 
-      // =========================================================
-      // 🐛 ĐOẠN CODE DEBUG: Bấm F12 -> Mở tab Console để xem
-      // =========================================================
       console.group("🚀 [DEBUG] PAYLOAD GỬI XUỐNG API CREATE PAYMENT");
       console.log("🆔 Booking ID:", idBooking);
+      console.log("🏢 Branch ID:", idBranch);
       console.log("📦 Dữ liệu Payload:", JSON.stringify(payload, null, 2));
       console.groupEnd();
-      // =========================================================
 
       if (selectedMethod === "VNPAY") {
         const response = await PaymentAPI.create(idBooking, payload);
+        
+        // ✅ THÊM idBranch vào customer_update_progress
         socket.emit("customer_update_progress", {
+          idBranch,                          // ✅ THÊM
           bookingId: idBooking,
           step: 5,
-          rating: payload.rating, // Lấy từ payload cho đồng bộ
+          rating: payload.rating,
           tip: payload.tip,
           total: payload.total,
+          timestamp: new Date().toISOString(),
         });
 
         if (response.paymentUrl) {
@@ -105,11 +102,14 @@ export default function Step4_Invoice({
           throw new Error("Không lấy được link thanh toán VNPAY");
         }
       } else {
-        // LUỒNG TIỀN MẶT
+        // CASH PAYMENT
+        // ✅ THÊM idBranch vào customer_choose_cash_payment
         socket.emit("customer_choose_cash_payment", {
+          idBranch,                          // ✅ THÊM
           bookingId: idBooking,
           customerName: booking.customer,
           ...payload,
+          timestamp: new Date().toISOString(),
         });
 
         setIsPaid(true);
@@ -117,7 +117,7 @@ export default function Step4_Invoice({
         setTimeout(() => onClose(), 2500);
       }
     } catch (error) {
-      console.error("Payment Error:", error);
+      console.error("❌ Payment Error:", error);
       alert(`❌ ${error.message || "Có lỗi xảy ra khi thanh toán"}`);
     } finally {
       setLoading(false);
@@ -126,11 +126,9 @@ export default function Step4_Invoice({
 
   return (
     <div className={styles.container}>
-      {/* Trang trí Blobs */}
       <div className={styles.blobTop} />
       <div className={styles.blobBottom} />
 
-      {/* Header Hóa đơn */}
       <div className={styles.header}>
         <div className={styles.ornament}>
           <span className={styles.ornLine} />
@@ -271,7 +269,7 @@ export default function Step4_Invoice({
           )}
         </div>
 
-        {/* Footer Area: Tổng tiền & Nút bấm */}
+        {/* Footer Area */}
         <div className={styles.bottomArea}>
           <div className={styles.totalBox}>
             <span className={styles.totalLabel}>Tổng cộng hóa đơn</span>

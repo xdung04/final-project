@@ -173,28 +173,7 @@ const updateBarber = async (req, res) => {
   }
 };
 
-export const addBarberUnavailability = async (req, res) => {
-  try {
-    const result = await BarberService.addBarberUnavailability(req.body);
-    res.status(201).json(result);
-  } catch (error) {
-    console.error("Lỗi khi thêm nghỉ phép:", error);
-    res.status(500).json({
-      message: error.message || "Không thể thêm lịch nghỉ phép.",
-    });
-  }
-};
 
-const getBarberUnavailabilities = async (req, res) => {
-  try {
-    const { idBarber } = req.params;
-    const records = await BarberService.getUnavailabilitiesByBarber(idBarber);
-    return res.status(200).json({ unavailabilities: records });
-  } catch (error) {
-    console.error("Lỗi khi lấy lịch nghỉ phép:", error);
-    return res.status(500).json({ message: error.message });
-  }
-};
 
 const getBarberProfile = async (req, res) => {
   try {
@@ -318,14 +297,13 @@ export default {
   syncBarbers,
   assignBarberToBranch,
   approveBarber,
-  addBarberUnavailability,
   lockBarber,
   unlockBarber,
   assignUserAsBarber,
   getBarberReward,
   createBarberWithUser,
   updateBarber,
-  getBarberUnavailabilities,
+
   getBarberProfile,
   updateBarberProfile,
   uploadAvatar,

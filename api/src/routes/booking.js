@@ -4,7 +4,6 @@ import {
   getBranchDetails,
   createBooking,
   completeBooking,
-  getBookingsByBarber,
   upload,
   cancelBooking,
   getBookingsForBarber,
@@ -40,7 +39,6 @@ router.put ("/:idBooking/cancel",     authenticate, receptionistOnly, cancelBook
 // 4. BARBER
 // ═══════════════════════════════════════════════════════════════════════════
 router.get("/barber",                 authenticate, barberOnly, getBookingsForBarber);
-router.get("/barbers/:idBarber",      authenticate,getBookingsByBarber);
 
 router.post(
   "/:id/complete",

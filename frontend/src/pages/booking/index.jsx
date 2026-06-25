@@ -265,7 +265,7 @@ function BookingPage() {
       try {
         const res = await fetch(`${API_BASE_URL}/bookings/branches/${branchId}`);
         const data = await res.json();
-        // [FIX] data.barbers giờ có thêm lockDate, isLocked từ backend đã fix
+      
         setBarbers(data.barbers || []);
         setServices(data.services || []);
         if (data.openTime && data.closeTime && data.slotDuration) {
@@ -359,21 +359,7 @@ try {
       setBarberLockDate(barber.lockDate);
     }
 
-    try {
-      // [FIX] Gọi đúng API lấy unavailabilities — không dùng /bookings/barbers/:id
-      const res = await fetch(`${API_BASE_URL}/barbers/unavailability/${barberId}`);
-      const data = await res.json();
 
-      const unava = [];
-      (data.unavailabilities || []).forEach((u) => {
-        for (let d = new Date(u.startDate); d <= new Date(u.endDate); d.setDate(d.getDate() + 1)) {
-          unava.push(d.toISOString().split("T")[0]);
-        }
-      });
-      setUnavailableDates(unava);
-    } catch (err) {
-      console.error("Lỗi lấy unavailabilities:", err);
-    }
   };
 
   // [FIX] Khi unavailableDates thay đổi, reset date nếu ngày đã chọn bị block

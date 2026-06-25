@@ -166,46 +166,7 @@ export const completeBooking = async (req, res) => {
   }
 };
 
-// [FIX] Sửa lại hàm này — getBarberBookingsNext7Days không tồn tại trong service
-export const getBookingsByBarber = async (req, res) => {
-  try {
-    const { idBarber } = req.params;
 
-    if (!idBarber) {
-      return res.status(400).json({ success: false, message: "Thiếu idBarber" });
-    }
-
-    const barber = await db.Barber.findByPk(idBarber);
-    if (!barber) {
-      return res.status(404).json({
-        success: false,
-        message: "Không tìm thấy thợ cắt tóc này.",
-      });
-    }
-
-    // [FIX] Dùng hàm getBarberBookings có sẵn, lấy 7 ngày tới
-    const today = new Date().toISOString().split("T")[0];
-    const next7 = new Date();
-    next7.setDate(next7.getDate() + 7);
-    const end = next7.toISOString().split("T")[0];
-
-    const bookings = await bookingService.getBarberBookings(parseInt(idBarber), today, end);
-
-    return res.status(200).json({
-      success: true,
-      isLocked: barber.isLocked,
-      lockDate: barber.lockDate || null,
-      bookings,
-    });
-  } catch (error) {
-    console.error("Lỗi Controller getBookingsByBarber:", error.message);
-    return res.status(500).json({
-      success: false,
-      message: "Lỗi hệ thống khi lấy lịch",
-      error: error.message,
-    });
-  }
-};
 
 export const cancelBooking = async (req, res) => {
   try {
@@ -214,7 +175,7 @@ export const cancelBooking = async (req, res) => {
     return res.status(200).json(result);
   } catch (error) {
     console.error("❌ Lỗi khi hủy lịch:", error);
-    res.status(500).json({ message: "Lỗi khi hủy lịch", error: error.message });
+    return res.status(400).json({ message: error.message }); // ← đổi 500 → 400, trả message trực tiếp
   }
 };
 
@@ -225,10 +186,7 @@ export const checkInBooking = async (req, res) => {
     return res.status(200).json(result);
   } catch (error) {
     console.error("❌ Lỗi khi check-in booking:", error);
-    return res.status(500).json({
-      message: "Lỗi khi check-in booking",
-      error: error.message,
-    });
+    return res.status(400).json({ message: error.message }); // ← đổi 500 → 400, trả message trực tiếp
   }
 };
 

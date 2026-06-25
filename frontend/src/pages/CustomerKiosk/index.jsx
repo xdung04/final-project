@@ -1,7 +1,7 @@
 // File: src/pages/CustomerKiosk.jsx
 import React, { useState, useEffect } from "react";
-import { Scissors, CheckCircle2 } from "lucide-react"; // Thêm icon check cho đẹp
-import { useSearchParams } from "react-router-dom"; // Hook để đọc URL
+import { Scissors, CheckCircle2 } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import styles from "./CustomerKiosk.module.scss";
 
 import Step2_Rating from "~/components/ReceptionistPayment/Rating";
@@ -14,24 +14,67 @@ export default function CustomerKiosk() {
   const [formData, setFormData] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const [countdown, setCountdown] = useState(5);
+  
+  // ✅ Lấy idBranch từ URL params hoặc localStorage
+  const [idBranch, setIdBranch] = useState(null);
+  const [ipadId, setIpadId] = useState(null);
+
+  // ✅ BƯỚC 1: Khởi tạo branch info khi component mount
+  useEffect(() => {
+    // Cách 1: Từ URL params (nếu có)
+    const branchFromUrl = new URLSearchParams(window.location.search).get("idBranch");
+    
+    
+    // Cách 3: Từ environment hoặc config
+    const branch = branchFromUrl || process.env.REACT_APP_BRANCH_ID;
+    
+    if (branch) {
+      setIdBranch(Number(branch));
+      console.log(`✅ iPad khởi động ở chi nhánh: ${branch}`);
+    } else {
+      console.warn("⚠️ Không tìm thấy idBranch - iPad sẽ không hoạt động đúng!");
+    }
+
+    // Tạo unique ID cho iPad này
+    const storedIpadId = localStorage.getItem("ipadId");
+    const newIpadId = storedIpadId || `iPad_${Date.now()}`;
+    if (!storedIpadId) {
+      localStorage.setItem("ipadId", newIpadId);
+    }
+    setIpadId(newIpadId);
+  }, []);
+
+  // ✅ BƯỚC 2: Join room checkout khi idBranch sẵn sàng
+  useEffect(() => {
+    if (!idBranch || !ipadId) return;
+
+    socket.emit("ipad_join_checkout", {
+      idBranch,
+      ipadId,
+    });
+
+    console.log(`✅ iPad [${ipadId}] joined checkout room for branch [${idBranch}]`);
+
+    return () => {
+      console.log(`👋 iPad leaving checkout room`);
+    };
+  }, [idBranch, ipadId]);
 
   // --- LOGIC XỬ LÝ SAU KHI VNPAY ĐÁ VỀ ---
   useEffect(() => {
     const responseCode = searchParams.get("vnp_ResponseCode");
     
     if (responseCode === "00") {
-      setStep(5); // Chuyển sang step "Cảm ơn" đặc biệt
+      setStep(5);
 
-      // Bộ đếm ngược 5 giây
       const timer = setInterval(() => {
         setCountdown((prev) => prev - 1);
       }, 1000);
 
-      // Sau 5 giây quay về màn hình chờ (Step 0) và dọn sạch URL
       const redirect = setTimeout(() => {
         setStep(0);
         setFormData(null);
-        setSearchParams({}); // Xóa các tham số ?vnp_... trên URL
+        setSearchParams({});
       }, 5000);
 
       return () => {
@@ -39,15 +82,16 @@ export default function CustomerKiosk() {
         clearTimeout(redirect);
       };
     } else if (responseCode && responseCode !== "00") {
-        // Nếu thanh toán thất bại, có thể cho quay lại step 4 hoặc hiện lỗi
-        alert("Thanh toán không thành công. Vui lòng thử lại!");
-        setSearchParams({});
+      alert("Thanh toán không thành công. Vui lòng thử lại!");
+      setSearchParams({});
     }
   }, [searchParams, setSearchParams]);
 
   // --- SOCKET LISTENERS ---
   useEffect(() => {
+    // ✅ Nghe receive_checkout_request từ room
     socket.on("receive_checkout_request", (data) => {
+      console.log("📱 iPad nhận bill từ lễ tân:", data);
       const receivedData = data.formData ? data.formData : data;
       setFormData({
         ...receivedData,
@@ -57,7 +101,8 @@ export default function CustomerKiosk() {
       setStep(2);
     });
 
-    socket.on("receive_cancel_checkout", () => {
+    socket.on("receive_cancel_checkout", (data) => {
+      console.log("❌ Lễ tân hủy bill:", data);
       setStep(0);
       setFormData(null);
     });
@@ -71,21 +116,25 @@ export default function CustomerKiosk() {
   const nextStep = () => setStep((s) => s + 1);
   const prevStep = () => setStep((s) => s - 1);
 
+  // ✅ FIX: Thêm idBranch vào notify progress
   const notifyAdminProgress = (currentFormData, currentStep) => {
-    if (!currentFormData || currentStep === 0 || currentStep === 5) return;
+    if (!currentFormData || !idBranch || currentStep === 0 || currentStep === 5) return;
     
+    console.log(`📤 Cập nhật tiến độ step ${currentStep} tới lễ tân`);
     socket.emit("customer_update_progress", {
+      idBranch,                                    // ✅ Thêm
       bookingId: currentFormData.booking.idBooking,
       step: currentStep,
       rating: currentFormData.serviceRating || 0,
       tip: currentFormData.tip || 0,
       total: currentFormData.total || 0,
+      timestamp: new Date().toISOString(),
     });
   };
 
   useEffect(() => {
     notifyAdminProgress(formData, step);
-  }, [step, formData?.serviceRating, formData?.tip]);
+  }, [step, formData?.serviceRating, formData?.tip, idBranch]);
 
   // 👉 MÀN HÌNH CẢM ƠN (Khi thanh toán xong)
   if (step === 5) {
@@ -105,7 +154,7 @@ export default function CustomerKiosk() {
     );
   }
 
-  // 👉 MÀN HÌNH CHỜ LUXURY (Khi step === 0)
+  // 👉 MÀN HÌNH CHỜ (Khi step === 0)
   if (step === 0 || !formData) {
     return (
       <div className={styles.fullPage}>
@@ -113,10 +162,16 @@ export default function CustomerKiosk() {
           <Scissors className={styles.logoIcon} strokeWidth={1} />
           <div className={styles.brandName}>BARBER SHOP</div>
           <h1 className={styles.welcomeText}>Xin Chào Quý Khách</h1>
-          <div className={styles.slogan}>“Nâng tầm diện mạo, khơi nguồn tự tin”</div>
+          <div className={styles.slogan}>"Nâng tầm diện mạo, khơi nguồn tự tin"</div>
           <div className={styles.loadingArea}>
             <div className={styles.pulseDot}></div>
             <p>Hệ thống đang sẵn sàng phục vụ...</p>
+            {/* ✅ Debug: Hiển thị branch info */}
+            {process.env.NODE_ENV === "development" && (
+              <small style={{ marginTop: "10px", color: "#666" }}>
+                Branch: {idBranch || "?"} | iPad: {ipadId || "?"}
+              </small>
+            )}
           </div>
         </div>
       </div>
@@ -135,6 +190,8 @@ export default function CustomerKiosk() {
       {step === 4 && (
         <Step4_Invoice
           data={formData}
+          // ✅ Pass idBranch để Step4_Invoice có thể dùng
+          idBranch={idBranch}
           onBack={prevStep}
           onClose={() => {
             setStep(0);

@@ -9,20 +9,20 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 import styles from "./BookingList.module.scss";
-
-// 🌟 IMPORT CÁC HÀM SERVICE ĐÃ ĐƯỢC ỦY QUYỀN XỬ LÝ API
 import {
   fetchMyBranch,
   fetchBookingsByBranch,
   checkInBooking,
   cancelBooking,
-} from "~/services/bookingService"; // Đổi lại đường dẫn thư mục service của m nếu cần nhé
+} from "~/services/bookingService"; 
+import { useToast } from "~/context/ToastContext"; // ← thêm// Đổi lại đường dẫn thư mục service của m nếu cần nhé
 
 export default function BookingList({ onSelect, date }) {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [branchInfo, setBranchInfo] = useState(null);
+  const { showToast } = useToast();
 
   // Hàm reload danh sách
   const fetchBookings = useCallback(async () => {
@@ -76,33 +76,34 @@ export default function BookingList({ onSelect, date }) {
     }
   }, [fetchBookings, onSelect]);
 
-  // Hành động Hủy lịch
-  const handleCancel = async (id) => {
-    if (!window.confirm("Bạn có chắc muốn hủy lịch hẹn này không?")) return;
-    try {
-      const data = await cancelBooking(id);
-      // Nếu backend có trả trạng thái false m check ở đây, nếu ko thì ăn luôn catch khi dính 4xx/5xx
-      if (data && data.success === false) return alert(data.message || "Hủy lịch thất bại!");
-      
-      alert("Đã hủy lịch hẹn thành công!");
-      fetchBookings();
-    } catch (err) {
-      alert(err.response?.data?.message || "Có lỗi xảy ra khi hủy lịch!");
+const handleCancel = async (id) => {
+  if (!window.confirm("Bạn có chắc muốn hủy lịch hẹn này không?")) return;
+  try {
+    const data = await cancelBooking(id);
+    if (data && data.success === false) {
+      showToast({ text: data.message || "Hủy lịch thất bại!", type: "error" }); // ← đổi
+      return;
     }
-  };
+    showToast({ text: data.message || "Đã hủy lịch hẹn thành công!", type: "success" }); // ← đổi
+    fetchBookings();
+  } catch (err) {
+    showToast({ text: err.response?.data?.message || "Có lỗi xảy ra khi hủy lịch!", type: "error" }); // ← đổi
+  }
+};
 
-  // Hành động Check-in
-  const handleCheckIn = async (id) => {
-    try {
-      const data = await checkInBooking(id);
-      if (data && data.success === false) return alert(data.message || "Check-in thất bại!");
-
-      alert("Khách đã check-in!");
-      fetchBookings();
-    } catch (err) {
-      alert(err.response?.data?.message || "Có lỗi xảy ra khi check-in!");
+const handleCheckIn = async (id) => {
+  try {
+    const data = await checkInBooking(id);
+    if (data && data.success === false) {
+      showToast({ text: data.message || "Check-in thất bại!", type: "error" }); // ← đổi
+      return;
     }
-  };
+    showToast({ text: data.message || "Khách đã check-in!", type: "success" }); // ← đổi
+    fetchBookings();
+  } catch (err) {
+    showToast({ text: err.response?.data?.message || "Có lỗi xảy ra khi check-in!", type: "error" }); // ← đổi
+  }
+};
 
   if (loading)
     return <div className={styles.loading}>Đang tải dữ liệu lịch hẹn...</div>;
