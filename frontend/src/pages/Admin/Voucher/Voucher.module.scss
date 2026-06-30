@@ -1,92 +1,347 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap');
+// Admin — Quản Lý Voucher Thẻ Grid Vé Barber | NOULE Barber Premium Layout
+
+$gold:        #C9A84C;
+$gold-hover:  #BA9A3E;
+$gold-dim:    #8A6A28;
+$gold-faint:  rgba(201, 168, 76, 0.12);
+$gold-border: rgba(201, 168, 76, 0.25);
+
+$ink:         #1A1612;
+$ink-text:    #F5F0E8;
+$ink-muted:   rgba(245, 240, 232, 0.5);
+
+$page-bg:     #F7F4EF;
+$card-bg:     #FFFFFF;
+$surface-2:   #F9F6F1;
+
+$border:      1px solid rgba(0, 0, 0, 0.06);
+$radius-sm:   6px;
+$radius-md:   14px; // Tăng độ bo góc cho thẻ card mềm mại hẳn
+$radius-lg:   16px;
 
 .voucherPage {
-  padding: 40px;
-  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  background: $page-bg;
   min-height: 100vh;
-  font-family: 'DM Sans', sans-serif;
+  padding: 0 8px 64px 8px;
+  color: $ink;
 }
 
-.header {
+// ── Page Heading & Filter Tabs (Giữ nguyên cấu trúc của bạn) ─────────────────
+.pageHead {
   display: flex;
+  align-items: flex-end;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 40px;
-  border-bottom: 1.5px solid #000000; // Đường kẻ ngang phân cách tiêu đề sắc nét
   padding-bottom: 20px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 
-  h2 {
-    font-family: 'Playfair Display', serif;
-    font-size: 32px;
-    font-weight: 800;
-    color: #000000;
+  &__title {
+    font-size: 28px;
+    font-weight: 600;
+    color: $ink;
+    font-family: Georgia, serif;
     margin: 0;
-    letter-spacing: -0.5px;
+    em { color: $gold; font-style: italic; }
   }
 }
 
-.addBtn {
-  background: #000000; // Nút đen tuyền
-  color: #ffffff;
-  border: none;
-  border-radius: 4px; // Bo góc nhẹ cho nam tính
-  padding: 12px 24px;
-  cursor: pointer;
-  font-weight: 700;
-  font-size: 13px;
-  text-transform: uppercase; // Viết hoa toàn bộ cho chuyên nghiệp
-  letter-spacing: 1.5px;
-  display: flex;
+.addButton {
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  gap: 7px;
+  padding: 9px 20px;
+  font-size: 12px;
+  font-weight: 600;
+  background: $gold;
+  color: $ink;
+  border: none;
+  border-radius: $radius-sm;
+  cursor: pointer;
+  &:hover { background: $gold-hover; }
+}
 
-  svg {
-    font-size: 14px;
+.filterTabs {
+  display: flex;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.filterTab {
+  padding: 8px 20px;
+  background: transparent;
+  border: none;
+  font-size: 12px;
+  font-weight: 500;
+  color: #7a756e;
+  cursor: pointer;
+  border-radius: $radius-sm;
+  transition: all 0.15s;
+
+  &.active {
+    color: #fff;
+    background: $ink;
+    font-weight: 600;
   }
+}
+
+// ── Layout Phân Khu ──────────────────────────────────────────────────────────
+.zonesContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+.zoneBlock {
+  display: flex;
+  flex-direction: column;
+}
+
+.zoneTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: $ink;
+  font-family: Georgia, serif;
+  margin: 0 0 12px 0;
+  border-left: 3.5px solid var(--title-color, #{$gold});
+  padding-left: 12px;
+  line-height: 1;
+}
+
+.zoneLine {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.07);
+  margin-bottom: 24px;
+}
+
+.ticketGrid {
+  display: grid;
+  // Khống chế kích thước thẻ tối đa 400px để card trông dày dặn, ko bị dài ngoãng
+  grid-template-columns: repeat(auto-fill, minmax(360px, 400px)); 
+  gap: 24px;
+}
+
+// ── THIẾT KẾ CARD VÉ BARBER SIÊU CẤP ĐỔI MỚI ─────────────────────────────────
+.voucherTicket {
+  background: $card-bg;
+  border: $border;
+  border-radius: $radius-md;
+  display: flex;
+  height: 125px;
+  position: relative;
+  // Đổ bóng sâu lớp kép tạo chiều nổi hẳn lên trên nền kem
+  box-shadow: 0 4px 12px rgba(26, 22, 18, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+  transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  overflow: hidden;
 
   &:hover {
-    background: #4b382a; // Chuyển sang Nâu đồng khi hover
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(75, 56, 42, 0.2);
-  }
+    transform: translateY(-4px);
+    // Bóng đổ đậm đà kích thích thị giác khi đưa chuột vào
+    box-shadow: 0 12px 24px rgba(138, 106, 40, 0.12), 0 4px 8px rgba(0, 0, 0, 0.04);
+    border-color: rgba(201, 168, 76, 0.4);
 
-  &:active {
-    transform: translateY(0);
-  }
-}
-
-/* 🏆 LAYOUT DANH SÁCH VOUCHER */
-.voucherList {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); // Tự động chia cột
-  gap: 30px;
-  padding-top: 10px;
-}
-
-/* Responsive cho màn hình điện thoại */
-@media (max-width: 768px) {
-  .voucherPage {
-    padding: 20px;
-  }
-
-  .header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 20px;
-    
-    h2 {
-      font-size: 26px;
+    .ticketLeft {
+      filter: brightness(1.05); // Cuống trái sáng bừng lên nhẹ
     }
   }
 
-  .addBtn {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .voucherList {
-    grid-template-columns: 1fr;
+  &.inactive {
+    opacity: 0.5;
+    filter: grayscale(80%);
   }
 }
+
+// Cuống Vé Trái (Tăng tương phản đậm màu, font cực bốc)
+.ticketLeft {
+  width: 115px; 
+  // Đẩy gradient đậm hơn sang tone đen/tối ở góc để chữ trắng nổi bần bật
+  background: linear-gradient(135deg, var(--ticket-color) 0%, rgba(26, 22, 18, 0.4) 140%);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 12px;
+  text-align: center;
+  flex-shrink: 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); // Tạo độ nét cho chữ
+
+  .discountBadge {
+    .amount {
+      font-size: 26px; // Tăng kích thước số
+      font-weight: 800;
+      font-family: Georgia, serif;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+    }
+    
+    .percent {
+      font-size: 28px;
+      font-weight: 800;
+      font-family: Georgia, serif;
+      line-height: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+
+      small {
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        color: rgba(255, 255, 255, 0.9);
+        margin-top: 2px;
+      }
+    }
+  }
+
+  .conditionText {
+    font-size: 9px;
+    color: rgba(255, 255, 255, 0.85);
+    margin-top: 8px;
+    line-height: 1.2;
+    font-weight: 500;
+  }
+}
+
+// Đường Phân Cách Răng Cưa (Tạo bóng đổ cho lỗ khoét có chiều sâu)
+.ticketDivider {
+  width: 14px;
+  position: relative;
+  background: $card-bg;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  .notchTop, .notchBottom {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: $page-bg; 
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  // Bóng đổ viền nhẹ vào trong lỗ khoét nhìn như một vết bấm vé thật
+  .notchTop { 
+    top: -8px; 
+    box-shadow: inset 0 -2px 4px rgba(0,0,0,0.08), 0 1px 0 rgba(255,255,255,0.8);
+  }
+  .notchBottom { 
+    bottom: -8px; 
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.08), 0 -1px 0 rgba(255,255,255,0.8);
+  }
+
+  .dashLine {
+    height: 75%;
+    border-left: 1px dashed rgba(0, 0, 0, 0.15);
+  }
+}
+
+// Cuống Vé Phải
+.ticketRight {
+  flex: 1;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: $card-bg;
+  min-width: 0;
+
+  .ticketHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .ticketName {
+    font-size: 14px;
+    font-weight: 600;
+    color: $ink;
+    margin: 0;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .statusBadge {
+    font-size: 9px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: #f0ede9;
+    color: #888;
+    white-space: nowrap;
+
+    &.active {
+      background: rgba(46, 125, 50, 0.08);
+      color: #2e7d32;
+    }
+  }
+
+  .ticketDesc {
+    font-size: 11px;
+    color: #6e6963; // Làm đậm text mô tả lên một chút cho dễ đọc
+    margin: 4px 0 auto 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.4;
+  }
+
+  .ticketFooter {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-top: 4px;
+    padding-top: 6px;
+    border-top: 1px dashed rgba(0,0,0,0.05);
+  }
+
+  .metaInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    font-size: 10.5px;
+    color: #9c968f;
+    strong { color: $ink; font-weight: 600; }
+  }
+
+  .metaItem {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .ticketActions {
+    display: flex;
+    gap: 4px;
+    
+    button {
+      width: 26px;
+      height: 26px;
+      border-radius: $radius-sm;
+      background: $surface-2;
+      border: 1px solid rgba(0, 0, 0, 0.04);
+      color: #777;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s;
+
+      &:hover { background: $ink; color: #fff; border-color: $ink; }
+      &.btnDelete:hover { background: #d32f2f; color: #fff; border-color: #d32f2f; }
+    }
+  }
+}
+
+.globalEmpty { text-align: center; padding: 80px 24px; color: #bbb; font-size: 13px; }
+.loading { text-align: center; padding: 100px 24px; color: #aaa; }

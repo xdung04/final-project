@@ -1,195 +1,750 @@
+// services/salaryService.js — REFACTORED
+
 import db from "../models/index.js";
 import { fn, col, Op } from "sequelize";
 import { createNotification } from "./notificationService.js";
+import moment from "moment"
+// ═══════════════════════════════════════════════════════════════════════════
+// HELPER: Tính lại deductions + netSalary từ bảng salary_deductions
+// Dùng chung cho addDeduction và removeDeduction
+// ═══════════════════════════════════════════════════════════════════════════
+const recalculateSalary = async (idSalary, transaction) => {
+  // Chỉ SUM các khoản chưa bị soft delete
+  const result = await db.SalaryDeduction.findOne({
+    where: { idSalary, deletedAt: null },
+    attributes: [[fn("COALESCE", fn("SUM", col("amount")), 0), "totalDeductions"]],
+    raw: true,
+    transaction,
+  });
 
-// ====================== Lấy lương real-time cho một tháng ======================
-export const getBarberSalariesOptimized = async (month, year) => {
-  const startDate = new Date(year, month - 1, 1);
-  const endDate = new Date(year, month, 1);
+  const totalDeductions = parseFloat(result?.totalDeductions || 0);
 
-  const salaries = await db.Barber.findAll({
-    include: [
-      { model: db.User, as: "user", attributes: ["fullName"], required: true },
-      { model: db.Branch, as: "branch", attributes: ["name", "address"], required: false },
-      {
-        model: db.Booking,
-        as: "Bookings",
-        required: false,
-        where: { isPaid: true, bookingDate: { [Op.gte]: startDate, [Op.lt]: endDate } },
-        include: [
-          { model: db.BookingDetail, as: "BookingDetails", attributes: [] },
-          { model: db.BookingTip, as: "BookingTip", attributes: [] },
-        ],
-        attributes: [],
-      },
+  const salary = await db.Salary.findByPk(idSalary, { transaction });
+  const netSalary = parseFloat(salary.totalSalary) - totalDeductions;
+
+  await salary.update({ deductions: totalDeductions, netSalary }, { transaction });
+
+  return { totalDeductions, netSalary };
+};
+
+const buildContractWhereForMonth = (month, year) => {
+  const firstDayOfMonth = new Date(year, month - 1, 1);  // VD: 2025-05-01
+  const lastDayOfMonth  = new Date(year, month, 0);       // VD: 2025-05-31
+ 
+  return {
+    status: "active",
+    startDate: { [Op.lte]: lastDayOfMonth },   // Hợp đồng bắt đầu trước/trong tháng
+    [Op.or]: [
+      { endDate: null },                        // Vô thời hạn
+      { endDate: { [Op.gte]: firstDayOfMonth } }, // Chưa kết thúc trước tháng này
     ],
+  };
+};
+ 
+// ═══════════════════════════════════════════════════════════════════════════
+// 1. TÍNH LƯƠNG REALTIME (không lưu DB) — Dùng để preview
+// ═══════════════════════════════════════════════════════════════════════════
+export const calculateRealtimeSalaries = async (month, year) => {
+  const startDate = new Date(year, month - 1, 1);
+  const endDate   = new Date(year, month, 1);
+ 
+  // Tổng số ngày trong tháng (VD: tháng 6 = 30, tháng 1 = 31)
+  const totalDaysInMonth = new Date(year, month, 0).getDate();
+ 
+  // ── Lấy idBarber đã có SETTLEMENT tháng này → skip ──
+  const settlements = await db.Salary.findAll({
+    where: { month, year, calculationType: "SETTLEMENT" },
+    attributes: ["idBarber"],
+    raw: true,
+  });
+  const settledBarberIds = new Set(settlements.map((s) => s.idBarber));
+ 
+  // ── BƯỚC 1: Lấy thống kê doanh thu / tip / customer ──
+  const stats = await db.Barber.findAll({
     attributes: [
       "idBarber",
       [fn("COALESCE", fn("SUM", col("Bookings.BookingDetails.price")), 0), "serviceRevenue"],
-      [fn("COALESCE", fn("SUM", col("Bookings.BookingTip.tipAmount")), 0), "tipAmount"],
-      [col("user.fullName"), "barberName"],
-      [col("branch.name"), "branchName"],
-      [col("branch.address"), "branchAddress"],
+      [fn("COALESCE", fn("SUM", col("Bookings.BookingTip.tipAmount")),   0), "tipAmount"],
+      [fn("COUNT",    fn("DISTINCT", col("Bookings.idBooking"))),            "customerCount"],
     ],
-    group: ["Barber.idBarber", "user.idUser", "branch.idBranch"],
+    include: [{
+      model: db.Booking,
+      as: "Bookings",
+      required: false,
+      where: { isPaid: true, bookingDate: { [Op.gte]: startDate, [Op.lt]: endDate } },
+      attributes: [],
+      include: [
+        { model: db.BookingDetail, as: "BookingDetails", attributes: [] },
+        { model: db.BookingTip,    as: "BookingTip",     attributes: [] },
+      ],
+    }],
+    group: ["Barber.idBarber"],
+    raw: true,
   });
-
-  const bonusRules = await db.BonusRule.findAll({ where: { active: true }, order: [["minRevenue", "ASC"]] });
-
-  return salaries.map((b) => {
-    const serviceRevenue = parseFloat(b.get("serviceRevenue") || 0);
-    const tipAmount = parseFloat(b.get("tipAmount") || 0);
-    const baseSalary = 3000000;
-    const commission = serviceRevenue * 0.15;
-
-    const rule = bonusRules.find(
-      (r) => serviceRevenue >= parseFloat(r.minRevenue) && (r.maxRevenue == null || serviceRevenue <= parseFloat(r.maxRevenue))
-    );
-    const bonus = rule ? (commission * parseFloat(rule.bonusPercent)) / 100 : 0;
-    const totalSalary = baseSalary + commission + tipAmount + bonus;
-
-    return {
-      idBarber: b.idBarber,
-      barberName: b.get("barberName"),
-      branchName: b.get("branchName") || "",
-      branchAddress: b.get("branchAddress") || "",
-      serviceRevenue: serviceRevenue.toFixed(0),
-      tip: tipAmount.toFixed(0),
-      baseSalary: baseSalary.toFixed(0),
-      commission: commission.toFixed(0),
-      bonus: bonus.toFixed(0),
-      totalSalary: totalSalary.toFixed(0),
-      status: "Chưa tính",
+ 
+  const statsMap = {};
+  stats.forEach((s) => {
+    statsMap[s.idBarber] = {
+      serviceRevenue: parseFloat(s.serviceRevenue || 0),
+      tipAmount:      parseFloat(s.tipAmount      || 0),
+      customerCount:  parseInt(s.customerCount    || 0),
     };
   });
+ 
+  // ── BƯỚC 2: Lấy thợ + hợp đồng ──
+  const whereBarber = settledBarberIds.size > 0
+    ? { idBarber: { [Op.notIn]: [...settledBarberIds] } }
+    : {};
+ 
+  const barbers = await db.Barber.findAll({
+    where: whereBarber,
+    include: [
+      {
+        model: db.User,
+        as: "user",
+        attributes: ["idUser", "fullName"],
+        required: true,
+      },
+      {
+        model: db.Branch,
+        as: "branch",
+        attributes: ["name"],
+        required: false,
+      },
+      {
+        model: db.BarberRatingSummary,
+        as: "ratingSummary",
+        required: false,
+      },
+      {
+        model: db.SalaryContract,
+        as: "contracts",
+        where: buildContractWhereForMonth(month, year),
+        required: true,
+        include: [{
+          model: db.CompensationPlan,
+          as: "plan",
+          include: [
+            { model: db.CommissionRule, as: "commissionRules" },
+            { model: db.BonusRule,      as: "bonusRules" },
+          ],
+        }],
+      },
+    ],
+  });
+ 
+  // ── BƯỚC 3: Tính lương từng thợ — dùng Promise.all để await ngày nghỉ ──
+  return Promise.all(
+    barbers.map(async (b) => {
+      const bStats         = statsMap[b.idBarber] || { serviceRevenue: 0, tipAmount: 0, customerCount: 0 };
+      const serviceRevenue = bStats.serviceRevenue;
+      const tipAmount      = bStats.tipAmount;
+      const customerCount  = bStats.customerCount;
+      const averageRating  = b.ratingSummary ? parseFloat(b.ratingSummary.avgRate || 0) : 0;
+ 
+      let baseSalary = 0;
+      let commission = 0;
+      let bonus      = 0;
+ 
+      const contract = b.contracts?.[0] || null;
+      if (contract) {
+        baseSalary = parseFloat(contract.actualBaseSalary || 0);
+ 
+        const plan = contract.plan;
+        if (plan) {
+          // Tính hoa hồng theo bậc doanh thu
+          if (plan.commissionRules?.length > 0) {
+            const matched = plan.commissionRules.find(
+              (r) =>
+                serviceRevenue >= parseFloat(r.minRevenueStep) &&
+                (r.maxRevenueStep == null || serviceRevenue <= parseFloat(r.maxRevenueStep))
+            );
+            if (matched) commission = serviceRevenue * (parseFloat(matched.commissionRate) / 100);
+          }
+ 
+          // Tính thưởng KPI theo số khách + rating
+          if (plan.bonusRules?.length > 0) {
+            plan.bonusRules.forEach((rule) => {
+              if (
+                customerCount >= rule.minCustomerCount &&
+                averageRating >= parseFloat(rule.minAverageRating)
+              ) {
+                bonus += parseFloat(rule.rewardAmount);
+              }
+            });
+          }
+        }
+      }
+ 
+      // ── Tính khấu trừ ngày nghỉ ──────────────────────────────────────────
+      // Công thức: (baseSalary / totalDaysInMonth) * workingDays
+      const dayOffDays  = await calcDayOffDays(b.idBarber, month, year);
+      const workingDays = Math.max(totalDaysInMonth - dayOffDays, 0);
+ 
+      const effectiveBase   = dayOffDays > 0
+        ? Math.round((baseSalary / totalDaysInMonth) * workingDays)
+        : baseSalary;
+      const dayOffDeduction = baseSalary - effectiveBase;
+ 
+      // Tổng lương thực nhận
+      const totalSalary = effectiveBase + commission + tipAmount + bonus;
+ 
+      return {
+        idBarber:           b.idBarber,
+        idUser:             b.user?.idUser,
+        barberName:         b.user?.fullName || "N/A",
+        branchName:         b.branch?.name  || "",
+        month,
+        year,
+        customerCount,
+        averageRating,
+        serviceRevenue,
+ 
+        // ── Thông tin ngày công ──
+        totalDaysInMonth,           // tổng ngày trong tháng
+        dayOffDays,                 // số ngày nghỉ
+        workingDays,                // số ngày đi làm thực tế
+ 
+        // ── Lương ──
+        originalBaseSalary: baseSalary,     // lương cứng gốc hợp đồng (để đối chiếu)
+        baseSalary:         effectiveBase,  // lương cứng sau khi trừ ngày nghỉ
+        dayOffDeduction,                    // số tiền bị trừ do nghỉ
+        commission,
+        tip:                tipAmount,
+        bonus,
+        totalSalary,
+ 
+        // ── Fields DB/UI ──
+        idSalary:      null,
+        deductions:    dayOffDeduction,  // hiển thị ngay trên UI realtime
+        netSalary:     totalSalary,
+        DeductionsList: [],
+        status:        "Realtime",
+        disputeCount:  0,
+        disputeReason: null,
+        deadlineAt:    null,
+        paidAmount:    0,
+      };
+    })
+  );
+};
+ 
+// ═══════════════════════════════════════════════════════════════════════════
+// 2. Lấy lương từ DB (đã tính/đã lưu)
+// ═══════════════════════════════════════════════════════════════════════════
+export const getSavedSalaries = async (month, year) => {
+  const savedSalaries = await db.Salary.findAll({
+    where: { month, year },
+    include: [
+      {
+        model: db.Barber,
+        as: "barber",
+        include: [
+          { model: db.User,   as: "user",   attributes: ["idUser", "fullName"] },
+          { model: db.Branch, as: "branch", attributes: ["name"] },
+        ],
+      },
+      {
+        model: db.SalaryDeduction,
+        as: "DeductionsList",
+        where: { deletedAt: null },
+        required: false,
+        attributes: ["idDeduction", "amount", "reason", "createdAt", "violationDate"],
+      },
+    ],
+    order: [["idBarber", "ASC"]],
+  });
+ 
+  return savedSalaries.map((s) => ({
+    idSalary:       s.idSalary,
+    idBarber:       s.idBarber,
+    idUser:         s.barber?.user?.idUser,
+    barberName:     s.barber?.user?.fullName || "N/A",
+    branchName:     s.barber?.branch?.name  || "",
+    month:          s.month,
+    year:           s.year,
+    serviceRevenue: parseFloat(s.serviceRevenue || 0),
+    baseSalary:     parseFloat(s.baseSalary),
+    commission:     parseFloat(s.commission),
+    tip:            parseFloat(s.tips),
+    bonus:          parseFloat(s.bonus),
+    totalSalary:    parseFloat(s.totalSalary),
+    deductions:     parseFloat(s.deductions || 0),
+    netSalary:      parseFloat(s.netSalary  || 0),
+    DeductionsList: s.DeductionsList || [],
+    status:         s.status,
+    disputeCount:   s.disputeCount  || 0,
+    disputeReason:  s.disputeReason || null,
+    deadlineAt:     s.deadlineAt    || null,
+    paidAmount:     s.paidAmount    || 0,
+  }));
+};
+ 
+// ═══════════════════════════════════════════════════════════════════════════
+// 3. API CHO FRONTEND — Logic tổng hợp
+// ═══════════════════════════════════════════════════════════════════════════
+export const getSalariesForDisplay = async (month, year) => {
+  const today          = new Date();
+  const currentMonth   = today.getMonth() + 1;
+  const currentYear    = today.getFullYear();
+  const isCurrentMonth = month === currentMonth && year === currentYear;
+ 
+  const savedData = await getSavedSalaries(month, year);
+ 
+  if (savedData.length > 0) {
+    return { source: "database", isCurrentMonth, canCalculate: false, salaries: savedData };
+  }
+ 
+  const realtimeData = await calculateRealtimeSalaries(month, year);
+ 
+  if (isCurrentMonth) {
+    return {
+      source:         "realtime",
+      isCurrentMonth: true,
+      canCalculate:   false,
+      message:        "Dữ liệu realtime — Chưa hết tháng, chỉ xem được",
+      salaries:       realtimeData,
+    };
+  }
+ 
+  return {
+    source:         "realtime",
+    isCurrentMonth: false,
+    canCalculate:   true,
+    message:        "Preview tháng trước — Bấm 'Tính lương nháp' để lưu vào DB",
+    salaries:       realtimeData,
+  };
 };
 
-// ====================== Lấy danh sách tháng + trạng thái lương ======================
-// ====================== Lấy danh sách tháng + trạng thái lương ======================
-export const getSalaryOverview = async () => {
-  const today = new Date();
+// ═══════════════════════════════════════════════════════════════════════════
+// 4. Tính lương & Lưu Nháp (Draft)
+// ═══════════════════════════════════════════════════════════════════════════
+export const createDraftSalaries = async (month, year) => {
+  const today        = new Date();
   const currentMonth = today.getMonth() + 1;
-  const currentYear = today.getFullYear();
-
-  const months = [];
-
-  for (let month = 1; month <= currentMonth; month++) {
-    let salaries = [];
-    let canCalculate = false;
-
-    // Lấy dữ liệu đã lưu từ DB
-    const savedSalaries = await db.Salary.findAll({
-      where: { month, year: currentYear },
-      include: [
-        {
-          model: db.Barber,
-          as: "barber",
-          attributes: ["idBarber"],
-          include: [
-            { model: db.User, as: "user", attributes: ["fullName"] },
-            { model: db.Branch, as: "branch", attributes: ["name"] },
-          ],
-        },
-      ],
+  const currentYear  = today.getFullYear();
+ 
+  if (year > currentYear || (year === currentYear && month >= currentMonth)) {
+    throw new Error("Không thể tính lương cho tháng hiện tại hoặc tương lai!");
+  }
+ 
+  const existing = await db.Salary.findAll({ where: { month, year } });
+  if (existing.length > 0) throw new Error("Tháng này đã tính lương rồi! Không thể tính lại.");
+ 
+  // ── Lấy idBarber đã có SETTLEMENT tháng này → skip ──
+  const settlements = await db.Salary.findAll({
+    where: { month, year, calculationType: "SETTLEMENT" },
+    attributes: ["idBarber"],
+    raw: true,
+  });
+  const settledBarberIds = new Set(settlements.map((s) => s.idBarber));
+ 
+  // calculateRealtimeSalaries đã tính sẵn dayOffDeduction bên trong
+  const realtimeData = await calculateRealtimeSalaries(month, year);
+ 
+  // Lọc bỏ barber đã có SETTLEMENT
+  const filteredData = realtimeData.filter((s) => !settledBarberIds.has(s.idBarber));
+ 
+  if (filteredData.length === 0) {
+    throw new Error("Không có thợ nào cần tính lương MONTHLY tháng này.");
+  }
+ 
+  const transaction = await db.sequelize.transaction();
+  try {
+    const salariesToCreate = filteredData.map((s) => {
+      // baseSalary lúc này đã là effectiveBase (đã trừ ngày nghỉ)
+      const grossSalary = s.baseSalary + s.commission + s.tip + s.bonus;
+      const netSalary   = grossSalary; // deductions thủ công sẽ được cộng thêm sau qua DeductionModal
+ 
+      return {
+        idBarber:           s.idBarber,
+        month,
+        year,
+        calculationType:    "MONTHLY",
+        serviceRevenue:     s.serviceRevenue,
+ 
+        // Lưu lương cứng gốc để thợ đối chiếu khi khiếu nại
+        originalBaseSalary: s.originalBaseSalary,
+ 
+        // Lưu thông tin ngày công để hiển thị trong phiếu lương
+        totalDaysInMonth:   s.totalDaysInMonth,
+        dayOffDays:         s.dayOffDays,
+        workingDays:        s.workingDays,
+ 
+        // effectiveBase = (originalBaseSalary / totalDaysInMonth) * workingDays
+        baseSalary:         s.baseSalary,
+        commission:         s.commission,
+        tips:               s.tip,
+        bonus:              s.bonus,
+        totalSalary:        grossSalary,
+ 
+        // dayOffDeduction lưu riêng, cộng thêm deductions thủ công sau
+        dayOffDeduction:    s.dayOffDeduction,
+        deductions:         s.dayOffDeduction, // khấu trừ ban đầu = tiền nghỉ
+ 
+        netSalary,
+        status:          "Draft",
+        disputeCount:    0,
+      };
     });
+ 
+    await db.Salary.bulkCreate(salariesToCreate, { transaction });
+    await transaction.commit();
+ 
+    return { success: true, count: salariesToCreate.length };
+  } catch (err) {
+    await transaction.rollback();
+    throw err;
+  }
+};
 
-    if (month === currentMonth) {
-      // Tháng hiện tại → real-time, không được tính
-      salaries = (await getBarberSalariesOptimized(month, currentYear)).map((s) => ({
-        ...s,
-        status: "Chưa tính",
-      }));
-      canCalculate = false;
-    } else if (savedSalaries.length > 0) {
-      // Tháng trước đã lưu
-      salaries = savedSalaries.map((s) => ({
-        idBarber: s.barber.idBarber,
-        barberName: s.barber?.user?.fullName || "",
-        branchName: s.barber?.branch?.name || "",
-        baseSalary: s.baseSalary || 0,
-        commission: s.commission || 0,
-        tip: s.tips || 0,
-        bonus: s.bonus || 0,
-        totalSalary: s.totalSalary || 0,
-        status: s.status ? "Đã tính" : "Chưa tính",
-      }));
-      // Nếu còn thợ chưa tính → bật nút tính lương
-      canCalculate = savedSalaries.some((s) => !s.status);
-    } else {
-      // Tháng trước chưa lưu → lấy snapshot real-time, bật nút tính lương
-      salaries = (await getBarberSalariesOptimized(month, currentYear)).map((s) => ({
-        ...s,
-        status: "Chưa tính",
-      }));
-      canCalculate = true;
-    }
+// ═══════════════════════════════════════════════════════════════════════════
+// 5. Gửi Phiếu Lương (Draft → Pending)
+// ═══════════════════════════════════════════════════════════════════════════
+export const sendPayslip = async (idSalary) => {
+  const salary = await db.Salary.findByPk(idSalary, {
+    include: [{ model: db.Barber, as: "barber", include: [{ model: db.User, as: "user" }] }],
+  });
 
-    months.push({
-      month,
-      year: currentYear,
-      isCurrentMonth: month === currentMonth,
-      canCalculate,
-      salaries: Array.isArray(salaries) ? salaries : [],
+  if (!salary) throw new Error("Không tìm thấy phiếu lương");
+  if (!["Draft", "Disputed"].includes(salary.status)) {
+    throw new Error(`Chỉ có thể gửi phiếu ở trạng thái Draft/Disputed, hiện tại: ${salary.status}`);
+  }
+
+  const now      = new Date();
+  const deadline = new Date(now.getTime() + 48 * 60 * 60 * 1000);
+
+  await salary.update({ status: "Pending", sentAt: now, deadlineAt: deadline });
+
+  if (salary.barber?.user?.idUser) {
+    await createNotification({
+      type:       "SALARY",
+      title:      `Phiếu lương tháng ${salary.month}/${salary.year}`,
+      content:    "Quản lý đã gửi phiếu lương. Vui lòng xác nhận trong 48h tới.",
+      targetRole: "barber",
+      targetId:   salary.barber.user.idUser,
+      referenceId: salary.idSalary,
     });
   }
 
-  return months;
+  return salary;
 };
 
-// ====================== Xác nhận tính lương toàn bộ thợ ======================
-export const confirmMonthlySalary = async (month, year) => {
-  try {
-    const today = new Date();
-    const currentMonth = today.getMonth() + 1;
-    const currentYear = today.getFullYear();
+// ═══════════════════════════════════════════════════════════════════════════
+// 6. Thêm khoản khấu trừ mới (ACCUMULATE — không ghi đè)
+// ═══════════════════════════════════════════════════════════════════════════
+export const addDeduction = async (idSalary, { amount, reason, violationDate }) => {
+  if (!amount || Number(amount) <= 0) throw new Error("Số tiền phải lớn hơn 0");
+  if (!reason?.trim())                throw new Error("Lý do khấu trừ là bắt buộc");
 
-    // Chặn tính lương tháng hiện tại hoặc tương lai
-    if (year > currentYear || (year === currentYear && month >= currentMonth)) {
-      return { success: false, message: "Không được tính lương tháng hiện tại hoặc tương lai" };
+  const transaction = await db.sequelize.transaction();
+  try {
+    const salary = await db.Salary.findByPk(idSalary, { transaction });
+    if (!salary) throw new Error("Không tìm thấy phiếu lương");
+    if (["Paid", "Locked", "Cancelled"].includes(salary.status)) {
+      throw new Error("Phiếu lương đã khóa, không thể điều chỉnh");
     }
 
-    // Lấy dữ liệu real-time để tính chính xác
-    const salaries = await getBarberSalariesOptimized(month, year);
+    // Tạo khoản khấu trừ mới
+    const deduction = await db.SalaryDeduction.create(
+      {
+        idSalary,
+        amount:        Number(amount),
+        reason:        reason.trim(),
+        violationDate: violationDate || null, // nullable — tạm ứng không cần ngày vi phạm
+      },
+      { transaction }
+    );
 
-    const salaryData = salaries.map((s) => ({
-      idBarber: s.idBarber,
-      month,
-      year,
-      baseSalary: parseFloat(s.baseSalary),
-      commission: parseFloat(s.commission),
-      tips: parseFloat(s.tip),
-      bonus: parseFloat(s.bonus),
-      totalSalary: parseFloat(s.totalSalary),
-      status: true, // đã tính
-    }));
+    // Tính lại tổng và cập nhật cached columns
+    const { totalDeductions, netSalary } = await recalculateSalary(idSalary, transaction);
 
-    await db.Salary.bulkCreate(salaryData, {
-      updateOnDuplicate: ["baseSalary", "commission", "tips", "bonus", "totalSalary", "status"],
+    await transaction.commit();
+
+    return {
+      deduction,
+      summary: { totalDeductions, netSalary },
+    };
+  } catch (err) {
+    await transaction.rollback();
+    throw err;
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 7. Xóa mềm một khoản khấu trừ (có lý do — audit trail)
+// ═══════════════════════════════════════════════════════════════════════════
+export const removeDeduction = async (idDeduction, { deleteReason }) => {
+  if (!deleteReason?.trim()) throw new Error("Lý do xóa là bắt buộc");
+
+  const transaction = await db.sequelize.transaction();
+  try {
+    const deduction = await db.SalaryDeduction.findByPk(idDeduction, { transaction });
+    if (!deduction)          throw new Error("Không tìm thấy khoản khấu trừ");
+    if (deduction.deletedAt) throw new Error("Khoản khấu trừ này đã bị xóa rồi");
+
+    // Kiểm tra salary status
+    const salary = await db.Salary.findByPk(deduction.idSalary, { transaction });
+    if (!salary) throw new Error("Không tìm thấy phiếu lương");
+    if (!["Draft", "Disputed"].includes(salary.status)) {
+      throw new Error(`Chỉ được xóa khấu trừ khi phiếu ở trạng thái Draft/Disputed, hiện tại: ${salary.status}`);
+    }
+
+    // Soft delete
+    await deduction.update(
+      { deletedAt: new Date(), deleteReason: deleteReason.trim() },
+      { transaction }
+    );
+
+    // Tính lại tổng và cập nhật cached columns
+    const { totalDeductions, netSalary } = await recalculateSalary(deduction.idSalary, transaction);
+
+    await transaction.commit();
+
+    return {
+      idDeduction,
+      summary: { totalDeductions, netSalary },
+    };
+  } catch (err) {
+    await transaction.rollback();
+    throw err;
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 8. Force-close Khiếu nại
+// ═══════════════════════════════════════════════════════════════════════════
+export const forceCloseSalaryDispute = async (idSalary, reason) => {
+  const salary = await db.Salary.findByPk(idSalary, {
+    include: [{ model: db.Barber, as: "barber", include: [{ model: db.User, as: "user" }] }],
+  });
+
+  if (!salary || salary.status !== "Disputed") {
+    throw new Error("Chỉ có thể force-close phiếu đang Disputed");
+  }
+
+  // FIX: Bỏ adjustmentNote (đã xóa cột), chỉ update status + disputeReason
+  await salary.update({
+    status:        "Confirmed",
+    disputeReason: `[Admin từ chối]: ${reason}`,
+  });
+
+  if (salary.barber?.user?.idUser) {
+    await createNotification({
+      type:       "SALARY",
+      title:      "Khiếu nại đã bị đóng",
+      content:    `Quản lý: ${reason}`,
+      targetRole: "barber",
+      targetId:   salary.barber.user.idUser,
+      referenceId: salary.idSalary,
     });
+  }
 
-    for (const salary of salaries) {
-      const barberId = salary.idBarber;
-      const total = parseFloat(salary.totalSalary).toLocaleString("vi-VN");
+  return salary;
+};
 
-      // Lấy userId của barber để gửi thông báo đúng người
-      const barber = await db.Barber.findByPk(barberId, {
-        include: [{ model: db.User, as: "user", attributes: ["idUser"] }],
+// ═══════════════════════════════════════════════════════════════════════════
+// 9. Thanh toán & Khóa sổ
+// ═══════════════════════════════════════════════════════════════════════════
+export const markAsPaid = async (idSalary, { paidAmount, paymentProofUrl }) => {
+  const salary = await db.Salary.findByPk(idSalary);
+  if (!salary) throw new Error("Không tìm thấy phiếu lương");
+
+  if (!["Confirmed", "AutoConfirmed"].includes(salary.status)) {
+    throw new Error("Chỉ được thanh toán phiếu đã Confirmed");
+  }
+
+  await salary.update({ paidAmount, paymentProofUrl, status: "Paid" });
+  return salary;
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BARBER APIs
+// ═══════════════════════════════════════════════════════════════════════════
+export const getMyPayslips = async (idBarber) => {
+  const salaries = await db.Salary.findAll({
+    where: {
+      idBarber,
+      status: { [Op.ne]: "Draft" },
+    },
+    include: [
+      {
+        model: db.SalaryDeduction,
+        as: "DeductionsList",
+        where: { deletedAt: null },
+        required: false,
+        attributes: ["idDeduction", "amount", "reason", "violationDate", "createdAt"],
+      },
+    ],
+    order: [["year", "DESC"], ["month", "DESC"]],
+  });
+
+  const detailedSalaries = await Promise.all(
+    salaries.map(async (salary) => {
+      const startDate = new Date(salary.year, salary.month - 1, 1);
+      const endDate   = new Date(salary.year, salary.month,     1);
+      const monthEnd  = new Date(salary.year, salary.month,     0); // ngày cuối tháng
+
+      // ── Bookings ──────────────────────────────────────────────────────────
+      const bookings = await db.Booking.findAll({
+        where: {
+          idBarber: salary.idBarber,
+          isPaid: true,
+          bookingDate: { [Op.gte]: startDate, [Op.lt]: endDate },
+        },
+        include: [
+          {
+            model: db.BookingDetail,
+            as: "BookingDetails",
+            include: [{ model: db.Service, as: "service", attributes: ["name"] }],
+          },
+          {
+            model: db.BookingTip,
+            as: "BookingTip",
+            attributes: ["tipAmount", "createdAt"],
+          },
+          {
+            model: db.Customer,
+            as: "Customer",
+            include: [{ model: db.User, as: "user", attributes: ["fullName"] }],
+          },
+        ],
+        order: [["bookingDate", "ASC"]],
       });
 
-      if (barber?.user?.idUser) {
-        await createNotification({
-          type: "SALARY",
-          title: `Lương tháng ${month}/${year}`,
-          content: `Lương tháng ${month}/${year} của bạn là ${total} VNĐ. Chi tiết xem trong mục lương.`,
-          targetRole: "barber",
-          targetId: barber.user.idUser,
-        });
-      }
-    }
+      // ── Lịch nghỉ trong tháng — clamp về đúng biên tháng ─────────────────
+      const dayOffs = await db.BarberDayOff.findAll({
+        where: {
+          idBarber,
+          startDate: { [Op.lte]: monthEnd  },
+          endDate:   { [Op.gte]: startDate },
+        },
+        attributes: ["idUnavailable", "startDate", "endDate", "reason"],
+        order: [["startDate", "ASC"]],
+        raw: true,
+      });
 
-    return { success: true, message: "Đã tính lương và gửi thông báo thành công!" };
-  } catch (err) {
-    console.error(err);
-    return { success: false, message: "Tính lương thất bại" };
+      // Map lại để trả về ngày đã clamp + số ngày nghỉ thực tế trong tháng
+      const dayOffList = dayOffs.map((d) => {
+        const clampedStart = new Date(Math.max(new Date(d.startDate), startDate));
+        const clampedEnd   = new Date(Math.min(new Date(d.endDate),   monthEnd));
+        const days = Math.floor((clampedEnd - clampedStart) / 86_400_000) + 1;
+
+        return {
+          idUnavailable: d.idUnavailable,
+          startDate:     d.startDate,   // ngày gốc (để hiển thị)
+          endDate:       d.endDate,
+          reason:        d.reason || null,
+          daysInMonth:   days,           // số ngày nghỉ thực tế tính trong tháng này
+        };
+      });
+
+      return {
+        ...salary.get({ plain: true }),
+
+        // ── Thông tin ngày công ──
+        dayOffList,                                              // chi tiết từng đợt nghỉ
+        totalDayOffDays: dayOffList.reduce((s, d) => s + d.daysInMonth, 0), // tổng ngày nghỉ
+
+        // ── Lịch sử booking ──
+        workHistory: bookings.map((b) => ({
+          idBooking:    b.idBooking,
+          date:         b.bookingDate,
+          customerName: b.Customer?.user?.fullName || "Khách vãng lai",
+          services:     b.BookingDetails.map((d) => d.service?.name).join(", "),
+          servicePrice: b.BookingDetails.reduce((sum, d) => sum + parseFloat(d.price), 0),
+          tipAmount:    b.BookingTip ? parseFloat(b.BookingTip.tipAmount) : 0,
+        })),
+      };
+    })
+  );
+
+  return detailedSalaries;
+};
+
+export const confirmPayslipByBarber = async (idSalary, idBarber) => {
+  const salary = await db.Salary.findByPk(idSalary, {
+    include: [{ model: db.Barber, as: "barber" }],
+  });
+
+  if (!salary)                                          throw new Error("Không tìm thấy phiếu");
+  if (parseInt(salary.idBarber) !== parseInt(idBarber)) throw new Error("Không có quyền");
+  if (salary.status !== "Pending")                      throw new Error("Chỉ confirm phiếu Pending");
+
+  await salary.update({ status: "Confirmed" });
+
+  // Notify admin thợ đã confirm
+  await createNotification({
+    type:       "SALARY",
+    title:      "Thợ đã xác nhận",
+    content:    `Thợ đã xác nhận lương tháng ${salary.month}/${salary.year}`,
+    targetRole: "admin",
+  });
+
+  // ✅ Check điều kiện lên cấp — best effort, không block confirm
+  try {
+    const { checkPromotionEligibility } = await import("./hrPolicyService.js");
+    await checkPromotionEligibility(idBarber);
+  } catch (e) {
+    console.warn(`[Promotion check] idBarber=${idBarber}:`, e.message);
   }
+
+  return salary;
+};
+
+export const disputePayslipByBarber = async (idSalary, idBarber, reason) => {
+  const salary = await db.Salary.findByPk(idSalary, {
+    include: [{ model: db.Barber, as: "barber" }],
+  });
+
+  if (!salary)                                          throw new Error("Không tìm thấy phiếu");
+  if (parseInt(salary.idBarber) !== parseInt(idBarber)) throw new Error("Không có quyền");
+  if (salary.status !== "Pending")                      throw new Error("Chỉ dispute phiếu Pending");
+
+  await salary.update({
+    status:        "Disputed",
+    disputeReason: reason,
+    disputeCount:  (salary.disputeCount || 0) + 1,
+  });
+
+  await createNotification({
+    type:       "SALARY",
+    title:      "Khiếu nại mới",
+    content:    `Tháng ${salary.month}: ${reason}`,
+    targetRole: "admin",
+  });
+
+  return salary;
+};
+
+const calcDayOffDays = async (idBarber, month, year) => {
+  const monthStart = new Date(year, month - 1, 1);
+  const monthEnd   = new Date(year, month, 0); // ngày cuối tháng
+
+  // ✅ Chỉ đếm những ngày đã thực sự qua
+  // Tháng đã qua   → effectiveEnd = monthEnd   (không đổi gì)
+  // Tháng hiện tại → effectiveEnd = today       (bỏ ngày nghỉ tương lai)
+  const todayDate  = new Date();
+  todayDate.setHours(0, 0, 0, 0);
+  const effectiveEnd = new Date(Math.min(monthEnd, todayDate));
+
+  const dayOffs = await db.BarberDayOff.findAll({
+    where: {
+      idBarber,
+      startDate: { [Op.lte]: effectiveEnd }, // ← dùng effectiveEnd thay monthEnd
+      endDate:   { [Op.gte]: monthStart    },
+    },
+    attributes: ["startDate", "endDate"],
+    raw: true,
+  });
+
+  let totalDayOff = 0;
+  for (const d of dayOffs) {
+    const clampedStart = new Date(Math.max(new Date(d.startDate), monthStart));
+    const clampedEnd   = new Date(Math.min(new Date(d.endDate), effectiveEnd)); // ← clamp luôn
+    const days = Math.floor((clampedEnd - clampedStart) / 86_400_000) + 1;
+    if (days > 0) totalDayOff += days;
+  }
+
+  return totalDayOff;
 };

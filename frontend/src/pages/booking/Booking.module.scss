@@ -1,20 +1,21 @@
 /* Booking.module.scss */
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;700&family=Bebas+Neue&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;700&family=Bebas+Neue&display=swap");
 
 :root {
-  --bg-white:  #ffffff;
-  --bg-cream:  #fdfbf8;
-  --gold:      #b8966a; /* Màu vàng đồng chủ đạo */
+  --bg-white: #ffffff;
+  --bg-cream: #fdfbf8;
+  --gold: #b8966a;
   --gold-dark: #967a54;
-  --charcoal:  #2c2c2c; /* Màu chữ chính */
-  --text-dim:  #666666;
-  --border:    #e0d7cc;
+  --charcoal: #2c2c2c;
+  --text-dim: #666666;
+  --border: #e0d7cc;
 
-  --ff-serif:  'Playfair Display', serif;
-  --ff-display:'Bebas Neue', sans-serif;
-  --ff-body:   'DM Sans', sans-serif;
+  --ff-serif:"Playfair Display", serif;
+  --ff-display:"Bebas Neue", sans-serif;
+  --ff-body:"DM Sans", sans-serif;
 }
 
+/* ─── Layout ──────────────────────────────────────────────────────────────── */
 .bookingWrapper {
   position: relative;
   display: flex;
@@ -26,11 +27,12 @@
   overflow: hidden;
 }
 
-/* Hiệu ứng hạt cực nhẹ trên nền trắng */
 .grainOverlay {
-  position: fixed; inset: 0;
+  position: fixed;
+  inset: 0;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.02'/%3E%3C/svg%3E");
-  pointer-events: none; z-index: 1; 
+  pointer-events: none;
+  z-index: 1;
 }
 
 .logoBarber {
@@ -39,7 +41,10 @@
   left: 50%;
   transform: translateX(-50%);
   z-index: 5;
-  img { width: 160px; height: auto; }
+  img {
+    width: 160px;
+    height: auto;
+  }
 }
 
 .bookingContainer {
@@ -48,7 +53,7 @@
   margin-top: 40px;
   padding: 45px;
   background: var(--bg-cream);
-  border-radius: 4px; /* Bo nhẹ hoặc vuông vức kiểu classic */
+  border-radius: 4px;
   border: 1px solid var(--border);
   box-shadow: 0 15px 40px rgba(0, 0, 0, 0.05);
   position: relative;
@@ -63,7 +68,7 @@
     letter-spacing: 1px;
     text-transform: uppercase;
     position: relative;
-    
+
     &::after {
       content: "";
       position: absolute;
@@ -77,8 +82,304 @@
   }
 }
 
+/* ─── Branch Finder Panel ─────────────────────────────────────────────────── */
+/* ─── Branch Finder Panel ─────────────────────────────────────────────────── */
+.branchFinder {
+  margin-bottom: 36px;
+  padding: 24px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-top: 4px solid var(--gold); // Dày hơn một chút để tạo điểm nhấn
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+}
+
+.branchFinderHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  &:hover {
+    border-color: var(--gold);
+    transform: translateY(-5px);
+    box-shadow: 0 12px 24px rgba(184, 150, 106, 0.15);
+  }
+}
+
+/* Card Gần nhất - Làm nổi bật hẳn lên */
+.branchCardNearest {
+  border-color: rgba(184, 150, 106, 0.5);
+  background: linear-gradient(145deg, #ffffff, #fffdfa);
+  
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 12px;
+    border: 2px solid transparent;
+    background: linear-gradient(var(--gold), var(--gold-dark)) border-box;
+    -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: destination-out;
+    mask-composite: exclude;
+    opacity: 0.3; // Viền gradient mờ ảo
+  }
+
+  .branchCardName {
+    color: var(--gold-dark);
+  }
+}
+
+/* Card đã được chọn */
+.branchCardSelected {
+  border: 2px solid var(--gold) !important;
+  background: #fffefb !important;
+  box-shadow: 0 8px 30px rgba(184, 150, 106, 0.25) !important;
+  transform: translateY(-5px);
+}
+
+/* Badge "Gần nhất" - Thiết kế lại như một cái tag sang trọng */
+.nearestBadge {
+  position: absolute;
+  top: -12px;
+  left: 12px;
+  background: var(--gold);
+  background: linear-gradient(to right, var(--gold-dark), var(--gold));
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: var(--ff-display);
+  font-size: 14px;
+  letter-spacing: 2px;
+  color: var(--charcoal);
+  text-transform: uppercase;
+}
+/* Nút cập nhật vị trí */
+.locationBtn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  font-family: var(--ff-body);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--gold-dark);
+  background: transparent;
+  border: 1px solid var(--gold);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+
+  &:hover:not(:disabled) {
+    background: var(--gold);
+    color: #ffffff;
+    .locationDot {
+      background: #ffffff;
+    }
+  }
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+/* Chấm xanh nhấp nháy – định vị đang hoạt động */
+.locationDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #1d9e75;
+  flex-shrink: 0;
+  animation: locPulse 1.6s ease-in-out infinite;
+}
+.locationBtnLoading .locationDot {
+  background: var(--gold);
+}
+
+@keyframes locPulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.8);
+  }
+}
+
+.locationError {
+  font-size: 12px;
+  color: #c0392b;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: #fdf2f2;
+  border-left: 3px solid #c0392b;
+  border-radius: 0 4px 4px 0;
+}
+
+.locationHint {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+  font-style: italic;
+}
+
+/* ─── Danh sách card chi nhánh (scroll ngang) ─────────────────────────────── */
+.branchCardList {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scroll-snap-type: x mandatory;
+
+  /* Ẩn scrollbar nhưng vẫn scroll được */
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+  &::-webkit-scrollbar {
+    height: 4px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 2px;
+  }
+}
+
+/* ─── Card mỗi chi nhánh ─────────────────────────────────────────────────── */
+.branchCard {
+  position: relative;
+  min-width: 175px;
+  max-width: 190px;
+  flex-shrink: 0;
+  scroll-snap-align: start;
+  padding: 14px 14px 12px;
+  background: var(--bg-cream);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    transform 0.15s ease,
+    box-shadow 0.2s ease;
+  user-select: none;
+
+  &:hover {
+    border-color: var(--gold);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(184, 150, 106, 0.12);
+  }
+  &:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
+}
+
+/* Card đã được chọn */
+.branchCardSelected {
+  border: 2px solid var(--gold) !important;
+  background: #ffffff !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(184, 150, 106, 0.18);
+}
+
+.branchCardNearest:not(.branchCardSelected) {
+  border-color: #b8966a80;
+}
+
+
+/* Badge "✓ Đã chọn" */
+.selectedBadge {
+  position: absolute;
+  top: -9px;
+  right: 10px;
+  background: var(--charcoal);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 9px;
+  border-radius: 20px;
+}
+
+.branchCardName {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--charcoal);
+  margin-bottom: 5px;
+  line-height: 1.4;
+}
+.branchCardAddr {
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  margin-bottom: 10px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.branchCardMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+%chip-base {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 20px;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+}
+.chipDist {
+  @extend %chip-base;
+  background: #eaf3de;
+  color: #3b6d11;
+}
+.chipTime {
+  @extend %chip-base;
+  background: #e6f1fb;
+  color: #185fa5;
+}
+.chipNoLoc {
+  @extend %chip-base;
+  background: #f0ede8;
+  color: #999;
+}
+.chipWarn {
+  @extend %chip-base;
+  background: #fcebeb;
+  color: #a32d2d;
+}
+.chipPause {
+  @extend %chip-base;
+  background: #faeeda;
+  color: #854f0b;
+}
+
+.branchCardSkeleton {
+  min-width: 175px;
+  height: 115px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #f5f0eb 25%, #ede7e0 50%, #f5f0eb 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ─── Form groups ─────────────────────────────────────────────────────────── */
 .formGroup {
   margin-bottom: 25px;
+
   label {
     font-family: var(--ff-display);
     font-size: 13px;
@@ -88,25 +389,170 @@
     display: block;
     text-transform: uppercase;
   }
+}
+
+/* ─── Custom Select ───────────────────────────────────────────────────────── */
+.selectWrapper {
+  position: relative;
 
   select {
     width: 100%;
-    padding: 14px;
+    padding: 14px 40px 14px 16px;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
     border-radius: 4px;
     background: #ffffff;
     border: 1px solid var(--border);
     color: var(--charcoal);
-    font-size: 15px;
+    font-family: var(--ff-body);
+    font-size: 14px;
+    font-weight: 500;
     outline: none;
-    transition: all 0.3s ease;
+    cursor: pointer;
+    transition:
+      border-color 0.25s ease,
+      box-shadow 0.25s ease;
 
     &:focus {
       border-color: var(--gold);
-      box-shadow: 0 0 0 3px rgba(184, 150, 106, 0.1);
+      box-shadow: 0 0 0 3px rgba(184, 150, 106, 0.12);
+    }
+    &:disabled {
+      background: #f7f4f0;
+      color: #bbb;
+      cursor: not-allowed;
+    }
+
+    option {
+      font-family: var(--ff-body);
+      font-size: 14px;
+      color: var(--charcoal);
+      background: #ffffff;
     }
   }
 }
 
+.selectArrow {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  font-size: 12px;
+  color: var(--gold-dark);
+  line-height: 1;
+}
+
+/* ─── Date list ───────────────────────────────────────────────────────────── */
+.dateList {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 12px;
+  margin-top: 10px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  &::-webkit-scrollbar {
+    height: 3px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: var(--gold-dark);
+    border-radius: 10px;
+  }
+}
+
+.dateCard {
+  position: relative;
+  flex-shrink: 0;
+  width: 75px;
+  height: 85px;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-white);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+  &:hover:not(.dateCardDisabled) {
+    border-color: var(--gold);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(184, 150, 106, 0.15);
+  }
+}
+
+.dateCardSelected {
+  background: var(--charcoal);
+  border-color: var(--charcoal);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(44, 44, 44, 0.25);
+  .dateDay {
+    color: var(--gold-dark);
+  }
+  .dateNumber {
+    color: var(--gold);
+  }
+  .dateMonth {
+    color: rgba(184, 150, 106, 0.7);
+  }
+}
+
+.dateCardDisabled {
+  background: #f5f5f5;
+  border-color: #eaeaea;
+  cursor: not-allowed;
+  opacity: 0.6;
+  .dateDay,
+  .dateNumber,
+  .dateMonth {
+    color: #bbb;
+  }
+  &::after {
+    content: "Nghỉ";
+    position: absolute;
+    font-size: 10px;
+    font-weight: 700;
+    color: #a00;
+    background: rgba(255, 0, 0, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+}
+
+.dateDay {
+  font-family: var(--ff-display);
+  font-size: 14px;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 2px;
+  transition: color 0.3s;
+}
+.dateNumber {
+  font-family: var(--ff-serif);
+  font-size: 26px;
+  font-weight: 900;
+  color: var(--charcoal);
+  line-height: 1;
+  transition: color 0.3s;
+}
+.dateMonth {
+  font-family: var(--ff-body);
+  font-size: 11px;
+  font-weight: 500;
+  color: #999;
+  margin-top: 2px;
+  transition: color 0.3s;
+}
+
+/* ─── Time grid ───────────────────────────────────────────────────────────── */
 .timeGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
@@ -121,52 +567,320 @@
   color: var(--charcoal);
   cursor: pointer;
   transition: all 0.2s;
+  font-family: var(--ff-body);
   font-weight: 500;
   font-size: 14px;
 
-  &:hover:not(.booked) {
+  &:hover:not(.booked):not(:disabled) {
     border-color: var(--gold);
     color: var(--gold);
   }
-
   &.selected {
     background: var(--gold);
     color: white;
     border-color: var(--gold);
   }
-
-  &.booked, &.disabled {
+  &.booked,
+  &:disabled {
     background: #f5f5f5;
-    color: #cccccc;
+    color: #ccc;
     border-color: #eee;
     cursor: not-allowed;
   }
 }
 
+/* ─── Service list ────────────────────────────────────────────────────────── */
 .serviceList {
-  margin-top: 15px;
+  margin-top: 12px;
+  list-style: none;
+  padding: 0;
+
   li {
     display: flex;
     justify-content: space-between;
-    padding: 14px;
+    align-items: center;
+    padding: 12px 16px;
     background: white;
     border: 1px solid var(--border);
-    margin-bottom: 8px;
+    border-left: 3px solid var(--gold);
+    margin-bottom: 6px;
+    border-radius: 0 4px 4px 0;
+    font-family: var(--ff-body);
     color: var(--charcoal);
-    font-size: 14px;
+    font-size: 13px;
 
     button {
       background: #fdf2f2;
       color: #d9534f;
       border: none;
-      width: 24px; height: 24px;
+      width: 24px;
+      height: 24px;
       border-radius: 4px;
       cursor: pointer;
-      &:hover { background: #d9534f; color: white; }
+      font-size: 12px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      &:hover {
+        background: #d9534f;
+        color: white;
+      }
     }
   }
 }
 
+/* ═══════════════════════════════════════════════════════════
+   HAIRSTYLE — single trigger row + dropdown
+═══════════════════════════════════════════════════════════ */
+.hairstyleRow {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.hairstyleTrigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 18px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--gold);
+  border-radius: 0 4px 4px 0;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+
+  &:hover {
+    border-color: var(--gold);
+    box-shadow: 0 4px 14px rgba(184, 150, 106, 0.1);
+  }
+}
+
+.hairstyleTriggerQuestion {
+  font-family: var(--ff-body);
+  font-size: 14px;
+  color: var(--text-dim);
+  font-style: italic;
+  text-align: left;
+
+  strong {
+    font-style: normal;
+    font-weight: 600;
+    color: var(--gold-dark);
+  }
+}
+
+.hairstyleTriggerArrow {
+  font-size: 20px;
+  color: var(--gold);
+  line-height: 1;
+  flex-shrink: 0;
+  margin-left: 12px;
+  display: inline-block;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform: rotate(90deg);
+}
+
+.hairstyleTriggerArrowOpen {
+  transform: rotate(270deg);
+}
+
+/* ─── Dropdown panel ─────────────────────────────────────────────────────── */
+.hairstyleDropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--gold);
+  border-radius: 4px;
+  box-shadow: 0 16px 40px rgba(44, 44, 44, 0.12);
+  z-index: 100;
+  animation: dropIn 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  overflow: hidden;
+}
+
+@keyframes dropIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hairstyleDropdownHint {
+  padding: 14px 18px 10px;
+  font-family: var(--ff-body);
+  font-size: 11px;
+  font-style: italic;
+  color: #aaa;
+  letter-spacing: 0.3px;
+  border-bottom: 1px solid #f0ece6;
+  margin: 0;
+}
+
+.hairstyleDropdownList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 320px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 2px;
+  }
+}
+
+.hairstyleItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 18px;
+  cursor: pointer;
+  border-bottom: 1px solid #f5f1ec;
+  transition: background 0.15s ease;
+  user-select: none;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background: #fdfaf6;
+  }
+}
+
+.hairstyleItemSelected {
+  background: #fffefb !important;
+
+  .hairstyleItemName {
+    color: var(--gold-dark);
+    font-weight: 600;
+  }
+}
+
+.hairstyleItemClear {
+  border-top: 1px solid var(--border);
+  .hairstyleItemName {
+    color: #aaa;
+    font-size: 12px;
+    font-style: italic;
+    font-weight: 400;
+  }
+}
+
+.hairstyleItemText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.hairstyleItemName {
+  font-family: var(--ff-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--charcoal);
+  transition: color 0.15s;
+}
+
+.hairstyleItemDesc {
+  font-family: var(--ff-body);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.hairstyleItemTick {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gold);
+  min-width: 16px;
+  text-align: center;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SILENT MODE — luxury checkbox
+═══════════════════════════════════════════════════════════ */
+.silentLabel {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 15px 18px;
+  margin-bottom: 28px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
+
+  &:hover {
+    border-color: var(--gold);
+  }
+}
+
+.silentLabelActive {
+  border-color: var(--gold) !important;
+  background: #fffefb !important;
+
+  .silentCheckbox {
+    border-color: var(--gold);
+    background: var(--gold);
+  }
+}
+
+.silentHiddenInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* The visible checkbox square */
+.silentCheckbox {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--border);
+  border-radius: 3px;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.silentTick {
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1;
+}
+
+.silentLabelText {
+  font-family: var(--ff-body);
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+/* ─── Summary ─────────────────────────────────────────────────────────────── */
 .summary {
   margin: 35px 0;
   padding: 25px;
@@ -179,6 +893,22 @@
     justify-content: space-between;
     margin: 10px 0;
     color: var(--text-dim);
+    font-family: var(--ff-body);
+    font-size: 14px;
+  }
+
+  .summaryTotal {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    color: var(--charcoal);
+  }
+  .voucherWarning {
+    margin: 4px 0 0;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: #e69d9d;
+    line-height: 1.4;
   }
 
   b {
@@ -189,19 +919,40 @@
 
   button {
     width: 100%;
-    margin-top: 15px;
+    margin-top: 16px;
     padding: 12px;
     background: white;
     border: 1px solid var(--gold);
     color: var(--gold);
     font-family: var(--ff-display);
     letter-spacing: 2px;
+    font-size: 13px;
     cursor: pointer;
+    border-radius: 2px;
     transition: 0.3s;
-    &:hover { background: var(--gold); color: white; }
+    &:hover {
+      background: var(--gold);
+      color: white;
+    }
   }
 }
 
+.appliedVoucher {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: #f8f4ee;
+  border-radius: 4px;
+  font-family: var(--ff-body);
+  font-size: 12px;
+  color: var(--gold-dark);
+  p {
+    color: var(--gold-dark);
+    margin: 3px 0;
+    font-size: 12px;
+  }
+}
+
+/* ─── Submit button ───────────────────────────────────────────────────────── */
 .submitBtn {
   width: 100%;
   padding: 18px;
@@ -213,43 +964,43 @@
   letter-spacing: 3px;
   text-transform: uppercase;
   cursor: pointer;
+  border-radius: 2px;
   transition: all 0.3s;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: var(--gold);
-    letter-spacing: 5px; /* Hiệu ứng giãn chữ nhẹ khi hover */
+    letter-spacing: 5px;
+  }
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
   }
 }
 
-/* Scissors decorations mờ tinh tế */
-.scissorsLeft, .scissorsRight {
+/* ─── Scissors ────────────────────────────────────────────────────────────── */
+.scissorsLeft,
+.scissorsRight {
   position: absolute;
   top: 40%;
   width: 220px;
-  opacity: 0.03; /* Cực mờ để tạo texture cho nền trắng */
+  opacity: 0.03;
   z-index: 1;
 }
-
-/* Trạng thái nút khi đang loading */
-.loadingBtn {
-  opacity: 0.7;
-  cursor: not-allowed;
-  pointer-events: none;
+.scissorsLeft {
+  left: -80px;
+}
+.scissorsRight {
+  right: -80px;
+  transform: scaleX(-1);
 }
 
-/* -------------------------------------
-   LUXURY LOADING OVERLAY & SPINNER
---------------------------------------- */
+/* ─── Loading overlay ─────────────────────────────────────────────────────── */
 .overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(253, 251, 248, 0.85); /* Nền kem sáng hơi trong suốt */
-  backdrop-filter: blur(6px); /* Hiệu ứng làm mờ background xịn xò */
+  inset: 0;
+  background: rgba(253, 251, 248, 0.85);
+  backdrop-filter: blur(6px);
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
   z-index: 9999;
@@ -259,34 +1010,403 @@
 .loader {
   width: 55px;
   height: 55px;
-  border: 2px solid var(--border); /* Vòng ngoài nét mảnh */
-  border-top: 2px solid var(--gold); /* Phần xoay màu vàng đồng */
+  border: 2px solid var(--border);
+  border-top: 2px solid var(--gold);
   border-radius: 50%;
   animation: spin 0.9s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   margin-bottom: 20px;
 }
 
-.loadingText {
-  font-family: var(--ff-display);
-  color: var(--gold-dark);
-  font-size: 18px;
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  animation: pulse 1.5s infinite ease-in-out;
-}
-
-/* Keyframes */
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
-
-@keyframes pulse {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
-}
-
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+/* ═══════════════════════════════════════════════════════════
+   HAIRSTYLE MODAL — thay thế toàn bộ block cũ từ
+   "HAIRSTYLE SELECTION" đến cuối file
+═══════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════
+   HAIRSTYLE MODAL — ĐÃ SỬA LỖI BUG GAP & FIX KHÓA PHOM PORTRAIT
+═══════════════════════════════════════════════════════════ */
+
+/* ── Trigger button ─────────────────────────────────────── */
+.hairstyleTrigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 18px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--gold);
+  border-radius: 0 4px 4px 0;
+  cursor: pointer;
+  font-family: var(--ff-body);
+  font-size: 14px;
+  color: var(--charcoal);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  margin-bottom: 0;
+
+  &:hover {
+    border-color: var(--gold);
+    box-shadow: 0 4px 14px rgba(184, 150, 106, 0.1);
+  }
+}
+
+.hairstyleTriggerText {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-dim);
+  font-style: italic;
+
+  strong {
+    font-style: normal;
+    font-weight: 600;
+    color: var(--gold-dark);
+  }
+}
+
+.hairstyleTriggerArrow {
+  font-size: 18px;
+  color: var(--gold);
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+/* ── Full-screen overlay ────────────────────────────────── */
+.hairstyleOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(30, 24, 18, 0.72);
+  backdrop-filter: blur(4px);
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: hsOverlayIn 0.2s ease;
+
+  @keyframes hsOverlayIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+}
+
+/* ── Modal box ──────────────────────────────────────────── */
+.hairstyleModal {
+  background: var(--bg-cream);
+  width: 100%;
+  max-width: 780px;
+  height: 82vh; /* Khống chế chiều cao modal cố định ở mức 82% màn hình */
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column; /* Xếp Header -> Thân Grid -> Footer theo hàng dọc */
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+  animation: hsModalIn 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+  @keyframes hsModalIn {
+    from { opacity: 0; transform: translateY(28px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0)    scale(1);    }
+  }
+}
+
+/* ── Modal header ───────────────────────────────────────── */
+.hairstyleModalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 26px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  background: #ffffff;
+
+  h3 {
+    font-family: var(--ff-serif);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--charcoal);
+    margin: 0;
+  }
+}
+
+.hairstyleModalHint {
+  font-family: var(--ff-body);
+  font-size: 12px;
+  color: #aaa;
+  font-style: italic;
+  margin-top: 3px;
+}
+
+.hairstyleModalClose {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+  transition: all 0.15s;
+
+  &:hover {
+    background: var(--charcoal);
+    color: #fff;
+    border-color: var(--charcoal);
+  }
+}
+
+/* ── Grid scrollable area — ĐÃ FIX LỖI ── */
+.hairstyleGrid {
+  display: grid;
+  /* Đổi min-width lên 195px để tự động chia 3 cột cực chuẩn trên modal 780px */
+  grid-template-columns: repeat(auto-fill, minmax(195px, 1fr)) !important;
+  gap: 16px !important; /* ĐÃ SỬA: Thay thế 'px' rỗng thành 16px rõ ràng */
+  padding: 22px 24px;
+  
+  /* BẬT SCROLL DỌC THOẢI MÁI CHO GRID */
+  flex: 1;
+  min-height: 0; 
+  overflow-y: auto !important;
+  
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+
+  &::-webkit-scrollbar       { width: 5px; }
+  &::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+}
+
+/* ── Hairstyle card — KHÓA CỨNG CHIỀU CAO CHỐNG DẸT ── */
+.hairstyleCard {
+  border: 2px solid transparent;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  background: #ffffff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.07);
+  transition: all 0.25s ease;
+  
+  display: flex !important;           
+  flex-direction: column !important;  
+  
+  /* ĐẶT CHIỀU CAO CỐ ĐỊNH: Ép buộc dài ra, không cho co cụm dẹt dí nữa */
+  height: 320px !important;
+  min-height: 320px !important;
+
+  // Chống lỗi đè layout từ thẻ div vô danh "bis_skin_checked" của extension trình duyệt
+  > div {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100%;
+  }
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 28px rgba(184, 150, 106, 0.22);
+    border-color: rgba(184, 150, 106, 0.4);
+
+    .hairstyleCoverImg  { opacity: 0; }
+    .hairstyleSideImg   { opacity: 1; }
+  }
+}
+
+.hairstyleCardSelected {
+  border-color: var(--gold) !important;
+  box-shadow: 0 6px 22px rgba(184, 150, 106, 0.35) !important;
+}
+
+/* ── Image container with hover swap ───────────────────── */
+/* ── Phần Ảnh + Hover Side Image (ĐÃ SỬA) ── */
+.hairstyleImgWrap {
+  position: relative;
+  width: 100%;
+  height: 200px;           /* Giữ cố định chiều cao ảnh */
+  background: #f0ece6;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.hairstyleCoverImg,
+.hairstyleSideImg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  transition: opacity 0.4s ease;
+}
+
+.hairstyleCoverImg {
+  opacity: 1;
+  z-index: 1;
+}
+
+.hairstyleSideImg {
+  opacity: 0;
+  z-index: 2;
+}
+
+/* Hover - Chuyển sang ảnh nghiêng */
+.hairstyleCard:hover .hairstyleCoverImg {
+  opacity: 0;
+}
+
+.hairstyleCard:hover .hairstyleSideImg {
+  opacity: 1;
+}
+
+/* ── Selected tick badge ────────────────────────────────── */
+.hairstyleSelectedTick {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 3;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--gold);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+/* ── Card info — CHIẾM 120px CÒN LẠI CỦA CARD ── */
+.hairstyleCardInfo {
+  padding: 10px 12px;
+  height: 120px !important; /* Khóa chết vùng chữ cao 120px */
+  display: flex !important;
+  flex-direction: column !important;
+  background: #ffffff;
+
+  h4 {
+    font-family: var(--ff-serif);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--charcoal);
+    margin: 0 0 4px 0;
+    line-height: 1.3;
+    white-space: nowrap;         
+    overflow: hidden;            
+    text-overflow: ellipsis;     
+  }
+
+  p {
+    font-family: var(--ff-body);
+    font-size: 11px;
+    color: var(--text-dim);
+    margin: 0 0 6px 0;
+    line-height: 1.45;
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* Cắt chữ tối đa sau 2 dòng */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+.hairstyleCardMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: auto; /* Tự động đẩy cụm tag xuống sát đáy card cho đều hàng */
+}
+
+.hairstyleMetaTag {
+  font-family: var(--ff-body);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 20px;
+  background: #f0ece6;
+  color: var(--gold-dark);
+  letter-spacing: 0.2px;
+}
+
+/* ── Modal footer ───────────────────────────────────────── */
+.hairstyleModalFooter {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  gap: 12px;
+}
+
+.hairstyleFooterSelected {
+  font-family: var(--ff-body);
+  font-size: 13px;
+  color: var(--gold-dark);
+  font-weight: 600;
+
+  span {
+    color: var(--text-dim);
+    font-weight: 400;
+    margin-right: 4px;
+  }
+}
+
+.hairstyleFooterBtns {
+  display: flex;
+  gap: 10px;
+}
+
+.hairstyleClearBtn {
+  padding: 11px 18px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-family: var(--ff-body);
+  font-size: 13px;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    border-color: var(--charcoal);
+    color: var(--charcoal);
+  }
+}
+
+.hairstyleConfirmBtn {
+  padding: 11px 24px;
+  background: var(--charcoal);
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  font-family: var(--ff-display);
+  font-size: 14px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.25s;
+
+  &:hover {
+    background: var(--gold);
+    letter-spacing: 3px;
+  }
 }

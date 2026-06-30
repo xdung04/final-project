@@ -4,10 +4,12 @@ import RevealSection from "~/components/RevealSection/RevealSection";
 import { HairConsultAPI } from "~/apis/hairConsultAPI";
 import FaceCamera from "./FaceCamera";
 import { useToast } from "~/context/ToastContext";
+
 const HairConsult = () => {
   const [quizData, setQuizData] = useState(null);
   const [currentFlow, setCurrentFlow] = useState(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  
   const [answers, setAnswers] = useState({});
   const [loading, setLoading] = useState(true);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
@@ -16,7 +18,8 @@ const HairConsult = () => {
   const [sending, setSending] = useState(false);
   const [showOverlay, setShowOverlay] = useState(false);
   const [capturedImage, setCapturedImage] = useState(null);
- const { showToast } = useToast();
+  const { showToast } = useToast();
+
   useEffect(() => {
     const fetchQuiz = async () => {
       try {
@@ -49,21 +52,51 @@ const HairConsult = () => {
   if (loading) return <div>Đang tải quiz...</div>;
   if (!quizData) return <div>Không có dữ liệu quiz</div>;
 
-  const handleAnswer = (qid, value) => setAnswers({ ...answers, [qid]: value });
+  const handleSelectOption = (qid, label) => {
+    setAnswers({
+      ...answers,
+      [qid]: { value: label, customText: answers[qid]?.value === label ? answers[qid]?.customText : "" }
+    });
+  };
+
+  // 👉 SỬA: Cắt chuỗi lấy tối đa 300 ký tự phòng trường hợp khách cố tình copy paste văn bản dài
+  const handleCustomInputChange = (qid, text) => {
+    setAnswers({
+      ...answers,
+      [qid]: { ...answers[qid], customText: text.slice(0, 300) }
+    });
+  };
+
+  // 👉 SỬA: Cắt chuỗi lấy tối đa 300 ký tự cho ô nhập văn bản thuần túy
+  const handlePureTextChange = (qid, text) => {
+    setAnswers({
+      ...answers,
+      [qid]: { value: text.slice(0, 300), customText: "" }
+    });
+  };
 
   const handleNext = () => {
     const flow = currentFlow ? quizData.flows[currentFlow] : null;
-    const qid = currentFlow ? flow.questions[currentQuestionIndex].id : quizData.startQuestion.id;
+    const currentQuestion = !currentFlow ? quizData.startQuestion : flow.questions[currentQuestionIndex];
+    const qid = currentQuestion.id;
+    const userAnswer = answers[qid];
 
-    if (!answers[qid]) return showToast({ text: "Vui lòng chọn hoặc nhập câu trả lời!", type: "error" });
+    if (!userAnswer || !userAnswer.value) {
+      return showToast({ text: "Vui lòng chọn hoặc nhập câu trả lời!", type: "error" });
+    }
+
+    if (currentQuestion.type === "single_choice") {
+      const selectedOptObj = currentQuestion.options.find(o => o.label === userAnswer.value);
+      if (selectedOptObj?.requires_custom_input && (!userAnswer.customText || !userAnswer.customText.trim())) {
+        return showToast({ text: "Vui lòng nhập nội dung chi tiết vào ô trống!", type: "error" });
+      }
+    }
 
     const isLastQuestion = currentFlow && currentQuestionIndex === flow.questions.length - 1;
     if (isLastQuestion) return setIsCameraOpen(true);
 
     if (!currentFlow) {
-      const selectedOption = quizData.startQuestion.options.find(
-        (o) => (typeof o === "string" ? o === answers[qid] : o.label === answers[qid])
-      );
+      const selectedOption = quizData.startQuestion.options.find(o => o.label === userAnswer.value);
       setCurrentFlow(selectedOption.nextFlow);
       setCurrentQuestionIndex(0);
     } else {
@@ -87,14 +120,22 @@ const HairConsult = () => {
     try {
       const flowData = quizData.flows[currentFlow];
       const filteredAnswers = {};
+      
       flowData.questions.forEach(q => {
-        if (answers[q.id]) filteredAnswers[q.id] = { question: q.question, answer: answers[q.id] };
+        const ansObj = answers[q.id];
+        if (ansObj) {
+          const optConfig = q.options?.find(o => o.label === ansObj.value);
+          const finalAnswerString = optConfig?.requires_custom_input ? ansObj.customText : ansObj.value;
+          
+          filteredAnswers[q.id] = {
+            question: q.question,
+            answer: finalAnswerString
+          };
+        }
       });
 
       const startOptions = quizData.startQuestion.options;
-      const selectedOption = startOptions.find(
-        (o) => typeof o === "string" ? o === answers[quizData.startQuestion.id] : o.nextFlow === currentFlow
-      );
+      const selectedOption = startOptions.find(o => o.nextFlow === currentFlow);
 
       const base64ToBlob = (base64) => {
         const byteString = atob(base64.split(",")[1]);
@@ -119,7 +160,6 @@ const HairConsult = () => {
     } catch (err) {
       console.error(err);
       return showToast({ text: "Lỗi khi gửi dữ liệu phân tích khuôn mặt", type: "error" });
-
     } finally {
       setSending(false);
     }
@@ -129,100 +169,150 @@ const HairConsult = () => {
     ? quizData.startQuestion
     : quizData.flows[currentFlow]?.questions[currentQuestionIndex];
 
-  const progress = currentFlow
-    ? ((currentQuestionIndex + 1) / quizData.flows[currentFlow]?.questions.length) * 100
-    : 0;
+  const totalQuestions = currentFlow ? quizData.flows[currentFlow]?.questions.length : 0;
+  const currentStepDisplay = currentFlow ? currentQuestionIndex + 1 : 0;
+  const progress = currentFlow ? (currentStepDisplay / totalQuestions) * 100 : 0;
 
   return (
     <div className={styles.hairConsult}>
       <div className={styles.quizContainer}>
         {!isCameraOpen && !quizCompleted && (
-          <RevealSection className={styles.quizCard}>
-            <h2>{currentQuestion.question}</h2>
+          <RevealSection className={styles.quizWrapper}>
+            {currentFlow && (
+              <div className={styles.stepLabel}>
+                Câu hỏi {currentStepDisplay} / {totalQuestions}
+              </div>
+            )}
+            
+            <h2 className={styles.questionTitle}>{currentQuestion.question}</h2>
+            
             {currentQuestion.type === "single_choice" && (
               <div className={styles.options}>
-                {currentQuestion.options.map(opt => {
+                {currentQuestion.options.map((opt, idx) => {
                   const label = typeof opt === "string" ? opt : opt.label;
+                  const isSelected = answers[currentQuestion.id]?.value === label;
+                  const hasCustomInput = typeof opt === "object" && opt.requires_custom_input;
+
                   return (
-                    <button key={label} className={answers[currentQuestion.id] === label ? styles.selected : ""} onClick={() => handleAnswer(currentQuestion.id, label)}>
-                      {label}
-                    </button>
+                    <div key={idx} className={styles.optionWrapper}>
+                      <button 
+                        className={`${styles.optionBtn} ${isSelected ? styles.selected : ""}`} 
+                        onClick={() => handleSelectOption(currentQuestion.id, label)}
+                      >
+                        {label}
+                      </button>
+                      
+                      {isSelected && hasCustomInput && (
+                        <div className={styles.inputWrapper}>
+                          <input
+                            type="text"
+                            maxLength={300} // 👉 THÊM: Ngăn người dùng gõ tiếp khi chạm mốc 300 chữ
+                            className={styles.customInputField}
+                            placeholder="Mô tả cụ thể ý của bạn tại đây..."
+                            value={answers[currentQuestion.id]?.customText || ""}
+                            onChange={(e) => handleCustomInputChange(currentQuestion.id, e.target.value)}
+                          />
+                          {/* Đếm số ký tự nhỏ dưới ô input (Tùy chọn hiển thị) */}
+                          <span className={styles.charCount}>
+                            {(answers[currentQuestion.id]?.customText || "").length}/300
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
               </div>
             )}
+
             {currentQuestion.type === "text" && (
-              <input type="text" placeholder="Nhập câu trả lời..." value={answers[currentQuestion.id] || ""} onChange={(e) => handleAnswer(currentQuestion.id, e.target.value)} />
+              <div className={styles.inputWrapper}>
+                <input 
+                  type="text" 
+                  maxLength={300} // 👉 THÊM: Ngăn gõ quá 300 chữ ở ô text thuần túy
+                  className={styles.pureTextInput}
+                  placeholder="Nhập câu trả lời của bạn..." 
+                  value={answers[currentQuestion.id]?.value || ""} 
+                  onChange={(e) => handlePureTextChange(currentQuestion.id, e.target.value)} 
+                />
+                <span className={styles.charCount}>
+                  {(answers[currentQuestion.id]?.value || "").length}/300
+                </span>
+              </div>
             )}
+
             <div className={styles.btnGroup}>
-              <button className={styles.btnPrimary} onClick={handleBack} disabled={!currentFlow && currentQuestionIndex === 0}>Quay lại</button>
+              <button 
+                className={styles.btnOutline} 
+                onClick={handleBack} 
+                disabled={!currentFlow && currentQuestionIndex === 0}
+              >
+                Quay lại
+              </button>
+              
               <button className={styles.btnPrimary} onClick={handleNext}>
-                {currentFlow && currentQuestionIndex === quizData.flows[currentFlow]?.questions.length - 1 ? "Quét khuôn mặt" : "Tiếp theo"}
+                {currentFlow && currentQuestionIndex === totalQuestions - 1 
+                  ? "Quét khuôn mặt" 
+                  : "Tiếp theo"}
               </button>
             </div>
-            {currentFlow && (
-              <>
-                <div className={styles.progress}>
-                  Câu {currentQuestionIndex + 1}/{quizData.flows[currentFlow]?.questions.length}
-                </div>
-                <div className={styles.progressBar}>
-                  <div className={styles.progressFill} style={{ width: `${progress}%` }} />
-                </div>
-              </>
-            )}
+            
           </RevealSection>
         )}
 
         {isCameraOpen && !quizCompleted && (
-          <FaceCamera visible={isCameraOpen} onCapture={({ image }) => { setCapturedImage(image); setIsCameraOpen(false); setShowOverlay(true); }} onClose={() => setIsCameraOpen(false)} />
+          <FaceCamera 
+            visible={isCameraOpen} 
+            onCapture={({ image }) => { setCapturedImage(image); setIsCameraOpen(false); setShowOverlay(true); }} 
+            onClose={() => setIsCameraOpen(false)} 
+          />
         )}
 
         {showOverlay && !quizCompleted && (
           <div className={styles.overlay}>
-            <button onClick={handleSendMetrics} disabled={sending}>{sending ? "Đang phân tích..." : "Phân tích & Gửi dữ liệu"}</button>
-            {sending && <div className="spinner"></div>}
+            <button className={styles.btnPrimary} onClick={handleSendMetrics} disabled={sending}>
+              {sending ? "Đang phân tích..." : "Bắt đầu phân tích khuôn mặt"}
+            </button>
+            {sending && <div className={styles.spinner}></div>}
           </div>
         )}
 
-{/* Quiz completed */}
-{quizCompleted && recommendation && (
-  <div className={styles.quizResult}>
-    <h2>Kết quả phân tích của bạn</h2>
+        {/* Kết quả phân tích */}
+        {quizCompleted && recommendation && (
+          <div className={styles.quizResult}>
+            <h2>Kết quả phân tích</h2>
+            
+            <div className={styles.faceProgress}>
+              {recommendation.faceBlend?.map((f, i) => (
+                <div className={styles.faceItem} key={i}>
+                  <div className={styles.faceLabel}>{f.faceType}</div>
+                  <div className={styles.progressTrack}>
+                    <div className={styles.progressFillBar} style={{ width: `${f.ratio * 100}%` }} />
+                  </div>
+                  <div className={styles.faceValue}>{Math.round(f.ratio * 100)}%</div>
+                </div>
+              ))}
+            </div>
 
-    {/* Progress khuôn mặt */}
-    <div className={styles.faceProgress}>
-      {recommendation.faceBlend.map((f, i) => (
-        <div className={styles.faceItem} key={i}>
-          <div className={styles.faceLabel}>{f.faceType}</div>
-          <div className={styles.progressContainer}>
-<div
-  className={styles.progressFill}
-  style={{ width: `${f.ratio * 100}%` }}
->
-  {Math.round(f.ratio * 100)}%
-</div>
-
+            <div className={styles.resultDetails}>
+              <p><b>Dáng mặt chính:</b> {recommendation.primaryFaceType}</p>
+              <p><b>Độ tự tin (AI):</b> {recommendation.confidenceLevel}</p>
+              <p><b>Gợi ý kiểu tóc:</b> {recommendation.recommendedStyles?.join(", ")}</p>
+              <p><b>Lý do chọn:</b> {recommendation.reasoning}</p>
+              <p><b>Chăm sóc tóc:</b> {recommendation.careAdvice}</p>
+            </div>
+            
+            <button className={styles.btnPrimary} onClick={() => window.location.href = "/"}>
+              Hoàn tất
+            </button>
           </div>
-        </div>
-      ))}
-    </div>
-
-    {/* Thông tin chi tiết */}
-    <div className={styles.resultDetails}>
-      <p><b>Primary Face Type:</b> {recommendation.primaryFaceType}</p>
-      <p><b>Confidence Level:</b> {recommendation.confidenceLevel}</p>
-      <p><b>Gợi ý kiểu tóc:</b> {recommendation.recommendedStyles?.join(", ")}</p>
-      <p><b>Lý do chọn:</b> {recommendation.reasoning}</p>
-      <p><b>Lời khuyên chăm sóc tóc:</b> {recommendation.careAdvice}</p>
-    </div>
-
-    <button onClick={() => window.location.href = "/"}>Đóng</button>
-  </div>
-)}
-
-
-
+        )}
       </div>
+
+      {!isCameraOpen && !quizCompleted && currentFlow && (
+        <div className={styles.progressContainer}>
+          <div className={styles.progressFill} style={{ width: `${progress}%` }} />
+        </div>
+      )}
     </div>
   );
 };

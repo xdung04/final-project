@@ -1,0 +1,289 @@
+/* LockBarberModal.module.scss
+   NOULE Admin — Lên lịch khóa tài khoản thợ
+   Design: Editorial · Luxury Barber · Dark-Gold
+---------------------------------------------------------------- */
+
+$gold:        #C9A84C;
+$gold-hover:  #BA9A3E;
+$gold-dim:    #8A6A28;
+$gold-faint:  rgba(201, 168, 76, 0.15);
+$gold-border: rgba(201, 168, 76, 0.3);
+
+$ink:         #1A1612;
+$ink-2:       #2C2720;
+$ink-text:    #F5F0E8;
+$ink-muted:   rgba(245, 240, 232, 0.55);
+
+$card-bg:     #FFFFFF;
+$surface-2:   #F9F6F1;
+
+$red:         #A32D2D;
+$red-bg:      #FCEBEB;
+$red-bd:      rgba(163, 45, 45, 0.25);
+
+$radius-sm:   6px;
+$radius-md:   10px;
+$radius-lg:   14px;
+$radius-xl:   18px;
+
+$border-base: 1px solid rgba(0, 0, 0, 0.08);
+$transition:  0.18s ease;
+
+// ── Overlay ───────────────────────────────────────────────────
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 12, 10, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+  padding: 20px;
+  animation: overlayIn 0.2s ease;
+}
+
+@keyframes overlayIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+// ── Dialog ────────────────────────────────────────────────────
+.dialog {
+  background: $card-bg;
+  border-radius: $radius-xl;
+  width: 460px;
+  max-width: 100%;
+  overflow: hidden;
+  border: $border-base;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(201, 168, 76, 0.1);
+  animation: dialogIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes dialogIn {
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+// ── Header (dark ink) ─────────────────────────────────────────
+.header {
+  background: $ink;
+  padding: 20px 24px;
+  border-bottom: 1px solid $gold-border;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.headerIconWrap {
+  width: 40px;
+  height: 40px;
+  border-radius: $radius-md;
+  background: $gold-faint;
+  border: 1px solid $gold-border;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: $gold;
+}
+
+.headerText {
+  h3 {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 16px;
+    font-weight: 600;
+    color: $ink-text;
+    margin: 0 0 3px;
+    letter-spacing: 0.01em;
+  }
+
+  p {
+    font-size: 11px;
+    color: $ink-muted;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 500;
+  }
+}
+
+// ── Body ──────────────────────────────────────────────────────
+.body {
+  padding: 24px;
+}
+
+// ── Warning Banner ────────────────────────────────────────────
+.warningBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  background: $red-bg;
+  border: 1px solid $red-bd;
+  border-radius: $radius-md;
+  margin-bottom: 22px;
+
+  .warnIcon {
+    color: $red;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  p {
+    font-size: 13px;
+    color: $red;
+    margin: 0;
+    line-height: 1.55;
+
+    strong {
+      font-weight: 700;
+      color: darken($red, 5%);
+    }
+  }
+}
+
+// ── Form ──────────────────────────────────────────────────────
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #888;
+  }
+}
+
+.inputWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  .inputIcon {
+    position: absolute;
+    left: 12px;
+    color: $gold;
+    pointer-events: none;
+    flex-shrink: 0;
+  }
+
+  input[type="date"] {
+    width: 100%;
+    padding: 11px 14px 11px 40px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: $radius-md;
+    font-size: 14px;
+    font-family: inherit;
+    background: $surface-2;
+    color: $ink;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color $transition, box-shadow $transition, background $transition;
+    cursor: pointer;
+    appearance: none;
+
+    &::-webkit-calendar-picker-indicator {
+      opacity: 0.5;
+      cursor: pointer;
+    }
+
+    &:focus {
+      border-color: $gold;
+      background: $card-bg;
+      box-shadow: 0 0 0 3px $gold-faint;
+    }
+
+    &:hover:not(:focus) {
+      border-color: rgba(201, 168, 76, 0.4);
+    }
+  }
+}
+
+.hint {
+  font-size: 11px;
+  color: #aaa;
+  margin-top: 2px;
+  font-style: italic;
+}
+
+// ── Actions ───────────────────────────────────────────────────
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(0, 0, 0, 0.07);
+}
+
+.cancelBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: $radius-md;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: transparent;
+  color: #666;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all $transition;
+
+  &:hover:not(:disabled) {
+    border-color: rgba(0, 0, 0, 0.2);
+    color: $ink;
+    background: $surface-2;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.confirmBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 22px;
+  border-radius: $radius-md;
+  border: none;
+  background: $gold;
+  color: $ink;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  letter-spacing: 0.02em;
+  box-shadow: 0 2px 8px rgba(201, 168, 76, 0.35);
+  transition: all $transition;
+
+  &:hover:not(:disabled) {
+    background: $gold-hover;
+    box-shadow: 0 4px 14px rgba(201, 168, 76, 0.45);
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+.spinIcon {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}

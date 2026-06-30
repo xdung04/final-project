@@ -7,22 +7,22 @@ import { fetchReelsByBarberId } from "~/services/reelService";
 import { useAuth } from "~/context/AuthContext";
 import { useToast } from "~/context/ToastContext";
 import { useNavigate } from "react-router-dom";
+import { Film, UploadCloud, Loader2 } from "lucide-react"; // Thêm icons
 
 function VideoTayNghe() {
-
-  const { accessToken, user, loading: isAuthLoading } = useAuth();
+  const {  user, loading: isAuthLoading } = useAuth();
   const { showToast } = useToast();
   const [reels, setReels] = useState([]);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(null);
   const [globalMuted, setGlobalMuted] = useState(true);
   const [loading, setLoading] = useState(true);
-  const idBarber = user.idUser; // Add globalMuted state
+  const idBarber = user?.idUser; 
   const navigate = useNavigate();
 
   const openDetail = (index) => {
     setCurrentIndex(index);
-    setGlobalMuted(false); // Unmute when opening VideoDetailDialog
+    setGlobalMuted(false); 
   };
 
   const handleHashtagClick = (tag) => {
@@ -39,7 +39,7 @@ function VideoTayNghe() {
     const loadReels = async () => {
       setLoading(true);
       try {
-        const data = await fetchReelsByBarberId(idBarber, 1, 20, accessToken);
+        const data = await fetchReelsByBarberId(idBarber, 1, 20);
         setReels(data);
       } catch (error) {
         console.error("Lỗi khi tải reels của Barber:", error);
@@ -49,13 +49,13 @@ function VideoTayNghe() {
       }
     };
     loadReels();
-  }, [idBarber, accessToken, isAuthLoading, showToast]);
+  }, [idBarber,isAuthLoading, showToast]);
 
   const toggleLike = (idReel, isLiked, likesCount) => {
     setReels((prev) =>
       prev.map((r) =>
         r.idReel === idReel
-          ? { ...r, isLiked: isLiked, likesCount: likesCount } // Đảm bảo cập nhật cả isLiked và likesCount
+          ? { ...r, isLiked: isLiked, likesCount: likesCount } 
           : r
       )
     );
@@ -67,31 +67,42 @@ function VideoTayNghe() {
 
   return (
     <div className={styles.container}>
-      <h2 className={styles.title}>Video tay nghề</h2>
-      <p className={styles.subtitle}>Upload và quản lý video showcase kỹ năng cắt tóc</p>
-
-      <div className={styles.header}>
+      <div className={styles.headerInfo}>
+        <div>
+          <h2 className={styles.title}>Video Tay Nghề</h2>
+          <p className={styles.subtitle}>Upload và quản lý video showcase kỹ năng cắt tóc</p>
+        </div>
         <button className={styles.uploadBtn} onClick={() => setIsUploadOpen(true)}>
+          <UploadCloud size={20} />
           Upload Video
         </button>
       </div>
 
-      <div className={styles.grid}>
+      <div className={styles.gridContainer}>
         {loading ? (
-          <p>Đang tải video...</p>
+          <div className={styles.loadingState}>
+            <Loader2 className={styles.spinner} size={40} />
+            <p>Đang tải danh sách video...</p>
+          </div>
         ) : reels.length === 0 ? (
-          <p className={styles.emptyText}>Không có video nào.</p>
+          <div className={styles.emptyState}>
+            <Film size={48} className={styles.emptyIcon} />
+            <p>Chưa có video nào. Hãy đăng tải tác phẩm đầu tiên của bạn!</p>
+          </div>
         ) : (
-          reels.map((reel, idx) => (
-            <VideoCard
-              key={reel.idReel}
-              reel={reel}
-              onToggleLike={toggleLike}
-              onOpenDetail={() => openDetail(idx)}
-            />
-          ))
+          <div className={styles.grid}>
+            {reels.map((reel, idx) => (
+              <VideoCard
+                key={reel.idReel}
+                reel={reel}
+                onToggleLike={toggleLike}
+                onOpenDetail={() => openDetail(idx)}
+              />
+            ))}
+          </div>
         )}
       </div>
+
       {currentIndex !== null && (
         <VideoDetailDialog
           reels={reels}
@@ -99,7 +110,7 @@ function VideoTayNghe() {
           onChangeVideo={(newIdx) => setCurrentIndex(newIdx)}
           onClose={() => setCurrentIndex(null)}
           onToggleLike={toggleLike}
-          token={accessToken}
+      
           globalMuted={globalMuted}
           onToggleGlobalMuted={() => setGlobalMuted((prev) => !prev)}
           fromReelPlayer={false}

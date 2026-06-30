@@ -1,101 +1,235 @@
-.container {
-  padding: 20px;
-  font-family: "Segoe UI", Tahoma, sans-serif;
-  color: #2a1f1f;
-  background: white;
+// LichHen.module.scss
+// Barber — Lịch Hẹn | NOULE Barber
+// Design: NOULE gold/dark system
+
+$gold:        #C9A84C;
+$gold-hover:  #BA9A3E;
+$gold-dim:    #8A6A28;
+$gold-faint:  rgba(201, 168, 76, 0.15);
+$gold-border: rgba(201, 168, 76, 0.3);
+
+$ink:         #1A1612;
+$ink-2:       #2C2720;
+$ink-text:    #F5F0E8;
+$ink-muted:   rgba(245, 240, 232, 0.5);
+
+$page-bg:     #F7F4EF;
+$card-bg:     #FFFFFF;
+$surface-2:   #F9F6F1;
+
+$border:      rgba(0, 0, 0, 0.07);
+$border-md:   rgba(0, 0, 0, 0.1);
+
+$radius-sm:   6px;
+$radius-md:   10px;
+$radius-lg:   14px;
+$radius-xl:   18px;
+
+// ── Loading / Empty ───────────────────────────────────────────────────────────
+.loadingContainer,
+.emptyContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  background: $card-bg;
+  border: 1px solid $border-md;
+  border-radius: $radius-lg;
+  gap: 12px;
+
+  .loadingIcon {
+    color: $gold;
+    animation: spin 0.9s linear infinite;
+  }
+
+  p {
+    font-size: 13px;
+    color: #bbb;
+    font-style: italic;
+    margin: 0;
+  }
 }
 
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+// ── Container ─────────────────────────────────────────────────────────────────
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: $page-bg;
+  font-family: inherit;
+  color: $ink;
+  animation: fadeIn 0.4s ease forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+// ── Header (khớp TongQuan .pageHead) ─────────────────────────────────────────
 .header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
+  align-items: flex-end;
+  padding-bottom: 22px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;
 }
 
 .title {
-  font-size: 20px;
-  font-weight: 700;
-  color: #3b2f2f;
+  font-size: 28px;
+  font-weight: 600;
+  color: $ink;
+  margin: 0;
+  line-height: 1.1;
+  font-family: Georgia, 'Times New Roman', serif;
 }
 
+// ── View Select ───────────────────────────────────────────────────────────────
 .select {
-  padding: 6px 10px;
-  border: 1px solid #d8cdc3;
-  border-radius: 6px;
-  color: #3b2f2f;
-  background: #fffaf5;
+  padding: 7px 10px;
+  font-size: 12px;
+  border: 1px solid $border-md;
+  border-radius: $radius-md;
+  background: $card-bg;
+  color: $ink;
+  cursor: pointer;
+  outline: none;
+  font-family: inherit;
+  font-weight: 500;
+  transition: border-color 0.15s;
+  appearance: none;
+
+  &:hover, &:focus { border-color: $gold; }
 }
 
+// ── Navigation (date picker) ──────────────────────────────────────────────────
 .nav {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 16px;
+  background: $card-bg;
+  border: 1px solid $border-md;
+  border-radius: $radius-lg;
+  padding: 10px 18px;
 }
 
 .navBtn {
-  background: #fff6eb;
-  border: 1px solid #e8e1dc;
-  padding: 4px 8px;
-  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  border-radius: $radius-sm;
+  border: 1px solid $border-md;
+  background: transparent;
+  color: #aaa;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
 
   &:hover {
-    background: #f0e4dc;
+    background: $ink;
+    color: $gold;
+    border-color: $ink;
   }
 }
 
 .rangeText {
-  font-weight: 500;
-  color: #3b2f2f;
+  font-size: 14px;
+  font-weight: 600;
+  color: $ink;
+  min-width: 180px;
+  text-align: center;
+  font-family: Georgia, 'Times New Roman', serif;
+  letter-spacing: 0.02em;
 }
 
+// ── Day View — List ───────────────────────────────────────────────────────────
 .list {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-height: 500px;
+  max-height: 560px;
   overflow-y: auto;
+  padding-right: 2px;
+
+  &::-webkit-scrollbar       { width: 3px; }
+  &::-webkit-scrollbar-thumb { background: $border-md; border-radius: 10px; }
 }
 
+.emptyState {
+  text-align: center;
+  color: #bbb;
+  font-size: 13px;
+  font-style: italic;
+  padding: 40px 24px;
+  background: $card-bg;
+  border: 1px dashed $border-md;
+  border-radius: $radius-lg;
+}
+
+// ── Week View — Grid ──────────────────────────────────────────────────────────
 .weekGrid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 12px;
+  gap: 8px;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  }
 }
 
 .weekCol {
-  border: 1px solid #e8e1dc;
-  border-radius: 6px;
-  background: #ffffff;
+  background: $card-bg;
+  border: 1px solid $border-md;
+  border-radius: $radius-md;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 2px 4px rgba(43, 35, 35, 0.08);
+  overflow: hidden;
+  transition: border-color 0.15s;
+
+  &:hover { border-color: $gold-border; }
 }
 
+// ── Week Column Header (dark — giống sectionHead TongQuan) ───────────────────
 .weekHeader {
-  padding: 6px;
-  background: #fff6eb;
+  padding: 9px 6px;
+  background: $ink;
+  font-size: 11px;
   font-weight: 600;
+  letter-spacing: 0.06em;
   text-align: center;
-  border-bottom: 1px solid #e8e1dc;
-  color: #3b2f2f;
+  border-bottom: 1px solid $gold-border;
+  color: $gold;
+  text-transform: uppercase;
 }
 
 .weekAppts {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 6px;
+  gap: 5px;
+  padding: 8px 6px;
   max-height: 450px;
   overflow-y: auto;
+
+  &::-webkit-scrollbar       { width: 3px; }
+  &::-webkit-scrollbar-thumb { background: $border-md; border-radius: 10px; }
 }
 
-.empty,
 .noAppt {
   text-align: center;
-  color: #7a6b6b;
-  font-size: 14px;
+  color: #ccc;
+  font-size: 12px;
+  margin: 10px 0;
+  padding: 8px 0;
+  border-top: 1px dashed $border-md;
 }

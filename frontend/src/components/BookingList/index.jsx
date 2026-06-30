@@ -1,240 +1,245 @@
 import React, { useEffect, useState, useCallback } from "react";
+import {
+  Clock,
+  User,
+  Scissors,
+  ReceiptText,
+  Activity,
+  Wallet,
+  MoreHorizontal,
+} from "lucide-react";
 import styles from "./BookingList.module.scss";
+import {
+  fetchMyBranch,
+  fetchBookingsByBranch,
+  checkInBooking,
+  cancelBooking,
+} from "~/services/bookingService"; 
+import { useToast } from "~/context/ToastContext"; // ← thêm// Đổi lại đường dẫn thư mục service của m nếu cần nhé
 
 export default function BookingList({ onSelect, date }) {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [branchInfo, setBranchInfo] = useState(null);
+  const { showToast } = useToast();
 
-  // ===========================
-  // 🔄 FETCH BOOKING LIST
-  // ===========================
-  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+  // Hàm reload danh sách
   const fetchBookings = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
-      const res = await fetch(`${API_BASE_URL}/bookings/details`);
-      const data = await res.json();
+      // Bước 1: lấy branch của receptionist qua Service
+      const branch = await fetchMyBranch();
+      setBranchInfo(branch);
 
-      if (!data?.data) return;
+      // Bước 2: lấy bookings theo branch + ngày qua Service
+      const resData = await fetchBookingsByBranch(branch.idBranch, date);
+      const raw = resData.data || [];
 
-      const list = data.data
-        .filter((b) => b.bookingDate?.startsWith(date))
-        .map((b) => {
-          const serviceTotal =
-            b.services?.reduce(
-              (sum, s) => sum + (parseFloat(s.price) || 0) * (s.quantity || 1),
-              0
-            ) || 0;
-
-          const tip = Number(b.tip) || 0;
-          const discountPercent = Number(b.voucher?.discountPercent) || 0;
-          const discountAmount = (serviceTotal * discountPercent) / 100;
-
-          const subTotal = serviceTotal + tip;
-          const finalTotal = subTotal - discountAmount;
-
-          return {
-            id: b.idBooking,
-            time: b.bookingTime || "—",
-            customer: b.customer?.name || "Khách lẻ",
-            barber: b.barber?.name || "Chưa chỉ định",
-            services: b.services?.map((s) => s.name) || [],
-            branch: b.branch?.name || "",
-            serviceTotal,
-            tip,
-            discountPercent,
-            discountAmount,
-            subTotal,
-            finalTotal,
-            isPaid: b.isPaid || false,
-            status: b.status || "Pending",
-            raw: b,
-          };
-        })
-        .sort((a, b) => b.time.localeCompare(a.time));
+      // Bước 3: map dữ liệu (Giữ nguyên 100% logic hiển thị của m)
+      const list = raw.map((b) => ({
+        id: b.idBooking,
+        time: b.bookingTime || "—",
+        customer: b.customer?.name || "Khách lẻ",
+        barber: b.barber?.name || "Chưa chỉ định",
+        services: b.services?.map((s) => s.name) || [],
+        serviceTotal: parseFloat(b.serviceTotal || 0),
+        tip: parseFloat(b.tip || 0),
+        discountAmount: parseFloat(b.discountAmount || 0),
+        discountPercent: parseFloat(b.discountPercent || 0),
+        discountFixed: parseFloat(b.discountFixed || 0),
+        voucherType: b.voucher?.type || null, 
+        total: parseFloat(b.total || 0),
+        isPaid: b.isPaid || false,
+        status: b.status || "Pending",
+        raw: b,
+      }));
 
       setBookings(list);
     } catch (err) {
-      console.error("❌ Fetch booking error:", err);
+      console.error("❌ Lỗi fetch booking:", err);
+      setError(err.response?.data?.message || err.message);
     } finally {
       setLoading(false);
     }
-  }, [date]);
+  }, [date]); // Sạch sẽ tuyệt đối, không dính dependency 'token' làm lặp loop
 
   useEffect(() => {
     fetchBookings();
   }, [fetchBookings]);
 
+  // Expose hàm reload ra ngoài Component cha
   useEffect(() => {
     if (onSelect) {
       onSelect((prev) => prev, fetchBookings);
     }
   }, [fetchBookings, onSelect]);
 
-  // ===========================
-  // ❌ HỦY BOOKING
-  // ===========================
-  const handleCancel = async (id) => {
-    if (!window.confirm("Bạn có chắc muốn hủy lịch hẹn này không?")) return;
-
-    try {
-      const res = await fetch(`${API_BASE_URL}/bookings/${id}/cancel`, {
-        method: "PUT",
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        alert(data.message || "Hủy lịch thất bại!");
-        return;
-      }
-
-      alert("Đã hủy lịch hẹn thành công!");
-      fetchBookings();
-    } catch (err) {
-      console.error("❌ Cancel booking error:", err);
-      alert("Có lỗi xảy ra khi hủy lịch!");
+const handleCancel = async (id) => {
+  if (!window.confirm("Bạn có chắc muốn hủy lịch hẹn này không?")) return;
+  try {
+    const data = await cancelBooking(id);
+    if (data && data.success === false) {
+      showToast({ text: data.message || "Hủy lịch thất bại!", type: "error" }); // ← đổi
+      return;
     }
-  };
+    showToast({ text: data.message || "Đã hủy lịch hẹn thành công!", type: "success" }); // ← đổi
+    fetchBookings();
+  } catch (err) {
+    showToast({ text: err.response?.data?.message || "Có lỗi xảy ra khi hủy lịch!", type: "error" }); // ← đổi
+  }
+};
 
-  // ===========================
-  // ✅ CHECK-IN BOOKING
-  // ===========================
-  const handleCheckIn = async (id) => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/bookings/${id}/checkin`, {
-        method: "PUT",
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        alert(data.message || "Check-in thất bại!");
-        return;
-      }
-
-      alert("Khách đã check-in!");
-      fetchBookings();
-    } catch (err) {
-      console.error("❌ Check-in error:", err);
-      alert("Có lỗi xảy ra khi check-in!");
+const handleCheckIn = async (id) => {
+  try {
+    const data = await checkInBooking(id);
+    if (data && data.success === false) {
+      showToast({ text: data.message || "Check-in thất bại!", type: "error" }); // ← đổi
+      return;
     }
-  };
+    showToast({ text: data.message || "Khách đã check-in!", type: "success" }); // ← đổi
+    fetchBookings();
+  } catch (err) {
+    showToast({ text: err.response?.data?.message || "Có lỗi xảy ra khi check-in!", type: "error" }); // ← đổi
+  }
+};
 
-  if (loading) return <p>Đang tải dữ liệu...</p>;
+  if (loading)
+    return <div className={styles.loading}>Đang tải dữ liệu lịch hẹn...</div>;
+  if (error)
+    return (
+      <div className={styles.loading} style={{ color: "red" }}>
+        Lỗi: {error}
+      </div>
+    );
 
   return (
-    <div className={styles.list}>
-      <h2>Lịch hẹn {date}</h2>
+    <div className={styles.listWrapper}>
+      <h2 className={styles.title}>
+        Danh Sách Lịch Hẹn
+        {branchInfo && (
+          <span style={{ fontSize: 14, fontWeight: 400, marginLeft: 12, color: "#888" }}>
+            — {branchInfo.branchName}
+          </span>
+        )}
+      </h2>
 
       <div className={styles.tableContainer}>
         <table>
           <thead>
             <tr>
-              <th>Giờ</th>
-              <th>Khách hàng</th>
-              <th>Thợ cắt</th>
-              <th>Dịch vụ</th>
-              <th>Chi nhánh</th>
-              <th>Chi tiết thanh toán</th>
-              <th>Tiến trình</th>
-              <th>Thanh toán</th>
-              <th>Thao tác</th>
+              <th><div className={styles.thContent}><Clock size={16} /> Giờ</div></th>
+              <th><div className={styles.thContent}><User size={16} /> Khách hàng</div></th>
+              <th><div className={styles.thContent}><Scissors size={16} /> Thợ cắt</div></th>
+              <th><div className={styles.thContent}><MoreHorizontal size={16} /> Dịch vụ</div></th>
+              <th><div className={styles.thContent}><ReceiptText size={16} /> Chi tiết Bill</div></th>
+              <th><div className={styles.thContent}><Activity size={16} /> Trạng thái</div></th>
+              <th><div className={styles.thContent}><Wallet size={16} /> Thanh toán</div></th>
+              <th className={styles.alignRight}>Thao tác</th>
             </tr>
           </thead>
-
           <tbody>
             {bookings.length === 0 ? (
               <tr>
-                <td colSpan="9" style={{ textAlign: "center" }}>
-                  Không có lịch hẹn nào trong ngày này
+                <td colSpan="8" className={styles.emptyState}>
+                  Không có lịch hẹn nào trong ngày này.
                 </td>
               </tr>
             ) : (
               bookings.map((booking) => {
-                const { id, services } = booking;
-
                 const displayedServices =
-                  services.length > 2
-                    ? `${services.slice(0, 2).join(", ")} (+${services.length - 2})`
-                    : services.join(", ");
+                  booking.services.length > 2
+                    ? `${booking.services.slice(0, 2).join(", ")} (+${booking.services.length - 2})`
+                    : booking.services.join(", ");
 
                 return (
-                  <tr key={id}>
-                    <td>{booking.time}</td>
-                    <td>{booking.customer}</td>
+                  <tr key={booking.id}>
+                    <td className={styles.timeCell}>{booking.time}</td>
+                    <td className={styles.boldCell}>{booking.customer}</td>
                     <td>{booking.barber}</td>
-                    <td title={services.join(", ")}>{displayedServices || "—"}</td>
-                    <td>{booking.branch}</td>
+                    <td title={booking.services.join(", ")} className={styles.truncateCell}>
+                      {displayedServices || "—"}
+                    </td>
 
                     <td>
-                      <div>
-                        <div>
-                          <strong>Tạm tính:</strong> {booking.subTotal.toLocaleString("vi-VN")}đ
+                      <div className={styles.billDetails}>
+                        <div className={styles.billRow}>
+                          <span>Tạm tính:</span>
+                          <span>{booking.serviceTotal.toLocaleString("vi-VN")}đ</span>
                         </div>
-
-                        {booking.discountPercent > 0 && (
-                          <div style={{ color: "#e67e22" }}>
-                            Giảm {booking.discountPercent}% (-{booking.discountAmount.toLocaleString("vi-VN")}đ)
+                        {booking.discountAmount > 0 && (
+                          <div className={`${styles.billRow} ${styles.discount}`}>
+                            {booking.voucherType === "POINTS_EXCHANGE" ? (
+                              <span>Giảm tiền:</span>
+                            ) : booking.discountPercent > 0 ? (
+                              <span>Giảm {booking.discountPercent}%:</span>
+                            ) : (
+                              <span>Giảm:</span>
+                            )}
+                            <span>-{booking.discountAmount.toLocaleString("vi-VN")}đ</span>
                           </div>
                         )}
-
-                        <div>
-                          <strong>Tip:</strong> {booking.tip.toLocaleString("vi-VN")}đ
+                        <div className={styles.billRow}>
+                          <span>Tip:</span>
+                          <span>{booking.tip.toLocaleString("vi-VN")}đ</span>
                         </div>
-
-                        <div style={{ color: "#0a7f25", fontWeight: 600 }}>
-                          Tổng cộng: {booking.finalTotal.toLocaleString("vi-VN")}đ
+                        <div className={`${styles.billRow} ${styles.total}`}>
+                          <span>Tổng:</span>
+                          <span>{booking.total.toLocaleString("vi-VN")}đ</span>
                         </div>
                       </div>
                     </td>
 
-                    <td
-                      className={
-                        booking.status === "Completed"
-                          ? styles.completed
+                    <td>
+                      <span className={`${styles.badge} ${styles[`status_${booking.status}`]}`}>
+                        {booking.status === "Completed"
+                          ? "Đã cắt xong"
                           : booking.status === "Cancelled"
-                          ? styles.cancelled
-                          : booking.status === "InProgress"
-                          ? styles.inprogress
-                          : styles.pending
-                      }
-                    >
-                      {booking.status === "Completed"
-                        ? "Đã cắt xong"
-                        : booking.status === "Cancelled"
-                        ? "Đã hủy"
-                        : booking.status === "InProgress"
-                        ? "Đang thực hiện"
-                        : "Đang chờ"}
+                            ? "Đã hủy"
+                            : booking.status === "InProgress"
+                              ? "Đang thực hiện"
+                              : "Đang chờ"}
+                      </span>
                     </td>
 
-                    <td className={booking.isPaid ? styles.paid : styles.unpaid}>
-                      {booking.status === "Completed"
-                        ? booking.isPaid
-                          ? "Đã thanh toán"
-                          : "Chưa thanh toán"
-                        : "—"}
+                    <td>
+                      {booking.status === "Completed" ? (
+                        <span className={`${styles.badge} ${booking.isPaid ? styles.paid : styles.unpaid}`}>
+                          {booking.isPaid ? "Đã thanh toán" : "Chưa thanh toán"}
+                        </span>
+                      ) : (
+                        <span className={styles.textMuted}>—</span>
+                      )}
                     </td>
 
-                    <td style={{ display: "flex", gap: "6px" }}>
-                      {/* Thanh toán chỉ hiển thị khi Completed */}
-                      {booking.status === "Completed" && !booking.isPaid && (
-                        <button onClick={() => onSelect(booking.raw, fetchBookings)}>
-                          Thanh toán
-                        </button>
-                      )}
-
-                      {/* Check-in */}
-                      {booking.status === "Pending" && (
-                        <button className={styles.checkinBtn} onClick={() => handleCheckIn(id)}>
-                          Check-in
-                        </button>
-                      )}
-
-                      {/* Hủy lịch (Chỉ Pending) */}
-                      {booking.status === "Pending" && (
-                        <button className={styles.cancelBtn} onClick={() => handleCancel(id)}>
-                          Hủy
-                        </button>
-                      )}
+                    <td className={styles.actionCell}>
+                      <div className={styles.actionButtons}>
+                        {booking.status === "Completed" && !booking.isPaid && (
+                          <button
+                            className={styles.btnCheckout}
+                            onClick={() => onSelect(booking.raw, fetchBookings)}
+                          >
+                            Thanh toán
+                          </button>
+                        )}
+                        {booking.status === "Pending" && (
+                          <>
+                            <button
+                              className={styles.btnCheckin}
+                              onClick={() => handleCheckIn(booking.id)}
+                            >
+                              Check-in
+                            </button>
+                            <button
+                              className={styles.btnCancel}
+                              onClick={() => handleCancel(booking.id)}
+                            >
+                              Hủy
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );

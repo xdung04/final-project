@@ -1,68 +1,192 @@
+/* AiHubTab.module.scss
+   NOULE Admin — AI Smart Hub Tab
+   Design System: Editorial · Luxury Barber · Dark-Gold
+---------------------------------------------------------------- */
+
+// ─── Tokens ──────────────────────────────────────────────────
+$gold:        #C9A84C;
+$gold-dim:    #8A6A28;
+$gold-faint:  rgba(201, 168, 76, 0.15);
+$gold-border: rgba(201, 168, 76, 0.3);
+
+$ink:         #1A1612;
+$ink-2:       #2C2720;
+$ink-text:    #F5F0E8;
+$ink-muted:   rgba(245, 240, 232, 0.5);
+
+$card-bg:     #FFFFFF;
+$border:      1px solid rgba(0, 0, 0, 0.07);
+$border-hover: 1px solid rgba(201, 168, 76, 0.5);
+
+$radius-sm:   6px;
+$radius-md:   10px;
+$radius-lg:   14px;
+
+$transition:  0.15s;
+
+// ─── Wrapper ─────────────────────────────────────────────────
 .wrapper {
   display: flex;
   flex-direction: column;
-  gap: 25px;
-  animation: fadeIn 0.4s ease;
+  gap: 20px;
+  animation: fadeSlideIn 0.2s ease;
 }
 
+// ─── KPI Grid ────────────────────────────────────────────────
 .kpiGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+  gap: 12px;
+}
 
-  .card {
-    background: #fff;
-    padding: 20px;
-    border-radius: 20px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+.card {
+  background: $card-bg;
+  border: $border;
+  border-radius: $radius-lg;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: border $transition;
 
-    .icon { color: #D4AF37; width: 32px; height: 32px; }
-    .info {
-      span { font-size: 13px; color: #888; display: block; }
-      h3 { font-size: 24px; margin: 4px 0; color: #1a1a1a; }
-      small { color: #10b981; font-weight: 600; font-size: 12px; }
-    }
+  &:hover {
+    border: $border-hover;
   }
 }
 
+.iconWrap {
+  width: 38px;
+  height: 38px;
+  border-radius: $radius-md;
+  background: $gold-faint;
+  color: $gold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.info {
+  span {
+    font-size: 11px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    display: block;
+  }
+
+  h3 {
+    font-size: 22px;
+    font-weight: 600;
+    color: $ink;
+    margin: 2px 0;
+    line-height: 1;
+  }
+
+  small {
+    font-size: 11px;
+    font-weight: 500;
+    color: #63C142;
+  }
+}
+
+// ─── Main Grid ───────────────────────────────────────────────
 .mainGrid {
   display: grid;
   grid-template-columns: 2fr 1fr;
-  gap: 25px;
+  gap: 16px;
+}
 
-  .chartSection {
-    background: #fff;
-    padding: 25px;
-    border-radius: 24px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
-    h4 { margin-bottom: 20px; font-size: 17px; }
+// Chart section
+.chartSection {
+  background: $card-bg;
+  border: $border;
+  border-radius: $radius-lg;
+  padding: 20px 22px;
+  transition: border $transition;
+
+  &:hover {
+    border: $border-hover;
   }
 
-  .insightSection {
-    background: #1a1a1a;
-    color: #fff;
-    padding: 30px;
-    border-radius: 24px;
+  h4 {
+    font-size: 13px;
+    font-weight: 600;
+    color: $ink;
+    margin: 0 0 16px;
+    letter-spacing: 0.01em;
+  }
+}
+
+// Insight section — dark card
+.insightSection {
+  background: $ink;
+  border: 1px solid $gold-border;
+  border-radius: $radius-lg;
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  h5 {
+    font-size: 13px;
+    font-weight: 600;
+    color: $gold;
     display: flex;
-    flex-direction: column;
-    gap: 15px;
+    align-items: center;
+    gap: 7px;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
 
-    h5 { color: #D4AF37; display: flex; align-items: center; gap: 8px; margin: 0; font-size: 18px; }
-    p { font-size: 14px; line-height: 1.6; color: #ccc; margin: 0; }
+  p {
+    font-size: 13px;
+    line-height: 1.65;
+    color: $ink-muted;
+    margin: 0;
 
-    .recommendation {
-      margin-top: auto;
-      background: rgba(212, 175, 55, 0.1);
-      border-left: 3px solid #D4AF37;
-      padding: 15px;
-      border-radius: 0 12px 12px 0;
-      font-size: 13px;
-      strong { color: #D4AF37; display: block; margin-bottom: 5px; }
+    strong {
+      color: $ink-text;
+      font-weight: 600;
     }
   }
 }
 
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.recommendation {
+  margin-top: auto;
+  background: $gold-faint;
+  border-left: 2px solid $gold;
+  border-radius: 0 $radius-sm $radius-sm 0;
+  padding: 12px 14px;
+  font-size: 12px;
+  color: $ink-text;
+  line-height: 1.6;
+
+  strong {
+    color: $gold;
+    display: block;
+    font-weight: 600;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 10px;
+  }
+}
+
+// ─── Responsive ──────────────────────────────────────────────
+@media (max-width: 768px) {
+  .kpiGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .mainGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ─── Animation ───────────────────────────────────────────────
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

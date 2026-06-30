@@ -7,7 +7,6 @@ export const AuthAPI = {
   },
 
   googleLogin: async (token) => {
-    // ← MỚI
     const result = await requestService.googleLogin({ token });
     return result;
   },
@@ -49,19 +48,22 @@ export const AuthAPI = {
     return result;
   },
 
-  refreshToken: async ({ refreshToken }) => {
-    const result = await requestService.refreshToken({ refreshToken });
+  // Không còn nhận refreshToken làm tham số bắt buộc — cookie tự gửi kèm.
+  // Để tham số có default = {} tránh lỗi nếu nơi gọi cũ còn truyền
+  // refreshToken (sẽ chỉ bị bỏ qua, không gây crash).
+  refreshToken: async ({ refreshToken } = {}) => {
+    const result = await requestService.refreshToken();
     return result;
   },
 
-  logout: async ({ refreshToken }) => {
-    const result = await requestService.logout({ refreshToken });
+  // Tương tự, không bắt buộc refreshToken nữa.
+  logout: async ({ refreshToken } = {}) => {
+    const result = await requestService.logout();
     return result;
   },
 
   getMe: async () => {
-  const result = await requestService.getMe();
-  return result;
+    const result = await requestService.getMe();
+    return result;
   },
-
 };

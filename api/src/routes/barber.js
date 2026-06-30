@@ -1,6 +1,6 @@
 import express from "express";
 import barberController from "../controllers/barberController.js";
-import { authenticate} from "../middlewares/authMiddleware.js";
+import { authenticate } from "../middlewares/authMiddleware.js";
 const router = express.Router();
 
 router.post("/", barberController.syncBarbers);
@@ -15,16 +15,20 @@ router.get("/reward/:idBarber", barberController.getBarberReward);
 
 router.post("/create", barberController.createBarberWithUser);
 router.put("/update/:idBarber", barberController.updateBarber);
-router.post("/unavailability", barberController.addBarberUnavailability);
-router.get("/unavailability/:idBarber", barberController.getBarberUnavailabilities);
 
 router.get("/profile/:idBarber", barberController.getBarberProfile);
 router.put(
-  "/profile/:idBarber",authenticate,
+  "/profile/:idBarber",
+  authenticate,
   barberController.uploadAvatar.single("image"),
-  barberController.updateBarberProfile
+  barberController.updateBarberProfile,
 );
 
 router.get("/stats/:idBarber", authenticate, barberController.getDashboardStats);
+router.get("/hot", barberController.getHotBarbers);
 router.get("/home", barberController.getBarbersForHome);
+
+router.patch("/:idBarber/lock-date", barberController.setLockDate);
+router.delete("/:idBarber/lock-date", barberController.cancelLockDate);
+
 export default router;

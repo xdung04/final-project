@@ -10,7 +10,7 @@ import { fetchCustomerGallery } from "~/services/customerGalleryService";
 const cx = classNames.bind(styles);
 
 function Profile() {
-  const { accessToken, setUser } = useAuth();
+ const { isLogin, setUser } = useAuth(); 
   const { showToast } = useToast();
 
   const [profile, setProfile] = useState(null);
@@ -29,13 +29,19 @@ function Profile() {
 
   const [isEditing, setIsEditing] = useState(false);
 
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+
   useEffect(() => {
-    if (!accessToken) return;
+    if (!isLogin) return;
 
     const fetchProfile = async () => {
       setLoading(true);
       try {
-        const res = await ProfileAPI.getProfile(accessToken);
+        const res = await ProfileAPI.getProfile();
         const userProfile = res.profile;
 
         setProfile(userProfile);
@@ -55,15 +61,15 @@ function Profile() {
     };
 
     fetchProfile();
-  }, [accessToken]);
+  }, [isLogin]);
 
   useEffect(() => {
-    if (!accessToken) return;
+    if (!isLogin) return;
 
     const loadGallery = async () => {
       setGalleryLoading(true);
       try {
-        const data = await fetchCustomerGallery(accessToken);
+        const data = await fetchCustomerGallery();
 
         const grouped = {};
         data.forEach((item) => {
@@ -91,7 +97,7 @@ function Profile() {
     };
 
     loadGallery();
-  }, [accessToken]);
+  }, [isLogin]);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -117,7 +123,7 @@ function Profile() {
       formData.append("phoneNumber", phoneNumber);
       if (avatarFile) formData.append("avatar", avatarFile);
 
-      const res = await ProfileAPI.updateProfile(accessToken, formData);
+      const res = await ProfileAPI.updateProfile(formData);
       const updatedProfile = res.profile || res;
 
       setProfile(updatedProfile);
@@ -144,12 +150,67 @@ function Profile() {
       });
     }
   };
-  const handleChangePassword = () => {
-    showToast({
-      text: "Đổi mật khẩu thành công!",
-      type: "success",
-      duration: 3000,
-    });
+
+  const handlePasswordInput = (e) => {
+    const { name, value } = e.target;
+
+    setPasswordData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+  const handleChangePassword = async () => {
+    const { currentPassword, newPassword, confirmPassword } = passwordData;
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      showToast({
+        text: "Vui lòng nhập đầy đủ",
+        type: "error",
+      });
+
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      showToast({
+        text: "Mật khẩu tối thiểu 6 ký tự",
+        type: "error",
+      });
+
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      showToast({
+        text: "Mật khẩu xác nhận không khớp",
+        type: "error",
+      });
+
+      return;
+    }
+
+    try {
+      const res = await ProfileAPI.changePassword({
+        currentPassword,
+        newPassword,
+      });
+
+      showToast({
+        text: res.message || "Đổi mật khẩu thành công",
+        type: "success",
+      });
+
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    } catch (err) {
+      showToast({
+        text: err.message || "Đổi mật khẩu thất bại",
+        type: "error",
+      });
+    }
   };
 
   if (loading) return <div className={cx("loading")}>Đang tải...</div>;
@@ -177,12 +238,16 @@ function Profile() {
             >
               Hồ sơ
             </button>
-            <button
-              className={cx("menu-item", { active: activeTab === "password" })}
-              onClick={() => setActiveTab("password")}
-            >
-              Đổi mật khẩu
-            </button>
+            {profile?.authProvider !== "google" && (
+              <button
+                className={cx("menu-item", {
+                  active: activeTab === "password",
+                })}
+                onClick={() => setActiveTab("password")}
+              >
+                Đổi mật khẩu
+              </button>
+            )}
           </div>
 
           {/* Content */}
@@ -263,19 +328,48 @@ function Profile() {
               </div>
             )}
 
-            {activeTab === "password" && (
+            {activeTab === "password" && profile?.authProvider !== "google" && (
               <div className={cx("password-card")}>
                 <h2>
                   Thay đổi <em>Mật khẩu</em>
                 </h2>
+
+                <div className={cx("form-group")}>
+                  <label>Mật khẩu hiện tại</label>
+
+                  <input
+                    type="password"
+                    name="currentPassword"
+                    value={passwordData.currentPassword}
+                    onChange={handlePasswordInput}
+                    placeholder="Nhập mật khẩu hiện tại..."
+                  />
+                </div>
+
                 <div className={cx("form-group")}>
                   <label>Mật khẩu mới</label>
-                  <input type="password" placeholder="Nhập mật khẩu mới..." />
+
+                  <input
+                    type="password"
+                    name="newPassword"
+                    value={passwordData.newPassword}
+                    onChange={handlePasswordInput}
+                    placeholder="Nhập mật khẩu mới..."
+                  />
                 </div>
+
                 <div className={cx("form-group")}>
                   <label>Xác nhận mật khẩu</label>
-                  <input type="password" placeholder="Nhập lại mật khẩu..." />
+
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    value={passwordData.confirmPassword}
+                    onChange={handlePasswordInput}
+                    placeholder="Nhập lại mật khẩu..."
+                  />
                 </div>
+
                 <button
                   className={cx("save-btn")}
                   onClick={handleChangePassword}

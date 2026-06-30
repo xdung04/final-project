@@ -35,4 +35,14 @@ export const ProfileAPI = {
       throw error;
     }
   },
+ changePassword: async (data) => {
+  try {
+    const res = await profileService.changePassword(data);
+    console.log("ProfileAPI.changePassword trả về:", res);
+    return res;
+  } catch (error) {
+    console.error("Lỗi ProfileAPI.changePassword:", error);
+    throw error;
+  }
+},
 };

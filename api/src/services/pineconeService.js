@@ -1,123 +1,147 @@
-import index from "../config/pinecone.js";
-import fetch from "node-fetch";
-const HF_API_KEY = process.env.HF_API_KEY;  
-// Tạm thời test với embedding từ HF
-export async function createEmbedding(text) {
-  try {
-    const response = await fetch(
-      "https://api-inference.huggingface.co/models/intfloat/multilingual-e5-large",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${HF_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          inputs: text // đảm bảo model sẵn sàng
-        }),
-      }
-    );
+import { Pinecone } from "@pinecone-database/pinecone";
+import { pipeline } from "@xenova/transformers";
 
-    const result = await response.json();
-
-    // debug kết quả
-    console.log("HF embedding result:", result);
-
-    // xử lý đa dạng format trả về
-    if (Array.isArray(result)) {
-      if (Array.isArray(result[0])) {
-        // chuẩn mảng 2 chiều [ [..embedding..] ]
-        return result[0];
-      } else {
-        // một số trường hợp trả mảng 1 chiều
-        return result;
-      }
-    } else if (result?.embedding) {
-      // một số API có key "embedding"
-      return result.embedding;
-    } else {
-      throw new Error("HF API returned unexpected format");
-    }
-  } catch (err) {
-    console.error("⚠️ HF API failed:", err.message);
-    // fallback tạm thời
-    return Array(1024).fill(0.01);
+// ✅ Lazy init — tránh lỗi ES Module hoist
+let _index = null;
+function getPineconeIndex() {
+  if (!_index) {
+    const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY });
+    _index = pc.index("project", "project-yfyk5m4.svc.aped-4627-b74a.pinecone.io");
   }
+  return _index;
 }
 
-// Test upsert barbers bằng text, Pinecone tự sinh vector
+let embedder = null;
+async function getEmbedder() {
+  if (!embedder) {
+    console.log("⏳ Loading embedding model...");
+    embedder = await pipeline("feature-extraction", "Xenova/multilingual-e5-large");
+    console.log("✅ Embedding model ready");
+  }
+  return embedder;
+}
+
+export async function createEmbedding(text) {
+  const embed = await getEmbedder();
+  const output = await embed(text, { pooling: "mean", normalize: true });
+  return Array.from(output.data);
+}
 export async function upsertBarbers(barbers) {
   try {
-    const records = barbers.map((b) => ({
-      id: b.idBarber.toString(),
-      text: `
-        Tên barber: ${b.fullName || "Chưa có tên"}.
-        Chi nhánh: ${b.branchName || "Chưa có chi nhánh"}.
-        Mô tả: ${b.profileDescription || "Không có mô tả"}.
-        Đánh giá trung bình: ${b.avgRate ?? 0}.
-      `.trim(),
-      metadata: JSON.stringify({
-        idBarber: b.idBarber,
-        idBranch: b.idBranch,
-        fullName: b.fullName || "",
-        branchName: b.branchName || "",
-        profileDescription: b.profileDescription || "",
-        avgRate: b.avgRate ?? 0,
-      }),
-    }));
+    const index = getPineconeIndex();
 
-    console.log("📦 Records ready to upsert:", records.length);
-    console.dir(records, { depth: null });
+    // Đảm bảo model load xong 1 lần duy nhất trước khi bắt đầu
+    await getEmbedder();
 
-    // Đẩy dữ liệu vào Pinecone
-    const namespaceIndex = index.namespace("barbers");
-    await namespaceIndex.upsertRecords(records);
+    const BATCH_SIZE = 5; // xử lý 5 barber mỗi lần, tránh OOM
+    const allRecords = [];
 
+    for (let i = 0; i < barbers.length; i += BATCH_SIZE) {
+      const batch = barbers.slice(i, i + BATCH_SIZE);
+
+      const records = await Promise.all(
+        batch.map(async (b) => {
+          const text = `
+            Tên barber: ${b.fullName}.
+            Chi nhánh: ${b.branchName}.
+            Mô tả: ${b.profileDescription}.
+            Kinh nghiệm: ${b.experienceYears} năm.
+            Chuyên môn: ${b.specialty}.
+            Phong cách: ${b.style}.
+            Chứng chỉ: ${b.certificates}.
+            Triết lý: ${b.philosophy}.
+            Đánh giá trung bình: ${b.avgRate}.
+          `.trim();
+
+          return {
+            id: b.idBarber.toString(),
+            values: await createEmbedding(text),
+            metadata: {
+              text,
+              metadata: JSON.stringify({
+                idBarber:           b.idBarber,
+                idBranch:           b.idBranch,
+                fullName:           b.fullName,
+                branchName:         b.branchName,
+                profileDescription: b.profileDescription,
+                experienceYears:    b.experienceYears,
+                specialty:          b.specialty,
+                style:              b.style,
+                certificates:       b.certificates,
+                philosophy:         b.philosophy,
+                avgRate:            b.avgRate,
+              }),
+            },
+          };
+        })
+      );
+
+      allRecords.push(...records);
+      console.log(`✅ Embedded batch ${Math.floor(i / BATCH_SIZE) + 1} (${allRecords.length}/${barbers.length})`);
+    }
+
+    await index.namespace("barbers").upsert(allRecords);
+    console.log(`✅ Upserted ${allRecords.length} barbers`);
   } catch (error) {
     console.error("Upsert Barber Error:", error);
-    throw new Error("Không thể upsert dữ liệu vào Pinecone");
+    throw new Error("Không thể upsert barbers vào Pinecone");
   }
 }
+
 export async function upsertBranches(branches) {
   try {
-    const records = branches.map((b) => {
-      const statusRaw = (b.status || "").trim().toLowerCase();
-      const isActive =
-        statusRaw === "active" ||
-        statusRaw === "true" ||
-        statusRaw === "1" ||
-        statusRaw === "đang hoạt động";
+    const index = getPineconeIndex(); // ← gọi ở đây
+    const records = await Promise.all(
+      branches.map(async (b) => {
+        const isActive = ["active", "true", "1", "đang hoạt động"].includes(
+          (b.status || "").trim().toLowerCase()
+        );
 
-      return {
-        id: b.idBranch.toString(),
-        text: `
-Chi nhánh: ${b.name || "Chưa có tên"}.
-Địa chỉ: ${b.address || "Không có địa chỉ"}.
-Trạng thái: ${isActive ? "Đang hoạt động" : "Ngừng hoạt động"}.
-Giờ mở cửa: ${b.openTime || "N/A"}.
-Giờ đóng cửa: ${b.closeTime || "N/A"}.
-Dịch vụ: ${b.displayText || "Chưa có thông tin"}.
-        `.trim(),
-        metadata: JSON.stringify({
-          idBranch: b.idBranch,
-          name: b.name || "",
-          address: b.address || "",
-          isActive,
-          openTime: b.openTime || "",
-          closeTime: b.closeTime || "",
-        }),
-      };
-    });
+        const text = `
+          Chi nhánh: ${b.name || "Chưa có tên"}.
+          Địa chỉ: ${b.address || "Không có địa chỉ"}.
+          Trạng thái: ${isActive ? "Đang hoạt động" : "Ngừng hoạt động"}.
+          Giờ mở cửa: ${b.openTime || "N/A"}.
+          Giờ đóng cửa: ${b.closeTime || "N/A"}.
+          Dịch vụ: ${b.displayText || "Chưa có thông tin"}.
+        `.trim();
 
-    const namespaceIndex = index.namespace("branches");
-    await namespaceIndex.upsertRecords(records);
+        return {
+          id: b.idBranch.toString(),
+          values: await createEmbedding(text),
+          metadata: {
+            text,
+            metadata: JSON.stringify({
+              idBranch: b.idBranch,
+              name: b.name || "",
+              address: b.address || "",
+              isActive,
+              openTime: b.openTime || "",
+              closeTime: b.closeTime || "",
+            }),
+          },
+        };
+      })
+    );
 
-
-    console.log(`✅ Upserted ${records.length} branches into Pinecone (namespace: branches)`);
+    await index.namespace("branches").upsert(records);
+    console.log(`✅ Upserted ${records.length} branches`);
   } catch (error) {
-    console.error("❌ Lỗi upsert Pinecone:", error);
-    throw new Error("Không thể upsert dữ liệu chi nhánh vào Pinecone");
+    console.error("Upsert Branch Error:", error);
+    throw new Error("Không thể upsert branches vào Pinecone");
   }
 }
-
-
+// pineconeService.js — thêm vào cuối
+export async function deleteNamespace(namespace) {
+  try {
+    const index = getPineconeIndex();
+    await index.namespace(namespace).deleteAll();
+    console.log(`🗑️ Đã xóa namespace ${namespace}`);
+  } catch (error) {
+    if (error.message?.includes("404")) {
+      console.log(`⚠️ Namespace ${namespace} chưa tồn tại, bỏ qua bước xóa`);
+      return;
+    }
+    throw error;
+  }
+}

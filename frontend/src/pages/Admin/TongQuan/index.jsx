@@ -1,253 +1,380 @@
 import React, { useEffect, useState } from "react";
 import classNames from "classnames/bind";
-import { 
-  DollarSign, Users, CalendarDays, Star, Crown, TrendingUp, Scissors, Award
+import {
+  DollarSign, Users, CalendarDays, Star,
+  Crown, TrendingUp, Scissors, Award,
 } from "lucide-react";
-import { 
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend
-} from 'recharts';
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid,
+  Tooltip as RechartsTooltip, ResponsiveContainer, Legend,
+  PieChart, Pie, Cell,
+} from "recharts";
 import styles from "./TongQuan.module.scss";
-import { StatisticsAPI } from "~/apis/statisticsAPI"; 
+import { StatisticsAPI } from "~/apis/statisticsAPI";
 
 const cx = classNames.bind(styles);
 
-// --- DỮ LIỆU GIẢ LẬP CHO BIỂU ĐỒ ---
-const revenueData = [
-  { name: 'Tuần 1', q1: 45000000, q3: 38000000 },
-  { name: 'Tuần 2', q1: 52000000, q3: 41000000 },
-  { name: 'Tuần 3', q1: 48000000, q3: 45000000 },
-  { name: 'Tuần 4', q1: 61000000, q3: 50000000 },
-];
+// ── Màu biểu đồ (palette NOULE) ───────────────────────────────────────────────
+const COLORS = ["#C9A84C", "#2C2720", "#9C8A5A", "#D4C090", "#6B5A38", "#E8D5A3"];
 
-const serviceData = [
-  { name: 'Uốn Hàn Quốc', value: 40 },
-  { name: 'Cắt Layer/Mullet', value: 30 },
-  { name: 'Nhuộm Thời Trang', value: 20 },
-  { name: 'Gội/Phục Hồi', value: 10 },
-];
+// ── Tooltip tuỳ chỉnh ─────────────────────────────────────────────────────────
+const CustomTooltip = ({ active, payload, label }) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className={cx("tooltip")}>
+      <p className={cx("tooltip__label")}>{label}</p>
+      {payload.map((entry, i) => (
+        <p key={i} className={cx("tooltip__item")} style={{ color: entry.color }}>
+          {entry.name}: {Number(entry.value).toLocaleString("vi-VN")} ₫
+        </p>
+      ))}
+    </div>
+  );
+};
 
-const topBarbers = [
-  { id: 1, name: "Trần Văn Phong", role: "Senior Stylist", revenue: 25000000, rating: 4.9 },
-  { id: 2, name: "Lê Hải Hoàng", role: "Master Barber", revenue: 22500000, rating: 4.8 },
-  { id: 3, name: "Phạm Tấn Phát", role: "Stylist", revenue: 18000000, rating: 4.7 },
-];
+// ── Skeleton ──────────────────────────────────────────────────────────────────
+const Skeleton = ({ width = "100%", height = 24, radius = 6 }) => (
+  <div
+    style={{
+      width, height, borderRadius: radius,
+      background: "linear-gradient(90deg,#f0ebe3 25%,#e8e0d4 50%,#f0ebe3 75%)",
+      backgroundSize: "200% 100%",
+      animation: "shimmer 1.4s infinite",
+    }}
+  />
+);
 
-const COLORS = ['#b8966a', '#2c2c2c', '#d4b896', '#e0d7cc'];
+// ── Label tỉ lệ cho Pie ───────────────────────────────────────────────────────
+const renderPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+  if (percent < 0.05) return null;
+  const RADIAN = Math.PI / 180;
+  const r = innerRadius + (outerRadius - innerRadius) * 0.55;
+  const x = cx + r * Math.cos(-midAngle * RADIAN);
+  const y = cy + r * Math.sin(-midAngle * RADIAN);
+  return (
+    <text x={x} y={y} fill="#fff" textAnchor="middle" dominantBaseline="central"
+      style={{ fontSize: 11, fontWeight: 600 }}>
+      {`${(percent * 100).toFixed(0)}%`}
+    </text>
+  );
+};
 
+// ── Component chính ───────────────────────────────────────────────────────────
 function TongQuan() {
-  const [dashboard, setDashboard] = useState({
-    monthlyRevenue: 0,
-    servedCustomerCount: 0,
-    totalBookings: 0,
-    avgRating: 0,
-    topCustomers: [],
-  });
+  const currentMonth = new Date().getMonth() + 1;
+  const currentYear  = new Date().getFullYear();
 
-  const formatCurrency = (value) => {
-    return (value || 0).toLocaleString("vi-VN") + " ₫";
-  };
+  const [data, setData]       = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [month, setMonth]     = useState(currentMonth);
+  const [year, setYear]       = useState(currentYear);
 
   useEffect(() => {
     const fetchDashboard = async () => {
+      setLoading(true);
       try {
-        const data = await StatisticsAPI.getDashboardOverview({ month: 10, year: 2025 });
-        setDashboard(data);
-      } catch (error) {
-        console.error("Lỗi khi load dashboard:", error);
+        const res = await StatisticsAPI.getDashboardOverview({ month, year });
+        setData(res);
+      } catch (err) {
+        console.error("Lỗi load dashboard:", err);
+      } finally {
+        setLoading(false);
       }
     };
     fetchDashboard();
-  }, []);
+  }, [month, year]);
 
+  const fmt = (val) => (val || 0).toLocaleString("vi-VN") + " ₫";
+
+  // ── Stat cards ───────────────────────────────────────────────────────────
   const stats = [
-    { icon: <DollarSign size={24} strokeWidth={1.5} />, title: "Doanh Thu Tháng", value: formatCurrency(dashboard.monthlyRevenue || 185000000), trend: "+12.5%", isPositive: true },
-    { icon: <Users size={24} strokeWidth={1.5} />, title: "Tổng Khách Phục Vụ", value: dashboard.servedCustomerCount || 842, trend: "+5.2%", isPositive: true },
-    { icon: <CalendarDays size={24} strokeWidth={1.5} />, title: "Lịch Hẹn Trong Tháng", value: dashboard.totalBookings || 915, trend: "-2.1%", isPositive: false },
-    { icon: <Star size={24} strokeWidth={1.5} />, title: "Đánh Giá Trung Bình", value: (dashboard.avgRating || 4.8).toFixed(1), trend: "Ổn định", isPositive: true },
+    {
+      icon: <DollarSign size={18} strokeWidth={1.5} />,
+      label: "Doanh Thu Tháng",
+      value: loading ? null : fmt(data?.monthlyRevenue),
+      trend: "+12.5%", isPos: true,
+    },
+    {
+      icon: <Users size={18} strokeWidth={1.5} />,
+      label: "Khách Phục Vụ",
+      value: loading ? null : (data?.servedCustomerCount ?? 0),
+      trend: "+5.2%", isPos: true,
+    },
+    {
+      icon: <CalendarDays size={18} strokeWidth={1.5} />,
+      label: "Lịch Hẹn Tháng",
+      value: loading ? null : (data?.totalBookings ?? 0),
+      trend: "-2.1%", isPos: false,
+    },
+    {
+      icon: <Star size={18} strokeWidth={1.5} />,
+      label: "Đánh Giá TB",
+      value: loading ? null : (data?.avgRating ?? 0).toFixed(1),
+      trend: "Ổn định", isPos: null,
+    },
   ];
 
-  // Tooltip tùy chỉnh cho biểu đồ để giữ đúng tone màu Luxury
-  const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className={cx("customTooltip")}>
-          <p className={cx("tooltipLabel")}>{label}</p>
-          {payload.map((entry, index) => (
-            <p key={index} style={{ color: entry.color, margin: "3px 0", fontSize: "13px", fontWeight: 600 }}>
-              {entry.name}: {entry.value.toLocaleString('vi-VN')} ₫
-            </p>
-          ))}
-        </div>
-      );
-    }
-    return null;
-  };
+  const branchLines      = data?.revenueChart?.branches ?? [];
+  const revenueChartData = data?.revenueChart?.weeks    ?? [];
+  const serviceData      = data?.serviceDistribution    ?? [];
+  const topBarbers       = data?.topBarbers             ?? [];
+  const topCustomers     = data?.topCustomers           ?? [];
 
   return (
     <div className={cx("dashboardWrapper")}>
-      
-      {/* ====== HEADER ====== */}
-      <div className={cx("welcomeSection")}>
-        <div className={cx("welcomeText")}>
-          <h2>Báo cáo tổng quan</h2>
-          <p>Cập nhật số liệu kinh doanh mới nhất của hệ thống Barber Lab.</p>
+
+      {/* ── PAGE HEADING ──────────────────────────────────────────────────── */}
+      <div className={cx("pageHead")}>
+        <div>
+          <p className={cx("pageHead__eyebrow")}>Nội dung &amp; Số liệu</p>
+          <h2 className={cx("pageHead__title")}>
+            Tổng quan &amp; <em>Báo cáo</em>
+          </h2>
         </div>
+
+        {/* Bộ lọc tháng / năm */}
         <div className={cx("dateFilter")}>
-          <CalendarDays size={18} strokeWidth={1.5} />
-          <span>Tháng 10, 2025</span>
+          <CalendarDays size={16} strokeWidth={1.5} />
+          <select value={month} onChange={(e) => setMonth(Number(e.target.value))}
+            className={cx("filterSelect")}>
+            {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+              <option key={m} value={m}>Tháng {m}</option>
+            ))}
+          </select>
+          <select value={year} onChange={(e) => setYear(Number(e.target.value))}
+            className={cx("filterSelect")}>
+            {[currentYear - 1, currentYear].map((y) => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
         </div>
       </div>
 
-      {/* ====== THỐNG KÊ NHANH ====== */}
+      {/* ── STATS STRIP ───────────────────────────────────────────────────── */}
       <div className={cx("statsGrid")}>
         {stats.map((s, i) => (
           <div key={i} className={cx("statCard")}>
-            <div className={cx("cardHeader")}>
-              <div className={cx("iconBox")}>{s.icon}</div>
-              <div className={cx("trendBadge", { positive: s.isPositive, negative: !s.isPositive })}>
-                {s.isPositive ? <TrendingUp size={14} /> : <TrendingUp size={14} style={{transform: "scaleY(-1)"}} />}
-                <span>{s.trend}</span>
+            <div className={cx("statCard__icon")}>{s.icon}</div>
+            <div>
+              <div className={cx("statCard__label")}>{s.label}</div>
+              <div className={cx("statCard__num")}>
+                {s.value !== null ? s.value : <Skeleton width={90} height={22} />}
               </div>
-            </div>
-            <div className={cx("cardBody")}>
-              <p className={cx("cardTitle")}>{s.title}</p>
-              <h3 className={cx("cardValue")}>{s.value}</h3>
+              <div className={cx(
+                "statCard__trend",
+                s.isPos === true  ? "statCard__trend--pos" :
+                s.isPos === false ? "statCard__trend--neg" :
+                "statCard__trend--neu"
+              )}>
+                {s.isPos !== null && (
+                  <TrendingUp size={10}
+                    style={{ transform: s.isPos ? "none" : "scaleY(-1)" }} />
+                )}
+                {s.trend}
+              </div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* ====== KHU VỰC BIỂU ĐỒ ====== */}
+      {/* ── CHARTS ────────────────────────────────────────────────────────── */}
       <div className={cx("chartsGrid")}>
-        
-        {/* Biểu đồ Doanh Thu Line Chart */}
-        <div className={cx("chartCard", "revenueChart")}>
-          <div className={cx("sectionHeader")}>
-            <div className={cx("titleBox")}>
-              <TrendingUp size={20} strokeWidth={1.5} className={cx("sectionIcon")} />
-              <h3>Xu Hướng Doanh Thu (30 Ngày)</h3>
+
+        {/* Biểu đồ doanh thu */}
+        <div className={cx("sectionCard")}>
+          <div className={cx("sectionHead")}>
+            <div className={cx("sectionHead__left")}>
+              <TrendingUp size={16} strokeWidth={1.5} className={cx("sectionHead__icon")} />
+              <span className={cx("sectionHead__title")}>Xu Hướng Doanh Thu (30 Ngày)</span>
             </div>
           </div>
-          <div className={cx("chartWrapper")}>
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={revenueData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e0d7cc" opacity={0.5} />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#999', fontSize: 12}} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: '#999', fontSize: 12}} tickFormatter={(val) => `${val / 1000000}M`} />
-                <RechartsTooltip content={<CustomTooltip />} />
-                <Legend iconType="circle" wrapperStyle={{ fontSize: '13px', paddingTop: '10px' }}/>
-                <Line type="monotone" name="Chi nhánh Quận 1" dataKey="q1" stroke="#b8966a" strokeWidth={3} dot={{r: 4, strokeWidth: 2}} activeDot={{r: 6}} />
-                <Line type="monotone" name="Chi nhánh Quận 3" dataKey="q3" stroke="#2c2c2c" strokeWidth={3} dot={{r: 4, strokeWidth: 2}} activeDot={{r: 6}} />
-              </LineChart>
-            </ResponsiveContainer>
+
+          <div className={cx("chartBody")}>
+            {loading ? (
+              <Skeleton height={260} radius={8} />
+            ) : revenueChartData.length === 0 ? (
+              <p className={cx("empty")}>Chưa có dữ liệu</p>
+            ) : (
+              <div className={cx("revenueChartWrap")}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={revenueChartData}
+                    margin={{ top: 8, right: 12, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.06)" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false}
+                      tick={{ fill: "#aaa", fontSize: 11 }} dy={8} />
+                    <YAxis axisLine={false} tickLine={false}
+                      tick={{ fill: "#aaa", fontSize: 11 }}
+                      tickFormatter={(v) => `${(v / 1_000_000).toFixed(0)}M`} />
+                    <RechartsTooltip content={<CustomTooltip />} />
+                    <Legend iconType="circle"
+                      wrapperStyle={{ fontSize: 12, paddingTop: 12, color: "#666" }} />
+                    {branchLines.map((br, idx) => (
+                      <Line key={br.idBranch} type="monotone"
+                        name={br.name} dataKey={br.name}
+                        stroke={COLORS[idx % COLORS.length]}
+                        strokeWidth={2.5}
+                        dot={{ r: 3, strokeWidth: 2 }}
+                        activeDot={{ r: 5 }} />
+                    ))}
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Biểu đồ Xu hướng Dịch Vụ Donut Chart */}
-        <div className={cx("chartCard", "serviceChart")}>
-          <div className={cx("sectionHeader")}>
-            <div className={cx("titleBox")}>
-              <Scissors size={20} strokeWidth={1.5} className={cx("sectionIcon")} />
-              <h3>Tỉ Trọng Dịch Vụ</h3>
+        {/* Tỉ trọng dịch vụ */}
+        <div className={cx("sectionCard")}>
+          <div className={cx("sectionHead")}>
+            <div className={cx("sectionHead__left")}>
+              <Scissors size={16} strokeWidth={1.5} className={cx("sectionHead__icon")} />
+              <span className={cx("sectionHead__title")}>Tỉ Trọng Dịch Vụ</span>
             </div>
           </div>
-          <div className={cx("chartWrapper")}>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={serviceData} cx="50%" cy="45%" innerRadius={70} outerRadius={100} paddingAngle={2} dataKey="value" stroke="none">
-                  {serviceData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <RechartsTooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }} itemStyle={{ color: '#2c2c2c', fontWeight: 600 }} />
-                <Legend iconType="circle" layout="vertical" verticalAlign="bottom" align="center" wrapperStyle={{ fontSize: '13px' }}/>
-              </PieChart>
-            </ResponsiveContainer>
+
+          <div className={cx("chartBody")}>
+            {loading ? (
+              <Skeleton height={260} radius={8} />
+            ) : serviceData.length === 0 ? (
+              <p className={cx("empty")}>Chưa có dữ liệu</p>
+            ) : (
+              <div className={cx("pieChartWrap")}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+                    <Pie
+                      data={serviceData}
+                      cx="50%" cy="42%"
+                      innerRadius="38%" outerRadius="60%"
+                      paddingAngle={2}
+                      dataKey="value"
+                      labelLine={false}
+                      label={renderPieLabel}
+                      stroke="none"
+                    >
+                      {serviceData.map((_, idx) => (
+                        <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <RechartsTooltip
+                      formatter={(value, name) => [`${value} lượt`, name]}
+                      contentStyle={{
+                        borderRadius: 10,
+                        border: "1px solid rgba(0,0,0,0.07)",
+                        boxShadow: "0 4px 14px rgba(26,22,18,0.08)",
+                        fontSize: 12,
+                      }}
+                    />
+                    <Legend
+                      iconType="circle"
+                      layout="horizontal"
+                      verticalAlign="bottom"
+                      align="center"
+                      iconSize={8}
+                      wrapperStyle={{ fontSize: 11, paddingTop: 10 }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </div>
         </div>
-
       </div>
 
-      {/* ====== KHU VỰC BẢNG DỮ LIỆU ====== */}
+      {/* ── TABLES ────────────────────────────────────────────────────────── */}
       <div className={cx("tablesGrid")}>
-        
-        {/* Top Khách Hàng VIP */}
-        <div className={cx("tableCard", "topCustomers")}>
-          <div className={cx("sectionHeader")}>
-            <div className={cx("titleBox")}>
-              <Crown size={20} strokeWidth={1.5} className={cx("sectionIcon", "gold")} />
-              <h3>Khách Hàng VIP</h3>
+
+        {/* Khách hàng VIP */}
+        <div className={cx("sectionCard")}>
+          <div className={cx("sectionHead")}>
+            <div className={cx("sectionHead__left")}>
+              <Crown size={16} strokeWidth={1.5} className={cx("sectionHead__icon")} />
+              <span className={cx("sectionHead__title")}>Khách Hàng VIP</span>
             </div>
-            <button className={cx("actionBtn")}>Xem tất cả</button>
           </div>
-          <div className={cx("tableWrapper")}>
-            <table className={cx("luxuryTable")}>
-              <thead>
-                <tr>
-                  <th>Khách hàng</th>
-                  <th className={cx("textCenter")}>Số lần</th>
-                  <th className={cx("textRight")}>Chi tiêu</th>
-                </tr>
-              </thead>
-              <tbody>
-                {/* Giả lập data nếu API rỗng */}
-                {(dashboard.topCustomers?.length > 0 ? dashboard.topCustomers : [
-                  { idCustomer: 1, fullName: "Lý Tuấn Kiệt", visitCount: 8, totalSpent: 4500000 },
-                  { idCustomer: 2, fullName: "Hoàng Gia Bảo", visitCount: 6, totalSpent: 3200000 },
-                  { idCustomer: 3, fullName: "Đinh Công Thành", visitCount: 5, totalSpent: 2800000 },
-                ]).map((c) => (
-                  <tr key={c.idCustomer}>
-                    <td>
-                      <div className={cx("customerInfo")}>
-                        <div className={cx("avatarInitials")}>
-                          {c.fullName.charAt(0).toUpperCase()}
-                        </div>
-                        <span className={cx("customerName")}>{c.fullName}</span>
-                      </div>
-                    </td>
-                    <td className={cx("textCenter")}>
-                      <span className={cx("visitCount")}>{c.visitCount}</span>
-                    </td>
-                    <td className={cx("textRight")}>
-                      <span className={cx("totalSpent")}>{formatCurrency(c.totalSpent)}</span>
-                    </td>
+
+          <div className={cx("tableWrap")}>
+            {loading ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "16px 18px" }}>
+                {[1, 2, 3, 4].map((i) => <Skeleton key={i} height={38} radius={6} />)}
+              </div>
+            ) : (
+              <table className={cx("table")}>
+                <thead>
+                  <tr>
+                    <th>Khách hàng</th>
+                    <th className={cx("textCenter")}>Lượt</th>
+                    <th className={cx("textRight")}>Chi tiêu</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {topCustomers.length > 0 ? topCustomers.map((c) => (
+                    <tr key={c.idCustomer}>
+                      <td>
+                        <div className={cx("customerInfo")}>
+                          <div className={cx("avatar")}>
+                            {(c.fullName || "K").charAt(0).toUpperCase()}
+                          </div>
+                          {c.fullName || "Khách ẩn danh"}
+                        </div>
+                      </td>
+                      <td className={cx("textCenter")}>
+                        <span className={cx("visitCount")}>{c.visitCount}</span>
+                      </td>
+                      <td className={cx("textRight")}>
+                        <span className={cx("totalSpent")}>{fmt(c.totalSpent)}</span>
+                      </td>
+                    </tr>
+                  )) : (
+                    <tr>
+                      <td colSpan={3} className={cx("empty")}>Chưa có dữ liệu</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
 
-        {/* Top Barbers (Thay thế Recent Activity) */}
-        <div className={cx("tableCard", "topBarbers")}>
-          <div className={cx("sectionHeader")}>
-            <div className={cx("titleBox")}>
-              <Award size={20} strokeWidth={1.5} className={cx("sectionIcon")} />
-              <h3>Thợ Xuất Sắc Tháng</h3>
+        {/* Thợ xuất sắc tháng */}
+        <div className={cx("sectionCard")}>
+          <div className={cx("sectionHead")}>
+            <div className={cx("sectionHead__left")}>
+              <Award size={16} strokeWidth={1.5} className={cx("sectionHead__icon")} />
+              <span className={cx("sectionHead__title")}>Thợ Xuất Sắc Tháng</span>
             </div>
           </div>
+
           <div className={cx("barberList")}>
-            {topBarbers.map((barber, index) => (
-              <div key={barber.id} className={cx("barberItem")}>
-                <div className={cx("rankBadge", { rank1: index === 0, rank2: index === 1, rank3: index === 2 })}>
-                  {index + 1}
+            {loading ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {[1, 2, 3].map((i) => <Skeleton key={i} height={52} radius={6} />)}
+              </div>
+            ) : topBarbers.length > 0 ? topBarbers.map((barber) => (
+              <div key={barber.idBarber} className={cx("barberItem")}>
+                <div className={cx("rankBadge", `rankBadge--${barber.rank}`)}>
+                  {barber.rank}
                 </div>
                 <div className={cx("barberInfo")}>
-                  <p className={cx("barberName")}>{barber.name}</p>
-                  <span className={cx("barberRole")}>{barber.role}</span>
+                  <p className={cx("barberInfo__name")}>{barber.name}</p>
+                  <span className={cx("barberInfo__role")}>
+                    {barber.bookingCount} lịch hẹn
+                  </span>
                 </div>
                 <div className={cx("barberStats")}>
-                  <span className={cx("barberRevenue")}>{formatCurrency(barber.revenue)}</span>
-                  <span className={cx("barberRating")}><Star size={12} fill="#b8966a" color="#b8966a"/> {barber.rating}</span>
+                  <span className={cx("barberStats__revenue")}>{fmt(barber.revenue)}</span>
+                  <span className={cx("barberStats__rating")}>
+                    <Star size={10} fill="#C9A84C" color="#C9A84C" />
+                    {barber.rating.toFixed(1)}
+                  </span>
                 </div>
               </div>
-            ))}
+            )) : (
+              <p className={cx("empty")}>Chưa có dữ liệu</p>
+            )}
           </div>
         </div>
 
       </div>
-
     </div>
   );
 }

@@ -1,7 +1,9 @@
-import { Link } from "react-router-dom"; // nhớ thêm dòng này đầu file
+import { Link } from "react-router-dom";
 import React, { useState, useEffect, useRef } from "react";
 import styles from "./VideoDetailDialog.module.scss";
 import { useToast } from "~/context/ToastContext";
+import { useAuth } from "~/context/AuthContext";
+import { createPortal } from "react-dom";
 import {
   likeReel,
   getComments,
@@ -21,15 +23,16 @@ function VideoDetailDialog({
   onClose,
   onToggleLike,
   onChangeVideo,
-  token,
   globalMuted = true,
-  onToggleGlobalMuted = () => { },
-  redirectToLogin = () => console.log("Login modal not passed!"),
+  onToggleGlobalMuted = () => {},
+  redirectToLogin = () => {},
   fromReelPlayer = false,
-  onHashtagClick = () => { }, // 🆕 thêm prop mới
+  onHashtagClick = () => {},
 }) {
-
   const reel = reels[currentIndex];
+  const { user } = useAuth();
+  const { showToast } = useToast();
+
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [activeReply, setActiveReply] = useState(null);
@@ -37,57 +40,47 @@ function VideoDetailDialog({
   const [slideDirection, setSlideDirection] = useState(null);
   const [isScrollLocked, setIsScrollLocked] = useState(false);
   const [showNavButtons, setShowNavButtons] = useState(!fromReelPlayer);
-  const [localMuted, setLocalMuted] = useState(globalMuted); // Add localMuted state
+  const [localMuted, setLocalMuted] = useState(globalMuted);
 
   const videoRef = useRef(null);
   const dialogRef = useRef(null);
   const isViewTrackedRef = useRef(false);
-  const { showToast } = useToast();
+
+  const toast = (text, type) => showToast({ text, type }); // ✅ wrapper đúng format
 
   const handleAction = async (apiCall) => {
     try {
       return await apiCall();
     } catch (err) {
-      console.error("Lỗi xác thực/hành động:", err);
-      // Xử lý nếu token bị hết hạn/không hợp lệ khi đang sử dụng
-      if (err.response?.status === 401) {
-        redirectToLogin();
-      }
+      console.error("Lỗi action:", err);
+      if (err.response?.status === 401) redirectToLogin();
       return null;
     }
   };
 
-  // Đồng bộ muted với globalMuted và fromReelPlayer
   useEffect(() => {
     if (videoRef.current) {
-      const shouldMute = fromReelPlayer ? globalMuted : false; // Unmute if not from ReelPlayer
+      const shouldMute = fromReelPlayer ? globalMuted : false;
       videoRef.current.muted = shouldMute;
       setLocalMuted(shouldMute);
     }
   }, [globalMuted, currentIndex, fromReelPlayer]);
 
-  // Track view after 3s
   useEffect(() => {
     isViewTrackedRef.current = false;
     const handleTimeUpdate = () => {
-      if (
-        videoRef.current &&
-        videoRef.current.currentTime * 1000 >= MIN_VIEW_DURATION_MS
-      ) {
-        if (!isViewTrackedRef.current && token) {
-          trackReelView(reel.idReel, token).catch(console.error);
+      if (videoRef.current?.currentTime * 1000 >= MIN_VIEW_DURATION_MS) {
+        if (!isViewTrackedRef.current && user) {
+          trackReelView(reel.idReel).catch(console.error); // ✅ bỏ token
           isViewTrackedRef.current = true;
         }
-        videoRef.current.removeEventListener("timeupdate", handleTimeUpdate);
+        videoRef.current?.removeEventListener("timeupdate", handleTimeUpdate);
       }
     };
-
     videoRef.current?.addEventListener("timeupdate", handleTimeUpdate);
-    return () =>
-      videoRef.current?.removeEventListener("timeupdate", handleTimeUpdate);
-  }, [reel, token]);
+    return () => videoRef.current?.removeEventListener("timeupdate", handleTimeUpdate);
+  }, [reel, user]);
 
-  // Load comments
   useEffect(() => {
     const loadComments = async () => {
       const data = await getComments(reel.idReel);
@@ -104,18 +97,14 @@ function VideoDetailDialog({
     if (reel) loadComments();
   }, [reel]);
 
-  // Click outside dialog to close
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (dialogRef.current && !dialogRef.current.contains(e.target)) {
-        onClose();
-      }
+      if (dialogRef.current && !dialogRef.current.contains(e.target)) onClose();
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [onClose]);
 
-  // Xử lý hiệu ứng chuyển tiếp
   useEffect(() => {
     if (slideDirection) {
       const timer = setTimeout(() => setSlideDirection(null), ANIMATION_DURATION_MS);
@@ -123,77 +112,64 @@ function VideoDetailDialog({
     }
   }, [slideDirection]);
 
-  // Show navigation buttons after first navigation
   useEffect(() => {
-    if (fromReelPlayer && slideDirection) {
-      setShowNavButtons(true);
-    }
+    if (fromReelPlayer && slideDirection) setShowNavButtons(true);
   }, [fromReelPlayer, slideDirection]);
 
   const handleLike = async () => {
-    if (!token) return; // Bảo vệ API (mặc dù đã check ở component cha)
-    const res = await handleAction(() => likeReel(reel.idReel, token));
+    if (!user) return redirectToLogin();
+    const res = await handleAction(() => likeReel(reel.idReel)); // ✅ bỏ token
     if (res) onToggleLike(reel.idReel, res.liked, res.likesCount);
   };
 
   const handleAddComment = async () => {
-    if (!token) {
-      showToast("Bạn cần đăng nhập để bình luận!", "warning");
+    if (!user) {
+      toast("Bạn cần đăng nhập để bình luận!", "info");
       return;
     }
     if (!newComment.trim()) {
-      showToast("Nội dung bình luận không được để trống!", "warning");
+      toast("Nội dung bình luận không được để trống!", "info");
       return;
     }
-
-    const cmt = await handleAction(() =>
-      addComment(reel.idReel, newComment, token)
-    );
-
+    const cmt = await handleAction(() => addComment(reel.idReel, newComment)); // ✅ bỏ token
     if (cmt) {
       setComments([...comments, { ...cmt, replies: [] }]);
       setNewComment("");
+      toast("Đã đăng bình luận!", "success");
     }
   };
 
   const handleAddReply = async (commentId) => {
-    if (!token) {
-      showToast("Bạn cần đăng nhập để trả lời bình luận!", "warning");
+    if (!user) {
+      toast("Bạn cần đăng nhập để trả lời!", "info");
       return;
     }
     if (!newReply.trim()) {
-      showToast("Nội dung trả lời không được để trống!", "warning");
+      toast("Nội dung trả lời không được để trống!", "info");
       return;
     }
-
-    const rep = await handleAction(() =>
-      addReply(commentId, newReply, token)
-    );
-
+    const rep = await handleAction(() => addReply(commentId, newReply)); // ✅ bỏ token
     if (rep) {
-      // rep.User đã có fullName + image
-      setComments(
-        comments.map((c) =>
-          c.idComment === commentId
-            ? { ...c, replies: [...(c.replies || []), rep] }
-            : c
-        )
-      );
+      setComments(comments.map((c) =>
+        c.idComment === commentId
+          ? { ...c, replies: [...(c.replies || []), rep] }
+          : c
+      ));
       setNewReply("");
       setActiveReply(null);
+      toast("Đã trả lời bình luận!", "success");
     }
   };
 
-
   const handleEnded = () => {
-    if (currentIndex < reels.length - 1) {
-      handleNavClick("down");
-    }
+    if (currentIndex < reels.length - 1) handleNavClick("down");
   };
 
   const handleNavClick = (direction) => {
     if (isScrollLocked) return;
-    const canNav = direction === "down" ? currentIndex < reels.length - 1 : currentIndex > 0;
+    const canNav = direction === "down"
+      ? currentIndex < reels.length - 1
+      : currentIndex > 0;
     if (!canNav) return;
     setSlideDirection(direction);
     onChangeVideo(direction === "down" ? currentIndex + 1 : currentIndex - 1);
@@ -201,10 +177,12 @@ function VideoDetailDialog({
     setTimeout(() => setIsScrollLocked(false), ANIMATION_LOCK_MS);
   };
 
-  return (
+  return createPortal(
     <div className={`${styles.overlay} ${slideDirection === "up" ? styles.slideUp : slideDirection === "down" ? styles.slideDown : ""}`}>
       <div className={styles.dialog} ref={dialogRef}>
-        {/* 🎬 Video Section */}
+
+        <button className={styles.closeBtn} onClick={onClose}>✖</button>
+
         <div className={styles.videoSection}>
           <video
             ref={videoRef}
@@ -216,23 +194,15 @@ function VideoDetailDialog({
             muted={localMuted}
             onEnded={handleEnded}
           />
-          <button className={styles.closeBtn} onClick={onClose}>
-            ✖
-          </button>
 
-          {/* 🔊 Nút bật/tắt âm thanh */}
           <button
             className={styles.soundToggle}
-            onClick={() => {
-              setLocalMuted((prev) => !prev);
-              onToggleGlobalMuted();
-            }}
+            onClick={() => { setLocalMuted((p) => !p); onToggleGlobalMuted(); }}
             title={localMuted ? "Bật âm thanh" : "Tắt âm thanh"}
           >
-            {localMuted ? <VolumeX size={22} /> : <Volume2 size={22} />}
+            {localMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
           </button>
 
-          {/* ✅ Navigation Buttons */}
           {showNavButtons && (
             <div className={styles.navContainer}>
               <button
@@ -253,13 +223,12 @@ function VideoDetailDialog({
           )}
         </div>
 
-        {/* 📝 Info + Comments */}
         <div className={styles.infoSection}>
           <div className={styles.header}>
             <Link
               to={`/barber/${reel.Barber?.idBarber}`}
               className={styles.reelMeta}
-              onClick={onClose} // ✅ Đóng dialog trước khi điều hướng
+              onClick={onClose}
               style={{ textDecoration: "none", color: "inherit" }}
             >
               <img
@@ -269,7 +238,7 @@ function VideoDetailDialog({
               />
               <div className={styles.authorInfo}>
                 <span className={styles.authorName}>
-                  {reel.Barber?.user?.fullName || "Barber ẩn danh"}
+                  {reel.Barber?.user?.fullName || "Barber Ẩn Danh"}
                 </span>
                 <span className={styles.postTime}>
                   {new Date(reel.createdAt).toLocaleString("vi-VN")}
@@ -282,75 +251,51 @@ function VideoDetailDialog({
             <h3 className={styles.reelTitle}>
               {reel.title
                 ? reel.title.split(/(\s+)/).map((word, i) =>
-                  word.startsWith("#") ? (
-                    <span
-                      key={i}
-                      className={styles.hashtag}
-                      onClick={() => {
-                        onClose(); // 🆕 Đóng dialog trước
-                        setTimeout(() => onHashtagClick(word.substring(1)), 300); // Gọi tìm kiếm hashtag sau 0.3s
-                      }}
-                      style={{ color: "#1DA1F2", cursor: "pointer" }}
-                    >
-                      {word}
-                    </span>
-                  ) : (
-                    word
+                    word.startsWith("#") ? (
+                      <span
+                        key={i}
+                        className={styles.hashtag}
+                        onClick={() => { onClose(); setTimeout(() => onHashtagClick(word.substring(1)), 300); }}
+                      >
+                        {word}
+                      </span>
+                    ) : word
                   )
-                )
                 : "Không có tiêu đề"}
             </h3>
           </div>
-
 
           <div className={styles.descriptionBox}>
             <pre className={styles.desc}>{reel.description || "Chưa có mô tả chi tiết"}</pre>
           </div>
 
           <div className={styles.commentsContainer}>
-            <h4>Bình luận ({reel.commentsCount})</h4>
+            <h4 className={styles.commentCount}>Bình luận ({reel.commentsCount})</h4>
             <div className={styles.commentList}>
               {comments.map((cmt) => (
                 <div key={cmt.idComment} className={styles.comment}>
                   <div className={styles.cmtHeader}>
-                    <img
-                      src={cmt.User?.image || "/user.png"}
-                      alt="avatar"
-                      className={styles.avatar}
-                    />
+                    <img src={cmt.User?.image || "/user.png"} alt="avatar" className={styles.avatar} />
                     <div className={styles.cmtInfo}>
                       <div className={styles.cmtAuthorTime}>
-                        <span className={styles.author}>
-                          {cmt.User?.fullName || "Ẩn danh"}
-                        </span>
-                        <span className={styles.time}>
-                          {new Date(cmt.createdAt).toLocaleTimeString()}
-                        </span>
+                        <span className={styles.author}>{cmt.User?.fullName || "Khách hàng"}</span>
+                        <span className={styles.time}>{new Date(cmt.createdAt).toLocaleTimeString()}</span>
                       </div>
                       <p className={styles.content}>{cmt.content}</p>
                     </div>
                   </div>
 
-                  <button
-                    className={styles.replyBtn}
-                    onClick={() => setActiveReply(cmt.idComment)}
-                  >
-                    Trả lời
+                  <button className={styles.replyBtn} onClick={() => setActiveReply(cmt.idComment)}>
+                    TRẢ LỜI
                   </button>
 
                   {cmt.replies.length > 0 && (
                     <div className={styles.replies}>
                       {cmt.replies.map((rep) => (
                         <div key={rep.idComment} className={styles.reply}>
-                          <img
-                            src={rep.User?.image || "/user.png"}
-                            alt="avatar"
-                            className={styles.avatarSmall}
-                          />
+                          <img src={rep.User?.image || "/user.png"} alt="avatar" className={styles.avatarSmall} />
                           <div className={styles.replyText}>
-                            <span className={styles.author}>
-                              {rep.User?.fullName || "Ẩn danh"}
-                            </span>
+                            <span className={styles.author}>{rep.User?.fullName || "Khách hàng"}</span>
                             <p className={styles.replyContent}>{rep.content}</p>
                           </div>
                         </div>
@@ -364,13 +309,9 @@ function VideoDetailDialog({
                         type="text"
                         value={newReply}
                         onChange={(e) => setNewReply(e.target.value)}
-                        placeholder={`Trả lời ${cmt.User?.fullName || "bình luận"
-                          }...`}
+                        placeholder={`Trả lời ${cmt.User?.fullName || "bình luận"}...`}
                       />
-                      <button
-                        onClick={() => handleAddReply(cmt.idComment)}
-                        disabled={!newReply.trim()}
-                      >
+                      <button onClick={() => handleAddReply(cmt.idComment)} disabled={!newReply.trim()}>
                         <Send size={16} />
                       </button>
                     </div>
@@ -383,25 +324,27 @@ function VideoDetailDialog({
           <div className={styles.footerActions}>
             <div className={styles.reelActions}>
               <button
-                className={styles.likeBtn}
+                className={`${styles.likeBtn} ${reel.isLiked ? styles.liked : ""}`}
                 onClick={handleLike}
-                style={{ color: reel.isLiked ? "red" : "#333" }}
               >
                 <Heart
-                  size={24}
-                  fill={reel.isLiked ? "red" : "none"}
+                  size={26}
+                  fill={reel.isLiked ? "#ED4956" : "none"}
                   strokeWidth={reel.isLiked ? 0 : 2}
+                  color={reel.isLiked ? "#ED4956" : "var(--cream)"}
                 />
-                <span>{reel.likesCount || 0}</span>
+                <span className={styles.actionText}>{reel.likesCount || 0}</span>
               </button>
+
               <button
                 className={styles.shareBtn}
-                onClick={() =>
-                  navigator.clipboard.writeText(window.location.href)
-                }
+                onClick={() => {
+                  navigator.clipboard.writeText(window.location.href);
+                  toast("Đã copy link video!", "success"); // ✅ fix format
+                }}
               >
-                <Share2 size={20} />
-                <span>Chia sẻ</span>
+                <Share2 size={24} color="var(--cream)" />
+                <span className={styles.actionText}>Chia sẻ</span>
               </button>
             </div>
 
@@ -410,7 +353,7 @@ function VideoDetailDialog({
                 type="text"
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                placeholder="Thêm bình luận..."
+                placeholder="Thêm bình luận của bạn..."
               />
               <button onClick={handleAddComment} disabled={!newComment.trim()}>
                 <Send size={20} />
@@ -419,7 +362,8 @@ function VideoDetailDialog({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

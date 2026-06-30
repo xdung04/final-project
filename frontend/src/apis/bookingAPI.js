@@ -1,30 +1,36 @@
-import axios from "axios";
+import * as request from "~/apis/configs/httpRequest";
 
-const API_URL = process.env.REACT_APP_API_BASE_URL + "/bookings";
+const BOOKING_URL = "/bookings";
 
+// Không còn cần getAuthHeader() — cookie tự gửi kèm nhờ withCredentials: true
+// ở httpRequest.js. LƯU Ý: res trả về đã bóc .data sẵn, đọc thẳng res.xxx ở
+// nơi gọi thay vì res.data.xxx.
 const bookingApi = {
-  // Lấy tất cả booking
-  getBooking: () => axios.get(API_URL),
+  getMyBranch: () => request.get(`/receptionist/my-branch`),
 
-  // Lấy booking của barber theo khoảng ngày
-  getForBarber: (idBarber, start, end) => {
-    // Truyền idBarber, start, end qua query params
-    return axios.get(`${API_URL}/barber?idBarber=${idBarber}&start=${start}&end=${end}`);
-  },
+  getBookingsByBranch: (idBranch, date) =>
+    request.get(`${BOOKING_URL}/branch/${idBranch}`, { params: { date } }),
 
-  // Hoàn tất booking (upload ảnh)
+  checkInBooking: (id) => request.put(`${BOOKING_URL}/${id}/checkin`, {}),
+
+  cancelBooking: (id) => request.put(`${BOOKING_URL}/${id}/cancel`, {}),
+
+  getBooking: () => request.get(BOOKING_URL),
+
+  getForBarber: (idBarber, start, end) =>
+    request.get(`${BOOKING_URL}/barber`, { params: { idBarber, start, end } }),
+
   completeBooking: (idBooking, data) =>
-    axios.post(`${API_URL}/${idBooking}/complete`, data, {
+    request.post(`${BOOKING_URL}/${idBooking}/complete`, data, {
       headers: { "Content-Type": "multipart/form-data" },
     }),
 
-  // Lấy booked slots của barber theo ngày
   getBookedSlots: (idBarber, branchId, date) =>
-    axios.get(`${API_URL}/barbers/${idBarber}/booked-slots?branchId=${branchId}&date=${date}`),
+    request.get(`${BOOKING_URL}/barbers/${idBarber}/booked-slots`, {
+      params: { branchId, date },
+    }),
 
-  // Tạo booking mới
-  createBooking: (bookingData) =>
-    axios.post(`${API_URL}`, bookingData),
+  createBooking: (data) => request.post(`${BOOKING_URL}/create`, data),
 };
 
 export default bookingApi;

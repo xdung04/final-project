@@ -1,13 +1,15 @@
 import db from "../models/index.js";
-import { upsertBarbers } from "./pineconeService.js";
+import { upsertBarbers,deleteNamespace } from "./pineconeService.js";
 import { fn, col, Op } from "sequelize";
-import ratingService from "./ratingService.js"; 
-const Barber = db.Barber;
+import ratingService from "./ratingService.js";
+
+const Barber = db.Barber; 
+const Booking = db.Booking;
 export const getAllBarbers = async () => {
   try {
     const barbers = await db.Barber.findAll({
       include: [
-        { model: db.User, as: "user", attributes: ["fullName", "createdAt"] },
+        { model: db.User, as: "user", attributes: ["fullName", "image", "createdAt"] },
         { model: db.Branch, as: "branch", attributes: ["name"] },
         { model: db.BarberRatingSummary, as: "ratingSummary", attributes: ["avgRate"] },
         {
@@ -25,23 +27,22 @@ export const getAllBarbers = async () => {
     const now = new Date();
 
     const barberData = barbers.map((b) => {
-      // 🔹 Tính kinh nghiệm (năm)
       const startDate = b.user?.createdAt ? new Date(b.user.createdAt) : now;
       const expYears = Math.max(0, now.getFullYear() - startDate.getFullYear());
-
-      // 🔹 Tính số lượng khách hàng duy nhất
       const customerIds = b.Bookings?.map((bk) => bk.idCustomer).filter(Boolean) || [];
       const totalCustomers = new Set(customerIds).size;
 
       return {
         idBarber: b.idBarber,
         fullName: b.user?.fullName || "Chưa có tên",
+        image: b.user?.image || "", // 👈 thêm dòng này
         branchName: b.branch?.name || "Chưa có chi nhánh",
+        idBranch: b.idBranch, // 👈 thêm để sidebar filter theo branch
         exp: `${expYears} năm`,
         rating: Number(b.ratingSummary?.avgRate || 0).toFixed(1),
         customers: totalCustomers,
         isLocked: b.isLocked,
-        isApproved: b.isApproved,
+        lockDate: b.lockDate,
       };
     });
 
@@ -61,31 +62,35 @@ export const syncBarbersToPinecone = async () => {
       include: [
         { model: db.User, as: "user", attributes: ["fullName"] },
         { model: db.Branch, as: "branch", attributes: ["name"] },
-        { model: db.BarberRatingSummary, as: "ratingSummary", attributes: ["avgRate"] }, // 👈 thêm dòng này
+        { model: db.BarberRatingSummary, as: "ratingSummary", attributes: ["avgRate"] },
       ],
     });
 
     if (!barbers.length) {
-      return { message: " Không có dữ liệu barber để đồng bộ." };
+      return { message: "Không có dữ liệu barber để đồng bộ." };
     }
 
     const barberData = barbers.map((b) => ({
-      idBarber: b.idBarber,
-      idBranch: b.idBranch,
-      fullName: b.user?.fullName || "Chưa có tên",
-      branchName: b.branch?.name || "Chưa có chi nhánh",
-      profileDescription: b.profileDescription || "Không có mô tả",
-      avgRate: b.ratingSummary?.avgRate || 0,
-      displayText: `Tên barber: ${b.user?.fullName || "Chưa có tên"}, Chi nhánh: ${b.branch?.name || "Chưa có chi nhánh"}, Mô tả: ${b.profileDescription || "Không có mô tả"}, Đánh giá trung bình: ${b.ratingSummary?.avgRate || 0}`,
+      idBarber:           b.idBarber,
+      idBranch:           b.idBranch,
+      fullName:           b.user?.fullName            || "Chưa có tên",
+      branchName:         b.branch?.name              || "Chưa có chi nhánh",
+      profileDescription: b.profileDescription        || "Không có mô tả",
+      experienceYears:    b.experienceYears            ?? 0,
+      specialty:          b.specialty                 || "Không có chuyên môn",
+      style:              b.style                     || "Không có phong cách",
+      certificates:       b.certificates              || "Không có chứng chỉ",
+      philosophy:         b.philosophy                || "Không có triết lý",
+      avgRate:            b.ratingSummary?.avgRate     ?? 0,
     }));
 
+    await deleteNamespace("barbers");
 
     await upsertBarbers(barberData);
 
-    return { message: "Barber data synced to Pinecone (test).", total: barberData.length };
+    return { message: "Barber data synced to Pinecone.", total: barberData.length };
   } catch (error) {
-
-    return { message: " Lỗi server", error: error.message };
+    return { message: "Lỗi server", error: error.message };
   }
 };
 
@@ -118,7 +123,7 @@ export const assignUserAsBarber = async (data) => {
           profileDescription: profileDescription || "Chưa có mô tả",
           isLocked: false,
         },
-        { transaction: t }
+        { transaction: t },
       );
     } else {
       // 🔹 Nếu có rồi thì cập nhật
@@ -220,16 +225,25 @@ export const lockBarber = async (idBarber) => {
   };
 };
 
-
-
-
 export const unlockBarber = async (idBarber) => {
   const barber = await Barber.findByPk(idBarber);
-  if (!barber) throw new Error("Khong tìm thấy barber");
+
+  if (!barber) {
+    throw new Error("Không tìm thấy barber");
+  }
+
   barber.isLocked = false;
+  barber.lockDate = null;
+
   await barber.save();
-  return barber;
+
+  return {
+    success: true,
+    message: "Mở khóa barber thành công!",
+    barber,
+  };
 };
+
 export const calculateBarberReward = async (idBarber) => {
   const now = new Date();
   const month = now.getMonth() + 1;
@@ -238,17 +252,25 @@ export const calculateBarberReward = async (idBarber) => {
   const startOfMonth = new Date(year, month - 1, 1);
   const endOfMonth = new Date(year, month, 1);
 
-  // 1️⃣ Tổng doanh thu dịch vụ (Booking.total)
-  const serviceRevenue = await db.Booking.sum("total", {
+  // 1️⃣ Thống kê Doanh thu & Số lượt khách (Dùng Booking.total như cũ của ông)
+  const bookingStats = await db.Booking.findOne({
     where: {
       idBarber,
       isPaid: true,
       bookingDate: { [Op.gte]: startOfMonth, [Op.lt]: endOfMonth },
     },
+    attributes: [
+      [fn("COALESCE", fn("SUM", col("total")), 0), "serviceRevenue"],
+      [fn("COUNT", col("idBooking")), "customerCount"], // Đếm số lượng bill = số khách
+    ],
+    raw: true,
   });
 
-  // 2️⃣ Tổng tip
-  const tipAmount = await db.BookingTip.sum("tipAmount", {
+  const serviceRevenue = parseFloat(bookingStats?.serviceRevenue || 0);
+  const customerCount = parseInt(bookingStats?.customerCount || 0);
+
+  // 2️⃣ Thống kê Tổng tiền Tip
+  const tipAmountResult = await db.BookingTip.sum("tipAmount", {
     include: [
       {
         model: db.Booking,
@@ -262,57 +284,106 @@ export const calculateBarberReward = async (idBarber) => {
       },
     ],
   });
+  const tipAmount = parseFloat(tipAmountResult || 0);
 
-  const totalServiceRevenue = Number(serviceRevenue) || 0;
-  const totalTipAmount = Number(tipAmount) || 0;
+  // 3️⃣ Lấy Đánh giá (Rating) trung bình hiện tại của thợ
+  const ratingSummary = await db.BarberRatingSummary.findOne({
+    where: { idBarber },
+  });
+  const averageRating = parseFloat(ratingSummary?.avgRate || 0);
 
-  // 3️⃣ Lấy danh sách mốc thưởng
-  const rewardRules = await db.BonusRule.findAll({
-    where: { active: true },
-    order: [["minRevenue", "ASC"]],
-    raw: true,
+  // 4️⃣ Lấy Hợp đồng đang Active + Cấu hình Cấp bậc & Luật của thợ đó
+  const activeContract = await db.SalaryContract.findOne({
+    where: { idBarber, status: "active" },
+    include: [
+      {
+        model: db.CompensationPlan,
+        as: "plan",
+        include: [
+          { model: db.CommissionRule, as: "commissionRules" },
+          { model: db.BonusRule, as: "bonusRules" },
+        ],
+      },
+    ],
   });
 
-  if (!rewardRules.length) throw new Error("Không có mốc thưởng nào trong hệ thống.");
+  // 5️⃣ Tự động tính toán lương thưởng theo luật mới
+  let planName = "Chưa có hợp đồng";
+  let baseSalary = 0;
+  let commissionAmount = 0;
+  let bonusAmount = 0;
+  let commissionRules = [];
+  let bonusRules = [];
 
-  // 4️⃣ Xác định mốc hiện tại và kế tiếp
-  let currentRule = rewardRules[0];
-  let nextRule = rewardRules[1] || null;
+  if (activeContract) {
+    baseSalary = parseFloat(activeContract.actualBaseSalary || 0);
+    const plan = activeContract.plan;
 
-  for (let i = 0; i < rewardRules.length; i++) {
-    if (totalServiceRevenue >= rewardRules[i].minRevenue) {
-      currentRule = rewardRules[i];
-      nextRule = rewardRules[i + 1] || null;
+    if (plan) {
+      planName = plan.displayName;
+
+      // Sắp xếp rules theo mốc doanh thu tăng dần để FE hiển thị bảng cho chuẩn
+      commissionRules = (plan.commissionRules || []).sort(
+        (a, b) => parseFloat(a.minRevenueStep) - parseFloat(b.minRevenueStep),
+      );
+      bonusRules = plan.bonusRules || [];
+
+      // ── TÍNH HOA HỒNG BẬC THANG ──
+      if (commissionRules.length > 0) {
+        // Tìm bậc cao nhất mà thợ đã đạt được (đi từ trên xuống dưới)
+        const matchedRule = [...commissionRules].reverse().find((r) => serviceRevenue >= parseFloat(r.minRevenueStep));
+
+        if (matchedRule) {
+          commissionAmount = serviceRevenue * (parseFloat(matchedRule.commissionRate) / 100);
+        }
+      }
+
+      // ── TÍNH THƯỞNG KPI KÉP ──
+      if (bonusRules.length > 0) {
+        bonusRules.forEach((rule) => {
+          // Thoả mãn CẢ 2 điều kiện: Lượt khách VÀ Rating
+          if (customerCount >= parseInt(rule.minCustomerCount) && averageRating >= parseFloat(rule.minAverageRating)) {
+            bonusAmount += parseFloat(rule.rewardAmount);
+          }
+        });
+      }
     }
   }
 
-  // 5️⃣ Tính thưởng theo mốc cao nhất đạt được
-  const bonus = Math.floor((totalServiceRevenue * currentRule.bonusPercent) / 100);
-
-  // 6️⃣ Tính % progress sang mốc kế tiếp
-  const progressPercent = nextRule
-    ? Math.min((totalServiceRevenue / nextRule.minRevenue) * 100, 100)
-    : 100;
-
+  // 6️⃣ Trả về cục Data chuẩn 100% khớp với file Thuong.jsx
   return {
-    idBarber,
     month,
     year,
-    serviceRevenue: totalServiceRevenue, // ✅ Doanh thu lấy từ Booking.total
-    tipAmount: totalTipAmount,
-    bonus,
-    progressPercent,
-    currentRule,
-    nextRule,
-    rewardRules,
+    planName,
+    baseSalary,
+    serviceRevenue,
+    tipAmount,
+    commissionAmount,
+    bonusAmount,
+    customerCount,
+    averageRating,
+    // Trả luôn mảng luật về cho Frontend để nó vẽ Bảng lộ trình & Thanh tiến độ
+    commissionRules,
+    bonusRules,
   };
 };
-
 
 export const createBarberWithUser = async (data) => {
   const t = await db.sequelize.transaction();
   try {
-    const { email, password, fullName, phoneNumber, idBranch, profileDescription } = data;
+    const {
+      email,
+      password,
+      fullName,
+      phoneNumber,
+      idBranch,
+      profileDescription,
+      experienceYears,
+      specialty,
+      style,
+      certificates,
+      philosophy,
+    } = data;
 
     // 1️⃣ Kiểm tra email trùng
     const existed = await db.User.findOne({ where: { email } });
@@ -334,20 +405,25 @@ export const createBarberWithUser = async (data) => {
         role: "barber",
         isStatus: true,
       },
-      { transaction: t }
+      { transaction: t },
     );
 
     // 4️⃣ Tạo bản ghi barber — cho phép idBranch = null
     const newBarber = await db.Barber.create(
       {
         idBarber: newUser.idUser,
-        idBranch: idBranch || null, // ✅ Cho phép null
+        idBranch: idBranch || null,
         profileDescription: profileDescription || "Chưa có mô tả",
+        experienceYears: experienceYears != null ? Number(experienceYears) : 0,
+        specialty: specialty || null,
+        style: style || null,
+        certificates: certificates || null,
+        philosophy: philosophy || null,
         isLocked: false,
         createdAt: new Date(),
         updatedAt: new Date(),
       },
-      { transaction: t }
+      { transaction: t },
     );
 
     await t.commit();
@@ -370,7 +446,6 @@ export const createBarberWithUser = async (data) => {
   }
 };
 
-
 export const updateBarber = async (idBarber, data) => {
   const t = await db.sequelize.transaction();
   try {
@@ -392,8 +467,12 @@ export const updateBarber = async (idBarber, data) => {
 
     // 🔹 Cập nhật thông tin Barber
     if (data.idBranch !== undefined) barber.idBranch = data.idBranch || null;
-    if (data.profileDescription !== undefined)
-      barber.profileDescription = data.profileDescription;
+    if (data.profileDescription !== undefined) barber.profileDescription = data.profileDescription;
+    if (data.experienceYears !== undefined) barber.experienceYears = data.experienceYears;
+    if (data.specialty !== undefined) barber.specialty = data.specialty;
+    if (data.style !== undefined) barber.style = data.style;
+    if (data.certificates !== undefined) barber.certificates = data.certificates;
+    if (data.philosophy !== undefined) barber.philosophy = data.philosophy;
     await barber.save({ transaction: t });
 
     await t.commit();
@@ -405,64 +484,7 @@ export const updateBarber = async (idBarber, data) => {
 };
 
 
-export const addBarberUnavailability = async (data) => {
-  const { idBarber, startDate, endDate, reason } = data;
 
-  if (!idBarber || !startDate || !endDate || !reason) {
-    throw new Error("Thiếu thông tin yêu cầu.");
-  }
-
-  const barber = await db.Barber.findByPk(idBarber);
-  if (!barber) {
-    throw new Error("Không tìm thấy thợ cắt tóc.");
-  }
-
-  // 🔹 Kiểm tra trùng lịch nghỉ
-  const overlap = await db.BarberUnavailability.findOne({
-    where: {
-      idBarber,
-      [db.Sequelize.Op.or]: [
-        {
-          startDate: { [db.Sequelize.Op.between]: [startDate, endDate] },
-        },
-        {
-          endDate: { [db.Sequelize.Op.between]: [startDate, endDate] },
-        },
-        {
-          [db.Sequelize.Op.and]: [
-            { startDate: { [db.Sequelize.Op.lte]: startDate } },
-            { endDate: { [db.Sequelize.Op.gte]: endDate } },
-          ],
-        },
-      ],
-    },
-  });
-
-  if (overlap) {
-    throw new Error("❌ Thợ này đã có lịch nghỉ trong khoảng thời gian này!");
-  }
-
-  // 🔹 Tạo mới nếu không trùng
-  const record = await db.BarberUnavailability.create({
-    idBarber,
-    startDate,
-    endDate,
-    reason,
-  });
-
-  return {
-    message: " Đã thêm lịch nghỉ phép thành công.",
-    record,
-  };
-};
-
-export const getUnavailabilitiesByBarber = async (idBarber) => {
-  const records = await db.BarberUnavailability.findAll({
-    where: { idBarber },
-    order: [["startDate", "ASC"]],
-  });
-  return records;
-};
 
 export const getProfile = async (idBarber) => {
   const barber = await Barber.findOne({
@@ -494,8 +516,15 @@ export const getProfile = async (idBarber) => {
     branchName: barber.branch?.name || "Chưa có chi nhánh",
     branchAddress: barber.branch?.address || "",
     profileDescription: barber.profileDescription || "",
+    experienceYears: barber.experienceYears ?? 0,
+    specialty: barber.specialty || "",
+    style: barber.style || "",
+    certificates: barber.certificates || "",
+    philosophy: barber.philosophy || "",
     avgRate: ratingSummary?.avgRate || 0,
     totalRate: ratingSummary?.totalRate || 0,
+    lockDate: barber.lockDate,
+    isLocked: barber.isLocked,
   };
 };
 
@@ -506,65 +535,102 @@ export const updateProfile = async (idBarber, payload) => {
 
   if (!barber) throw new Error("Không tìm thấy thợ.");
 
-  const { fullName, image, phoneNumber, email, idBranch, profileDescription } =
-    payload;
+  const {
+    fullName,
+    image,
+    phoneNumber,
+    email,
+    idBranch,
+    profileDescription,
+    experienceYears,
+    specialty,
+    style,
+    certificates,
+    philosophy,
+  } = payload;
 
+  // ── Validate phoneNumber ──────────────────────────────────
+  if (phoneNumber !== undefined && phoneNumber !== "") {
+    const phoneRegex = /^0\d{9}$/;
+    if (!phoneRegex.test(phoneNumber)) {
+      throw Object.assign(new Error("Số điện thoại phải là 10 chữ số và bắt đầu bằng số 0."), { status: 400 });
+    }
+  }
+
+  // ── Validate experienceYears ──────────────────────────────
+  if (experienceYears !== undefined && experienceYears !== "") {
+    const exp = Number(experienceYears);
+    if (isNaN(exp) || exp < 0 || exp > 50) {
+      throw Object.assign(new Error("Số năm kinh nghiệm phải từ 0 đến 50."), { status: 400 });
+    }
+  }
+
+  // ── Update User ───────────────────────────────────────────
   if (barber.user) {
     await barber.user.update({
-      fullName: fullName ?? barber.user.fullName,
-      image: image ?? barber.user.image,
-      phoneNumber: phoneNumber ?? barber.user.phoneNumber,
-      email: email ?? barber.user.email,
+      fullName: fullName !== undefined ? fullName : barber.user.fullName,
+      image: image !== undefined ? image : barber.user.image,
+      phoneNumber: phoneNumber !== undefined ? phoneNumber : barber.user.phoneNumber,
+      email: email !== undefined ? email : barber.user.email,
     });
   }
 
+  // ── Update Barber ─────────────────────────────────────────
+  const expNum =
+    experienceYears !== undefined && experienceYears !== "" ? Number(experienceYears) : barber.experienceYears;
+
   await barber.update({
-    idBranch: idBranch ?? barber.idBranch,
-    profileDescription: profileDescription ?? barber.profileDescription,
+    idBranch: idBranch !== undefined ? idBranch : barber.idBranch,
+    profileDescription: profileDescription !== undefined ? profileDescription : barber.profileDescription,
+    experienceYears: expNum,
+    specialty: specialty !== undefined ? specialty : barber.specialty,
+    style: style !== undefined ? style : barber.style,
+    certificates: certificates !== undefined ? certificates : barber.certificates,
+    philosophy: philosophy !== undefined ? philosophy : barber.philosophy,
   });
 
   return { message: "Cập nhật hồ sơ thành công." };
 };
 
-const { Reel, ReelView, Booking, BarberRatingSummary } = db; 
+const { Reel, ReelView, BarberRatingSummary } = db;
 // Hàm tính toán % thay đổi
 const calculateChange = (current, previous) => {
-    if (previous === 0) return current > 0 ? 100 : 0;
-    return Math.round(((current - previous) / previous) * 100);
+  if (previous === 0) return current > 0 ? 100 : 0;
+  return Math.round(((current - previous) / previous) * 100);
 };
 
 // Hàm lấy thống kê lượt xem Reels
 const getReelViewsStats = async (idBarber, startOfWeek, endOfWeek, startOfLastWeek, endOfLastWeek) => {
-    const barberReels = await Reel.findAll({
-        where: { idBarber },
-        attributes: ['idReel']
-    });
-    const reelIds = barberReels.map(r => r.idReel);
+  const barberReels = await Reel.findAll({
+    where: { idBarber },
+    attributes: ["idReel"],
+  });
+  const reelIds = barberReels.map((r) => r.idReel);
 
-    if (reelIds.length === 0) {
-        return { currentWeekViews: 0, lastWeekViews: 0 };
-    }
+  if (reelIds.length === 0) {
+    return { currentWeekViews: 0, lastWeekViews: 0 };
+  }
 
-    const [currentWeekViews, lastWeekViews] = await Promise.all([
-        ReelView.count({
-            where: {
-                idReel: { [Op.in]: reelIds },
-                lastViewedAt: { [Op.between]: [startOfWeek, endOfWeek] }, 
-            },
-            distinct: true, 
-            col: 'idUser'
-        }),
-        ReelView.count({
-            where: {
-                idReel: { [Op.in]: reelIds },
-                lastViewedAt: { [Op.between]: [startOfLastWeek, endOfLastWeek] },
-            },
-            distinct: true,
-            col: 'idUser'
-        }),
-    ]);
-    
-    return { currentWeekViews, lastWeekViews };
+  const [currentWeekViews, lastWeekViews] = await Promise.all([
+    ReelView.count({
+      where: {
+        idReel: { [Op.in]: reelIds },
+        lastViewedAt: { [Op.between]: [startOfWeek, endOfWeek] },
+      },
+      distinct: true,
+      col: "idUser",
+    }),
+    ReelView.count({
+      where: {
+        idReel: { [Op.in]: reelIds },
+        lastViewedAt: { [Op.between]: [startOfLastWeek, endOfLastWeek] },
+      },
+      distinct: true,
+      col: "idUser",
+    }),
+  ]);
+
+  return { currentWeekViews, lastWeekViews };
 };
 
 export const getDashboardStats = async (idBarber) => {
@@ -587,70 +653,63 @@ export const getDashboardStats = async (idBarber) => {
   const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
   endOfMonth.setHours(23, 59, 59, 999);
 
-  const [
-    weeklyAppointments,
-    totalReelViews,
-    monthlyBookingRevenue,
-    monthlyTipRevenue,
-    ratingSummary,
-  ] = await Promise.all([
-    // 1️⃣ Tổng số lịch hẹn tuần này (Pending + Completed)
-    db.Booking.count({
-      where: {
-        idBarber,
-        bookingDate: { [Op.between]: [startOfWeek, endOfWeek] },
-        status: { [Op.in]: ["Pending", "Completed"] },
-      },
-    }),
-
-    // 2️⃣ Tổng lượt view unique Reel
-    db.ReelView.count({
-      include: [
-        {
-          model: db.Reel,
-          where: { idBarber }, // chỉ tính view của Barber này
-          attributes: [],
+  const [weeklyAppointments, totalReelViews, monthlyBookingRevenue, monthlyTipRevenue, ratingSummary] =
+    await Promise.all([
+      // 1️⃣ Tổng số lịch hẹn tuần này (Pending + Completed)
+      db.Booking.count({
+        where: {
+          idBarber,
+          bookingDate: { [Op.between]: [startOfWeek, endOfWeek] },
+          status: { [Op.in]: ["Pending", "Completed"] },
         },
-      ],
-      distinct: true,
-      col: "idUser", // đếm unique theo idUser
-    }),
+      }),
 
-    // 3️⃣ Doanh thu tháng này: SUM Booking.total (đã thanh toán)
-    db.Booking.sum("total", {
-      where: {
-        idBarber,
-        isPaid: true,
-        bookingDate: { [Op.between]: [startOfMonth, endOfMonth] },
-      },
-    }),
-
-    // 4️⃣ Tổng Tip tháng này (JOIN BookingTip -> Booking)
-    db.BookingTip.sum("tipAmount", {
-      include: [
-        {
-          model: db.Booking,
-          as: "booking", // đúng alias trong association
-          where: {
-            idBarber,
-            isPaid: true,
-            bookingDate: { [Op.between]: [startOfMonth, endOfMonth] },
+      // 2️⃣ Tổng lượt view unique Reel
+      db.ReelView.count({
+        include: [
+          {
+            model: db.Reel,
+            where: { idBarber }, // chỉ tính view của Barber này
+            attributes: [],
           },
-          attributes: [],
+        ],
+        distinct: true,
+        col: "idUser", // đếm unique theo idUser
+      }),
+
+      // 3️⃣ Doanh thu tháng này: SUM Booking.total (đã thanh toán)
+      db.Booking.sum("total", {
+        where: {
+          idBarber,
+          isPaid: true,
+          bookingDate: { [Op.between]: [startOfMonth, endOfMonth] },
         },
-      ],
-    }),
+      }),
 
-    // 5️⃣ Điểm đánh giá trung bình
-    db.BarberRatingSummary.findOne({
-      where: { idBarber },
-      attributes: ["avgRate"],
-    }),
-  ]);
+      // 4️⃣ Tổng Tip tháng này (JOIN BookingTip -> Booking)
+      db.BookingTip.sum("tipAmount", {
+        include: [
+          {
+            model: db.Booking,
+            as: "booking", // đúng alias trong association
+            where: {
+              idBarber,
+              isPaid: true,
+              bookingDate: { [Op.between]: [startOfMonth, endOfMonth] },
+            },
+            attributes: [],
+          },
+        ],
+      }),
 
-  const monthlyRevenue =
-    (parseFloat(monthlyBookingRevenue) || 0) +
-    (parseFloat(monthlyTipRevenue) || 0);
+      // 5️⃣ Điểm đánh giá trung bình
+      db.BarberRatingSummary.findOne({
+        where: { idBarber },
+        attributes: ["avgRate"],
+      }),
+    ]);
+
+  const monthlyRevenue = (parseFloat(monthlyBookingRevenue) || 0) + (parseFloat(monthlyTipRevenue) || 0);
 
   return {
     totalAppointmentsThisWeek: weeklyAppointments,
@@ -660,26 +719,25 @@ export const getDashboardStats = async (idBarber) => {
   };
 };
 
-
 export const getBarbersForDisplay = async () => {
   try {
     const barbers = await db.Barber.findAll({
       include: [
-        { model: db.User,   as: "user",   attributes: ["fullName", "image"] },
+        { model: db.User, as: "user", attributes: ["fullName", "image"] },
         { model: db.Branch, as: "branch", attributes: ["name", "address"] },
         { model: db.BarberRatingSummary, as: "ratingSummary", attributes: ["avgRate"] },
       ],
-      where: { isLocked: false }
+      where: { isLocked: false },
     });
 
-    const result = barbers.map(b => ({
-      idBarber: b.idBarber, 
+    const result = barbers.map((b) => ({
+      idBarber: b.idBarber,
       name: b.user?.fullName || "Chưa có tên",
       branch: b.branch?.name || "Chưa có chi nhánh",
       address: b.branch?.address || "Chưa có địa chỉ",
       description: b.profileDescription || "",
       rating: Number(b.ratingSummary?.avgRate || 0).toFixed(1),
-      avatar: b.user?.image || ""
+      avatar: b.user?.image || "",
     }));
 
     return result;
@@ -688,3 +746,144 @@ export const getBarbersForDisplay = async () => {
     throw new Error("Lỗi server khi lấy danh sách thợ cắt tóc");
   }
 };
+
+export const getHotBarbers = async (page = 1, limit = 4) => {
+  const offset = (page - 1) * limit;
+
+  const { count, rows } = await db.Barber.findAndCountAll({
+    attributes: {
+      include: [[db.Sequelize.fn("COUNT", db.Sequelize.col("Bookings.idBooking")), "totalBookings"]],
+    },
+    include: [
+      {
+        model: db.User,
+        as: "user",
+        attributes: ["fullName", "image"],
+        required: true,
+      },
+      {
+        model: db.Branch,
+        as: "branch",
+        attributes: ["name", "address"],
+        required: false,
+      },
+      {
+        model: db.BarberRatingSummary,
+        as: "ratingSummary",
+        attributes: ["avgRate"],
+        required: false,
+      },
+      {
+        model: db.Booking,
+        as: "Bookings",
+        attributes: [],
+        required: false,
+      },
+    ],
+    where: { isLocked: false },
+    group: ["Barber.idBarber", "user.idUser", "branch.idBranch", "ratingSummary.idBarber"],
+    order: [[db.Sequelize.literal("totalBookings"), "DESC"]],
+    limit,
+    offset,
+    subQuery: false,
+    distinct: true,
+  });
+
+  return {
+    total: Array.isArray(count) ? count.length : count,
+    page,
+    limit,
+    data: rows.map((b) => ({
+      idBarber: b.idBarber,
+      name: b.user?.fullName || "Chưa có tên",
+      avatar: b.user?.image || "",
+      branch: b.branch?.name || "Chưa có chi nhánh",
+      address: b.branch?.address || "",
+      description: b.profileDescription || "",
+      rating: Number(b.ratingSummary?.avgRate || 0).toFixed(1),
+      totalBookings: parseInt(b.get("totalBookings")) || 0,
+    })),
+  };
+};
+
+export const setLockDate = async (idBarber, lockDate) => {
+  const barber = await Barber.findByPk(idBarber);
+  if (!barber) return { success: false, message: "Không tìm thấy thợ cắt tóc!" };
+
+  const lockDay = parseDateSafe(lockDate);
+  if (!lockDay) return { success: false, message: "Ngày khóa không hợp lệ!" };
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  lockDay.setHours(0, 0, 0, 0);
+
+  if (lockDay <= today) {
+    return {
+      success: false,
+      message: "Ngày khóa phải lớn hơn ngày hiện tại ít nhất 1 ngày!",
+    };
+  }
+
+  // Check for future bookings on or after lockDate
+  const conflictBooking = await Booking.findOne({
+    where: {
+      idBarber,
+      bookingDate: { [Op.gte]: lockDay },
+      status: { [Op.in]: ["Pending", "InProgress"] },
+    },
+    order: [["bookingDate", "ASC"]],
+  });
+
+  if (conflictBooking) {
+    const dateStr = new Date(conflictBooking.bookingDate).toISOString().split("T")[0];
+    return {
+      success: false,
+      hasBooking: true,
+      lastBookingDate: conflictBooking.bookingDate,
+      message: `Không thể khóa vì còn lịch hẹn vào ngày ${formatDDMMYYYY(conflictBooking.bookingDate)}.`,
+    };
+  }
+
+  barber.lockDate = lockDay;
+  await barber.save();
+
+  return {
+    success: true,
+    hasBooking: false,
+    message: `Đã cài đặt ngày khóa tài khoản thành công! Tài khoản sẽ bị khóa từ ${formatDDMMYYYY(lockDay)}.`,
+    lockDate: barber.lockDate,
+  };
+};
+
+/**
+ * Cancel a scheduled lock (set lockDate back to null).
+ */
+export const cancelLockDate = async (idBarber) => {
+  const barber = await Barber.findByPk(idBarber);
+  if (!barber) throw new Error("Không tìm thấy thợ cắt tóc!");
+  if (!barber.lockDate) throw new Error("Thợ này chưa có ngày khóa được cài đặt!");
+
+  barber.lockDate = null;
+  await barber.save();
+
+  return { success: true, message: "Đã hủy lịch khóa tài khoản thành công!" };
+};
+
+// ── helpers ──────────────────────────────────────────────────────────────────
+
+function parseDateSafe(input) {
+  if (!input) return null;
+  const d = new Date(input);
+  if (!isNaN(d.getTime())) return d;
+  const parts = String(input).split("-");
+  if (parts.length === 3) {
+    const [y, m, day] = parts.map(Number);
+    return new Date(y, m - 1, day);
+  }
+  return null;
+}
+
+function formatDDMMYYYY(d) {
+  if (!d) return "";
+  return new Date(d).toLocaleDateString("vi-VN");
+}

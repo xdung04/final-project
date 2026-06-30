@@ -1,18 +1,19 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import styles from "./UploadVideoDialog.module.scss";
 import { uploadReel } from "~/services/reelService";
 import { getHashtags } from "~/services/hashtagService";
 import { useAuth } from "~/context/AuthContext";
+import { X, Film, Image as ImageIcon, Loader2, UploadCloud } from "lucide-react";
 
 function UploadVideoDialog({ open, onClose, onUpload }) {
-  const { accessToken,user, isLogin } = useAuth();
+  const { user, isLogin } = useAuth();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [videoFile, setVideoFile] = useState(null);
   const [thumbnailFile, setThumbnailFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
-  const idBarber = user.idUser;
+  const idBarber = user?.idUser;
 
   useEffect(() => {
     const match = title.match(/#(\w+)$/);
@@ -52,7 +53,7 @@ function UploadVideoDialog({ open, onClose, onUpload }) {
         return;
       }
 
-      if (!accessToken) {
+      if (!isLogin) {
         alert("Vui lòng đăng nhập để tải video lên!");
         return;
       }
@@ -72,7 +73,7 @@ function UploadVideoDialog({ open, onClose, onUpload }) {
       formData.append("hashtags", JSON.stringify(extractedTags));
 
       try {
-        const newReel = await uploadReel(formData, accessToken);
+        const newReel = await uploadReel(formData);
         onUpload(newReel);
         onClose();
       } catch (err) {
@@ -90,14 +91,13 @@ function UploadVideoDialog({ open, onClose, onUpload }) {
     };
   };
 
-
   return (
     <div className={styles.overlay}>
       <div className={styles.dialog}>
         <div className={styles.header}>
-          <h2>Tải lên video tay nghề</h2>
+          <h2>Tải Lên Video Tay Nghề</h2>
           <button className={styles.closeBtn} onClick={onClose} disabled={loading}>
-            ✕
+            <X size={24} />
           </button>
         </div>
         <p className={styles.description}>Chia sẻ kỹ năng và thu hút khách hàng mới</p>
@@ -110,18 +110,20 @@ function UploadVideoDialog({ open, onClose, onUpload }) {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               disabled={loading}
+              placeholder="VD: Kiểu tóc Mullet cực cháy #mullet #barber"
             />
             {/* ✅ Hiển thị gợi ý hashtag */}
             {suggestions.length > 0 && (
               <ul className={styles.suggestionList}>
                 {suggestions.map((tag) => (
                   <li key={tag.idHashtag} onClick={() => handleSelectHashtag(tag)}>
-                    #{tag.name}
+                    <span className={styles.hashMark}>#</span>{tag.name}
                   </li>
                 ))}
               </ul>
             )}
           </div>
+
           <div className={styles.formGroup}>
             <label>Mô tả</label>
             <textarea
@@ -129,27 +131,42 @@ function UploadVideoDialog({ open, onClose, onUpload }) {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               disabled={loading}
+              placeholder="Thêm mô tả chi tiết cho video..."
             />
           </div>
-          <div className={styles.formGroup}>
-            <label>Chọn video</label>
-            <input
-              type="file"
-              accept="video/*"
-              onChange={(e) => setVideoFile(e.target.files[0])}
-              disabled={loading}
-            />
-            {videoFile && <p className={styles.fileName}>{videoFile.name}</p>}
-          </div>
-          <div className={styles.formGroup}>
-            <label>Chọn thumbnail (tùy chọn)</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setThumbnailFile(e.target.files[0])}
-              disabled={loading}
-            />
-            {thumbnailFile && <p className={styles.fileName}>{thumbnailFile.name}</p>}
+
+          <div className={styles.fileInputsGrid}>
+            <div className={styles.formGroup}>
+              <label>File Video (Tối đa 1m30s)</label>
+              <label className={`${styles.fileUploadLabel} ${videoFile ? styles.hasFile : ''}`}>
+                <Film size={20} />
+                <span>{videoFile ? "Đổi Video Khác" : "Chọn Video"}</span>
+                <input
+                  type="file"
+                  accept="video/*"
+                  onChange={(e) => setVideoFile(e.target.files[0])}
+                  disabled={loading}
+                  style={{ display: "none" }}
+                />
+              </label>
+              {videoFile && <p className={styles.fileName} title={videoFile.name}>{videoFile.name}</p>}
+            </div>
+
+            <div className={styles.formGroup}>
+              <label>Thumbnail (Tùy chọn)</label>
+              <label className={`${styles.fileUploadLabel} ${thumbnailFile ? styles.hasFile : ''}`}>
+                <ImageIcon size={20} />
+                <span>{thumbnailFile ? "Đổi Ảnh Khác" : "Chọn Ảnh Bìa"}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setThumbnailFile(e.target.files[0])}
+                  disabled={loading}
+                  style={{ display: "none" }}
+                />
+              </label>
+              {thumbnailFile && <p className={styles.fileName} title={thumbnailFile.name}>{thumbnailFile.name}</p>}
+            </div>
           </div>
         </div>
 
@@ -158,7 +175,11 @@ function UploadVideoDialog({ open, onClose, onUpload }) {
             Hủy
           </button>
           <button className={styles.submitBtn} onClick={handleSubmit} disabled={loading}>
-            {loading ? "Đang tải..." : "Tải lên"}
+            {loading ? (
+              <><Loader2 size={18} className={styles.spin} /> Đang tải lên...</>
+            ) : (
+              <><UploadCloud size={18} /> Tải Lên</>
+            )}
           </button>
         </div>
       </div>

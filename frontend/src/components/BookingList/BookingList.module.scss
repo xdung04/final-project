@@ -1,150 +1,233 @@
-$accent: #a9744f;      // nâu đồng sang trọng
-$accent-hover: #8a5f3c;
-$bg-light: #ffffff;    // nền trắng
-$bg-section: #f5f5f5;  // xám nhạt giúp phân vùng
-$text: #1a1a1a;        // chữ đen
-$text-muted: #555555;  // chữ phụ
+// Bảng màu Luxury
+$gold-primary: #D4AF37;
+$gold-dark: #AA8628;
+$charcoal-dark: #121212;
+$charcoal-light: #2A2A2A;
+$bg-white: #FFFFFF;
+$bg-cream: #FAF9F6;
+$border-color: #EAEAEA;
+$text-main: #333333;
+$text-muted: #888888;
 
-.list {
-  flex: 2;
-  background-color: $bg-light;
-  border-radius: 16px;
-  padding: 20px;
-  overflow: auto;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+.listWrapper {
+  width: 100%;
+  max-width: 100%; // Ép căng hết không gian màn hình lớn
+  animation: fadeIn 0.4s ease-in-out;
+}
 
-  h2 {
-    color: $accent;
-    margin-bottom: 16px;
-    font-weight: 700;
-    font-size: 1.3rem;
-    letter-spacing: 0.5px;
-  }
+.title {
+  color: $charcoal-dark;
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: $gold-primary;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.tableContainer {
+  background: $bg-white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+  border: 1px solid $border-color;
+  width: 100%;
+  overflow-x: auto; /* Phòng hờ màn hình quá bé, còn lại sẽ tự fit */
 
   table {
     width: 100%;
     border-collapse: collapse;
-    color: $text;
-    font-size: 15px;
+    font-size: 13.5px; // Giảm nhẹ 0.5px để chữ gom gọn lại
+    text-align: left;
+    table-layout: auto; /* Để trình duyệt tự tính toán phân bổ độ rộng cột */
+    
+    // ❌ BỎ white-space: nowrap toàn cục ở đây để chống tràn dòng
+  }
 
-    th, td {
-      padding: 12px 10px;
-      text-align: left;
+  th {
+    // 👇 Giảm padding ngang từ 16px xuống 10px để tiết kiệm hàng trăm pixel bề ngang
+    padding: 12px 10px; 
+    background-color: $bg-cream;
+    color: $text-muted;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 11.5px;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid $border-color;
+
+    .thContent {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap; // Tiêu đề th thì giữ nguyên dòng cho đẹp
     }
+  }
 
-    th {
-      border-bottom: 2px solid $accent;
-      font-weight: 600;
-      color: $accent;
-      background-color: #fafafa;
-    }
+  td {
+    // 👇 Gom gọn khoảng cách các ô dữ liệu
+    padding: 10px; 
+    border-bottom: 1px solid #F5F5F5;
+    color: $text-main;
+    vertical-align: middle;
+  }
 
-    tr:nth-child(even) {
-      background-color: #fdfdfd;
-    }
+  tr:last-child td {
+    border-bottom: none;
+  }
 
-    tr:hover {
-      background-color: #f8f3ef; /* nhấn nhẹ tone nâu khi hover */
-      transition: background-color 0.2s ease-in-out;
-    }
+  tr:hover {
+    background-color: rgba(212, 175, 55, 0.02);
+    transition: background-color 0.15s ease;
+  }
+}
 
-    td {
-      color: $text-muted;
-    }
+// ── Định hình độ rộng/kiểu hiển thị từng cột để triệt tiêu scroll ngang ──
 
-    button {
-      background-color: $accent;
-      border: none;
-      color: white;
-      padding: 8px 14px;
-      border-radius: 6px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: 0.2s ease;
+.timeCell {
+  font-weight: 700;
+  color: $charcoal-dark;
+  font-size: 14px;
+  white-space: nowrap; // Giờ giấc bắt buộc thẳng hàng
+}
 
-      &:hover {
-        background-color: $accent-hover;
-        transform: translateY(-1px);
-      }
+.boldCell {
+  font-weight: 600;
+  color: $charcoal-dark;
+  white-space: nowrap; // Tên khách không cho xuống dòng bừa bãi
+}
 
-      &:active {
-        transform: scale(0.97);
-      }
+// Cột thợ cắt tóc
+td:nth-child(3) {
+  white-space: nowrap;
+}
+
+.truncateCell {
+  max-width: 160px; // Thu hẹp độ rộng cột dịch vụ lại một chút
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap; // Nếu dài quá tự động sinh dấu ba chấm (...)
+  color: $text-muted;
+}
+
+.textMuted {
+  color: $text-muted;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 40px !important;
+  color: $text-muted;
+  font-style: italic;
+}
+
+// Chi tiết hóa đơn siêu gọn
+.billDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 2px; // Ép khít khoảng cách dòng bill
+  font-size: 12px;
+  min-width: 145px; // Bóp nhỏ chiều rộng tối thiểu cột bill
+  
+  .billRow {
+    display: flex;
+    justify-content: space-between;
+    color: $text-muted;
+    white-space: nowrap;
+
+    &.discount { color: #E67E22; }
+    
+    &.total {
+      margin-top: 2px;
+      padding-top: 2px;
+      border-top: 1px dashed #eee;
+      font-weight: 700;
+      color: $charcoal-dark;
+      font-size: 13.5px;
     }
   }
 }
 
-.paid {
-  color: #27ae60; // xanh lá xác nhận thanh toán
+// Huy hiệu (Badges) mềm mại
+.badge {
+  padding: 4px 10px; // Thu nhỏ badge lại chút cho thanh thoát
+  border-radius: 50px;
+  font-size: 11.5px;
   font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap; // Chữ trong badge không được gãy dòng
 }
 
-.pending {
-  color: #e67e22; // cam sáng dễ nhận biết
-  font-weight: 600;
+// Trạng thái (Status)
+.status_Completed { background: #E8F5E9; color: #2E7D32; }
+.status_Pending { background: #FFF3E0; color: #E65100; }
+.status_InProgress { background: #E3F2FD; color: #1565C0; }
+.status_Cancelled { background: #F5F5F5; color: #9E9E9E; text-decoration: line-through; }
+
+// Thanh toán
+.paid { background: #E8F5E9; color: #2E7D32; }
+.unpaid { background: #FFEBEE; color: #C62828; }
+
+// Thao tác (Buttons)
+.actionCell {
+  text-align: right;
+  width: 1%; // Kỹ thuật ép cột Action vừa khít theo độ rộng của button bên trong
 }
 
-//
-.paid {
-  color: green;
-  font-weight: bold;
+.alignRight {
+  text-align: right;
 }
 
-.unpaid {
-  color: red;
-  font-weight: bold;
+.actionButtons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  white-space: nowrap; // Giữ các nút thao tác luôn nằm trên một dòng ngang
+
+  button {
+    padding: 6px 12px; // Bóp nhỏ nút bấm lại một chút
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 12.5px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+
+    &:active { transform: scale(0.96); }
+  }
+
+  .btnCheckout {
+    background: $charcoal-dark;
+    color: #fff;
+    &:hover {
+      background: $gold-primary;
+      box-shadow: 0 4px 8px rgba(212, 175, 55, 0.25);
+    }
+  }
+
+  .btnCheckin {
+    background: #fff;
+    border-color: $charcoal-dark;
+    color: $charcoal-dark;
+    &:hover { background: $bg-cream; }
+  }
+
+  .btnCancel {
+    background: #fff;
+    border-color: #FFEBEE;
+    color: #C62828;
+    &:hover { background: #FFEBEE; }
+  }
 }
 
-.completed {
-  color: green;
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
-
-.pending {
-  color: orange;
-}
-
-.cancelled {
-  color: gray;
-  text-decoration: line-through;
-}
-
-.cancelBtn {
-  background-color: #ff4d4f;
-  color: white;
-  border: none;
-  padding: 4px 8px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.cancelBtn:hover {
-  background-color: #d9363e;
-}
-
-td:nth-child(4) { // cột dịch vụ
-  max-width: 180px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-// // Thêm cuộn
-// .tableContainer {
-//   max-height: 450px; /* chiều cao tối đa */
-//   overflow-y: auto;
-//   border: 1px solid #ddd;
-//   border-radius: 8px;
-// }
-
-// .tableContainer table {
-//   width: 100%;
-//   border-collapse: collapse;
-// }
-
-// .tableContainer th,
-// .tableContainer td {
-//   padding: 8px 12px;
-//   border-bottom: 1px solid #eee;
-//   text-align: left;
-// }
-

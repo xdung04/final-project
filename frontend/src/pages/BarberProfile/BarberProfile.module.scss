@@ -1,163 +1,309 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;700&family=Bebas+Neue&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:wght@300;400;500;700&family=Bebas+Neue&display=swap');
 
 :root {
-  --bg-white:  #ffffff;
-  --bg-cream:  #fdfbf8;
-  --gold:      #b8966a;
-  --gold-dark: #967a54;
-  --charcoal:  #2c2c2c;
-  --text-dim:  #666666;
-  --border:    #e0d7cc;
-
-  --ff-serif:  'Playfair Display', serif;
-  --ff-display:'Bebas Neue', sans-serif;
-  --ff-body:   'DM Sans', sans-serif;
+  --bp-black:     #0a0a0a;
+  --bp-charcoal:  #1a1a1a;
+  --bp-gold:      #b8966a;
+  --bp-gold-dark: #967a54;
+  --bp-cream:     #fdfbf8;
+  --bp-white:     #ffffff;
+  --bp-border:    #e8e0d4;
+  --bp-text:      #2c2c2c;
+  --bp-muted:     #8a8070;
+  --bp-ff-serif:   'Playfair Display', Georgia, serif;
+  --bp-ff-display: 'Bebas Neue', sans-serif;
+  --bp-ff-body:    'DM Sans', sans-serif;
 }
 
-.container {
+/* ─── Page ───────────────────────────────────────────────────────────────── */
+.page {
+  background: var(--bp-white);
+  color: var(--bp-text);
+  font-family: var(--bp-ff-body);
+  min-height: 100vh;
+  padding-bottom: 80px;
+}
+
+.grain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+}
+
+/* ─── PROFILE CARD ───────────────────────────────────────────────────────── */
+/* 3 cột: ảnh cố định | thông tin cá nhân | chi tiết nghề nghiệp             */
+/* Toàn bộ nằm gọn trong viewport, padding-top tính cả header site           */
+.profileCard {
+  display: grid;
+  grid-template-columns: 220px 280px 1fr;
+  gap: 0;
   max-width: 1100px;
-  margin: 60px auto;
-  background: var(--bg-white);
-  padding: 0;
-  font-family: var(--ff-body);
-  position: relative;
-}
-
-/* Lớp phủ hạt tinh tế */
-.grainOverlay {
-  position: fixed; inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.02'/%3E%3C/svg%3E");
-  pointer-events: none; z-index: 1;
-}
-
-.profileSection {
-  display: flex;
-  gap: 40px;
-  padding: 40px;
-  background: var(--bg-cream);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  align-items: flex-start;
+  margin: 0 auto;
+  padding: 48px 40px 40px;
+  min-height: calc(100vh - 120px); /* gần đủ 1 màn hình */
+  align-items: start;
   position: relative;
   z-index: 2;
 
-  @media (max-width: 768px) {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
+  /* Đường dọc phân cách giữa các cột */
+  .colInfo {
+    border-left: 1px solid var(--bp-border);
+    border-right: 1px solid var(--bp-border);
   }
+
+  @media (max-width: 900px) {
+    grid-template-columns: 180px 1fr;
+    min-height: auto;
+
+    .colDetail {
+      grid-column: 1 / -1;
+      border-top: 1px solid var(--bp-border);
+      padding-top: 24px;
+      margin-top: 24px;
+    }
+  }
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+    padding: 24px 20px;
+
+    .colInfo {
+      border-left: none;
+      border-right: none;
+      border-top: 1px solid var(--bp-border);
+      border-bottom: 1px solid var(--bp-border);
+    }
+  }
+}
+
+/* ─── CỘT 1 — Ảnh ────────────────────────────────────────────────────────── */
+.colAvatar {
+  padding-right: 32px;
 }
 
 .avatar {
-  width: 200px;
-  height: 250px; /* Dáng ảnh chân dung đứng sẽ sang hơn */
+  width: 100%;
+  aspect-ratio: 3 / 4;
   object-fit: cover;
-  border: 1px solid var(--gold);
-  padding: 8px;
-  background: white;
-  box-shadow: 10px 10px 0px rgba(184, 150, 106, 0.1);
+  object-position: center top;
+  display: block;
+  border: 1px solid var(--bp-border);
+  /* Box shadow lệch nhẹ theo phong cách editorial */
+  box-shadow: 8px 8px 0 rgba(184, 150, 106, 0.12);
 }
 
-.info {
-  flex: 1;
-}
-
-.name {
-  font-family: var(--ff-serif);
-  font-size: 42px;
-  color: var(--charcoal);
-  margin-bottom: 10px;
-  letter-spacing: -1px;
+/* ─── CỘT 2 — Thông tin cá nhân ─────────────────────────────────────────── */
+.colInfo {
+  padding: 0 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
 .branch {
-  font-family: var(--ff-display);
-  color: var(--gold-dark);
+  font-family: var(--bp-ff-display);
+  font-size: 11px;
+  letter-spacing: 3.5px;
+  color: var(--bp-gold);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.name {
+  font-family: var(--bp-ff-serif);
+  font-size: clamp(28px, 3.5vw, 42px);
+  font-weight: 900;
+  color: var(--bp-charcoal);
+  line-height: 1.05;
+  letter-spacing: -0.5px;
+  margin-bottom: 16px;
+}
+
+/* Rating row: sao + số + lượt */
+.ratingRow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 28px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--bp-border);
+}
+
+.stars {
+  color: var(--bp-gold);
+  font-size: 14px;
+  letter-spacing: 1px;
+}
+
+.ratingNum {
+  font-family: var(--bp-ff-display);
   font-size: 16px;
-  letter-spacing: 2px;
-  margin-bottom: 15px;
+  color: var(--bp-charcoal);
+  letter-spacing: 1px;
+}
+
+.ratingCount {
+  font-size: 12px;
+  color: var(--bp-muted);
+}
+
+/* Danh sách meta: kinh nghiệm / email / SĐT */
+.metaList {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.metaItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.metaLabel {
+  font-family: var(--bp-ff-display);
+  font-size: 9px;
+  letter-spacing: 2.5px;
+  color: var(--bp-gold-dark);
   text-transform: uppercase;
 }
 
-.contact {
-  color: var(--text-dim);
-  font-size: 14px;
-  margin-bottom: 20px;
+.metaValue {
+  font-size: 13px;
+  color: var(--bp-text);
+  line-height: 1.4;
+}
+
+/* ─── CỘT 3 — Chi tiết nghề nghiệp ──────────────────────────────────────── */
+.colDetail {
+  padding-left: 36px;
   display: flex;
-  gap: 20px;
-  
-  @media (max-width: 768px) {
-    justify-content: center;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Mỗi trường là 1 block: label trên, value dưới, có border-bottom */
+.detailRow {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--bp-border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  &:first-child {
+    padding-top: 0;
+  }
+
+  &:last-child {
+    border-bottom: none;
   }
 }
 
-.rating {
-  display: inline-block;
-  background: var(--charcoal);
-  color: var(--gold);
-  padding: 6px 16px;
-  font-family: var(--ff-display);
-  font-size: 14px;
-  letter-spacing: 1px;
-  margin-bottom: 25px;
+.detailLabel {
+  font-family: var(--bp-ff-display);
+  font-size: 9px;
+  letter-spacing: 2.5px;
+  color: var(--bp-gold-dark);
+  text-transform: uppercase;
 }
 
-.descBox {
-  h3 {
-    font-family: var(--ff-display);
-    font-size: 14px;
-    color: var(--gold-dark);
-    letter-spacing: 2px;
-    margin-bottom: 10px;
-    text-transform: uppercase;
-    border-bottom: 1px solid var(--border);
-    display: inline-block;
-    padding-bottom: 4px;
-  }
+.detailValue {
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--bp-text);
+  /* Các trường dài (story) clamp 3 dòng để không phá layout 1 màn hình */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-.desc {
-  white-space: pre-wrap;
-  color: var(--charcoal);
-  font-size: 15px;
-  line-height: 1.8;
-  font-style: italic; /* Tạo cảm giác như trích dẫn nghệ thuật */
+/* Story & Expertise dùng font serif italic */
+.detailRow:has(.detailLabel:last-of-type) .detailValue {
+  font-family: var(--bp-ff-serif);
+  font-style: italic;
 }
 
-/* ===== VIDEO SECTION ===== */
+/* Chứng chỉ — list thay vì paragraph */
+.certList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.certItem {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--bp-text);
+  line-height: 1.5;
+}
+
+.certDot {
+  color: var(--bp-gold);
+  font-size: 7px;
+  flex-shrink: 0;
+}
+
+/* ─── VIDEO SECTION ──────────────────────────────────────────────────────── */
 .videoSection {
-  margin-top: 60px;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 40px 0;
   position: relative;
   z-index: 2;
-}
 
-.videoTitle {
-  font-family: var(--ff-serif);
-  font-size: 28px;
-  text-align: center;
-  margin-bottom: 40px;
-  color: var(--charcoal);
-  
-  &::after {
-    content: "";
-    display: block;
-    width: 40px;
-    height: 2px;
-    background: var(--gold);
-    margin: 15px auto 0;
+  @media (max-width: 768px) {
+    padding: 0 20px;
   }
 }
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 24px;
+.sectionHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--bp-border);
 }
 
-.loading, .empty {
-  text-align: center;
-  font-family: var(--ff-serif);
-  color: var(--text-dim);
-  padding: 100px 0;
-  font-size: 18px;
+.sectionTitle {
+  font-family: var(--bp-ff-serif);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--bp-charcoal);
+}
+
+.sectionSub {
+  font-size: 11px;
+  color: var(--bp-muted);
+  letter-spacing: 0.5px;
+}
+
+.videoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
+}
+
+/* ─── States ─────────────────────────────────────────────────────────────── */
+.stateWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 0;
+}
+
+.stateText {
+  font-family: var(--bp-ff-display);
+  font-size: 13px;
+  letter-spacing: 3px;
+  color: var(--bp-muted);
+  text-transform: uppercase;
 }

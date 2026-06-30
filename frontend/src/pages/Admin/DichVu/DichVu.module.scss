@@ -1,180 +1,270 @@
-/* ======================= WRAPPER & HEADER ======================= */
+// DichVu.module.scss
+// Admin — Dịch Vụ | NOULE Barber
+// Design: NOULE gold/dark — đồng bộ TongQuan
+
+$gold:        #C9A84C;
+$gold-hover:  #BA9A3E;
+$gold-dim:    #8A6A28;
+$gold-faint:  rgba(201, 168, 76, 0.15);
+$gold-border: rgba(201, 168, 76, 0.3);
+
+$ink:         #1A1612;
+$ink-text:    #F5F0E8;
+$ink-muted:   rgba(245, 240, 232, 0.5);
+
+$page-bg:     #F7F4EF;
+$card-bg:     #FFFFFF;
+$surface-2:   #F9F6F1;
+
+$border:      1px solid rgba(0, 0, 0, 0.07);
+$border-md:   rgba(0, 0, 0, 0.1);
+
+$green:       #3B6D11;
+$green-bg:    #EAF3DE;
+$green-bd:    rgba(59, 109, 17, 0.25);
+
+$radius-sm:   6px;
+$radius-md:   10px;
+$radius-lg:   14px;
+
+// ── Wrapper (khớp TongQuan .dashboardWrapper) ─────────────────────────────────
 .serviceList {
-  animation: fadeIn 0.4s ease;
-  padding-bottom: 30px;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
-  border-bottom: 1px solid var(--border, #e0d7cc);
-  padding-bottom: 15px;
+  flex-direction: column;
+  gap: 24px;
+  background: $page-bg;
+  min-height: 100vh;
+  padding-bottom: 48px;
+  color: $ink;
+  animation: fadeInPage 0.4s ease forwards;
+}
 
-  .titleBox {
+@keyframes fadeInPage {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+// ── Page heading (khớp TongQuan .pageHead) ────────────────────────────────────
+.pageHead {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding-bottom: 22px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+
+  &__eyebrow {
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: $gold-dim;
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+
+  &__title {
+    font-size: 28px;
+    font-weight: 600;
+    color: $ink;
+    line-height: 1.1;
+    font-family: Georgia, 'Times New Roman', serif;
+    margin: 0;
+
+    em { color: $gold; font-style: italic; }
+  }
+}
+
+// ── Section card (khớp TongQuan .sectionCard) ─────────────────────────────────
+.sectionCard {
+  background: $card-bg;
+  border: $border;
+  border-radius: $radius-lg;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+// ── Section head dark (khớp TongQuan .sectionHead) ────────────────────────────
+.sectionHead {
+  background: $ink;
+  padding: 13px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid $gold-border;
+  flex-shrink: 0;
+
+  &__left {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 9px;
+  }
 
-    .titleIcon {
-      color: var(--gold-dark, #a37c52);
-    }
+  &__icon { color: $gold; }
 
-    h2 {
-      font-family: var(--ff-serif, 'Playfair Display', serif);
-      font-size: 26px;
-      font-weight: 700;
-      color: var(--charcoal, #2c2c2c);
-      margin: 0;
-    }
+  &__title {
+    font-size: 13px;
+    font-weight: 600;
+    color: $ink-text;
+    font-family: Georgia, 'Times New Roman', serif;
+    letter-spacing: 0.01em;
   }
 }
 
+// ── Add Button ────────────────────────────────────────────────────────────────
 .addButton {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  background: var(--charcoal, #2c2c2c);
-  color: var(--bg-white, #ffffff);
+  gap: 7px;
+  padding: 8px 18px;
+  font-size: 12px;
+  font-weight: 600;
+  background: $gold;
+  color: $ink;
   border: none;
-  border-radius: 8px;
-  padding: 10px 20px;
-  font-size: 14px;
+  border-radius: $radius-sm;
   cursor: pointer;
-  font-weight: 500;
-  letter-spacing: 0.5px;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  font-family: inherit;
+  transition: background 0.15s;
 
-  &:hover {
-    background: var(--gold-dark, #a37c52);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(184, 150, 106, 0.3);
-  }
+  &:hover { background: $gold-hover; }
 }
 
-/* ======================= TABLE STYLES ======================= */
-.tableContainer {
-  background: var(--bg-white, #ffffff);
-  border: 1px solid var(--border, #e0d7cc);
-  border-radius: 12px;
-  overflow: hidden; /* Cắt viền bo góc */
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
-}
+// ── Table (khớp TongQuan .table) ──────────────────────────────────────────────
+.tableWrap { overflow-x: auto; }
 
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
-  text-align: left;
+  font-family: inherit;
+
+  th, td {
+    padding: 12px 18px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    text-align: left;
+  }
 
   th {
-    background: var(--bg-cream, #fdfbf8);
-    padding: 16px;
-    color: var(--charcoal, #2c2c2c);
-    font-family: var(--ff-display, 'Bebas Neue', sans-serif);
-    font-weight: 500;
-    letter-spacing: 1px;
+    font-size: 10px;
+    font-weight: 600;
     text-transform: uppercase;
-    border-bottom: 1px solid var(--border, #e0d7cc);
+    letter-spacing: 0.09em;
+    color: #888;
+    padding-top: 16px;
+    padding-bottom: 10px;
+    background: $surface-2;
   }
 
-  td {
-    padding: 16px;
-    border-bottom: 1px solid var(--border, #e0d7cc);
-    color: var(--charcoal, #2c2c2c);
-    vertical-align: middle;
+  tbody tr {
+    transition: background 0.1s;
+
+    &:hover td      { background: #faf8f4; }
+    &:last-child td { border-bottom: none; }
   }
 
-  tr:last-child td {
-    border-bottom: none;
-  }
+  td { font-size: 13px; color: $ink; }
 
-  tr {
-    transition: background 0.2s ease;
-    
-    &:hover td {
-      background: rgba(184, 150, 106, 0.03);
-    }
-  }
-
-  .fw-bold {
-    font-weight: 600;
-    font-size: 15px;
-  }
-
-  .desc {
-    max-width: 250px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    color: var(--text-dim, #666);
-  }
-
-  .price {
-    font-weight: 600;
-    color: var(--gold-dark, #a37c52);
-  }
-
-  .textCenter {
-    text-align: center;
-  }
+  .textCenter { text-align: center; }
 }
 
-/* ======================= BADGES & BUTTONS ======================= */
-.statusBadge {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-family: var(--ff-display, 'Bebas Neue', sans-serif);
+// ── Cells ─────────────────────────────────────────────────────────────────────
+.serviceName {
   font-size: 13px;
-  letter-spacing: 0.5px;
+  font-weight: 600;
+  color: $ink;
+}
+
+.desc {
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #888;
+  font-size: 12px;
+}
+
+.price {
+  font-size: 14px;
+  font-weight: 600;
+  color: $gold-dim;
+  font-family: Georgia, 'Times New Roman', serif;
+  white-space: nowrap;
+}
+
+// ── Status Badge ──────────────────────────────────────────────────────────────
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
   white-space: nowrap;
 
+  &::before {
+    content: '';
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
   &.active {
-    background: rgba(184, 150, 106, 0.1);
-    color: var(--gold-dark, #a37c52);
-    border: 1px solid rgba(184, 150, 106, 0.3);
+    background: $green-bg;
+    border: 1px solid $green-bd;
+    color: $green;
+
+    &::before { background: #63C142; }
   }
 
   &.inactive {
-    background: var(--bg-cream, #fdfbf8);
-    color: var(--text-dim, #888);
-    border: 1px solid #ddd;
+    background: $surface-2;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    color: #aaa;
+
+    &::before { background: #C0BDB6; }
   }
 }
 
+// ── Edit Button ───────────────────────────────────────────────────────────────
 .editBtn {
+  width: 30px;
+  height: 30px;
+  border-radius: $radius-sm;
+  border: 1px solid rgba(0, 0, 0, 0.08);
   background: transparent;
-  border: 1px solid transparent;
+  color: #aaa;
   cursor: pointer;
-  color: var(--text-dim, #666);
-  padding: 8px;
-  border-radius: 6px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  transition: all 0.12s;
 
   &:hover {
-    color: var(--gold-dark, #a37c52);
-    background: rgba(184, 150, 106, 0.1);
-    border-color: rgba(184, 150, 106, 0.2);
-    transform: scale(1.05);
+    background: $gold-faint;
+    border-color: $gold-border;
+    color: $gold-dim;
   }
 }
 
-/* ======================= LOADING ======================= */
-.loading {
-  text-align: center;
-  padding: 50px;
-  font-family: var(--ff-serif, 'Playfair Display', serif);
-  color: var(--gold-dark, #a37c52);
-  font-size: 18px;
+// ── Loading / Empty ───────────────────────────────────────────────────────────
+.loading, .empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  font-size: 13px;
+  color: #bbb;
+  font-style: italic;
+}
+
+// ── Responsive ────────────────────────────────────────────────────────────────
+@media (max-width: 768px) {
+  .pageHead {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+
+    &__title { font-size: 22px; }
+  }
 }

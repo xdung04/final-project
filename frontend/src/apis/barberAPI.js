@@ -22,6 +22,14 @@ export const BarberAPI = {
     return await barberService.unlockBarber({ idBarber });
   },
 
+  setLockDate: async (idBarber, lockDate) => {
+    return await barberService.setBarberLockDate(idBarber, lockDate);
+  },
+
+  cancelLockDate: async (idBarber) => {
+    return await barberService.cancelBarberLockDate(idBarber);
+  },
+
   getReward: async (idBarber) => {
     const result = await barberService.getBarberReward(idBarber);
     return result;
@@ -48,8 +56,8 @@ export const BarberAPI = {
   updateProfile: async (idBarber, payload, token) => {
     return await barberService.updateProfile(idBarber, payload, token);
   },
-  getBarberForHome : async () => {
+  getBarberForHome: async () => {
     const result = await barberService.getBarbersForHome();
     return result;
-  }
+  },
 };

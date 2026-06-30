@@ -4,44 +4,97 @@ import { Model } from "sequelize";
 export default (sequelize, DataTypes) => {
   class Voucher extends Model {
     static associate(models) {
-      Voucher.belongsToMany(models.Customer, {
-        through: models.CustomerVoucher,
-        foreignKey: "idVoucher",
-        otherKey: "idCustomer",
-        as: "customers",
-      });
       Voucher.hasMany(models.CustomerVoucher, {
-      foreignKey: "idVoucher",
-      as: "customerVouchers",
-    });
+        foreignKey: "voucher_id",
+        as: "customerVouchers",
+      });
     }
   }
 
   Voucher.init(
     {
-      idVoucher: {
+      id: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
       },
-      title: { type: DataTypes.STRING, allowNull: false },
-      discountPercent: { type: DataTypes.DECIMAL(5, 2), allowNull: false },
-      pointCost: { type: DataTypes.INTEGER, allowNull: false },
-      totalQuantity: { type: DataTypes.INTEGER, allowNull: true },
-      expiryDate: { type: DataTypes.DATE, allowNull: false },
-      status: {                    // Trạng thái voucher
-        type: DataTypes.BOOLEAN,
+      name: {
+        type: DataTypes.STRING,
         allowNull: false,
+      },
+      type: {
+        type: DataTypes.ENUM(
+          "NEW_CUSTOMER",
+          "POINTS_EXCHANGE",
+          "RETENTION",
+          "CAMPAIGN",
+        ),
+        allowNull: false,
+      },
+      description: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      discount_percent: {
+        type: DataTypes.DECIMAL(5, 2),
+        allowNull: true,
+      },
+      discount_amount: {
+        type: DataTypes.DECIMAL(12, 2),
+        allowNull: true,
+        validate: {
+          min: 0,
+        },
+      },
+      max_discount_amount: {
+        type: DataTypes.DECIMAL(12, 2),
+        allowNull: true,
+      },
+      min_invoice_amount: {
+        type: DataTypes.DECIMAL(12, 2),
+        defaultValue: 0,
+      },
+      is_active: {
+        type: DataTypes.BOOLEAN,
         defaultValue: true,
       },
-      description: { type: DataTypes.STRING, allowNull: true },
+      points_required: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
+      valid_days: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
+      max_usage_per_customer: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        defaultValue: null,
+      },
+      start_date: {
+        type: DataTypes.DATEONLY,
+        allowNull: true,
+      },
+      end_date: {
+        type: DataTypes.DATEONLY,
+        allowNull: true,
+      },
+      total_quantity: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
+      issued_count: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+      },
     },
     {
       sequelize,
       modelName: "Voucher",
       tableName: "vouchers",
       timestamps: true,
-    }
+      underscored: true,
+    },
   );
 
   return Voucher;

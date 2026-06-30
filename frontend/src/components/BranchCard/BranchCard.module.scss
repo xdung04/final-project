@@ -231,3 +231,28 @@
   }
   /* ... các style khác giữ nguyên ... */
 }
+
+/* ── Service Tags ── */
+.serviceTagList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.serviceTag {
+  padding: 3px 10px;
+  background: rgba(184, 150, 106, 0.08);
+  border: 1px solid rgba(184, 150, 106, 0.2);
+  border-radius: 20px;
+  font-size: 11px;
+  color: var(--gold-dark, #967a54);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.serviceTagMore {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+  color: #64748b;
+}

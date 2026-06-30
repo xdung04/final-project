@@ -1,427 +1,369 @@
-$accent: #8b5e3c;
-$bg-dark: #1a1a1a;
-$text: #fff;
-$text: #f5f5f5;        // chữ sáng, dễ đọc
-$input-bg: #3a3a3a; 
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@400;500;600&display=swap');
+
+$gold: #b8966a;
+$gold-dark: #967a54;
+$bg-dark: #1c1c1c;
+$bg-card: #252525;
+$text-main: #fdfbf8;
+$text-dim: #a3a3a3;
+$border-color: rgba(184, 150, 106, 0.25);
+$danger: #d9534f;
 
 .overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.75);
+  background-color: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(5px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 999;
+  z-index: 1000;
+  font-family: 'DM Sans', sans-serif;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .form {
   background-color: $bg-dark;
-  color: $text;
-  padding: 24px;
-  border-radius: 16px;
-  width: 400px;
+  color: $text-main;
+  padding: 30px;
+  border-radius: 12px;
+  width: 480px; // Mở rộng nhẹ để form thoáng hơn
   position: relative;
-  box-shadow: 0 0 20px rgba(139, 94, 60, 0.4);
+  border: 1px solid $border-color;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
-  max-height: 90vh; // giới hạn chiều cao form
+  max-height: 90vh;
+  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 h2 {
-  color: $accent;
-  margin-bottom: 16px;
+  font-family: 'Playfair Display', serif;
+  color: $gold;
+  font-size: 26px;
+  margin: 0 0 20px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid $border-color;
+  padding-bottom: 15px;
 }
 
-/* ----- Phần nội dung chính cuộn ----- */
-.formContent {
-  flex: 1;
-  overflow-y: auto;
-  margin: 8px 0 12px 0;
-  padding-right: 8px;
+.createCustomerBtn {
+  background: transparent;
+  color: $gold;
+  border: 1px solid $gold;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
 
-  // thanh cuộn nhỏ gọn
-  &::-webkit-scrollbar {
-    width: 6px;
-  }
-  &::-webkit-scrollbar-thumb {
-    background-color: rgba(139, 94, 60, 0.6);
-    border-radius: 4px;
+  &:hover {
+    background: $gold;
+    color: $bg-dark;
+    box-shadow: 0 4px 12px rgba(184, 150, 106, 0.3);
   }
 }
 
 .closeBtn {
   position: absolute;
-  right: 12px;
-  top: 12px;
+  right: 20px;
+  top: 20px;
   background: none;
   border: none;
-  color: $text;
-  font-size: 20px;
+  color: $text-dim;
+  font-size: 24px;
   cursor: pointer;
+  transition: color 0.3s ease;
+  z-index: 10;
+
+  &:hover {
+    color: $gold;
+    transform: scale(1.1);
+  }
 }
 
-/* ----- Các section trong form ----- */
+/* ----- Form Content & Scrollbar ----- */
+.scrollable {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 10px;
+  margin-bottom: 20px;
+
+  &::-webkit-scrollbar { width: 5px; }
+  &::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); border-radius: 4px; }
+  &::-webkit-scrollbar-thumb { background: $gold-dark; border-radius: 4px; }
+}
+
 .section {
-  margin: 12px 0;
+  margin-bottom: 20px;
   display: flex;
   flex-direction: column;
 
   label {
-    color: $accent;
-    font-weight: 600;
-    margin-bottom: 4px;
+    color: $text-dim;
+    font-size: 13px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
   }
 
-  input,
+  input, select {
+    background: $bg-card;
+    border: 1px solid $border-color;
+    color: $text-main;
+    border-radius: 6px;
+    padding: 12px 14px;
+    font-size: 15px;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.3s ease;
+
+    &:focus {
+      outline: none;
+      border-color: $gold;
+      box-shadow: 0 0 0 2px rgba(184, 150, 106, 0.1);
+    }
+    
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+  
   select {
-    background: #111;
-    border: 1px solid $accent;
-    color: $text;
-    border-radius: 8px;
-    padding: 8px;
-    font-size: 14px;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23b8966a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 16px;
+    padding-right: 40px;
   }
 }
 
 .phoneRow {
   display: flex;
-  gap: 8px;
+  gap: 10px;
+
+  input { flex: 1; }
 
   button {
-    background-color: $accent;
-    color: white;
-    border: none;
-    padding: 8px 12px;
-    border-radius: 8px;
+    background-color: $bg-card;
+    color: $gold;
+    border: 1px solid $gold;
+    padding: 0 20px;
+    border-radius: 6px;
+    font-weight: 600;
     cursor: pointer;
     transition: 0.3s;
 
-    &:hover {
-      background-color: darken($accent, 10%);
+    &:hover:not(:disabled) {
+      background-color: $gold;
+      color: $bg-dark;
+    }
+    
+    &:disabled {
+      border-color: $border-color;
+      color: $text-dim;
+      cursor: wait;
     }
   }
 }
 
-.guestNote {
-  color: #bbb;
-  font-size: 13px;
-  margin-top: 4px;
-}
-
-/* ----- Footer: nút submit luôn cố định ----- */
-.submitContainer {
-  position: sticky;
-  bottom: 0;
-  background: $bg-dark;
-  padding-top: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.submitBtn {
-  background-color: $accent;
-  border: none;
-  color: white;
-  width: 100%;
-  padding: 12px;
-  border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: 0.3s;
-
-  &:hover {
-    background-color: darken($accent, 10%);
-  }
-}
-
-/* ----- Radio chọn loại khách ----- */
-.radioGroup {
-  display: flex;
-  gap: 16px;
-  margin-top: 6px;
-
-  label {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    cursor: pointer;
-
-    input[type="radio"] {
-      accent-color: $accent;
-      transform: scale(1.1);
-    }
-  }
-}
-
-/* ----- Lưới chọn thời gian ----- */
+/* ----- Time Slots ----- */
 .timeGrid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
+  gap: 10px;
 }
 
 .timeSlot {
-  padding: 6px 10px;
-  border: 1px solid $accent;
-  background: #222;
-  color: $text;
-  border-radius: 8px;
+  padding: 10px 0;
+  border: 1px solid $border-color;
+  background: transparent;
+  color: $text-main;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
-  transition: 0.3s;
+  transition: all 0.2s ease;
+  text-align: center;
 
-  &:hover:not(.booked) {
-    background-color: darken($accent, 10%);
+  &:hover:not(.booked):not(:disabled) {
+    border-color: $gold;
+    color: $gold;
   }
 
-  &.booked {
-    opacity: 0.4;
+  &.booked, &:disabled {
+    opacity: 0.3;
     cursor: not-allowed;
+    background: rgba(0,0,0,0.2);
   }
 
   &.selected {
-    background-color: $accent;
-    color: white;
+    background-color: $gold;
+    border-color: $gold;
+    color: $bg-dark;
+    font-weight: 700;
   }
 }
 
-/* ----- Danh sách dịch vụ ----- */
+/* ----- Service List ----- */
 .serviceList {
   list-style: none;
   padding: 0;
-  margin-top: 8px;
+  margin-top: 12px;
 
   li {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: #222;
+    background: $bg-card;
+    border: 1px solid rgba(255,255,255,0.05);
     border-radius: 6px;
-    padding: 6px 10px;
-    margin-top: 4px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
     font-size: 14px;
 
     button {
-      background: none;
+      background: rgba(217, 83, 79, 0.1);
       border: none;
-      color: #ff6666;
-      font-size: 16px;
+      color: $danger;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       cursor: pointer;
+      transition: 0.2s;
+
+      &:hover { background: $danger; color: white; }
     }
   }
 }
 
-.scrollable {
-  max-height: 70vh;
-  overflow-y: auto;
-  padding-right: 8px;
+/* ----- Total Price & Submit ----- */
+.priceBox {
+  background: rgba(184, 150, 106, 0.05);
+  border: 1px dashed $gold;
+  border-radius: 6px;
+  padding: 16px;
+  text-align: right;
+  margin-bottom: 0;
+
+  p {
+    margin: 0;
+    color: $text-dim;
+    font-size: 14px;
+    
+    strong {
+      color: $gold;
+      font-size: 20px;
+      font-weight: 700;
+      margin-left: 8px;
+    }
+  }
 }
-/* Nút Tạo tài khoản góc trên phải */
-.createCustomerBtn {
-  position: absolute;
-  top: 25px;
-  right: 35px;
-  padding: 6px 14px;
-  background-color: $accent;
-  color: $text;
+
+.submitContainer {
+  padding-top: 20px;
+  border-top: 1px solid $border-color;
+}
+
+.submitBtn {
+  background: linear-gradient(135deg, $gold 0%, $gold-dark 100%);
   border: none;
-  border-radius: 12px;
-  font-weight: 500;
-  font-size: 0.85rem;
+  color: $bg-dark;
+  width: 100%;
+  padding: 16px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
   cursor: pointer;
-  transition: 0.2s;
+  transition: all 0.3s ease;
 
   &:hover {
-    background-color: darken($accent, 10%);
-  }
-
-  &:active {
-    transform: scale(0.97);
-  }
-
-  @media (max-width: 480px) {
-    padding: 5px 10px;
-    font-size: 0.8rem;
+    box-shadow: 0 8px 20px rgba(184, 150, 106, 0.4);
+    transform: translateY(-2px);
   }
 }
-/* Popup overlay */
+
+/* ----- Popup Tạo Khách Hàng ----- */
 .popupOverlay {
-  position: fixed;
+  position: absolute;
   inset: 0;
-  background-color: rgba(0,0,0,0.75); // mờ nền
+  background-color: rgba(0, 0, 0, 0.8);
+  border-radius: 12px;
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 9999;
+  z-index: 20;
+  backdrop-filter: blur(2px);
 }
 
-/* Popup content */
 .popupContent {
   background-color: $bg-dark;
-  color: $text;
-  padding: 24px;
-  border-radius: 16px;
-  width: 400px;
-  position: relative;
-  box-shadow: 0 0 20px rgba(139, 94, 60, 0.4);
-  display: flex;
-  flex-direction: column;
+  border: 1px solid $gold;
+  padding: 30px;
+  border-radius: 12px;
+  width: 90%;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 
-  label {
-    color: $accent;
-    font-weight: 600;
-    margin-bottom: 4px;
-  }
-
-  input {
-    width: 100%;
-    padding: 10px;
-    border-radius: 8px;
-    border: 1px solid rgba(139,94,60,0.5);
-    background: $input-bg;
-    color: $text;
-    font-size: 14px;
-
-    &:focus {
-      outline: none;
-      border-color: $accent;
-      box-shadow: 0 0 5px rgba(139,94,60,0.4);
-    }
-  }
-
-}
-
-/* Close button góc trên */
-.closeBtn {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  background: none;
-  border: none;
-  color: $text;
-  font-size: 20px;
-  cursor: pointer;
-}
-
-/* Nút Tạo */
-.createBtn {
-  background-color: $accent;
-  color: $text;
-  border: none;
-  border-radius: 8px;
-  padding: 10px 16px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: 0.3s;
-  margin-right: 8px;
-
-  &:hover {
-    background-color: darken($accent, 10%);
+  h3 {
+    font-family: 'Playfair Display', serif;
+    color: $gold;
+    margin: 0 0 20px 0;
+    font-size: 22px;
   }
 }
 
-/* Nút Hủy */
-.cancelBtn {
-  background-color: #555; // hơi tối để nổi bật so với Tạo
-  color: $text;
-  border: none;
-  border-radius: 8px;
-  padding: 10px 16px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: 0.3s;
-
-  &:hover {
-    background-color: #444;
-  }
-}
-
-/* Row chứa nút */
 .popupBtnRow {
   display: flex;
   justify-content: flex-end;
-  margin-top: 16px;
-}
-
-/* Popup tạo khách */
-/* Popup tạo khách hàng */
-/* Popup tạo khách hàng - phiên bản sáng */
-.createCustomerPopup {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background-color: #fdf6f0; // nền sáng
-  color: #2a1a0f; // chữ tối
-  padding: 24px;
-  border-radius: 16px;
-  width: 350px;
-  z-index: 1000;
-  box-shadow: 0 0 20px rgba(0,0,0,0.3);
-  display: flex;
-  flex-direction: column;
   gap: 12px;
+  margin-top: 25px;
 
-  h3 {
-    color: #b8734c; // accent nâu
-    margin-bottom: 12px;
-  }
-
-  label {
-    color: #b8734c;
+  button {
+    padding: 10px 20px;
+    border-radius: 6px;
     font-weight: 600;
-    margin-bottom: 4px;
-  }
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    border: none;
+    transition: 0.3s;
 
-  input {
-    width: 100%;
-    padding: 8px;
-    border-radius: 8px;
-    border: 1px solid #d6c5bb;
-    background: #fff; // nền input trắng
-    color: #f6eee9; // chữ input tối
-    font-size: 14px;
+    &.cancelBtn {
+      background: transparent;
+      color: $text-dim;
+      border: 1px solid $text-dim;
 
-    &:focus {
-      outline: none;
-      border-color: #8b5e3c;
-      box-shadow: 0 0 5px rgba(184,115,76,0.4);
+      &:hover { color: white; border-color: white; }
     }
 
-    &::placeholder {
-      color: #a67c52;
-    }
-  }
+    &.createBtn {
+      background: $gold;
+      color: $bg-dark;
 
-  .popupBtnRow {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 16px;
-
-    button {
-      padding: 8px 12px;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-      font-weight: 500;
-      transition: 0.2s;
-      margin-left: 8px;
-
-      &.createBtn {
-        background-color: #b8734c;
-        color: #fff;
-
-        &:hover {
-          background-color: #8b5e3c;
-        }
-      }
-
-      &.cancelBtn {
-        background-color: #ccc;
-        color: #2a1a0f;
-
-        &:hover {
-          background-color: #aaa;
-        }
-      }
+      &:hover { background: $gold-dark; }
     }
   }
 }

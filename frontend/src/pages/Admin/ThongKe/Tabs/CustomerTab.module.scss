@@ -1,63 +1,776 @@
+/* CustomerTab.module.scss
+   Design: Ivory & Obsidian — đồng bộ ThongKe / Admin dashboard
+   Fonts: DM Sans (body) · Playfair Display (serif accent)
+   Palette: gold #C9A84C, black #111, bg #EFEFEB, surface #FFF
+---------------------------------------------------------------- */
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+// ── Tokens ───────────────────────────────────────────────────────────────────
+$gold:        #C9A84C;
+$gold-dark:   #8B6914;
+$gold-light:  #FEF6E4;
+$gold-line:   rgba(201, 168, 76, 0.25);
+
+$black:       #111111;
+$black-soft:  #1E1E1E;
+$text-sec:    #555555;
+$text-muted:  #999999;
+$text-hint:   #BBBBBB;
+
+$bg-page:     #EFEFEB;
+$bg-surface:  #FFFFFF;
+$bg-muted:    #F7F7F5;
+
+$border:      #DDDDDD;
+$border-soft: #EEEEEE;
+
+$radius-sm:   6px;
+$radius-md:   10px;
+$radius-lg:   14px;
+$radius-xl:   18px;
+
+$ff-body:  'DM Sans', sans-serif;
+$ff-serif: 'Playfair Display', serif;
+
+// ── Mixins ───────────────────────────────────────────────────────────────────
+@mixin card {
+  background: $bg-surface;
+  border: 1px solid $border;
+  border-radius: $radius-lg;
+  padding: 20px 24px;
+}
+
+@mixin label-caps {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: $text-muted;
+}
+
+// ── Wrapper ──────────────────────────────────────────────────────────────────
 .wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  font-family: $ff-body;
+  color: $black;
+}
+
+// ── Loading ──────────────────────────────────────────────────────────────────
+.loadingRow {
+  text-align: center;
+  padding: 40px 0;
+  color: $text-muted;
+  font-size: 13px;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// BIỂU ĐỒ
+// ═══════════════════════════════════════════════════════════════
+.chartCard {
+  @include card;
+  padding: 20px 24px 16px;
+}
+
+.chartCardHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.chartTitle {
+  font-family: $ff-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: $black;
+  margin: 0 0 2px;
+}
+
+.chartSub {
+  @include label-caps;
+  margin: 0;
+}
+
+.chartLegend {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.lgItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: $text-sec;
+}
+
+.lgDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+// Tooltip biểu đồ
+.chartTooltip {
+  background: $black-soft;
+  border-radius: $radius-md;
+  padding: 10px 14px;
+  min-width: 150px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.ttMonth {
+  font-size: 11px;
+  font-weight: 600;
+  color: $gold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0 0 8px;
+}
+
+.ttRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.ttDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ttKey {
+  flex: 1;
+  font-size: 12px;
+  color: #ccc;
+}
+
+.ttVal {
+  font-size: 13px;
+  color: #fff;
+  font-weight: 600;
+}
+
+.ttSep {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 8px 0;
+}
+
+.ttFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: #aaa;
+
+  strong { color: #fff; }
+}
+
+.ttRate {
+  background: rgba(201, 168, 76, 0.2);
+  color: $gold;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 20px;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SUMMARY BAR — tổng khách (không phải segment)
+// ═══════════════════════════════════════════════════════════════
+.summaryBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  background: $black;
+  border-radius: $radius-lg;
+  padding: 16px 24px;
+
+  @media (max-width: 640px) { flex-direction: column; align-items: flex-start; }
+}
+
+.summaryLeft {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.summaryIconBox {
+  width: 38px;
+  height: 38px;
+  border-radius: $radius-md;
+  background: rgba(201, 168, 76, 0.15);
+  border: 1px solid rgba(201, 168, 76, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: $gold;
+  flex-shrink: 0;
+}
+
+.summaryLabel {
+  @include label-caps;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0 0 3px;
+}
+
+.summaryCount {
+  font-family: $ff-serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+  line-height: 1;
+}
+
+.summaryRight {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.summaryPill {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+
+  strong { font-weight: 600; }
+
+  &.pillGold {
+    background: rgba(201, 168, 76, 0.12);
+    border: 1px solid rgba(201, 168, 76, 0.3);
+    color: $gold;
+  }
+
+  &.pillGray {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.5);
+  }
+}
+
+.pillDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SEGMENT CARDS — 4 cards, 1 hàng
+// ═══════════════════════════════════════════════════════════════
+.segRow {
   display: grid;
-  grid-template-columns: 1fr 1.2fr;
-  gap: 25px;
-  animation: fadeIn 0.4s ease;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+
+  @media (max-width: 900px)  { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 480px)  { grid-template-columns: 1fr; }
 }
 
-.pieCard, .riskCard {
-  background: #fff;
-  padding: 30px;
-  border-radius: 24px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
-  h4 { margin-bottom: 20px; font-size: 18px; }
-}
+.segCard {
+  position: relative;
+  background: $bg-surface;
+  border: 1px solid $border;
+  border-radius: $radius-lg;
+  padding: 16px 18px 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+  overflow: hidden;
 
-.riskCard {
-  .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 25px;
-    h4 { margin: 0; display: flex; align-items: center; gap: 8px; }
-    span { font-size: 12px; color: #999; background: #f5f5f5; padding: 4px 10px; border-radius: 20px; }
+  &:hover {
+    border-color: var(--sc);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
   }
 
-  .list {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-
-    .item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 15px;
-      border-radius: 16px;
-      background: #fcfcfc;
-      border: 1px solid #f0f0f0;
-      transition: 0.2s;
-
-      &:hover { border-color: #D4AF37; background: #fff; }
-
-      .user {
-        p { margin: 0; font-weight: 700; color: #1a1a1a; }
-        small { color: #f43f5e; font-weight: 500; }
-      }
-
-      .btnVoucher {
-        background: #1a1a1a;
-        color: #fff;
-        border: none;
-        padding: 8px 16px;
-        border-radius: 8px;
-        font-size: 12px;
-        font-weight: 600;
-        cursor: pointer;
-        &:hover { background: #D4AF37; color: #1a1a1a; }
-      }
-    }
+  &.segCardActive {
+    border-color: var(--sc);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--sc) 15%, transparent);
   }
 }
 
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.scTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.scIconBox {
+  width: 30px;
+  height: 30px;
+  border-radius: $radius-sm;
+  background: var(--sb);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.scPill {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 20px;
+
+  &.scPillUp   { background: #E6F4EE; color: #0F6E56; }
+  &.scPillDown { background: #FCEBEB; color: #A32D2D; }
+  &.scPillFlat { background: $bg-muted; color: $text-muted; }
+}
+
+.scCount {
+  font-family: $ff-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: $black;
+  margin: 0 0 2px;
+  line-height: 1.1;
+}
+
+.scLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: $black;
+  margin: 0 0 2px;
+}
+
+.scDesc {
+  font-size: 11px;
+  color: $text-muted;
+  margin: 0 0 8px;
+  white-space: pre-line;
+}
+
+.scExtra {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: $radius-sm;
+  display: inline-block;
+  margin-top: 2px;
+
+  &.scExtraRed   { background: #FCEBEB; color: #A32D2D; }
+  &.scExtraAmber { background: #FAEEDA; color: #854F0B; }
+  &.scExtraGreen { background: #E6F4EE; color: #0F6E56; }
+}
+
+// Gạch dưới active (bottom accent line)
+.scUnderline {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--sc);
+  border-radius: 0 0 $radius-lg $radius-lg;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+
+  .segCardActive & { opacity: 1; }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DETAIL CARD — bảng chi tiết
+// ═══════════════════════════════════════════════════════════════
+.detailCard {
+  @include card;
+  padding: 0;
+  overflow: hidden;
+}
+
+.detailHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px 16px;
+  border-bottom: 1px solid $border-soft;
+}
+
+.detailHeadLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.detailIconBox {
+  width: 34px;
+  height: 34px;
+  border-radius: $radius-md;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.detailTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: $black;
+  margin: 0 0 2px;
+}
+
+.detailSub {
+  @include label-caps;
+  margin: 0;
+}
+
+// ── Voucher Toolbar ───────────────────────────────────────────────────────────
+// ── Voucher Toolbar ───────────────────────────────────────────────────────────
+.vToolbar {
+  display: flex;
+  flex-direction: column;    // Chuyển container tổng thành chiều dọc để xếp 2 hàng
+  gap: 16px;                 // Khoảng cách giữa hàng 1 và hàng 2
+  padding: 16px 24px;
+  background: $bg-muted;
+  border-bottom: 1px solid $border-soft;
+}
+
+// Class chung cho mỗi hàng ngang
+.vRow {
+  display: flex;
+  flex-direction: row;       // Ép các item bên trong xếp theo hàng ngang
+  align-items: flex-end;     // Cập nhật tất cả phần tử (input, select, checkbox, button) đều chạm đáy hàng
+  gap: 16px;
+  flex-wrap: wrap;           // Hỗ trợ responsive nếu màn hình quá nhỏ
+}
+
+// Chi tiết hàng 1
+.vFiltersRow {
+  width: 100%;
+}
+
+// Chi tiết hàng 2
+.vActionsRow {
+  width: 100%;
+  justify-content: flex-start; // Giữ select và button nằm gần nhau trên hàng ngang
+  padding-top: 12px;
+  border-top: 1px dashed rgba(201, 168, 76, 0.15); // Đường line phân cách mờ sang trọng màu gold nhẹ
+}
+
+.fGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+// Độ rộng riêng cho ô chọn voucher ở hàng 2 để text hiển thị đẹp, không bị quá dài hay quá ngắn
+.vSelectGroup {
+  min-width: 380px; 
+  max-width: 450px;
+
+  .voucherSelect {
+    width: 100%;
+  }
+}
+
+.fLabel {
+  @include label-caps;
+}
+
+.fRangeWrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px; // Khớp chuẩn line-height với select
+  
+  .fStatic {
+    font-size: 13px;
+    font-weight: 500;
+  }
+}
+
+.fInput {
+  width: 60px;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid $border;
+  border-radius: $radius-sm;
+  font-size: 13px;
+  font-family: $ff-body;
+  background: $bg-surface;
+  color: $black;
+  text-align: center;
+  transition: border-color 0.15s;
+
+  &:focus {
+    outline: none;
+    border-color: $gold;
+  }
+}
+
+.fSep, .fUnit {
+  font-size: 12px;
+  color: $text-muted;
+}
+
+.fSelect {
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid $border;
+  border-radius: $radius-sm;
+  font-size: 13px;
+  font-family: $ff-body;
+  background: $bg-surface;
+  color: $black;
+  cursor: pointer;
+  transition: border-color 0.15s;
+
+  &:focus {
+    outline: none;
+    border-color: $gold;
+  }
+}
+
+// Checkbox filter nằm trên hàng ngang số 1, căn đáy chuẩn chỉnh
+.fCheckLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid $border;
+  border-radius: $radius-sm;
+  background: $bg-surface;
+  font-size: 13px;
+  font-weight: 500;
+  color: $black;
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  transition: all 0.15s ease;
+
+  input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    accent-color: $gold;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin: 0;
+  }
+
+  &:hover {
+    border-color: $gold;
+    background-color: rgba(201, 168, 76, 0.04);
+  }
+}
+
+.noVoucher {
+  font-size: 12px;
+  color: $text-muted;
+  font-style: italic;
+  height: 32px;
+  display: flex;
+  align-items: center;
+}
+
+.vActions {
+  display: flex;
+  align-items: center;
+  height: 32px; // Đồng bộ chiều cao với select voucher bên cạnh
+}
+
+.btnSend {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 16px;
+  background: $black;
+  border: 1px solid $black;
+  border-radius: $radius-sm;
+  font-size: 12px;
+  font-family: $ff-body;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+
+  &:hover:not(:disabled) {
+    background: $gold;
+    border-color: $gold;
+    color: $black;
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+// ── Bảng ─────────────────────────────────────────────────────────────────────
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  font-family: $ff-body;
+
+  th {
+    @include label-caps;
+    padding: 10px 16px;
+    text-align: left;
+    background: $bg-muted;
+    border-bottom: 1px solid $border-soft;
+    white-space: nowrap;
+    font-weight: 600;
+  }
+
+  td {
+    padding: 11px 16px;
+    border-bottom: 1px solid $border-soft;
+    vertical-align: middle;
+    color: $black;
+  }
+}
+
+.tRow {
+  transition: background 0.1s;
+
+  &:hover td { background: #FDFAF3; }
+  &:last-child td { border-bottom: none; }
+
+  &.tRowSelected td { background: $gold-light; }
+}
+
+.custName {
+  font-weight: 500;
+  font-size: 13px;
+  margin: 0 0 1px;
+  color: $black;
+}
+
+.custEmail {
+  font-size: 11px;
+  color: $text-muted;
+  margin: 0;
+}
+
+.tdMono {
+  font-size: 12px;
+  color: $text-sec;
+  font-variant-numeric: tabular-nums;
+}
+
+.tdDate {
+  font-size: 12px;
+  color: $text-sec;
+  white-space: nowrap;
+}
+
+.tdCenter { text-align: center; color: $text-sec; }
+
+.tdMoney {
+  font-weight: 600;
+  font-size: 13px;
+  color: $gold-dark;
+  white-space: nowrap;
+  text-align: right;
+}
+
+// Số ngày vắng
+.daysBadge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: $bg-muted;
+  color: $text-sec;
+
+  &.daysAmber {
+    background: #FAEEDA;
+    color: #854F0B;
+  }
+
+  &.daysRed {
+    background: #FCEBEB;
+    color: #A32D2D;
+  }
+}
+
+
+// Voucher badge
+.vBadge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 9px;
+  border-radius: 20px;
+  white-space: nowrap;
+
+  &.vBadgeGreen { background: #E1F5EE; color: #0F6E56; }
+  &.vBadgeAmber { background: #FAEEDA; color: #854F0B; }
+  &.vBadgeGray  { background: $bg-muted; color: $text-muted; }
+}
+
+// Checkbox button
+.checkBtn {
+  background: transparent;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: $radius-sm;
+  transition: background 0.1s;
+
+  &:hover:not(:disabled) { background: $bg-muted; }
+  &:disabled { cursor: default; }
+}
+
+// Gửi đơn lẻ
+.sendRowBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: $radius-sm;
+  border: 1px solid $border;
+  background: $bg-surface;
+  color: $text-sec;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+
+  &:hover {
+    border-color: $gold;
+    color: $gold-dark;
+    background: $gold-light;
+  }
+}
+
+// Empty state
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 48px 24px;
+  color: $text-hint;
+  font-size: 13px;
+}
+

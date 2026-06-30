@@ -1,15 +1,20 @@
 import classNames from "classnames/bind";
-import { SuccessIcon, CloseIcon, ErrorIcon } from "~/components/Icons";
+import { SuccessIcon, CloseIcon, ErrorIcon, InfoIcon } from "~/components/Icons";
 import styles from "./Toast.module.scss";
 import { useEffect, useState } from "react";
 
 const cx = classNames.bind(styles);
 
-function Toast({ type, text, duration = 3000, onClose }) {
+const TYPE_LABEL = {
+  success: "Thành công",
+  error: "Lỗi",
+  info: "Thông báo",
+};
+
+function Toast({ type, text, message, duration = 3000, onClose }) {
   const [fadeOut, setFadeOut] = useState(false);
 
   useEffect(() => {
-    // Bắt đầu hiệu ứng biến mất trước khi đóng hẳn 400ms (khớp với CSS)
     const fadeTimeout = setTimeout(() => {
       setFadeOut(true);
     }, duration - 400);
@@ -24,28 +29,39 @@ function Toast({ type, text, duration = 3000, onClose }) {
     };
   }, [duration, onClose]);
 
+  const handleClose = () => {
+    setFadeOut(true);
+    setTimeout(() => onClose?.(), 400);
+  };
+
   return (
     <div className={cx("wrapper", { "fade-out": fadeOut })}>
       <div className={cx("inner", type)}>
+
         <div className={cx("body")}>
           <div className={cx("icon")}>
-            {type === "success" ? <SuccessIcon /> : <ErrorIcon />}
+            {type === "success" && <SuccessIcon />}
+            {type === "error" && <ErrorIcon />}
+            {type === "info" && <InfoIcon />}
           </div>
-          
-          <div className={cx("text")}>{text}</div>
 
-          <button className={cx("close")} onClick={() => setFadeOut(true)}>
+          <div className={cx("content")}>
+            <span className={cx("label")}>{TYPE_LABEL[type] ?? type}</span>
+            <span className={cx("text")}>{message || text}</span>
+          </div>
+
+          <button className={cx("close")} onClick={handleClose} aria-label="Đóng">
             <CloseIcon />
           </button>
         </div>
 
-        {/* Thanh tiến trình màu Gold chạy ngược */}
         <div className={cx("progress-bar")}>
-          <div 
-            className={cx("fill")} 
+          <div
+            className={cx("fill")}
             style={{ animationDuration: `${duration}ms` }}
-          ></div>
+          />
         </div>
+
       </div>
     </div>
   );

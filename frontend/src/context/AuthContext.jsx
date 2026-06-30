@@ -7,59 +7,56 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [accessToken, setAccessToken] = useState(null);
   const [refreshToken, setRefreshToken] = useState(null);
-  const [loading, setLoading] = useState(true); // trạng thái load auth khi app start
+  const [loading, setLoading] = useState(true);
 
-  // Load auth từ localStorage khi app khởi chạy
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
-    const storedAccessToken = localStorage.getItem("accessToken");
-    const storedRefreshToken = localStorage.getItem("refreshToken");
 
-    if (storedUser && storedAccessToken && storedRefreshToken) {
-      // 👉 gọi API để verify token còn sống không
-      AuthAPI.getMe()
-        .then((res) => {
-          setUser(JSON.parse(storedUser));
-          setAccessToken(storedAccessToken);
-          setRefreshToken(storedRefreshToken);
-        })
-        .catch(() => {
-          // ❌ token chết → logout luôn
-          localStorage.clear();
-          setUser(null);
-          setAccessToken(null);
-          setRefreshToken(null);
-        });
+    // Nếu trước đó chưa từng đăng nhập (không có "user" trong localStorage),
+    // không cần gọi getMe() làm gì — chắc chắn không có cookie hợp lệ, gọi
+    // chỉ tạo ra 401 dư thừa (và 401 đó lại kéo theo logic refresh trong
+    // interceptor, gây hàng loạt lỗi 401 lây sang các API khác đang load
+    // song song lúc app khởi chạy). Coi như guest luôn, tắt loading ngay.
+    if (!storedUser) {
+      setLoading(false);
+      return;
     }
 
-    setLoading(false);
+    // Có dấu hiệu đã từng đăng nhập trước đó -> thử hỏi server xem cookie
+    // (accessToken httpOnly) còn hợp lệ hay không.
+    AuthAPI.getMe()
+      .then((res) => {
+        const userData = res?.user || JSON.parse(storedUser);
+        setUser(userData);
+        setAccessToken(true); // cờ giả, chỉ để code cũ check !accessToken vẫn đúng
+        setRefreshToken(true);
+      })
+      .catch(() => {
+        // Cookie hết hạn / không hợp lệ -> dọn sạch, coi như guest
+        localStorage.removeItem("user");
+        setUser(null);
+        setAccessToken(null);
+        setRefreshToken(null);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
-  // LOGIN
-  const login = (userData, newAccessToken, newRefreshToken) => {
+  const login = (userData) => {
     localStorage.setItem("user", JSON.stringify(userData));
-    localStorage.setItem("accessToken", newAccessToken);
-    localStorage.setItem("refreshToken", newRefreshToken);
-
     setUser(userData);
-    setAccessToken(newAccessToken);
-    setRefreshToken(newRefreshToken);
+    setAccessToken(true);
+    setRefreshToken(true);
   };
 
-  // LOGOUT
   const logout = async () => {
     try {
-      if (refreshToken) {
-        await AuthAPI.logout({ refreshToken }); // gọi API logout nếu có
-      }
+      await AuthAPI.logout();
     } catch (err) {
       console.error("Logout API error:", err);
     } finally {
-      // Xóa localStorage và state
       localStorage.removeItem("user");
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-
       setUser(null);
       setAccessToken(null);
       setRefreshToken(null);
@@ -76,7 +73,7 @@ export function AuthProvider({ children }) {
         logout,
         setUser,
         isLogin: !!user,
-        loading, // expose loading để ProtectedRoute chờ load xong
+        loading,
       }}
     >
       {children}
@@ -84,7 +81,6 @@ export function AuthProvider({ children }) {
   );
 }
 
-// Hook tiện lợi
 export function useAuth() {
   return useContext(AuthContext);
 }

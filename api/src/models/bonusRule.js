@@ -4,54 +4,59 @@ import { Model } from "sequelize";
 export default (sequelize, DataTypes) => {
   class BonusRule extends Model {
     static associate(models) {
-      // Nếu sau này có bảng liên kết, thêm tại đây
-      // Ví dụ:
-      // BonusRule.hasMany(models.EmployeeBonus, {
-      //   foreignKey: "bonusRuleId",
-      //   as: "employeeBonuses",
-      // });
+      BonusRule.belongsTo(models.CompensationPlan, {
+        foreignKey: "idCompensationPlan",
+        targetKey:"idCompensationPlan",
+        as: "plan",
+      });
     }
   }
 
   BonusRule.init(
     {
-      id: {
+      idBonusRule: {
         type: DataTypes.INTEGER,
         primaryKey: true,
         autoIncrement: true,
+         field: "idBonus",
       },
-      minRevenue: {
-        type: DataTypes.DECIMAL(15, 2),
+      idCompensationPlan: {
+        type: DataTypes.INTEGER,
         allowNull: false,
-        comment: "Doanh thu tối thiểu để đạt mức thưởng này",
+        field: "idPlan",
       },
-      bonusPercent: {
-        type: DataTypes.DECIMAL(5, 2),
+      bonusName: {
+        type: DataTypes.STRING(150),
         allowNull: false,
-        validate: { min: 0, max: 100 },
-        comment: "Phần trăm thưởng (VD: 5.00 = 5%)",
+        comment: "Tên gói thưởng (VD: Thưởng chuyên cần & Rating)",
       },
-      note: {
-        type: DataTypes.STRING,
-        allowNull: true,
-        comment: "Ghi chú thêm cho quy tắc thưởng",
+      minCustomerCount: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+        comment: "Số lượng khách tối thiểu",
       },
-      active: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: true,
-        comment: "Trạng thái kích hoạt quy tắc thưởng",
+      minAverageRating: {
+        type: DataTypes.DECIMAL(3, 2),
+        allowNull: false,
+        defaultValue: 0.0,
+        comment: "Rating trung bình tối thiểu (VD: 4.5)",
+      },
+      rewardAmount: {
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: false,
+        comment: "Số tiền thưởng nóng (VNĐ)",
+      },
+      evaluationPeriodMonths: {
+        type: DataTypes.INTEGER,
+        defaultValue: 1,
       },
     },
     {
       sequelize,
       modelName: "BonusRule",
-      tableName: "BonusRules",
+      tableName: "bonus_rules",
       timestamps: true,
-      indexes: [
-        {
-          fields: ["minRevenue"],
-        },
-      ],
     }
   );
 

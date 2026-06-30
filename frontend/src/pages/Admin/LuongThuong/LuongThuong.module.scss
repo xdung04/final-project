@@ -1,343 +1,1086 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap');
+// LuongThuong.module.scss
+// Admin — Lương & Hoa hồng | NOULE Barber
+// Design: NOULE gold/dark system — đồng bộ TinTuc / TongQuan / ChinhSach
 
-.salaryPage {
-  padding: 40px;
-  background: #ffffff;
+// ── Design tokens ─────────────────────────────────────────────────────────────
+$gold:        #C9A84C;
+$gold-hover:  #BA9A3E;
+$gold-dim:    #8A6A28;
+$gold-faint:  rgba(201, 168, 76, 0.15);
+$gold-border: rgba(201, 168, 76, 0.3);
+
+$ink:         #1A1612;
+$ink-2:       #2C2720;
+$ink-text:    #F5F0E8;
+$ink-muted:   rgba(245, 240, 232, 0.5);
+
+$page-bg:     #F7F4EF;
+$card-bg:     #FFFFFF;
+$surface-2:   #F9F6F1;
+$surface-3:   #F2EFE8;
+
+$border:      rgba(0, 0, 0, 0.07);
+$border-md:   rgba(0, 0, 0, 0.1);
+
+// Semantic
+$green:       #3B6D11;
+$green-bg:    #EAF3DE;
+$green-bd:    rgba(59, 109, 17, 0.25);
+
+$red:         #A32D2D;
+$red-bg:      #FCEBEB;
+$red-bd:      rgba(163, 45, 45, 0.25);
+
+$amber:       #8A5C10;
+$amber-bg:    #FEF6E4;
+$amber-bd:    rgba(138, 92, 16, 0.25);
+
+$blue:        #1A4A8A;
+$blue-bg:     #EDF2FA;
+$blue-bd:     rgba(26, 74, 138, 0.25);
+
+$radius-sm:   6px;
+$radius-md:   10px;
+$radius-lg:   14px;
+$radius-xl:   18px;
+
+// ── Page ──────────────────────────────────────────────────────────────────────
+.page {
+  padding: 28px 32px 48px;
+  background: $page-bg;
   min-height: 100vh;
-  font-family: 'DM Sans', sans-serif;
+  font-family: "Merriweather", serif;
+  color: $ink;
+  animation: fadeInPage 0.4s ease forwards;
 }
 
-/* ========== Header & Controls ========== */
+@keyframes fadeInPage {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+// ── Header (khớp TinTuc .pageHead) ───────────────────────────────────────────
 .header {
-  margin-bottom: 40px;
-  border-bottom: 1.5px solid #000;
-  padding-bottom: 24px;
-
-  h2 {
-    font-family: 'Playfair Display', serif;
-    font-size: 32px;
-    font-weight: 800;
-    color: #000;
-    margin: 0 0 20px 0;
-  }
-}
-
-.controlsWrapper {
   display: flex;
+  align-items: flex-end;
   justify-content: space-between;
-  align-items: center;
   flex-wrap: wrap;
   gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-.filters {
+.headerLeft  { display: flex; flex-direction: column; gap: 4px; }
+
+.headerEyebrow {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: $gold-dim;
+  font-weight: 500;
+}
+
+.headerTitle {
+  font-size: 28px;
+  font-weight: 600;
+  color: $ink;
+  margin: 0;
+  line-height: 1.1;
+    font-family: "Merriweather", serif;
+}
+
+.headerRight {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
-.selectBox {
-  padding: 10px 16px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
-  color: #000;
-  background: #fafafa;
-  cursor: pointer;
-  outline: none;
-
-  &:focus {
-    border-color: #000;
-  }
-}
-
-/* ========== Buttons ========== */
-%btn-base {
+// ── Month picker ──────────────────────────────────────────────────────────────
+.monthPicker {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  border-radius: 4px;
-  font-weight: 700;
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+}
+
+.select {
+  appearance: none;
+  padding: 7px 32px 7px 11px;
+  background: $card-bg;
+  border: 1px solid $border-md;
+  border-radius: $radius-md;
+  color: $ink;
+    font-family: "Merriweather", serif;
+  font-size: 12px;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
+  outline: none;
+  transition: border-color 0.15s;
+
+  &:focus, &:hover { border-color: $gold; }
 }
 
-.btn-outline {
-  @extend %btn-base;
-  background: transparent;
-  border: 1px solid #4b382a;
-  color: #4b382a;
-
-  &:hover:not(:disabled) {
-    background: #4b382a;
-    color: #fff;
-  }
-  
-  &:disabled {
-    border-color: #eee;
-    color: #999;
-    cursor: not-allowed;
-  }
+.selectArrow {
+  position: absolute;
+  right: 10px;
+  color: #aaa;
+  font-size: 10px;
+  pointer-events: none;
 }
 
-.btn-primary {
-  @extend %btn-base;
-  background: #000;
-  border: 1px solid #000;
-  color: #fff;
-
-  &:hover:not(:disabled) {
-    background: #4b382a;
-    border-color: #4b382a;
-    transform: translateY(-2px);
-  }
-
-  &:disabled {
-    background: #f5f5f5;
-    border-color: #eee;
-    color: #aaa;
-    cursor: not-allowed;
-  }
-}
-
-/* ========== Search Box ========== */
-.searchBox {
-  position: relative;
-  width: 280px;
-
-  input {
-    width: 100%;
-    padding: 10px 36px 10px 16px;
-    border-radius: 4px;
-    border: 1px solid #ddd;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 14px;
-    transition: 0.3s;
-    background: #fafafa;
-
-    &:focus {
-      border-color: #000;
-      outline: none;
-      background: #fff;
-    }
-  }
-
-  svg {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #999;
-  }
-}
-
-/* ========== Table Section ========== */
-.salaryTableWrapper {
-  background: #ffffff;
-}
-
-.tableHeader {
-  margin-bottom: 24px;
-
-  h3 {
-    font-size: 20px;
-    font-weight: 700;
-    color: #000;
-    margin: 0 0 8px 0;
-  }
-
-  .desc {
-    font-size: 14px;
-    color: #777;
-    margin: 0;
-    font-style: italic;
-  }
-}
-
-.tableContainer {
-  width: 100%;
+// ── Workflow Bar ──────────────────────────────────────────────────────────────
+.workflowBar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: $card-bg;
+  border: 1px solid $border-md;
+  border-radius: $radius-lg;
+  padding: 14px 20px;
+  margin-bottom: 20px;
   overflow-x: auto;
 }
 
-table {
-  width: 100%;
-  border-collapse: collapse;
+.wfStep {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  opacity: 0.25;
+  transition: opacity 0.3s;
+  min-width: 72px;
 
-  th {
-    background: #fafafa;
-    color: #000;
-    font-weight: 700;
-    text-transform: uppercase;
-    font-size: 12px;
-    letter-spacing: 1px;
-    padding: 16px;
-    border-bottom: 2px solid #000;
-    text-align: left;
-    white-space: nowrap;
-  }
-
-  td {
-    padding: 16px;
-    border-bottom: 1px solid #f0f0f0;
-    color: #444;
-    font-size: 14px;
-    vertical-align: middle;
-  }
-
-  tbody tr {
-    transition: background-color 0.2s;
-    &:hover {
-      background-color: #fdfdfd;
-    }
-  }
+  &.wf-active { opacity: 1; }
 }
 
-/* ========== Table Cells Details ========== */
-.employee {
+.wfNum {
+  font-size: 26px;
+  font-weight: 600;
+  color: $ink;
+  line-height: 1;
+  font-family: "Merriweather", serif;
+}
+
+.wfLabel {
+  font-size: 10px;
+  color: #888;
+  text-align: center;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.wfArrow {
+  color: #ccc;
+  font-size: 18px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+// ── Action Bar ────────────────────────────────────────────────────────────────
+.actionBar {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
   gap: 12px;
+  margin-bottom: 20px;
 }
 
-.avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: #f0f0f0;
+.actionGroup {
   display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+// ── Buttons ───────────────────────────────────────────────────────────────────
+@mixin btn-base {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
-  font-size: 13px;
-  color: #000;
-  border: 1px solid #ddd;
-}
-
-.empName {
+  gap: 7px;
+  border-radius: $radius-md;
+   font-family: "Merriweather", serif;
+  font-size: 12px;
   font-weight: 600;
-  color: #000;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s;
+  white-space: nowrap;
+
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
 }
 
-.highlight {
-  font-weight: 700;
-  color: #000;
-  font-size: 15px;
+.btn {
+  @include btn-base;
+  padding: 8px 16px;
 }
 
-.loadingText {
+.btn-ghost {
+  background: transparent;
+  border-color: $border-md;
   color: #666;
-  font-style: italic;
-  padding: 20px 0;
+  &:hover:not(:disabled) { border-color: $gold-border; color: $ink; background: $gold-faint; }
 }
 
-/* ========== Nút Header Workflow Mới ========== */
-.btn-action {
-  @extend %btn-base;
-  background: #fff;
-  border: 1px solid #000;
-  color: #000;
+.btn-draft {
+  background: $surface-2;
+  border-color: $border-md;
+  color: $ink;
+  &:hover:not(:disabled) { background: $ink; color: $gold; border-color: $ink; }
+}
 
-  &:hover:not(:disabled) {
-    background: #000;
-    color: #fff;
-    transform: translateY(-2px);
-  }
+.btn-send {
+  background: $ink;
+  border-color: $ink;
+  color: $gold;
+  &:hover:not(:disabled) { background: $gold; color: $ink; border-color: $gold; }
 }
 
 .btn-success {
-  @extend %btn-base;
-  background: #1b4d3e; // Xanh rêu
-  border: 1px solid #1b4d3e;
-  color: #fff;
-
-  &:hover:not(:disabled) {
-    background: #12352a;
-    transform: translateY(-2px);
-  }
+  background: $green-bg;
+  border-color: $green-bd;
+  color: $green;
+  &:hover:not(:disabled) { background: $green; color: #fff; border-color: $green; }
 }
 
-/* ========== Trạng thái Workflow (5 Bước) ========== */
-.statusBadge {
+.btn-gold {
+  background: $gold;
+  border-color: $gold;
+  color: $ink;
+  font-weight: 700;
+  &:hover:not(:disabled) { background: $gold-hover; border-color: $gold-hover; }
+}
+
+.btn-danger {
+  background: $red-bg;
+  border-color: $red-bd;
+  color: $red;
+  &:hover:not(:disabled) { background: $red; color: #fff; border-color: $red; }
+}
+
+.btn-sm  { padding: 6px 12px; font-size: 11px; }
+.btn-xs  { padding: 4px 9px;  font-size: 11px; }
+
+// ── Search ────────────────────────────────────────────────────────────────────
+.searchWrap {
+  position: relative;
+  width: 230px;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #aaa;
   font-size: 12px;
-  padding: 6px 10px;
-  border-radius: 4px;
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 7px 12px 7px 32px;
+  background: $card-bg;
+  border: 1px solid $border-md;
+  border-radius: 20px;
+  color: $ink;
+  font-family: "Merriweather", serif;
+  font-size: 12px;
+  outline: none;
+  transition: border-color 0.15s, width 0.2s;
+
+  &::placeholder { color: #bbb; }
+  &:focus { border-color: $gold; }
+}
+
+// ── Stat Cards ────────────────────────────────────────────────────────────────
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+
+  @media (max-width: 1000px) { grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 640px)  { grid-template-columns: repeat(2, 1fr); }
+}
+
+.statCard {
+  background: $card-bg;
+  border: 1px solid $border-md;
+  border-top: 3px solid #ccc;
+  border-radius: $radius-lg;
+  padding: 14px 16px;
+  transition: border-color 0.15s, transform 0.15s;
+
+  &:hover { transform: translateY(-1px); border-color: rgba(201, 168, 76, 0.35); }
+}
+
+.stat-draft     { border-top-color: #B0AAA0; }
+.stat-pending   { border-top-color: $blue; }
+.stat-disputed  { border-top-color: $red; }
+.stat-confirmed { border-top-color: $green; }
+.stat-paid      { border-top-color: $gold; }
+
+.stat-pulse { animation: statPulse 2s ease-in-out infinite; }
+
+@keyframes statPulse {
+  0%, 100% { box-shadow: none; }
+  50%       { box-shadow: 0 0 0 3px rgba(163, 45, 45, 0.15); }
+}
+
+.statLabel {
+  font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.08em;
+  color: #888;
+  margin-bottom: 6px;
+}
+
+.statVal {
+  font-size: 28px;
+  font-weight: 600;
+  color: $ink;
+  line-height: 1;
+  font-family: Georgia, 'Times New Roman', serif;
+
+  .stat-disputed & { color: $red; }
+  .stat-paid &     { color: $gold-dim; }
+}
+
+.statSub {
+  font-size: 11px;
+  color: #aaa;
+  margin-top: 6px;
+}
+
+// ── Table section ─────────────────────────────────────────────────────────────
+.tableSection {
+  background: $card-bg;
+  border: 1px solid $border-md;
+  border-radius: $radius-lg;
+  overflow: hidden;
+}
+
+.tableHeader {
+  padding: 16px 20px;
+  border-bottom: 1px solid $border-md;
+  background: $surface-2;
+}
+
+.tableTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: $ink;
+  margin: 0 0 3px;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.tableDesc {
+  font-size: 12px;
+  color: #888;
+}
+
+.tableWrap { overflow-x: auto; }
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 900px;
+
+  thead th {
+    background: $ink;
+    padding: 10px 16px;
+    text-align: left;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: $gold;
+    border-bottom: 1px solid $gold-border;
+    white-space: nowrap;
+  }
+
+  tbody td {
+    padding: 13px 16px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    font-size: 13px;
+    vertical-align: middle;
+    color: #555;
+    background: $card-bg;
+  }
+
+  tbody tr {
+    transition: background 0.1s;
+    &:last-child td { border-bottom: none; }
+    &:hover td      { background: #faf8f4; }
+  }
+}
+
+.thRight { text-align: right !important; padding-right: 16px !important; }
+
+.rowDisputed td { background: $red-bg !important; }
+.rowRealtime td { background: $card-bg; }
+
+// ── Employee cell ─────────────────────────────────────────────────────────────
+.empCell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: $gold-faint;
+  border: 1px solid $gold-border;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: $gold-dim;
+  flex-shrink: 0;
+   font-family: "Merriweather", serif;
+  text-transform: uppercase;
+}
+
+.empName   { font-size: 13px; font-weight: 600; color: $ink; }
+.empBranch { font-size: 11px; color: #aaa; margin-top: 1px; }
+
+// ── Utility classes ───────────────────────────────────────────────────────────
+.mono   { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.cGold  { color: $gold-dim; }
+.cGreen { color: $green; }
+.cRed   { color: $red; }
+.cMuted { color: #aaa; }
+.fw700  { font-weight: 700; }
+
+// ── Badge ─────────────────────────────────────────────────────────────────────
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.badge-realtime      { background: $blue-bg;    color: $blue;     border-color: $blue-bd; }
+.badge-draft         { background: $surface-2;  color: #777;      border-color: $border-md; }
+.badge-pending       { background: $blue-bg;    color: $blue;     border-color: $blue-bd; }
+.badge-disputed      { background: $red-bg;     color: $red;      border-color: $red-bd; }
+.badge-confirmed     { background: $green-bg;   color: $green;    border-color: $green-bd; }
+.badge-autoconfirmed { background: $amber-bg;   color: $amber;    border-color: $amber-bd; }
+.badge-paid          { background: $gold-faint; color: $gold-dim; border-color: $gold-border; }
+.badge-locked        { background: $surface-2;  color: #aaa;      border-color: $border-md; }
+.badge-cancelled     { background: $surface-2;  color: #aaa;      border-color: $border-md; text-decoration: line-through; }
+
+.disputeTag {
   display: inline-block;
-
-  &.draft {
-    background: #f5f5f5;
-    color: #666;
-    border: 1px solid #ddd;
-  }
-  
-  &.pending {
-    background: #e6f4ff;
-    color: #0050b3; // Xanh dương
-    border: 1px solid #91caff;
-  }
-
-  &.disputed {
-    background: #fff1f0;
-    color: #a8071a; // Đỏ mận
-    border: 1px solid #ffa39e;
-  }
-
-  &.confirmed {
-    background: #f4fdf8;
-    color: #1b4d3e; // Xanh rêu
-    border: 1px solid #cce8d9;
-  }
-
-  &.paid {
-    background: #000;
-    color: #fff; // Đen sang trọng
-    border: 1px solid #000;
-  }
+  font-size: 10px;
+  font-weight: 600;
+  color: $amber;
+  background: $amber-bg;
+  border: 1px solid $amber-bd;
+  padding: 2px 7px;
+  border-radius: 20px;
+  margin-left: 6px;
 }
 
-/* Highight dòng khiếu nại */
-.row-disputed td {
-  background-color: #fffaf0; // Vàng nhạt cảnh báo
+.deadlineTag {
+  font-size: 11px;
+  font-weight: 600;
+  color: $amber;
+  letter-spacing: 0.03em;
 }
 
-.btn-icon.warn {
-  color: #a8071a;
-  animation: pulse 1.5s infinite;
-  
-  &:hover { background: #fff1f0; }
+// ── Action Cell ───────────────────────────────────────────────────────────────
+.actionCell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  padding-right: 4px;
 }
 
-@keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.15); }
-  100% { transform: scale(1); }
-}
-/* ========== Nút Icon trong bảng (Mắt, Bút, Cảnh báo) ========== */
-.btn-icon {
+.iconBtn {
+  width: 30px;
+  height: 30px;
+  border-radius: $radius-sm;
+  border: 1px solid $border-md;
   background: transparent;
-  border: none;
-  color: #4b382a; // Màu nâu đồng
-  font-size: 16px;
+  color: #aaa;
   cursor: pointer;
-  padding: 8px;
-  border-radius: 4px;
-  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  transition: all 0.15s;
+
+  &:hover:not(:disabled) {
+    background: $gold-faint;
+    border-color: $gold-border;
+    color: $gold-dim;
+  }
+
+  &:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  &.warn {
+    border-color: $red-bd;
+    color: $red;
+    background: $red-bg;
+    &:hover:not(:disabled) { background: $red; color: #fff; border-color: $red; }
+  }
+
+  &.send {
+    border-color: $border-md;
+    color: $ink;
+    background: $surface-2;
+    &:hover:not(:disabled) { background: $ink; color: $gold; border-color: $ink; }
+  }
+
+  &.pay {
+    border-color: $green-bd;
+    color: $green;
+    background: $green-bg;
+    &:hover:not(:disabled) { background: $green; color: #fff; border-color: $green; }
+  }
+}
+
+.lockIcon { font-size: 13px; color: #ccc; padding: 0 3px; }
+
+// ── Loading & Empty ───────────────────────────────────────────────────────────
+.loadingState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 70px 0;
+  color: #aaa;
+  font-size: 13px;
+}
+
+.loadingSpinner {
+  width: 36px;
+  height: 36px;
+  border: 2px solid rgba(0, 0, 0, 0.08);
+  border-top-color: $gold;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.emptyRow {
+  text-align: center;
+  padding: 60px 0 !important;
+  color: #bbb;
+  font-size: 13px;
+  background: $card-bg !important;
+
+  div:first-child { font-size: 32px; margin-bottom: 10px; }
+}
+
+.emptyHint {
+  font-size: 12px;
+  color: #aaa;
+  margin-top: 6px;
+  font-style: italic;
+}
+
+// ── Realtime tag ──────────────────────────────────────────────────────────────
+.realtimeTag {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  color: $blue;
+  background: $blue-bg;
+  border: 1px solid $blue-bd;
+  padding: 2px 8px;
+  border-radius: 20px;
+  margin-left: 10px;
+  vertical-align: middle;
+}
+
+// ── Source Banner ─────────────────────────────────────────────────────────────
+.sourceBanner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  margin-bottom: 18px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: $radius-md;
+
+  &.banner-info {
+    background: $blue-bg;
+    border: 1px solid $blue-bd;
+    border-left: 3px solid $blue;
+    color: $blue;
+  }
+
+  &.banner-warn {
+    background: $amber-bg;
+    border: 1px solid $amber-bd;
+    border-left: 3px solid $amber;
+    color: $amber;
+  }
+}
+
+// ── Modal ─────────────────────────────────────────────────────────────────────
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 12, 10, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 20px;
+}
+
+.modal {
+  background: $card-bg;
+  border-radius: $radius-xl;
+  width: 520px;
+  max-width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  animation: modalIn 0.2s ease;
+  position: relative;
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.modalClose {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  width: 28px;
+  height: 28px;
+  border-radius: $radius-sm;
+  border: 1px solid $gold-border;
+  background: transparent;
+  color: $ink-text;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  transition: background 0.1s;
+  z-index: 1;
+
+  &:hover { background: $gold-faint; }
+}
+
+// Modal head band (giống TinTuc modal head — reuse .modalTitle + .modalSub area)
+.modalTitle {
+  background: $ink;
+  padding: 18px 22px 6px;
+  font-size: 16px;
+  font-weight: 600;
+  color: $ink-text;
+  font-family: "Merriweather", serif;
+  border-bottom: none;
+}
+
+.modalSub {
+  background: $ink;
+  padding: 0 22px 16px;
+  font-size: 11px;
+  color: $ink-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  border-bottom: 1px solid $gold-border;
+  margin-bottom: 20px;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+  padding: 14px 22px 20px;
+  border-top: 1px solid rgba(0, 0, 0, 0.07);
+  margin-left: -22px;
+  margin-right: -22px;
+}
+
+// ── Form (inside modal — padded) ──────────────────────────────────────────────
+// Modal body area (padding applied to direct children of .modal after .modalSub)
+.modal > *:not(.modalTitle):not(.modalSub):not(.modalActions) {
+  padding-left: 22px;
+  padding-right: 22px;
+}
+
+.formGroup { margin-bottom: 14px; }
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.formGroupAmount {}
+.formGroupReason {}
+
+.formLabel {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: #888;
+  margin-bottom: 5px;
+}
+
+.formLabelHint {
+  font-size: 10px;
+  color: #bbb;
+  font-style: italic;
+  letter-spacing: 0;
+  text-transform: none;
+  font-weight: 400;
+}
+
+.formInput, .formTextarea {
+  width: 100%;
+  background: $surface-2;
+  border: 1px solid $border-md;
+  border-radius: $radius-md;
+  padding: 8px 11px;
+  color: $ink;
+  font-family: "Merriweather", serif;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s, background 0.15s;
+
+  &:focus     { border-color: $gold; background: $card-bg; }
+  &::placeholder { color: #c0b8ae; }
+}
+
+.formTextarea { resize: vertical; min-height: 90px; line-height: 1.6; }
+
+.inputHint {
+  display: block;
+  font-size: 11px;
+  margin-top: 4px;
+  color: #aaa;
+
+  &.warn { color: $amber; font-weight: 600; }
+}
+
+.previewBox {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: $surface-2;
+  border: 1px solid $border-md;
+  border-radius: $radius-md;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #777;
+  margin-bottom: 8px;
+}
+
+.previewVal {
+  font-size: 18px;
+  font-weight: 600;
+  color: $gold-dim;
+  font-family: "Merriweather", serif;
+}
+
+.lockWarning {
+  background: $amber-bg;
+  border: 1px solid $amber-bd;
+  border-left: 3px solid $amber;
+  border-radius: $radius-md;
+  padding: 10px 13px;
+  font-size: 12px;
+  color: $amber;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+// ── Dispute ───────────────────────────────────────────────────────────────────
+.disputeBox {
+  background: $red-bg;
+  border: 1px solid $red-bd;
+  border-left: 3px solid $red;
+  border-radius: $radius-md;
+  padding: 13px 16px;
+  margin-bottom: 14px;
+}
+
+.disputeBoxLabel {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: $red;
+  margin-bottom: 7px;
+}
+
+.disputeBoxText {
+  color: $ink;
+  font-size: 13px;
+  line-height: 1.6;
+  font-style: italic;
+}
+
+.disputeCountRow {
+  font-size: 12px;
+  color: #777;
+  margin-bottom: 16px;
+
+  strong { color: $amber; }
+}
+
+// ── Payslip breakdown ─────────────────────────────────────────────────────────
+.breakdownGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.breakdownItem {
+  background: $surface-2;
+  border: 1px solid $border-md;
+  border-radius: $radius-md;
+  padding: 12px 14px;
+}
+
+.biLabel {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #aaa;
+  margin-bottom: 5px;
+}
+
+.biVal { font-size: 16px; font-weight: 600;  font-family: "Merriweather", serif;; }
+.plus  { color: $green; }
+.minus { color: $red; }
+
+.totalRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 11px 14px;
+  border-radius: $radius-md;
+  border: 1px solid $border-md;
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: #666;
+  background: $surface-2;
+
+  &.minus {
+    background: transparent;
+    border-color: transparent;
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+
+  &.highlight {
+    background: $ink;
+    border-color: $ink;
+    color: $gold;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 14px 16px;
+
+    .mono { font-size: 20px; font-family: "Merriweather", serif; }
+  }
+}
+
+.noteRow { font-size: 12px; color: #bbb; padding: 6px 14px; font-style: italic; }
+.bigNum  { font-size: 20px !important; font-family: "Merriweather", serif; }
+
+// ── Deduction list section ────────────────────────────────────────────────────
+.deductionListSection { margin-bottom: 16px; }
+
+.deductionListTitle {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: #888;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.deductionTotal {
+  font-size: 13px;
+  font-weight: 600;
+  color: $red;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.deductionEmpty {
+  background: $surface-2;
+  border: 1px dashed $border-md;
+  border-radius: $radius-md;
+  padding: 14px 16px;
+  font-size: 12px;
+  color: #bbb;
+  text-align: center;
+  font-style: italic;
+}
+
+.deductionList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.deductionItem {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  background: $card-bg;
+  border: 1px solid $border-md;
+  border-left: 3px solid $red-bd;
+  border-radius: $radius-md;
+  padding: 10px 12px;
+  transition: background 0.12s, border-color 0.12s;
 
   &:hover {
-    background: #f5f0ec;
-    transform: scale(1.1);
+    background: $red-bg;
+    border-left-color: $red;
   }
 }
 
-/* Các class màu chữ trong bảng bị thiếu */
-.text-muted { color: #777 !important; }
-.text-success { color: #2b593f !important; font-weight: 600; }
-.text-danger { color: #8b3a3a !important; font-weight: 600; }
+.deductionItemLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.deductionAmount {
+  font-size: 15px;
+  font-weight: 600;
+  color: $red;
+  line-height: 1;
+  font-family: "Merriweather", serif;
+}
+
+.deductionReason {
+  font-size: 12px;
+  color: $ink;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.deductionViolationDate {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  color: $amber;
+  background: $amber-bg;
+  border: 1px solid $amber-bd;
+  padding: 2px 7px;
+  border-radius: 20px;
+  width: fit-content;
+}
+
+.deductionDate {
+  font-size: 10px;
+  color: #bbb;
+  font-style: italic;
+}
+
+// ── Remove form (inline) ──────────────────────────────────────────────────────
+.removeForm {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.removeInput {
+  width: 150px !important;
+  padding: 5px 9px !important;
+  font-size: 11px !important;
+}
+
+.deductionRemoveBtn {
+  flex-shrink: 0;
+  opacity: 0.3;
+  transition: opacity 0.15s, all 0.15s;
+
+  .deductionItem:hover & { opacity: 1; }
+
+  &:hover:not(:disabled) {
+    background: $red !important;
+    color: #fff !important;
+    border-color: $red !important;
+  }
+}
+
+// ── Deduction breakdown (payslip modal) ───────────────────────────────────────
+.deductionBreakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: -6px 0 10px;
+  padding: 8px 12px;
+  background: $surface-2;
+  border-radius: $radius-sm;
+}
+
+.deductionBreakdownItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  gap: 8px;
+}
+
+// ── Divider ───────────────────────────────────────────────────────────────────
+.deductionDivider {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.07);
+  margin: 16px 0;
+  position: relative;
+
+  &::after {
+    content: "THÊM MỚI";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: $card-bg;
+    padding: 0 10px;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    color: #ccc;
+  }
+}

@@ -1,60 +1,175 @@
+/* BarberTab.module.scss
+   NOULE Admin — Năng lực Thợ Tab
+   Design System: Editorial · Luxury Barber · Dark-Gold
+---------------------------------------------------------------- */
+
+// ─── Tokens ──────────────────────────────────────────────────
+$gold:        #C9A84C;
+$gold-dim:    #8A6A28;
+$gold-faint:  rgba(201, 168, 76, 0.15);
+$gold-border: rgba(201, 168, 76, 0.3);
+
+$ink:         #1A1612;
+$ink-text:    #F5F0E8;
+$ink-muted:   rgba(245, 240, 232, 0.5);
+
+$card-bg:     #FFFFFF;
+$border:      1px solid rgba(0, 0, 0, 0.07);
+$border-hover: 1px solid rgba(201, 168, 76, 0.5);
+
+$danger:      #E24B4A;
+
+$radius-sm:   6px;
+$radius-md:   10px;
+$radius-lg:   14px;
+
+$transition:  0.15s;
+
+// ─── Wrapper ─────────────────────────────────────────────────
 .tabWrapper {
-  animation: fadeIn 0.4s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadeSlideIn 0.2s ease;
+}
 
-  .alertSection {
-    margin-bottom: 25px;
-    .alertCard {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-      padding: 18px 25px;
-      border-radius: 15px;
-      &.danger {
-        background: #fee2e2;
-        color: #991b1b;
-        border-left: 6px solid #ef4444;
-      }
-    }
-  }
+// ─── Alert Section ───────────────────────────────────────────
+.alertSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 
-  .contentRow {
-    display: grid;
-    grid-template-columns: 1.5fr 1fr; // Biểu đồ to hơn insight
-    gap: 25px;
-  }
+.alertCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: $radius-md;
+  font-size: 13px;
+  line-height: 1.5;
 
-  .chartCard {
-    background: #fff;
-    padding: 25px;
-    border-radius: 24px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.03);
-    h4 { margin-bottom: 20px; font-weight: 700; color: #1a1a1a; }
-  }
+  &.danger {
+    background: #FCEBEB;
+    color: #A32D2D;
+    border: 1px solid #F09595;
 
-  .insightCard {
-    background: #1a1a1a; // Màu Charcoal sang trọng
-    color: #fff;
-    padding: 30px;
-    border-radius: 24px;
-    
-    h5 {
-      color: #D4AF37; // Chữ vàng Gold
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 18px;
-      margin-bottom: 25px;
+    strong {
+      font-weight: 600;
+      color: #A32D2D;
     }
 
-    .insightItem {
-      margin-bottom: 20px;
-      strong { display: block; margin-bottom: 5px; color: #eee; }
-      p { font-size: 14px; color: #aaa; line-height: 1.6; margin: 0; }
+    // icon color inherits
+    svg {
+      flex-shrink: 0;
+      color: $danger;
     }
   }
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+// ─── Content Row ─────────────────────────────────────────────
+.contentRow {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 16px;
+}
+
+// ─── Chart Card ──────────────────────────────────────────────
+.chartCard {
+  background: $card-bg;
+  border: $border;
+  border-radius: $radius-lg;
+  padding: 20px 22px;
+  transition: border $transition;
+
+  &:hover {
+    border: $border-hover;
+  }
+}
+
+.cardHeader {
+  margin-bottom: 16px;
+
+  h4 {
+    font-size: 13px;
+    font-weight: 600;
+    color: $ink;
+    margin: 0;
+    letter-spacing: 0.01em;
+  }
+}
+
+// ─── Insight Card — dark surface ─────────────────────────────
+.insightCard {
+  background: $ink;
+  border: 1px solid $gold-border;
+  border-radius: $radius-lg;
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  h5 {
+    font-size: 12px;
+    font-weight: 600;
+    color: $gold;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+}
+
+.insightItem {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(245, 240, 232, 0.08);
+
+  &:last-child {
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  strong {
+    font-size: 10px;
+    font-weight: 600;
+    color: $gold-dim;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    display: block;
+  }
+
+  p {
+    font-size: 13px;
+    color: $ink-muted;
+    line-height: 1.65;
+    margin: 0;
+
+    strong {
+      // override — inline strong trong paragraph
+      font-size: inherit;
+      font-weight: 600;
+      color: $ink-text;
+      text-transform: none;
+      letter-spacing: 0;
+      display: inline;
+    }
+  }
+}
+
+// ─── Responsive ──────────────────────────────────────────────
+@media (max-width: 768px) {
+  .contentRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ─── Animation ───────────────────────────────────────────────
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }

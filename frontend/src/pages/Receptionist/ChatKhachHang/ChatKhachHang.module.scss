@@ -1,194 +1,485 @@
+// ChatKhachHang.module.scss
+// Admin — Chat Khách Hàng | NOULE Barber
+// Design: NOULE gold/dark system — v2 (improved readability + responsive)
+
+$gold:        #C9A84C;
+$gold-hover:  #BA9A3E;
+$gold-dim:    #8A6A28;
+$gold-faint:  rgba(201, 168, 76, 0.12);
+$gold-border: rgba(201, 168, 76, 0.3);
+
+$ink:         #1A1612;
+$ink-2:       #2C2720;
+$ink-text:    #F5F0E8;
+$ink-muted:   rgba(245, 240, 232, 0.55);
+
+$page-bg:     #F2EEE8;
+$card-bg:     #FFFFFF;
+$surface-2:   #F9F6F1;
+
+// Màu bubble phân biệt rõ AI vs khách
+$bubble-customer-bg:      #FFFFFF;
+$bubble-customer-border:  rgba(0, 0, 0, 0.1);
+$bubble-customer-text:    #1A1612;
+
+$bubble-receptionist-bg:  #1A1612;
+$bubble-receptionist-text: #F5F0E8;
+$bubble-receptionist-border: rgba(201, 168, 76, 0.35);
+
+$border:      rgba(0, 0, 0, 0.07);
+$border-md:   rgba(0, 0, 0, 0.1);
+
+$radius-sm:   6px;
+$radius-md:   10px;
+$radius-lg:   14px;
+$radius-xl:   16px;
+
+// ── FONT SIZE BASE (dễ scale) ─────────────────────────────────────────────────
+$fs-xs:   11px;
+$fs-sm:   13px;
+$fs-base: 14px;   // tăng từ 13 → 14
+$fs-md:   15px;
+$fs-lg:   16px;
+
+// ── CONTAINER CHÍNH ──────────────────────────────────────────────────────────
 .chatContainer {
   display: grid;
-  grid-template-columns: 320px 1fr;
-  height: 650px;
-  background: var(--bg-white);
-  border: 1px solid var(--border);
-  border-radius: 12px;
+  grid-template-columns: clamp(220px, 22%, 280px) 1fr; // 🔥 sidebar tự co theo màn hình
+  height: clamp(480px, calc(100vh - 60px), 820px);     // 🔥 scale theo viewport, không cố định cứng
+  background: $card-bg;
+  border: 1px solid $border-md;
+  border-radius: $radius-xl;
   overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.07);
+  margin: 12px auto;
+  width: clamp(600px, 97%, 1300px); // 🔥 responsive rộng hẹp theo màn hình
 }
 
-/* SIDEBAR BÊN TRÁI */
+// ── SIDEBAR ──────────────────────────────────────────────────────────────────
 .chatSidebar {
-  border-right: 1px solid var(--border);
+  border-right: 1px solid $border-md;
   display: flex;
   flex-direction: column;
-  background: #fff;
+  background: $card-bg;
+  overflow: hidden;
+  height: 100%;
+}
 
-  .chatSearch {
-    padding: 20px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: var(--bg-cream);
-    border-bottom: 1px solid var(--border);
+.chatSearch {
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: $ink;
+  border-bottom: 1px solid $gold-border;
+  flex-shrink: 0;
 
-    svg { color: var(--gold); }
-    
-    input {
-      border: none;
-      background: transparent;
-      outline: none;
-      font-size: 14px;
-      width: 100%;
-      font-family: var(--ff-body);
-      &::placeholder { color: var(--text-light); }
-    }
+  svg { color: $gold; flex-shrink: 0; }
+
+  input {
+    border: none;
+    background: transparent;
+    outline: none;
+    font-size: $fs-sm;
+    width: 100%;
+    font-family: inherit;
+    color: $ink-text;
+    &::placeholder { color: $ink-muted; }
   }
+}
+
+.sidebarTabs {
+  display: flex;
+  border-bottom: 1px solid $border-md;
+  flex-shrink: 0;
+  background: $surface-2;
+}
+
+.sidebarTab {
+  flex: 1;
+  padding: 10px 4px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #999;
+  font-size: $fs-xs;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s;
+  white-space: nowrap;
+
+  &:hover { color: $ink; background: $gold-faint; }
+
+  &.active {
+    color: $gold-dim;
+    border-bottom-color: $gold;
+    background: $card-bg;
+    font-weight: 600;
+  }
+}
+
+.searchResultsHeader {
+  padding: 7px 14px;
+  background: $surface-2;
+  font-size: $fs-xs;
+  font-weight: 600;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid $border;
 }
 
 .conversationList {
   flex: 1;
   overflow-y: auto;
-  
-  &::-webkit-scrollbar { width: 4px; }
-  &::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+  min-height: 0;
+
+  &::-webkit-scrollbar       { width: 3px; }
+  &::-webkit-scrollbar-thumb { background: $border-md; border-radius: 10px; }
 }
 
 .conversationItem {
   display: flex;
-  padding: 18px 20px;
-  gap: 15px;
+  padding: 12px 14px;
+  gap: 10px;
   cursor: pointer;
-  transition: all 0.25s ease;
-  border-bottom: 1px solid rgba(0,0,0,0.03);
+  transition: background 0.12s;
+  border-bottom: 1px solid $border;
   position: relative;
 
-  &:hover { background: var(--bg-cream); }
-  
+  &:hover { background: $surface-2; }
+
   &.active {
-    background: linear-gradient(90deg, rgba(184, 150, 106, 0.1) 0%, transparent 100%);
-    &::before {
-      content: "";
-      position: absolute;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      width: 4px;
-      background: var(--gold);
-    }
-  }
-
-  .avatar {
-    width: 48px;
-    height: 48px;
-    background: var(--bg-cream);
-    border: 1px solid var(--border);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--gold);
-  }
-
-  .convInfo {
-    flex: 1;
-    overflow: hidden;
-
-    .convHeader {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 4px;
-
-      .name { font-weight: 700; color: var(--charcoal); font-size: 15px; }
-      .time { font-size: 11px; color: var(--text-light); }
-    }
-
-    .lastMsg {
-      font-size: 13px;
-      color: var(--text-dim);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
+    background: $gold-faint;
+    border-left: 3px solid $gold;
+    padding-left: 11px;
   }
 }
 
-/* KHUNG CHAT BÊN PHẢI */
+.avatar {
+  width: 36px;
+  height: 36px;
+  background: $gold-faint;
+  border: 1px solid $gold-border;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: $gold-dim;
+  flex-shrink: 0;
+}
+
+.convInfo   { flex: 1; overflow: hidden; }
+.convHeader { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; }
+.name       { font-size: $fs-sm; font-weight: 600; color: $ink; }
+.time       { font-size: $fs-xs; color: #bbb; }
+.lastMsg    { font-size: $fs-xs; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.unreadBadge {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  background: #A32D2D;
+  color: #fff;
+  border-radius: 10px;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  min-width: 18px;
+  text-align: center;
+}
+
+// ── CHAT WINDOW ───────────────────────────────────────────────────────────────
 .chatWindow {
   display: flex;
   flex-direction: column;
-  background: #fcfcfc;
-
-  .windowHeader {
-    padding: 18px 25px;
-    background: #fff;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-
-    strong { font-family: var(--ff-serif); font-size: 18px; color: var(--charcoal); }
-    span { font-size: 12px; color: #2ecc71; font-weight: 600; &::before { content: "● "; } }
-  }
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: $page-bg;
 }
 
-.messageArea {
-  flex: 1;
-  padding: 25px;
-  overflow-y: auto;
+.windowHeader {
+  flex-shrink: 0;
+  padding: 12px 16px;
+  background: $ink;
+  border-bottom: 1px solid $gold-border;
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
 
-  .msgRow {
-    display: flex;
-    max-width: 80%;
-    
-    &.sent { 
-      align-self: flex-end; 
-      .msgBubble { background: var(--charcoal); color: #fff; border-radius: 18px 18px 2px 18px; } 
-    }
-    
-    &.received { 
-      align-self: flex-start; 
-      .msgBubble { background: #fff; color: var(--charcoal); border: 1px solid var(--border); border-radius: 18px 18px 18px 2px; } 
-    }
-  }
-
-  .msgBubble {
-    padding: 12px 18px;
-    font-size: 14px;
-    line-height: 1.5;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+  strong {
+    font-size: $fs-md;
+    font-weight: 600;
+    color: $ink-text;
+    font-family: Georgia, 'Times New Roman', serif;
   }
 }
 
-.inputArea {
-  padding: 20px 25px;
-  background: #fff;
-  border-top: 1px solid var(--border);
+.headerActions { display: flex; align-items: center; gap: 6px; }
+
+.headerBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  font-size: $fs-xs;
+  font-weight: 600;
+  border-radius: $radius-sm;
+  border: 1px solid $gold-border;
+  background: transparent;
+  color: $ink-muted;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+
+  &:hover { background: $gold-faint; color: $gold; }
+
+  &.danger {
+    border-color: rgba(163, 45, 45, 0.4);
+    color: rgba(240, 149, 149, 0.9);
+    &:hover { background: rgba(163, 45, 45, 0.2); color: #F09595; }
+  }
+}
+
+.transferSelect {
+  padding: 5px 9px;
+  font-size: $fs-sm;
+  background: $ink-2;
+  border: 1px solid $gold-border;
+  border-radius: $radius-sm;
+  color: $ink-text;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+  option { background: $ink; color: $ink-text; }
+}
+
+.backButton {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 5px;
+  background: transparent;
+  border: 1px solid $gold-border;
+  color: $gold;
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: $radius-sm;
+  transition: all 0.15s;
+  font-size: $fs-sm;
+  font-family: inherit;
+  &:hover { background: $gold-faint; }
+}
+
+// ── MESSAGE AREA ──────────────────────────────────────────────────────────────
+.messageArea {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+
+  &::-webkit-scrollbar       { width: 4px; }
+  &::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.12); border-radius: 10px; }
+}
+
+// ── HÀNG TIN NHẮN ─────────────────────────────────────────────────────────────
+.msgRow {
+  display: flex;
+  align-items: flex-end; // căn chỉnh avatar với đáy bubble
+  gap: 8px;
+  max-width: 70%;
+  width: fit-content;
+
+  // Lễ tân gửi → phải
+  &.sent {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+
+    .senderName { text-align: right; color: $gold-dim; }
+
+    .msgBubble {
+      background: $bubble-receptionist-bg;
+      color: $bubble-receptionist-text;
+      border: 1px solid $bubble-receptionist-border;
+      border-radius: $radius-lg $radius-lg 4px $radius-lg;
+    }
+  }
+
+  // Khách hàng → trái
+  &.received {
+    align-self: flex-start;
+
+    .senderName { text-align: left; color: #999; }
+
+    .msgBubble {
+      background: $bubble-customer-bg;
+      color: $bubble-customer-text;
+      border: 1px solid $bubble-customer-border;
+      border-radius: $radius-lg $radius-lg $radius-lg 4px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    }
+  }
+
+  // Tin hệ thống → căn giữa
+  &.system {
+    align-self: center;
+    max-width: 80%;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin: 8px 0;
+  }
+}
+
+.msgBubbleWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.senderName {
+  font-size: $fs-xs;
+  font-weight: 600;
+  padding: 0 4px;
+  letter-spacing: 0.02em;
+}
+
+.msgBubble {
+  padding: 10px 14px;
+  font-size: $fs-base;   // 🔥 14px thay vì 13px
+  line-height: 1.6;
+  word-break: break-word;
+  border-radius: $radius-lg;
+}
+
+.msgAvatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: $gold-faint;
+  border: 1px solid $gold-border;
+  color: $gold-dim;
+  margin-bottom: 2px; // căn với đáy bubble
+}
+
+// ── KHỐI TÓM TẮT HỆ THỐNG / AI ───────────────────────────────────────────────
+// Thiết kế lại: gọn hơn, màu rõ hơn, dễ scan
+.systemSummary {
+  background: $ink;
+  border: 1px solid $gold-border;
+  border-radius: $radius-md;
+  padding: 14px 16px;
+  width: 100%;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.systemEventText {
+  font-size: $fs-sm;
+  font-weight: 700;
+  color: $gold;
+  text-align: center;
+  margin-bottom: 10px;
+  letter-spacing: 0.04em;
+  padding-bottom: 8px;
+  border-bottom: 1px solid $gold-border;
+}
+
+.aiSummaryBlock {
+  background: rgba(201, 168, 76, 0.07);
+  border-left: 3px solid $gold;
+  padding: 10px 14px;
+  border-radius: 4px;
+  color: $ink-text;
+  font-size: $fs-base;    // 🔥 14px — dễ đọc hơn
+  line-height: 1.65;
+  white-space: pre-wrap;
+
+  // Label "TÓM TẮT TỪ AI" nếu có **bold** markdown từ backend
+  strong {
+    color: $gold;
+    font-weight: 700;
+  }
+}
+
+// ── INPUT AREA ────────────────────────────────────────────────────────────────
+.inputArea {
+  flex-shrink: 0;
+  padding: 12px 16px;
+  background: $card-bg;
+  border-top: 1px solid $border-md;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 
   input {
     flex: 1;
-    border: 1px solid var(--border);
-    border-radius: 30px;
-    padding: 12px 25px;
-    font-family: var(--ff-body);
+    border: 1px solid $border-md;
+    border-radius: 20px;
+    padding: 9px 16px;
+    font-family: inherit;
+    font-size: $fs-base;   // 🔥 14px
+    background: $surface-2;
+    color: $ink;
     outline: none;
-    transition: 0.3s;
-    &:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(184, 150, 106, 0.1); }
-  }
+    transition: border-color 0.15s, background 0.15s;
 
-  .attachBtn { color: var(--text-light); cursor: pointer; &:hover { color: var(--gold); } }
-
-  .sendBtn {
-    background: var(--gold);
-    color: #fff;
-    border: none;
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: 0.3s;
-    &:hover { background: var(--gold-dark); transform: translateY(-2px); }
+    &:focus { border-color: $gold; background: $card-bg; }
+    &::placeholder { color: #bbb; }
   }
+}
+
+.attachBtn {
+  color: #aaa;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s;
+  &:hover { color: $gold; }
+}
+
+.sendBtn {
+  background: $gold;
+  color: $ink;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s;
+  flex-shrink: 0;
+  &:hover { background: $gold-hover; }
+}
+
+// ── MISC ──────────────────────────────────────────────────────────────────────
+.loading {
+  text-align: center;
+  padding: 32px;
+  font-size: $fs-sm;
+  color: #bbb;
+  font-style: italic;
+}
+
+.emptyWindow {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 10px;
+  color: #ccc;
+  font-size: $fs-sm;
+  font-style: italic;
 }

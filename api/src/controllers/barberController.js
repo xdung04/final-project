@@ -39,25 +39,23 @@ const assignBarberToBranch = async (req, res) => {
     const result = await BarberService.assignBarberToBranch(idBarber, idBranch);
 
     if (result.success) {
-  return res.json({
-    success: true,          // thêm dòng này
-    message: result.message,
-    barber: result.barber,
-  });
-} else {
-  return res.status(400).json({
-    success: false,         // thêm dòng này
-    message: result.message,
-    bookingId: result.bookingId,
-  });
-}
-
+      return res.json({
+        success: true, // thêm dòng này
+        message: result.message,
+        barber: result.barber,
+      });
+    } else {
+      return res.status(400).json({
+        success: false, // thêm dòng này
+        message: result.message,
+        bookingId: result.bookingId,
+      });
+    }
   } catch (error) {
     console.error("Lỗi assignBarberToBranch:", error);
     res.status(500).json({ error: error.message });
   }
 };
-
 
 const approveBarber = async (req, res) => {
   try {
@@ -93,11 +91,16 @@ const lockBarber = async (req, res) => {
 const unlockBarber = async (req, res) => {
   try {
     const { idBarber } = req.body;
-    const barber = await BarberService.unlockBarber(idBarber);
-    res.json({ message: "Barber unlocked", barber });
+    const result = await BarberService.unlockBarber(idBarber);
+
+    return res.status(200).json(result);
   } catch (error) {
     console.error("Lỗi unlockBarber:", error);
-    res.status(404).json({ error: error.message });
+
+    return res.status(404).json({
+      success: false,
+      error: error.message,
+    });
   }
 };
 
@@ -111,12 +114,24 @@ export const getBarberReward = async (req, res) => {
     res.status(500).json({ message: error.message || "Lỗi khi tính thưởng." });
   }
 };
+
 // 🔹 Tạo user + barber cùng lúc
 const createBarberWithUser = async (req, res) => {
   try {
-    const { email, password, fullName, phoneNumber, idBranch, profileDescription } = req.body;
+    const {
+      email,
+      password,
+      fullName,
+      phoneNumber,
+      idBranch,
+      profileDescription,
+      experienceYears,
+      specialty,
+      style,
+      certificates,
+      philosophy,
+    } = req.body;
 
-    // Gọi xuống service xử lý logic
     const result = await BarberService.createBarberWithUser({
       email,
       password,
@@ -124,6 +139,11 @@ const createBarberWithUser = async (req, res) => {
       phoneNumber,
       idBranch,
       profileDescription,
+      experienceYears,
+      specialty,
+      style,
+      certificates,
+      philosophy,
     });
 
     return res.status(201).json({
@@ -131,12 +151,13 @@ const createBarberWithUser = async (req, res) => {
       user: result.user,
       barber: result.barber,
     });
-    } catch (error) {
-      await t.rollback();
-      console.error("❌ Lỗi khi tạo barber mới (chi tiết):", error.errors || error);
-      throw new Error("Lỗi khi tạo barber mới: " + (error.message || "Không rõ"));
-    }
-
+  } catch (error) {
+    // KHÔNG gọi t.rollback() ở đây — transaction được rollback bên trong service
+    console.error("Lỗi createBarberWithUser controller:", error.message);
+    return res.status(500).json({
+      message: "Lỗi khi tạo thợ mới: " + (error.message || "Không rõ"),
+    });
+  }
 };
 
 // 🔹 Cập nhật barber (cho phép đổi pass, tên, sđt, branch, mô tả)
@@ -153,29 +174,6 @@ const updateBarber = async (req, res) => {
 };
 
 
-
-export const addBarberUnavailability = async (req, res) => {
-  try {
-    const result = await BarberService.addBarberUnavailability(req.body);
-    res.status(201).json(result);
-  } catch (error) {
-    console.error("Lỗi khi thêm nghỉ phép:", error);
-    res.status(500).json({
-      message: error.message || "Không thể thêm lịch nghỉ phép.",
-    });
-  }
-};
-
-const getBarberUnavailabilities = async (req, res) => {
-  try {
-    const { idBarber } = req.params;
-    const records = await BarberService.getUnavailabilitiesByBarber(idBarber);
-    return res.status(200).json({ unavailabilities: records });
-  } catch (error) {
-    console.error("Lỗi khi lấy lịch nghỉ phép:", error);
-    return res.status(500).json({ message: error.message });
-  }
-};
 
 const getBarberProfile = async (req, res) => {
   try {
@@ -201,33 +199,38 @@ const updateBarberProfile = async (req, res) => {
     const { idBarber } = req.params;
     const payload = { ...req.body };
 
-    // ✅ Cloudinary lưu ở file.path hoặc file.url tùy lib, nên check cả 2
+    // Multer Cloudinary lưu URL vào file.path
     if (req.file) {
       payload.image = req.file.path || req.file.url;
     }
 
+    // Đảm bảo image là string, không phải object
     if (payload.image && typeof payload.image !== "string") {
       delete payload.image;
     }
 
     const result = await BarberService.updateProfile(idBarber, payload);
+
     return res.status(200).json(result);
   } catch (err) {
-    console.error("❌ Lỗi updateProfile:", err);
-    return res.status(500).json({ error: err.message });
+    console.error("Lỗi updateBarberProfile:", err);
+
+    // Nếu service throw lỗi có status (400 validate) → trả về đúng status đó
+    const status = err.status || 500;
+    return res.status(status).json({ error: err.message });
   }
 };
 
 const getDashboardStats = async (req, res) => {
   try {
     const { idBarber } = req.params;
-    const idUser = req.user.idUser; 
+    const idUser = req.user.idUser;
 
     if (idBarber != idUser) {
-        return res.status(403).json({ error: "Không có quyền truy cập số liệu này." });
+      return res.status(403).json({ error: "Không có quyền truy cập số liệu này." });
     }
 
-    const stats = await BarberService.getDashboardStats(idBarber); 
+    const stats = await BarberService.getDashboardStats(idBarber);
 
     res.json(stats);
   } catch (err) {
@@ -241,29 +244,72 @@ export const getBarbersForHome = async (req, res) => {
     const barbers = await BarberService.getBarbersForDisplay();
     return res.status(200).json({
       total: barbers.length,
-      data: barbers
+      data: barbers,
     });
   } catch (error) {
     console.error("Lỗi getBarbersForHome:", error);
     return res.status(500).json({ message: "Lỗi server" });
   }
 };
+
+export const getHotBarbers = async (req, res) => {
+  try {
+    const { page = 1, limit = 4 } = req.query;
+    const result = await BarberService.getHotBarbers(parseInt(page), parseInt(limit));
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error("Lỗi getHotBarbers:", error);
+    return res.status(500).json({ message: "Lỗi server" });
+  }
+};
+
+export const setLockDate = async (req, res) => {
+  try {
+    const { idBarber } = req.params;
+    const { lockDate } = req.body;
+
+    if (!lockDate) {
+      return res.status(400).json({ success: false, message: "Thiếu ngày khóa!" });
+    }
+
+    const result = await BarberService.setLockDate(idBarber, lockDate);
+    return res.status(result.success ? 200 : 400).json(result);
+  } catch (error) {
+    console.error("setLockDate controller error:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/** DELETE /api/barbers/:idBarber/lock-date */
+export const cancelLockDate = async (req, res) => {
+  try {
+    const { idBarber } = req.params;
+    const result = await BarberService.cancelLockDate(idBarber);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error("cancelLockDate controller error:", error);
+    return res.status(400).json({ success: false, message: error.message });
+  }
+};
+
 export default {
   getAllBarbers,
   syncBarbers,
   assignBarberToBranch,
   approveBarber,
-  addBarberUnavailability,
   lockBarber,
   unlockBarber,
   assignUserAsBarber,
   getBarberReward,
   createBarberWithUser,
   updateBarber,
-  getBarberUnavailabilities,
+
   getBarberProfile,
   updateBarberProfile,
   uploadAvatar,
   getDashboardStats,
-   getBarbersForHome,
+  getBarbersForHome,
+  getHotBarbers,
+  setLockDate,
+  cancelLockDate,
 };

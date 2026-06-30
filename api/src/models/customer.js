@@ -6,14 +6,22 @@ export default (sequelize) => {
     static associate(models) {
       Customer.belongsTo(models.User, {
         foreignKey: "idCustomer",
+         targetKey:  "idUser", 
         as: "user",
+
       });
 
       Customer.belongsToMany(models.Voucher, {
         through: models.CustomerVoucher,
-        foreignKey: "idCustomer",
-        otherKey: "idVoucher",
+        foreignKey: "customer_id",  
+        otherKey: "voucher_id",      
         as: "vouchers",
+      });
+
+      Customer.hasOne(models.Conversation, {
+        foreignKey: "customerId",
+        sourceKey: "idCustomer",
+        as: "conversation",
       });
     }
   }
@@ -38,7 +46,7 @@ export default (sequelize) => {
       modelName: "Customer",
       tableName: "customers",
       timestamps: true,
-    }
+    },
   );
 
   return Customer;

@@ -1,266 +1,460 @@
-/* Wrapper */
+// TongQuan.module.scss
+// Admin — Tổng Quan Dashboard | NOULE Barber
+// Design: NOULE gold/dark system — khớp với TinTuc.module.scss
+
+// ── Design tokens (đồng bộ TinTuc) ───────────────────────────────────────────
+$gold:        #C9A84C;
+$gold-hover:  #BA9A3E;
+$gold-dim:    #8A6A28;
+$gold-faint:  rgba(201, 168, 76, 0.15);
+$gold-border: rgba(201, 168, 76, 0.3);
+
+$ink:         #1A1612;
+$ink-text:    #F5F0E8;
+$ink-muted:   rgba(245, 240, 232, 0.5);
+$ink-subtle:  rgba(245, 240, 232, 0.25);
+
+$page-bg:     #F7F4EF;
+$card-bg:     #FFFFFF;
+$input-bg:    #F9F6F1;
+
+$border:      1px solid rgba(0, 0, 0, 0.07);
+$border-hover: 1px solid rgba(201, 168, 76, 0.5);
+
+$radius-sm:   6px;
+$radius-md:   10px;
+$radius-lg:   14px;
+$radius-xl:   18px;
+
+// ── Page wrapper ──────────────────────────────────────────────────────────────
 .dashboardWrapper {
   display: flex;
   flex-direction: column;
-  gap: 30px;
-  animation: fadeIn 0.5s ease;
-  padding-bottom: 20px;
+  gap: 24px;
+  background: $page-bg;
+  min-height: 100vh;
+  padding-bottom: 48px;
+  color: $ink;
+  animation: fadeInPage 0.4s ease forwards;
 }
 
-/* Header Section */
-.welcomeSection {
+@keyframes fadeInPage {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+// ── Page heading (khớp TinTuc .pageHead) ──────────────────────────────────────
+.pageHead {
   display: flex;
-  justify-content: space-between;
   align-items: flex-end;
-  margin-bottom: 5px;
+  justify-content: space-between;
+  padding-bottom: 22px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 
-  .welcomeText h2 {
-    font-family: var(--ff-serif);
-    font-size: 26px;
-    color: var(--charcoal);
-    margin: 0 0 5px 0;
-  }
-  .welcomeText p {
-    color: var(--text-dim);
-    font-size: 14px;
-    margin: 0;
-  }
-  .dateFilter {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: var(--bg-white);
-    padding: 10px 18px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--gold-dark);
+  &__eyebrow {
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: $gold-dim;
+    margin-bottom: 6px;
     font-weight: 500;
-    font-size: 14px;
-    box-shadow: 0 2px 10px rgba(184, 150, 106, 0.05);
+  }
+
+  &__title {
+    font-size: 28px;
+    font-weight: 600;
+    color: $ink;
+    line-height: 1.1;
+   font-family: "Merriweather", serif;
+
+    em {
+      color: $gold;
+      font-style: italic;
+    }
   }
 }
 
-/* Stats Grid */
+// ── Date filter (phải) ────────────────────────────────────────────────────────
+.dateFilter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: $ink;
+
+  svg { color: #aaa; }
+}
+
+.filterSelect {
+  padding: 7px 10px;
+  font-size: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: $radius-md;
+  background: $card-bg;
+  color: $ink;
+  cursor: pointer;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s;
+
+  &:focus, &:hover { border-color: $gold; }
+}
+
+// ── Stats strip (khớp TinTuc .statsStrip / .statItem) ────────────────────────
 .statsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
 }
 
 .statCard {
-  background: var(--bg-white);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 24px;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
-  transition: all 0.3s ease;
+  background: $card-bg;
+  border: $border;
+  border-radius: $radius-lg;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: border-color 0.15s;
 
-  &::before {
-    content: "";
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 3px;
-    background: linear-gradient(90deg, var(--gold) 0%, transparent 100%);
-    opacity: 0; transition: opacity 0.3s ease;
-  }
+  &:hover { border-color: rgba(201, 168, 76, 0.35); }
 
-  &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(184, 150, 106, 0.1);
-    border-color: rgba(184, 150, 106, 0.3);
-    &::before { opacity: 1; }
-  }
-
-  .cardHeader {
+  &__icon {
+    width: 38px;
+    height: 38px;
+    border-radius: $radius-md;
+    background: $gold-faint;
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 20px;
+    align-items: center;
+    justify-content: center;
+    color: $gold;
+    flex-shrink: 0;
   }
 
-  .iconBox {
-    background: rgba(184, 150, 106, 0.1);
-    color: var(--gold-dark);
-    width: 45px; height: 45px;
-    display: flex; align-items: center; justify-content: center;
-    border-radius: 10px;
+  &__num {
+    font-size: 20px;
+    font-weight: 600;
+    color: $ink;
+    line-height: 1.1;
+    font-family: Georgia, 'Times New Roman', serif;
   }
 
-  .trendBadge {
-    display: flex; align-items: center; gap: 4px;
-    font-size: 12px; font-weight: 600;
-    padding: 4px 10px; border-radius: 20px;
-    &.positive { background: rgba(46, 204, 113, 0.1); color: #27ae60; }
-    &.negative { background: rgba(231, 76, 60, 0.1); color: #c0392b; }
+  &__label {
+    font-size: 10px;
+    color: #888;
+    margin-top: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
   }
 
-  .cardBody {
-    .cardTitle {
-      font-size: 13px; color: var(--text-light); text-transform: uppercase;
-      letter-spacing: 1px; margin: 0 0 8px 0; font-weight: 500;
-    }
-    .cardValue {
-      font-family: var(--ff-serif); font-size: 28px; color: var(--charcoal); margin: 0;
-    }
+  &__trend {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 10px;
+    font-weight: 500;
+    margin-top: 4px;
+
+    &--pos { color: #3B6D11; }
+    &--neg { color: #A32D2D; }
+    &--neu { color: #888; }
   }
 }
 
-/* Common Section Header */
-.sectionHeader {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 24px;
-
-  .titleBox {
-    display: flex; align-items: center; gap: 10px;
-    h3 { font-family: var(--ff-serif); font-size: 18px; color: var(--charcoal); margin: 0; }
-  }
-  .sectionIcon {
-    color: var(--text-light);
-    &.gold { color: var(--gold); }
-  }
-  .actionBtn {
-    background: transparent; border: none; color: var(--gold-dark);
-    font-size: 13px; font-weight: 600; cursor: pointer; transition: color 0.2s;
-    &:hover { color: var(--gold); }
-  }
-}
-
-/* Charts Grid */
+// ── Charts grid ───────────────────────────────────────────────────────────────
 .chartsGrid {
   display: grid;
   grid-template-columns: 2fr 1fr;
-  gap: 24px;
+  gap: 18px;
 }
 
-.chartCard {
-  background: var(--bg-white);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+// ── Section card (chart + table dùng chung) ───────────────────────────────────
+.sectionCard {
+  background: $card-bg;
+  border: $border;
+  border-radius: $radius-lg;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 
-.chartWrapper {
-  flex: 1;
-  min-height: 300px;
-  width: 100%;
-}
+// ── Section header (dark — giống modal head của TinTuc) ───────────────────────
+.sectionHead {
+  background: $ink;
+  padding: 13px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid $gold-border;
+  flex-shrink: 0;
 
-.customTooltip {
-  background: var(--bg-white);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  &__left {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
 
-  .tooltipLabel {
+  &__icon { color: $gold; }
+
+  &__title {
+    font-size: 13px;
     font-weight: 600;
-    color: var(--text-dim);
-    margin: 0 0 8px 0;
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    color: $ink-text;
+   font-family: "Merriweather", serif;
+    letter-spacing: 0.01em;
   }
 }
 
-/* Tables Grid */
+// ── Chart wrappers ────────────────────────────────────────────────────────────
+.chartBody {
+  padding: 20px 18px 18px;
+  flex: 1;
+  min-height: 0;
+}
+
+// Revenue line chart
+.revenueChartWrap {
+  height: 280px;
+  width: 100%;
+
+  :global(.recharts-cartesian-grid-horizontal line) {
+    stroke: rgba(0, 0, 0, 0.06);
+  }
+
+  :global(.recharts-text) {
+    font-family: inherit;
+    font-size: 11px;
+    fill: #aaa;
+  }
+
+  :global(.recharts-legend-item-text) {
+    font-size: 12px !important;
+    color: #666 !important;
+  }
+}
+
+// Pie chart — layout cố định tránh bị xén
+.pieChartWrap {
+  height: 300px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+
+  :global(.recharts-legend-wrapper) {
+    position: relative !important;
+    bottom: auto !important;
+  }
+
+  :global(.recharts-legend-item-text) {
+    font-size: 11px !important;
+    color: #555 !important;
+  }
+
+  :global(.recharts-pie-label-text) {
+    font-size: 11px;
+    fill: $ink;
+  }
+}
+
+// ── Tooltip ───────────────────────────────────────────────────────────────────
+.tooltip {
+  background: $card-bg;
+  border: $border;
+  border-radius: $radius-md;
+  padding: 10px 14px;
+  box-shadow: 0 4px 16px rgba(26, 22, 18, 0.08);
+
+  &__label {
+    font-size: 12px;
+    font-weight: 600;
+    color: $ink;
+    margin: 0 0 6px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    font-family: Georgia, 'Times New Roman', serif;
+  }
+
+  &__item {
+    font-size: 12px;
+    margin: 3px 0;
+    font-weight: 500;
+  }
+}
+
+// ── Tables grid ───────────────────────────────────────────────────────────────
 .tablesGrid {
   display: grid;
   grid-template-columns: 2fr 1.5fr;
-  gap: 24px;
+  gap: 18px;
 }
 
-@media (max-width: 1024px) {
-  .chartsGrid, .tablesGrid {
-    grid-template-columns: 1fr;
+// ── Luxury table ──────────────────────────────────────────────────────────────
+.tableWrap { overflow-x: auto; }
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: inherit;
+
+  th, td {
+    padding: 12px 18px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    text-align: left;
   }
-}
 
-.tableCard {
-  background: var(--bg-white);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
-}
+  th {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: #888;
+    padding-top: 16px;
+    padding-bottom: 10px;
+  }
 
-/* Luxury Table (Top Customers) */
-.tableWrapper { overflow-x: auto; }
-.luxuryTable {
-  width: 100%; border-collapse: collapse; font-size: 14px;
-  th, td { padding: 15px 10px; border-bottom: 1px solid rgba(184, 150, 106, 0.1); }
-  th { text-transform: uppercase; font-size: 11px; letter-spacing: 1px; color: var(--text-light); font-weight: 600; text-align: left; }
   tbody tr {
-    transition: background 0.2s ease;
-    &:hover { background: rgba(184, 150, 106, 0.02); }
+    transition: background 0.1s;
+
+    &:hover   { background: #faf8f4; }
+    &:last-child td { border-bottom: none; }
   }
+
+  td { font-size: 13px; color: $ink; }
+
   .textCenter { text-align: center; }
-  .textRight { text-align: right; }
-  .customerInfo { display: flex; align-items: center; gap: 12px; }
-  .avatarInitials {
-    width: 32px; height: 32px; background: linear-gradient(135deg, var(--gold-light), var(--gold-dark));
-    color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-    font-weight: bold; font-size: 13px;
-  }
-  .customerName { font-weight: 500; color: var(--charcoal); }
-  .visitCount {
-    background: var(--bg-cream); padding: 4px 12px; border-radius: 12px;
-    font-weight: 600; color: var(--text-dim); font-size: 12px;
-  }
-  .totalSpent { font-weight: 600; color: var(--gold-dark); }
+  .textRight  { text-align: right; }
 }
 
-/* Top Barbers List */
+.customerInfo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: $gold-faint;
+  border: 1px solid $gold-border;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: $gold-dim;
+  flex-shrink: 0;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.visitCount { color: $ink; }
+
+.totalSpent {
+  color: $gold;
+  font-weight: 600;
+}
+
+// ── Barber list ───────────────────────────────────────────────────────────────
 .barberList {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  padding: 4px 18px 18px;
 }
 
 .barberItem {
   display: flex;
   align-items: center;
-  gap: 15px;
-  padding: 12px 15px;
-  border-radius: 10px;
-  background: var(--bg-cream);
-  border: 1px solid transparent;
-  transition: all 0.2s ease;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 
-  &:hover {
-    background: var(--bg-white);
-    border-color: var(--border);
-    box-shadow: 0 4px 12px rgba(184, 150, 106, 0.05);
-    transform: translateX(4px);
+  &:last-child { border-bottom: none; }
+}
+
+.rankBadge {
+  width: 22px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: #ccc;
+  font-family: Georgia, 'Times New Roman', serif;
+  flex-shrink: 0;
+
+  &--1 { color: $gold; }
+  &--2 { color: #9C8A5A; }
+  &--3 { color: #B0AAA0; }
+}
+
+.barberInfo {
+  flex: 1;
+  min-width: 0;
+
+  &__name {
+    font-size: 13px;
+    font-weight: 600;
+    color: $ink;
+    margin: 0 0 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
-  .rankBadge {
-    width: 32px; height: 32px;
-    display: flex; align-items: center; justify-content: center;
-    border-radius: 8px; font-weight: 700; font-size: 14px;
-    background: var(--bg-white); color: var(--text-dim);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  &__role {
+    font-size: 11px;
+    color: #aaa;
+  }
+}
 
-    &.rank1 { background: linear-gradient(135deg, #ffd700, #ffb300); color: white; }
-    &.rank2 { background: linear-gradient(135deg, #e0e0e0, #9e9e9e); color: white; }
-    &.rank3 { background: linear-gradient(135deg, #cd7f32, #a0522d); color: white; }
+.barberStats {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+
+  &__revenue {
+    font-size: 13px;
+    font-weight: 600;
+    color: $gold;
   }
 
-  .barberInfo {
-    flex: 1;
-    .barberName { margin: 0 0 3px 0; font-weight: 600; color: var(--charcoal); font-size: 14px; }
-    .barberRole { font-size: 12px; color: var(--text-light); }
+  &__rating {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 11px;
+    color: #888;
   }
+}
 
-  .barberStats {
-    display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
-    .barberRevenue { font-weight: 700; color: var(--gold-dark); font-size: 14px; }
-    .barberRating { 
-      display: flex; align-items: center; gap: 3px; 
-      font-size: 12px; color: var(--text-dim); font-weight: 600;
-    }
+// ── Empty / skeleton ──────────────────────────────────────────────────────────
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  font-size: 13px;
+  color: #bbb;
+  font-style: italic;
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+// ── Responsive ────────────────────────────────────────────────────────────────
+@media (max-width: 1024px) {
+  .chartsGrid,
+  .tablesGrid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  .statsGrid { grid-template-columns: repeat(2, 1fr); }
+
+  .pageHead {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+
+    &__title { font-size: 22px; }
   }
 }

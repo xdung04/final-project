@@ -1,50 +1,93 @@
 import * as request from "~/apis/configs/httpRequest";
 
-/**
- * Lấy bảng lương thợ cắt tóc theo tháng và năm
- * @param {number} month Tháng
- * @param {number} year Năm
- * @returns {Promise<Array>} Mảng dữ liệu lương
- */
 export const fetchBarberSalaries = async (month, year) => {
   try {
-    const res = await request.get(`/salary?month=${month}&year=${year}`);
-    console.log("fetchBarberSalaries trả về:", res);
-    return res; // trả về dữ liệu lương từ backend
+    return await request.get(`/salary`, { params: { month, year } });
   } catch (error) {
-    console.error("Lỗi khi fetch bảng lương:", error);
     throw error.response?.data || error;
   }
 };
 
-/**
- * Gửi yêu cầu lưu/tính lương cho tháng/năm
- * @param {number} month Tháng
- * @param {number} year Năm
- * @returns {Promise<any>}
- */
-export const calculateBarberSalaries = async (month, year) => {
-  try {
-    const res = await request.post(`/salary/confirm`, { month, year });
-    console.log("calculateBarberSalaries trả về:", res);
-    return res;
-  } catch (error) {
-    console.error("Lỗi khi tính lương:", error);
-    throw error.response?.data || error;
-  }
-};
-
-/**
- * Lấy tổng quan lương các tháng (cả tháng hiện tại & các tháng trước)
- * @returns {Promise<Array>} Mảng dữ liệu tháng + status + salaries
- */
 export const fetchSalaryOverview = async () => {
   try {
-    const res = await request.get(`/salary/overview`);
-    console.log("fetchSalaryOverview trả về:", res);
-    return res;
+    return await request.get(`/salary/overview`);
   } catch (error) {
-    console.error("Lỗi khi fetch salary overview:", error);
+    throw error.response?.data || error;
+  }
+};
+
+export const createDraftSalaries = async (month, year) => {
+  try {
+    return await request.post(`/salary/draft`, { month, year });
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+};
+
+export const sendPayslip = async (idSalary) => {
+  try {
+    return await request.post(`/salary/${idSalary}/send`);
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+};
+
+export const addDeduction = async (idSalary, { amount, reason, violationDate }) => { // 🆕
+  try {
+    return await request.post(`/salary/${idSalary}/deductions`, {
+      amount,
+      reason,
+      violationDate: violationDate || null, // 🆕
+    });
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+};
+
+export const removeDeduction = async (idDeduction, deleteReason) => {
+  try {
+    return await request.del(`/salary/deductions/${idDeduction}`, { data: { deleteReason } });
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+};
+
+export const forceCloseDispute = async (idSalary, reason) => {
+  try {
+    return await request.post(`/salary/${idSalary}/force-close`, { reason });
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+};
+
+export const markAsPaid = async (idSalary, payload) => {
+  try {
+    return await request.post(`/salary/${idSalary}/pay`, payload);
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+};
+
+export const fetchMyPayslips = async () => {
+  try {
+    return await request.get(`/salary/my-payslips`);
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+};
+
+export const confirmMyPayslip = async (idSalary) => {
+  try {
+    return await request.patch(`/salary/${idSalary}/confirm`, {});
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+};
+
+export const disputeMyPayslip = async (idSalary, reason) => {
+  try {
+    return await request.patch(`/salary/${idSalary}/dispute`, { reason });
+  } catch (error) {
     throw error.response?.data || error;
   }
 };

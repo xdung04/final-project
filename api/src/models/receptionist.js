@@ -15,6 +15,10 @@ export default (sequelize) => {
         foreignKey: "idBranch",
         as: "branch",
       });
+      Receptionist.hasMany(models.Conversation, {
+        foreignKey: "assignedReceptionistId",
+        as: "assignedConversations",
+      });
     }
   }
 
@@ -36,7 +40,7 @@ export default (sequelize) => {
       modelName: "Receptionist",
       tableName: "receptionists",
       timestamps: true,
-    }
+    },
   );
 
   return Receptionist;

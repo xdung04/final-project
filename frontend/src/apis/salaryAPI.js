@@ -1,46 +1,46 @@
 import * as salaryService from "~/services/salaryService";
 
 export const SalaryAPI = {
-  /**
-   * Lấy bảng lương theo tháng/năm (realtime)
-   * @param {number} month Tháng
-   * @param {number} year Năm
-   */
   getSalaries: async (month, year) => {
-    try {
-      const res = await salaryService.fetchBarberSalaries(month, year);
-      return res;
-    } catch (error) {
-      console.error("SalaryAPI.getSalaries lỗi:", error);
-      throw error;
-    }
+    return await salaryService.fetchBarberSalaries(month, year);
   },
 
-  /**
-   * Tính/lưu lương toàn bộ thợ cho một tháng/năm
-   * @param {number} month Tháng
-   * @param {number} year Năm
-   */
-  calculateSalaries: async (month, year) => {
-    try {
-      const res = await salaryService.calculateBarberSalaries(month, year);
-      return res;
-    } catch (error) {
-      console.error("SalaryAPI.calculateSalaries lỗi:", error);
-      throw error;
-    }
-  },
-
-  /**
-   * Lấy tổng quan các tháng để frontend biết tháng nào đã tính, chưa tính
-   */
   getSalaryOverview: async () => {
-    try {
-      const res = await salaryService.fetchSalaryOverview();
-      return res;
-    } catch (error) {
-      console.error("SalaryAPI.getSalaryOverview lỗi:", error);
-      throw error;
-    }
+    return await salaryService.fetchSalaryOverview();
+  },
+
+  createDraftSalaries: async (month, year) => {
+    return await salaryService.createDraftSalaries(month, year);
+  },
+
+  sendPayslip: async (idSalary) => {
+    return await salaryService.sendPayslip(idSalary);
+  },
+
+addDeduction: async (idSalary, { amount, reason, violationDate }) => {
+  return await salaryService.addDeduction(idSalary, { amount, reason, violationDate });
+},
+
+removeDeduction: async (idDeduction, deleteReason) => {
+  return await salaryService.removeDeduction(idDeduction, deleteReason);
+},
+
+  forceCloseDispute: async (idSalary, reason) => {
+    return await salaryService.forceCloseDispute(idSalary, reason);
+  },
+
+  markAsPaid: async (idSalary, payload) => {
+    return await salaryService.markAsPaid(idSalary, payload);
+  },
+  getMyPayslips: async () => {
+    return await salaryService.fetchMyPayslips();
+  },
+
+  confirmMyPayslip: async (idSalary) => {
+    return await salaryService.confirmMyPayslip(idSalary);
+  },
+
+  disputeMyPayslip: async (idSalary, reason) => {
+    return await salaryService.disputeMyPayslip(idSalary, reason);
   },
 };

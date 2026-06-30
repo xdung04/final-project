@@ -12,71 +12,59 @@ import RevenueTab from "./Tabs/RevenueTab";
 
 import { 
   BrainCircuit, Users, Scissors, TrendingUp, 
-  CalendarDays, LayoutDashboard, DollarSign
+  CalendarDays, DollarSign
 } from "lucide-react";
 
 const cx = classNames.bind(styles);
 
+const tabs = [
+  { id: "revenue",  label: "Doanh thu",     icon: <DollarSign  size={15} strokeWidth={2} /> },
+  { id: "ai-hub",   label: "AI Smart Hub",  icon: <BrainCircuit size={15} strokeWidth={2} /> },
+  { id: "customer", label: "Khách hàng",    icon: <Users        size={15} strokeWidth={2} /> },
+  { id: "barber",   label: "Năng lực Thợ",  icon: <Scissors     size={15} strokeWidth={2} /> },
+  { id: "ops",      label: "Vận hành",      icon: <CalendarDays size={15} strokeWidth={2} /> },
+  { id: "trend",    label: "Xu hướng",      icon: <TrendingUp   size={15} strokeWidth={2} /> },
+];
+
 function ThongKe() {
   const [activeTab, setActiveTab] = useState("revenue");
-
-  const sidebarItems = [
-    { id: "revenue", label: "Doanh thu", icon: <DollarSign size={20} /> },
-    { id: "ai-hub", label: "AI Smart Hub", icon: <BrainCircuit size={20} /> },
-    { id: "customer", label: "Khách hàng", icon: <Users size={20} /> },
-    { id: "barber", label: "Năng lực Thợ", icon: <Scissors size={20} /> },
-    { id: "ops", label: "Vận hành", icon: <CalendarDays size={20} /> },
-    { id: "trend", label: "Xu hướng", icon: <TrendingUp size={20} /> },
-  ];
-
-  const activeHeader = sidebarItems.find(i => i.id === activeTab);
+  const activeItem = tabs.find(t => t.id === activeTab);
 
   return (
-    <div className={cx("container")}>
-      {/* --- SIDEBAR --- */}
-      <aside className={cx("sidebar")}>
-        <div className={cx("logoBox")}>
-          <div className={cx("logoIcon")}><LayoutDashboard size={24} /></div>
-          <div className={cx("logoText")}>BARBER<span>STAT</span></div>
-        </div>
-
-        <nav className={cx("navigation")}>
-          {sidebarItems.map((item) => (
+    <div className={cx("wrapper")}>
+      {/* ── TAB BAR ── */}
+      <div className={cx("tabBar")}>
+        <div className={cx("tabBarInner")}>
+          {tabs.map(tab => (
             <button
-              key={item.id}
-              className={cx("navItem", { active: activeTab === item.id })}
-              onClick={() => setActiveTab(item.id)}
+              key={tab.id}
+              className={cx("tabBtn", { active: activeTab === tab.id })}
+              onClick={() => setActiveTab(tab.id)}
             >
-              {item.icon}
-              <span>{item.label}</span>
+              <span className={cx("tabIcon")}>{tab.icon}</span>
+              <span className={cx("tabLabel")}>{tab.label}</span>
             </button>
           ))}
-        </nav>
-
-        <div className={cx("sidebarFooter")}>
-          <p>© 2026 AI Management</p>
         </div>
-      </aside>
+      </div>
 
-      {/* --- MAIN CONTENT --- */}
-      <main className={cx("mainArea")}>
-        <header className={cx("topBar")}>
-          <div className={cx("pageInfo")}>
-            <h2>{activeHeader?.label}</h2>
-            <p>Dữ liệu tổng hợp thời gian thực từ hệ thống</p>
-          </div>
-        </header>
+      {/* ── PAGE HEADER ── */}
+      <div className={cx("pageHeader")}>
+        <div className={cx("pageHeaderInner")}>
+          <h2 className={cx("pageTitle")}>{activeItem?.label}</h2>
+          <p className={cx("pageSubtitle")}>Dữ liệu tổng hợp thời gian thực từ hệ thống</p>
+        </div>
+      </div>
 
-        <section className={cx("contentBody")}>
-          {/* Các Tab tự quản lý API bên trong */}
-          {activeTab === "revenue" && <RevenueTab />}
-          {activeTab === "ai-hub" && <AiHubTab />}
-          {activeTab === "customer" && <CustomerTab />}
-          {activeTab === "barber" && <BarberTab />}
-          {activeTab === "ops" && <OpsTab />}
-          {activeTab === "trend" && <TrendTab />}
-        </section>
-      </main>
+      {/* ── CONTENT ── */}
+      <div className={cx("contentBody")} key={activeTab}>
+        {activeTab === "revenue"  && <RevenueTab />}
+        {activeTab === "ai-hub"   && <AiHubTab />}
+        {activeTab === "customer" && <CustomerTab />}
+        {activeTab === "barber"   && <BarberTab />}
+        {activeTab === "ops"      && <OpsTab />}
+        {activeTab === "trend"    && <TrendTab />}
+      </div>
     </div>
   );
 }

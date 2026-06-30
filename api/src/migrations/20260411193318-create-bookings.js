@@ -1,9 +1,12 @@
-// api/src/migrations/20250101000010-create-bookings.js
 "use strict";
 
 export async function up(queryInterface, Sequelize) {
   await queryInterface.createTable("bookings", {
-    idBooking: { type: Sequelize.INTEGER, autoIncrement: true, primaryKey: true },
+    idBooking: {
+      type: Sequelize.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
+    },
     idCustomer: {
       type: Sequelize.INTEGER,
       allowNull: false,
@@ -21,27 +24,63 @@ export async function up(queryInterface, Sequelize) {
     idCustomerVoucher: {
       type: Sequelize.INTEGER,
       allowNull: true,
-      references: { model: "customer_voucher", key: "id" },
+      references: {
+        model: "customer_vouchers",
+        key: "id",
+      },
       onUpdate: "CASCADE",
       onDelete: "SET NULL",
     },
-    guestCount: { type: Sequelize.INTEGER, defaultValue: 1 },
-    bookingDate: { type: Sequelize.DATE, allowNull: false },
-    bookingTime: { type: Sequelize.TEXT, allowNull: false },
+    guestCount: {
+      type: Sequelize.INTEGER,
+      defaultValue: 1,
+    },
+    bookingDate: {
+      type: Sequelize.DATE,
+      allowNull: false,
+    },
+    bookingTime: {
+      type: Sequelize.TEXT,
+      allowNull: false,
+    },
     status: {
       type: Sequelize.ENUM("Pending", "InProgress", "Completed", "Cancelled"),
       defaultValue: "Pending",
     },
-    description: { type: Sequelize.TEXT, allowNull: true },
-    total: { type: Sequelize.DECIMAL(10, 2), allowNull: false, defaultValue: 0.0 },
-    isPaid: { type: Sequelize.BOOLEAN, allowNull: false, defaultValue: false },
-    createdAt: { type: Sequelize.DATE, defaultValue: Sequelize.literal("CURRENT_TIMESTAMP") },
+    description: {
+      type: Sequelize.TEXT,
+      allowNull: true,
+    },
+    total: {
+      type: Sequelize.DECIMAL(10, 2),
+      allowNull: false,
+      defaultValue: 0.0,
+    },
+    isPaid: {
+      type: Sequelize.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
+    paymentMethod: {
+      type: Sequelize.ENUM("Cash", "Transfer"),
+      allowNull: true,
+    },
+    createdAt: {
+      type: Sequelize.DATE,
+      defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
+    },
     updatedAt: {
       type: Sequelize.DATE,
       defaultValue: Sequelize.literal("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"),
     },
   });
+  // Thêm vào cuối hàm up(), sau createTable
+await queryInterface.addIndex("bookings", ["idCustomer"]);  // xem lịch sử khách
+await queryInterface.addIndex("bookings", ["idBarber"]);    // xem lịch thợ
+await queryInterface.addIndex("bookings", ["status"]);      // filter Pending/Completed
+await queryInterface.addIndex("bookings", ["bookingDate"]);
 }
+ // query theo ngày — quan trọng nhất
 
 export async function down(queryInterface) {
   await queryInterface.dropTable("bookings");

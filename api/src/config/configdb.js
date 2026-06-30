@@ -1,20 +1,20 @@
 import { Sequelize } from 'sequelize';
 import mysql2 from 'mysql2';
 
-const sequelize = new Sequelize("barbershop", "rpWeBffxsABWN46.root", "I1zjl93hQooAG5uH", {
-  host: "gateway01.ap-southeast-1.prod.aws.tidbcloud.com",
-  port: process.env.DB_PORT || 4000,
+const sequelize = new Sequelize("barbershop", "root", "123456789", {
+  host: "localhost",
+  port: process.env.DB_PORT || 3306,
   dialect: 'mysql',
   dialectModule: mysql2,  // Force load mysql2
   logging: console.log,   // Để debug
-  dialectOptions: {
-    ssl: {
-      require: true,
-      rejectUnauthorized: false,  
-      minVersion: 'TLSv1.2'
-    },
-    connectTimeout: 30000
-  },
+  // dialectOptions: {
+  //   ssl: {
+  //     require: true,
+  //     rejectUnauthorized: false,  
+  //     minVersion: 'TLSv1.2'
+  //   },
+  //   connectTimeout: 30000
+  // },
   pool: {
     max: 5,       // Pool nhỏ cho serverless
     min: 0,

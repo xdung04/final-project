@@ -1,109 +1,156 @@
-// Biến màu đồng bộ với Admin/Receptionist
-$gold: #b8966a;
-$gold-dark: #8e7352;
-$charcoal: #1a1a1a;
-$border: #e8e8e8;
-$bg-cream: #f9f7f4;
+// DatLichThanhToan.module.scss
+// Admin — Đặt Lịch & Thanh Toán | NOULE Barber
+// Fix: responsive cho MacBook / màn hình nhỏ — không còn overflow + scroll
 
+$gold:        #C9A84C;
+$gold-hover:  #BA9A3E;
+$gold-dim:    #8A6A28;
+$gold-faint:  rgba(201, 168, 76, 0.15);
+$gold-border: rgba(201, 168, 76, 0.3);
+
+$ink:         #1A1612;
+$ink-text:    #F5F0E8;
+$ink-muted:   rgba(245, 240, 232, 0.5);
+
+$page-bg:     #F7F4EF;
+$card-bg:     #FFFFFF;
+$surface-2:   #F9F6F1;
+
+$border:      rgba(0, 0, 0, 0.07);
+$border-md:   rgba(0, 0, 0, 0.1);
+
+$radius-sm:   6px;
+$radius-md:   10px;
+$radius-lg:   14px;
+$radius-xl:   50px;
+
+// ── Page ──────────────────────────────────────────────────────────────────────
+// FIX: dùng height 100vh với overflow hidden ở page
+// → nội dung bên trong tự scroll, không bị tràn ra ngoài
 .page {
-  padding: 20px;
-  background-color: transparent; // Để thừa hưởng màu nền từ Layout chính
+  padding: 20px 24px 0;          // bỏ padding-bottom, để container tự fill
+  background: $page-bg;
+  height: 100vh;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
+  font-family: inherit;
+  color: $ink;
+  overflow: hidden;              // chặn scroll toàn trang
+  animation: fadeInPage 0.4s ease forwards;
+  box-sizing: border-box;
 }
 
-/* Header bar cho Page */
+@keyframes fadeInPage {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+// ── Page Header ───────────────────────────────────────────────────────────────
 .pageHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 20px;
-  border-bottom: 1px solid $border;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;                // header không bị co lại
 }
 
-/* Bộ chọn ngày kiểu Luxury */
+// ── Date Selector (pill) ──────────────────────────────────────────────────────
 .dateSelector {
   display: flex;
   align-items: center;
-  background: white;
-  padding: 6px;
-  border-radius: 12px;
-  border: 1px solid $border;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+  background: $card-bg;
+  padding: 3px;
+  border-radius: $radius-xl;
+  border: 1px solid $border-md;
+  transition: border-color 0.15s;
 
-  .arrowButton {
-    background: transparent;
-    color: $charcoal;
-    border: none;
-    width: 40px;
-    height: 40px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s;
-
-    &:hover:not(:disabled) {
-      background-color: $bg-cream;
-      color: $gold;
-    }
-
-    &:disabled {
-      opacity: 0.2;
-      cursor: not-allowed;
-    }
-  }
-
-  .dateDisplay {
-    font-size: 15px;
-    font-weight: 700;
-    color: $charcoal;
-    padding: 0 25px;
-    min-width: 140px;
-    text-align: center;
-    border-left: 1px solid $border;
-    border-right: 1px solid $border;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
+  &:hover { border-color: $gold-border; }
 }
 
-.container {
-  width: 100%;
-  animation: fadeIn 0.5s ease-in-out;
-}
-
-/* Nút booking thiết kế lại theo style Admin-btn */
-.bookingButton {
-  background-color: $charcoal;
-  border: 1px solid $charcoal;
-  color: #fff;
-  padding: 10px 24px;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 14px;
+.arrowButton {
+  background: transparent;
+  color: #aaa;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+
+  &:hover:not(:disabled) {
+    background: $gold-faint;
+    color: $gold-dim;
+  }
+
+  &:disabled {
+    opacity: 0.25;
+    cursor: not-allowed;
+  }
+}
+
+.dateDisplay {
   display: flex;
   align-items: center;
   gap: 8px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0 16px;
+  min-width: 140px;
+  justify-content: center;
 
-  &:hover {
-    background-color: $gold;
-    border-color: $gold;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(184, 150, 106, 0.2);
-  }
+  .calendarIcon { color: $gold; }
 
-  svg {
-    width: 18px;
-    height: 18px;
+  span {
+    font-size: 12px;
+    font-weight: 600;
+    color: $ink;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
   }
 }
 
+// ── Booking Button ────────────────────────────────────────────────────────────
+.bookingButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 18px;
+  background: $ink;
+  border: 1px solid $ink;
+  color: $gold;
+  border-radius: $radius-md;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+
+  &:hover {
+    background: $gold;
+    border-color: $gold;
+    color: $ink;
+  }
+}
+
+// ── Container ─────────────────────────────────────────────────────────────────
+// FIX: flex: 1 + overflow hidden → fill phần còn lại của trang
+// BookingList bên trong tự scroll nội bộ
+.container {
+  flex: 1;
+  overflow: hidden;              // con tự scroll, container không tràn
+  position: relative;
+  animation: fadeIn 0.3s ease;
+  padding-bottom: 20px;
+  box-sizing: border-box;
+}
+
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }

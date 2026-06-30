@@ -3,7 +3,7 @@
 export async function up(queryInterface, Sequelize) {
   await queryInterface.bulkInsert("reels", [
     {
-      idBarber: 15,
+      idBarber: 36,
       title: "Cắt Fade chuẩn #Fade #BarberStyle",
       url: "https://res.cloudinary.com/xuandung/video/upload/v1761365338/reels/qgpm8q5hmnkkps8nnusl.mp4",
       thumbnail: "https://res.cloudinary.com/xuandung/video/upload/so_1/v1761365338/reels/qgpm8q5hmnkkps8nnusl.jpg",
@@ -12,7 +12,7 @@ export async function up(queryInterface, Sequelize) {
       updatedAt: new Date(),
     },
     {
-      idBarber: 16,
+      idBarber: 37,
       title: "Tạo kiểu tóc nữ #LayerCut #StylePro",
       url: "https://res.cloudinary.com/xuandung/video/upload/v1761365409/reels/yvchoyhllajhix6i2u10.mp4",
       thumbnail: "https://res.cloudinary.com/xuandung/video/upload/so_1/v1761365409/reels/yvchoyhllajhix6i2u10.jpg",
@@ -21,7 +21,7 @@ export async function up(queryInterface, Sequelize) {
       updatedAt: new Date(),
     },
     {
-      idBarber: 18,
+      idBarber: 38,
       title: "Tạo kiểu râu đẹp #BeardTrim #ClassicMen",
       url: "https://res.cloudinary.com/xuandung/video/upload/v1761365472/reels/ts4xl9lmnjdbxeb8ebfl.mp4",
       thumbnail: "https://res.cloudinary.com/xuandung/video/upload/so_1/v1761365472/reels/ts4xl9lmnjdbxeb8ebfl.jpg",
@@ -30,7 +30,7 @@ export async function up(queryInterface, Sequelize) {
       updatedAt: new Date(),
     },
     {
-      idBarber: 21,
+      idBarber: 39,
       title: "Nhuộm Highlight siêu đẹp #Highlight #StylePro",
       url: "https://res.cloudinary.com/xuandung/video/upload/v1761365442/reels/nrtfehbptaaale4nswvb.mp4",
       thumbnail: "https://res.cloudinary.com/xuandung/video/upload/so_1/v1761365442/reels/nrtfehbptaaale4nswvb.jpg",
@@ -39,7 +39,7 @@ export async function up(queryInterface, Sequelize) {
       updatedAt: new Date(),
     },
     {
-      idBarber: 22,
+      idBarber: 40,
       title: "Uốn xoăn sóng nước #WavyHair #LayerCut",
       url: "https://res.cloudinary.com/xuandung/video/upload/v1761365338/reels/qgpm8q5hmnkkps8nnusl.mp4",
       thumbnail: "https://res.cloudinary.com/xuandung/video/upload/so_1/v1761365338/reels/qgpm8q5hmnkkps8nnusl.jpg",

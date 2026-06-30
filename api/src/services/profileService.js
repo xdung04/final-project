@@ -1,21 +1,41 @@
 import db from "../models/index.js";
 import cloudinary from "../config/cloudinary.js";
+import bcrypt from "bcryptjs";
+
+
+const salt = bcrypt.genSaltSync(10);
+
+async function hashUserPassword(password) {
+  return bcrypt.hash(password, salt);
+}
 
 // ====== Lấy profile (theo role) ======
 const getUserProfileWithRole = async (idUser) => {
   return await db.User.findByPk(idUser, {
-    attributes: { exclude: ["password"] },
+    attributes: {
+      exclude: ["password"],
+    },
     include: [
       {
         model: db.Customer,
         as: "customer",
-        attributes: ["idCustomer", "loyaltyPoint", "address", "createdAt", "updatedAt"],
+        attributes: [
+          "idCustomer",
+          "loyaltyPoint",
+          "address",
+          "createdAt",
+          "updatedAt",
+        ],
       },
       {
         model: db.Barber,
         as: "barber",
-        attributes: ["idBarber", "profileDescription", "createdAt", "updatedAt"],
-
+        attributes: [
+          "idBarber",
+          "profileDescription",
+          "createdAt",
+          "updatedAt",
+        ],
       },
     ],
   });
@@ -33,6 +53,84 @@ const uploadToCloudinary = (buffer) => {
     );
     stream.end(buffer);
   });
+};
+
+const changePassword = async (
+  idUser,
+  currentPassword,
+  newPassword
+) => {
+
+  if (!currentPassword || !newPassword) {
+    throw {
+      status: 400,
+      message: "Vui lòng nhập đầy đủ thông tin",
+    };
+  }
+
+  if (newPassword.length < 6) {
+    throw {
+      status: 400,
+      message: "Mật khẩu mới phải tối thiểu 6 ký tự",
+    };
+  }
+
+  const user = await db.User.findByPk(idUser);
+
+  if (!user) {
+    throw {
+      status: 404,
+      message: "User không tồn tại",
+    };
+  }
+
+  // Chặn Google account
+  if (user.authProvider === "google") {
+    throw {
+      status: 400,
+      message:
+        "Tài khoản Google không hỗ trợ đổi mật khẩu",
+    };
+  }
+
+  // Verify mật khẩu cũ
+  const isMatch = await bcrypt.compare(
+    currentPassword,
+    user.password
+  );
+
+  if (!isMatch) {
+    throw {
+      status: 400,
+      message: "Mật khẩu hiện tại không đúng",
+    };
+  }
+
+  // Không cho đổi trùng mật khẩu cũ
+  const samePassword = await bcrypt.compare(
+    newPassword,
+    user.password
+  );
+
+  if (samePassword) {
+    throw {
+      status: 400,
+      message:
+        "Mật khẩu mới không được trùng mật khẩu cũ",
+    };
+  }
+
+  const hashPassword =
+    await hashUserPassword(newPassword);
+
+  await user.update({
+    password: hashPassword,
+  });
+
+  return {
+    success: true,
+    message: "Đổi mật khẩu thành công",
+  };
 };
 
 // ====== Cập nhật profile ======
@@ -203,4 +301,5 @@ export default {
   getUserProfileWithRole,
   updateUserProfile,
   updatePhone,
+  changePassword,
 };

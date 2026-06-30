@@ -1,19 +1,66 @@
+/* OpsTab.module.scss
+   NOULE Admin — Vận hành Tab
+   Design System: Editorial · Luxury Barber · Dark-Gold
+---------------------------------------------------------------- */
+
+// ─── Tokens ──────────────────────────────────────────────────
+$gold:        #C9A84C;
+$gold-dim:    #8A6A28;
+$gold-border: rgba(201, 168, 76, 0.3);
+
+$ink:         #1A1612;
+
+$card-bg:     #FFFFFF;
+$border:      1px solid rgba(0, 0, 0, 0.07);
+$border-hover: 1px solid rgba(201, 168, 76, 0.5);
+
+$radius-lg:   14px;
+
+$transition:  0.15s;
+
+// ─── Wrapper ─────────────────────────────────────────────────
 .wrapper {
-  animation: fadeIn 0.4s ease;
+  animation: fadeSlideIn 0.2s ease;
 }
 
+// ─── Forecast Card ───────────────────────────────────────────
 .forecastCard {
-  background: #fff;
-  padding: 35px;
-  border-radius: 28px;
-  box-shadow: 0 15px 40px rgba(0,0,0,0.04);
+  background: $card-bg;
+  border: $border;
+  border-radius: $radius-lg;
+  padding: 20px 22px;
+  transition: border $transition;
 
-  .header {
-    margin-bottom: 30px;
-    h4 { font-size: 20px; margin: 0; display: flex; align-items: center; gap: 10px; }
-    p { color: #666; margin-top: 8px; font-size: 14px; }
+  &:hover {
+    border: $border-hover;
   }
 }
 
-/* Custom Tooltip style có thể thêm tại đây nếu cần */
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.header {
+  margin-bottom: 16px;
+
+  h4 {
+    font-size: 13px;
+    font-weight: 600;
+    color: $ink;
+    margin: 0 0 5px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    letter-spacing: 0.01em;
+  }
+
+  p {
+    font-size: 11px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 0;
+  }
+}
+
+// ─── Animation ───────────────────────────────────────────────
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

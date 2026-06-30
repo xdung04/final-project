@@ -2,6 +2,8 @@ import express from "express";
 import bodyParser from "body-parser";
 import dotenv from "dotenv";
 import cors from "cors";
+import http from "http";
+import cookieParser from "cookie-parser";
 import bookingHistory from "./routes/bookingHistory.js";
 import barberRoutes from "./routes/barber.js";
 import viewEngine from "./config/viewEngine.js";
@@ -25,42 +27,81 @@ import summaryRoutes from "./routes/summaryStatistics.js";
 import bookingDirectRoutes from "./routes/bookingDirect.js";
 import hashtagRoutes from "./routes/hashtag.js";
 import hairConsultRoutes from "./routes/hairConsult.js";
+import transactionRoutes from "./routes/transaction.js";
+import hairstyleRoutes from "./routes/hairStyle.js";
+import barberDayOffRoutes from "./routes/barberDayOff.js";
 import startBranchStatusCron from "./cron/branchStatusCron.js";
+import startSalaryCron from "./cron/salaryCron.js";
+import startBarberLockCron from "./cron/barberStatusCron.js";
+import startExpireVouchersCron from "./cron/expireVouchersCron.js";
+
 import { authenticate, authorize } from "./middlewares/authMiddleware.js";
 import notificationRoute from "./routes/notification.js";
-import bannerRoute from "./routes/banner.js";
+import newsRouter from "./routes/news.js";
+import initSocket from "./config/socket.js";
+import paymentRoute from "./routes/payment.js";
+import hrPolicyRoutes from "./routes/hrPolicyRoutes.js";
+import chatLiveRoute from "./routes/chatLive.js";
+import receptionistRouter from "./routes/receptionist.js";
+import contractRoute from "./routes/contract.js";
+import calendarRoutes from "./routes/calendarRoutes.js";
+import customerStatsRoutes from "./routes/customerStats.js";
 dotenv.config();
 
 const app = express();
+const server = http.createServer(app);
+const io = initSocket(server);
 
-app.use(cors());
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || "http://localhost:3000", // PHẢI là domain cụ thể, không để "*"
+    credentials: true, // cho phép gửi/nhận cookie
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  }),
+);
+app.use(cookieParser()); 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
 app.use("/api/services", serviceRoute);
 app.use("/api/user/profile", profileRoutes);
 app.use("/api/chat", chatRoute);
+app.use("/api/chat-live", chatLiveRoute);
 app.use("/api/barbers", barberRoutes);
 app.use("/api/branches", branchRoutes);
 app.use("/api/ratings", ratingRoutes);
-
+app.use("/api/barber-day-offs", barberDayOffRoutes);
+app.use("/api/hairstyles", hairstyleRoutes);
 app.use("/api/bookings", bookingRoute);
+app.use("/api/payment", paymentRoute);
 app.use("/api/reels", reelRoute);
 app.use("/api/reels", reelCommentRoutes);
 app.use("/api/customer-galleries", customerGalleryRoutes);
 app.use("/api/booking-history", bookingHistory);
 app.use("/api/vouchers", voucherRoutes);
 app.use("/api/loyalty-rules", loyaltyRuleRoute);
-app.use("/api/salary", authenticate, authorize(["admin"]), salaryRoute);
+app.use("/api/salary", authenticate, salaryRoute);
 app.use("/api/statistics", authenticate, authorize(["admin"]), statisticRoute);
 app.use("/api/bonus", authenticate, authorize(["admin"]), bonusRoutes);
 app.use("/api/statistics/summary", authenticate, authorize(["admin"]), summaryRoutes);
-
+app.use("/api/hr-policy", authenticate, hrPolicyRoutes);
+app.use("/api/contracts", authenticate, contractRoute);
+app.use("/api/transactions", transactionRoutes);
 app.use("/api/booking-direct", bookingDirectRoutes);
 app.use("/api/hashtags", hashtagRoutes);
 app.use("/api/hair-consult", hairConsultRoutes);
 app.use("/api/notifications", notificationRoute);
-app.use("/api/banners", bannerRoute);
+app.use("/api/news", newsRouter);
+
+app.use("/api/receptionist", receptionistRouter);
+
+app.use("/api/calendar", calendarRoutes);
+
+app.use("/api/customer-stats", customerStatsRoutes);
 
 // View engine & auth routes
 viewEngine(app);
@@ -69,7 +110,11 @@ authRoutes(app);
 // Kết nối DB
 connectDB();
 startBranchStatusCron();
+startSalaryCron();
+startBarberLockCron();
+startExpireVouchersCron();
+
 const PORT = process.env.PORT || 8088;
-app.listen(PORT, () => {
-  console.log(`Backend Node.js is running on port: ${PORT}`);
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`Backend Node.js & Socket is running on http://0.0.0.0:${PORT}`);
 });
