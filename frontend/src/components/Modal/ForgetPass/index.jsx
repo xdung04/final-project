@@ -30,7 +30,14 @@ function ForgetPass({ onSwitch }) {
       });
       setOtpSent(true);
     } catch (err) {
-      showToast({ text: err.error || "Không gửi được OTP", type: "error" });
+      const errorMessage =
+        err.response?.data?.message || 
+        err.message || 
+        "Không gửi được OTP"; 
+      showToast({
+        text: errorMessage,
+        type: "error",
+      });
     }
   };
 
@@ -52,14 +59,20 @@ function ForgetPass({ onSwitch }) {
     }
   };
 
-return (
+  return (
     <div className={cx("wrapper")}>
       <div className={cx("inner")}>
         <h4 className={cx("heading")}>Quên mật khẩu</h4>
         <div className={cx("body")}>
           <p>
             Bạn đã nhớ lại mật khẩu?
-            <a href="#" onClick={(e) => { e.preventDefault(); onSwitch("Login"); }}>
+            <a
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                onSwitch("Login");
+              }}
+            >
               Đăng nhập
             </a>
           </p>
@@ -91,7 +104,9 @@ return (
               </Button>
             </div>
 
-            <Button type="submit" className={cx("submitBtn")}> {/* Thêm class này */}
+            <Button type="submit" className={cx("submitBtn")}>
+              {" "}
+              {/* Thêm class này */}
               Xác nhận OTP
             </Button>
           </form>
