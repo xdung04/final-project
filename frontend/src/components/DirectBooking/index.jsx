@@ -10,6 +10,7 @@ const { user } = useAuth();
   const [customerExists, setCustomerExists] = useState(false);
   const [customerId, setCustomerId] = useState(0);
   const [checking, setChecking] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const [showCreateCustomer, setShowCreateCustomer] = useState(false);
   const [newCustomer, setNewCustomer] = useState({ name: "", phone: "" });
@@ -291,6 +292,7 @@ const handleBranchChange = (e) => {
 
   // ===== GỬI BOOKING =====
   const handleSubmit = async () => {
+    if (submitting) return;
     if (!customerExists) {
       showToast({ text: "Vui lòng kiểm tra hoặc tạo tài khoản khách hàng trước!", type: "error" });
       return;
@@ -316,6 +318,7 @@ const handleBranchChange = (e) => {
       customerName: form.name,
       phoneNumber: phone,
     };
+    setSubmitting(true);
 
     try {
       const res = await fetch(`${API_BASE_URL}/booking-direct/create`, {
@@ -546,8 +549,12 @@ const handleBranchChange = (e) => {
         </div>
 
         <div className={styles.submitContainer}>
-          <button className={styles.submitBtn} onClick={handleSubmit}>
-            Xác nhận booking
+          <button 
+            className={styles.submitBtn} 
+            onClick={handleSubmit}
+            disabled={submitting} 
+          >
+            {submitting ? "Đang xử lý..." : "Xác nhận booking"}
           </button>
         </div>
       </div>

@@ -231,6 +231,10 @@ export async function sendOtpForForgotPassword(email) {
 
   if (!user) throw new Error("Email không tồn tại");
 
+  if (user.role !== "customer") {
+    throw new Error("Tài khoản không có quyền thực hiện chức năng này");
+  }
+
   if (user.googleId && !user.password) {
     console.log("User Google đang thiết lập password lần đầu");
   }
