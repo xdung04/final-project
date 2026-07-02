@@ -24,7 +24,7 @@ export async function up(queryInterface, Sequelize) {
       allowNull: false,
     },
     status: {
-      type: Sequelize.ENUM("waiting", "in_progress", "closed"),
+      type: Sequelize.ENUM("ai_active","waiting", "in_progress", "closed"),
       defaultValue: "waiting",
       allowNull: false,
     },

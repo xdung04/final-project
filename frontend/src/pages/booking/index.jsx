@@ -134,16 +134,25 @@ function BookingPage() {
     return () => document.removeEventListener("mousedown", handler);
   }, [showHairstylePanel]);
 
-  const buildDescription = (b) => {
-    const parts = [];
-    if (b.services.length) parts.push(b.services.map((s) => s.name).join(", "));
-    if (b.hairstyleId) {
-      const hs = hairstylesData.find((h) => h.idHairstyle === b.hairstyleId);
-      if (hs) parts.push(`Kiểu tóc: ${hs.name}`);
-    }
-    if (b.silentMode) parts.push("Khách yêu cầu giữ im lặng khi đang làm dịch vụ");
-    return parts.join(" | ");
-  };
+const buildDescription = (b) => {
+  const obj = {};
+
+  if (b.services.length) {
+    obj.services = b.services.map((s) => s.name);
+  }
+
+  if (b.hairstyleId) {
+    const hs = hairstylesData.find((h) => h.idHairstyle === b.hairstyleId);
+    if (hs) obj.hairstyle = hs.name;
+  }
+
+  if (b.silentMode) {
+    obj.silentMode = true;
+  }
+
+  return JSON.stringify(obj);
+  // Kết quả: {"services":["Cắt tóc","Gội đầu"],"hairstyle":"Undercut","silentMode":true}
+};
 
   const fetchBranches = useCallback(
     async (lat, lng) => {
@@ -855,57 +864,80 @@ try {
                       </button>
                     </div>
 
-                    <div className={styles.hairstyleGrid}>
-                      {hairstylesData.map((hs) => {
-                        const isSelected = booking.hairstyleId === hs.idHairstyle;
-                        return (
-                          <div
-                            key={hs.idHairstyle}
-                            className={`${styles.hairstyleCard} ${isSelected ? styles.hairstyleCardSelected : ""}`}
-                            onClick={() => {
-                              setBooking((prev) => ({
-                                ...prev,
-                                hairstyleId: prev.hairstyleId === hs.idHairstyle ? null : hs.idHairstyle,
-                              }));
-                            }}
-                          >
-                            <div className={styles.hairstyleImgWrap}>
-                              <img
-                                src={hs.coverImage}
-                                alt={hs.name}
-                                className={styles.hairstyleCoverImg}
-                                onError={(e) => {
-                                  e.target.src = `https://via.placeholder.com/400x400/2c2c2c/ffffff?text=${encodeURIComponent(
-                                    hs.name,
-                                  )}`;
-                                }}
-                              />
-                              {hs.sideImage && (
-                                <img
-                                  src={hs.sideImage}
-                                  alt={`${hs.name} - góc nghiêng`}
-                                  className={styles.hairstyleSideImg}
-                                  onError={(e) => (e.target.style.display = "none")}
-                                />
-                              )}
-                              {isSelected && <div className={styles.hairstyleSelectedTick}>✓</div>}
-                            </div>
-                            <div className={styles.hairstyleCardInfo}>
-                              <h4>{hs.name}</h4>
-                              <p>{hs.shortDescription || "Kiểu tóc hiện đại, phong cách lịch lãm."}</p>
-                              {(hs.difficultyLevel || hs.suitableAge) && (
-                                <div className={styles.hairstyleCardMeta}>
-                                  {hs.difficultyLevel && (
-                                    <span className={styles.hairstyleMetaTag}>{hs.difficultyLevel}</span>
-                                  )}
-                                  {hs.suitableAge && <span className={styles.hairstyleMetaTag}>{hs.suitableAge}</span>}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+<div className={styles.hairstyleGrid}>
+  {(() => {
+    const recommended = hairstylesData.filter((hs) => hs.isRecommended);
+    const others = hairstylesData.filter((hs) => !hs.isRecommended);
+
+    const renderCard = (hs) => {
+      const isSelected = booking.hairstyleId === hs.idHairstyle;
+      return (
+        <div
+          key={hs.idHairstyle}
+          className={`${styles.hairstyleCard} ${isSelected ? styles.hairstyleCardSelected : ""} ${hs.isRecommended ? styles.hairstyleCardRecommended : ""}`}
+          onClick={() => {
+            setBooking((prev) => ({
+              ...prev,
+              hairstyleId: prev.hairstyleId === hs.idHairstyle ? null : hs.idHairstyle,
+            }));
+          }}
+        >
+          <div className={styles.hairstyleImgWrap}>
+            {hs.isRecommended && (
+              <span className={styles.recommendedBadge}>✨ Phù hợp khuôn mặt bạn</span>
+            )}
+            <img
+              src={hs.coverImage}
+              alt={hs.name}
+              className={styles.hairstyleCoverImg}
+              onError={(e) => {
+                e.target.src = `https://via.placeholder.com/400x400/2c2c2c/ffffff?text=${encodeURIComponent(hs.name)}`;
+              }}
+            />
+            {hs.sideImage && (
+              <img
+                src={hs.sideImage}
+                alt={`${hs.name} - góc nghiêng`}
+                className={styles.hairstyleSideImg}
+                onError={(e) => (e.target.style.display = "none")}
+              />
+            )}
+            {isSelected && <div className={styles.hairstyleSelectedTick}>✓</div>}
+          </div>
+          <div className={styles.hairstyleCardInfo}>
+            <h4>{hs.name}</h4>
+            <p>{hs.shortDescription || "Kiểu tóc hiện đại, phong cách lịch lãm."}</p>
+            {(hs.difficultyLevel || hs.suitableAge) && (
+              <div className={styles.hairstyleCardMeta}>
+                {hs.difficultyLevel && <span className={styles.hairstyleMetaTag}>{hs.difficultyLevel}</span>}
+                {hs.suitableAge && <span className={styles.hairstyleMetaTag}>{hs.suitableAge}</span>}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    };
+
+    return (
+      <>
+        {recommended.length > 0 && (
+          <>
+            <div className={styles.hairstyleGroupHeader}>
+              ✨ Gợi ý cho khuôn mặt của bạn ({recommended.length})
+            </div>
+            {recommended.map(renderCard)}
+            {others.length > 0 && (
+              <div className={styles.hairstyleGroupHeader}>
+                Tất cả kiểu tóc
+              </div>
+            )}
+          </>
+        )}
+        {others.map(renderCard)}
+      </>
+    );
+  })()}
+</div>
 
                     <div className={styles.hairstyleModalFooter}>
                       <div className={styles.hairstyleFooterSelected}>

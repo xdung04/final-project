@@ -4,10 +4,9 @@ import { Model } from "sequelize";
 export default (sequelize, DataTypes) => {
   class Hairstyle extends Model {
     static associate(models) {
-      // Một kiểu tóc thuộc về MỘT danh mục (Khóa ngoại idCategory nằm ở đây)
       Hairstyle.belongsTo(models.Category, {
         foreignKey: "idCategory",
-        as: "category", // Alias để sau này dùng: Hairstyle.findAll({ include: 'category' })
+        as: "category",
       });
     }
   }
@@ -46,6 +45,10 @@ export default (sequelize, DataTypes) => {
       },
       suitableAge: {
         type: DataTypes.STRING(50),
+        allowNull: true,
+      },
+      suitableFaceShapes: {
+        type: DataTypes.JSON,  // ["oval", "round", "square", "heart", "oblong"]
         allowNull: true,
       },
       status: {

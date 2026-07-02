@@ -53,8 +53,30 @@ const getDashboardOverview = async (req, res) => {
     return res.status(500).json({ message: "Lỗi server" });
   }
 };
+const getAIRatingSummary = async (req, res) => {
+  try {
+    const data = await StatisticsService.getAIRatingSummary();
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    console.error("Lỗi getAIRatingSummary:", error);
+    return res.status(500).json({ message: "Lỗi server" });
+  }
+};
+
+const getAIRatingByFaceShape = async (req, res) => {
+  try {
+    const data = await StatisticsService.getAIRatingByFaceShape();
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    console.error("Lỗi getAIRatingByFaceShape:", error);
+    return res.status(500).json({ message: "Lỗi server" });
+  }
+};
+
 export default {
   getBarberRevenue,
   getMonthlyBranchRevenue,
   getDashboardOverview,
+  getAIRatingSummary,       // ← thêm
+  getAIRatingByFaceShape,   // ← thêm
 };

@@ -26,3 +26,17 @@ export const getSummary = async (params = {}) => {
     throw error.response?.data || error;
   }
 };
+export const getAISummary = async () => {
+  try {
+    const res = await request.get("/statistics/summary/ai-model");
+    if (res?.success) {
+      return res.data;
+    } else {
+      console.warn("Backend trả về lỗi:", res);
+      throw new Error(res?.message || "Lấy báo cáo AI thất bại");
+    }
+  } catch (error) {
+    console.error("Lỗi khi gọi API getAISummary:", error.response?.data || error);
+    throw error.response?.data || error;
+  }
+};

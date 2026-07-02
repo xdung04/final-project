@@ -41,7 +41,7 @@ export default (sequelize) => {
         allowNull: false,
       },
       status: {
-        type: DataTypes.ENUM("waiting", "in_progress", "closed"),
+        type: DataTypes.ENUM("ai_active","waiting", "in_progress", "closed"),
         defaultValue: "waiting",
         allowNull: false,
       },

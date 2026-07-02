@@ -19,5 +19,14 @@ export const SummaryAPI = {
       throw error;
     }
   },
+  getAISummary: async () => {
+  try {
+    const result = await summaryService.getAISummary();
+    return result;
+  } catch (error) {
+    console.error("SummaryAPI.getAISummary lỗi:", error);
+    throw error;
+  }
+},
 
 };

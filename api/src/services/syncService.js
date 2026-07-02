@@ -23,28 +23,25 @@ return await db.sequelize.transaction(async (t) => {
     lastMsgText = todayHistory[todayHistory.length - 1].content || "📷 [Hình ảnh]";
   }
 
-  // ➡️ Bước B: 🚀 ĐỔI THÀNH LUỒNG "TÌM HOẶC TẠO" ĐỂ TRÁNH LỖI UNIQUE
-  const [conversation, created] = await Conversation.findOrCreate({
-    where: { customerId: customerId }, // Tìm xem đã từng có phòng chat nào của khách này chưa
-    defaults: {
-      // Nếu CHƯA CÓ, sẽ tạo mới với đống dữ liệu này
-      mode: "ai",         
-      status: "waiting",   
-      lastMessage: lastMsgText,
-      unreadCount: 1       
-    },
-    transaction: t
-  });
+const [conversation, created] = await Conversation.findOrCreate({
+  where: { customerId: customerId },
+  defaults: {
+    mode: "ai",         
+    status: "ai_active",   
+    lastMessage: lastMsgText,
+    unreadCount: 1       
+  },
+  transaction: t
+});
 
-  // Nếu PHÒNG ĐÃ TỒN TẠI TỪ TRƯỚC (created === false), tiến hành cập nhật lại trạng thái để "mở lại phòng"
-  if (!created) {
-    await conversation.update({
-      mode: "ai",         // Trả về cho AI tiếp quản tạm thời trước khi lễ tân join
-      status: "waiting",   // Đẩy lại vào hàng đợi "waiting" của lễ tân
-      lastMessage: lastMsgText,
-      unreadCount: conversation.unreadCount + 1 // Cộng dồn tin nhắn chưa đọc
-    }, { transaction: t });
-  }
+if (!created) {
+  await conversation.update({
+    mode: "ai",
+    status: "ai_active",
+    lastMessage: lastMsgText,
+    unreadCount: conversation.unreadCount + 1
+  }, { transaction: t });
+}
 
   const dbMessages = [];
 

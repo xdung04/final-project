@@ -1,5 +1,5 @@
 // controllers/summaryController.js
-import { getSummary } from "../services/summaryStatisticService.js";
+import { getSummary,getAISummary } from "../services/summaryStatisticService.js";
 
 export async function getBranchSummary(req, res) {
   try {
@@ -41,5 +41,14 @@ export async function getBranchSummary(req, res) {
       message: "Lấy báo cáo thất bại",
       error: err.message,
     });
+  }
+}
+export async function getAISummaryModel(req, res) {
+  try {
+    const data = await getAISummary();
+    return res.status(200).json({ success: true, data });
+  } catch (err) {
+    console.error("❌ getAISummary:", err);
+    return res.status(500).json({ success: false, message: err.message });
   }
 }

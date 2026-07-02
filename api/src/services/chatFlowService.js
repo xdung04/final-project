@@ -35,21 +35,17 @@ const createDefaultBookingState = () => ({
 function parseBookingState(raw) {
   const defaults = createDefaultBookingState();
   if (!raw) return defaults;
-
   try {
     const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
     if (!parsed || typeof parsed !== "object") return defaults;
 
     const state = { ...defaults, ...parsed };
-
-    // Đảm bảo cấu trúc mảng dịch vụ luôn chuẩn
     if (!Array.isArray(state.idServices)) {
       state.idServices = state.idService ? [state.idService] : [];
     }
     if (!Array.isArray(state.serviceNames)) {
       state.serviceNames = state.serviceName ? [state.serviceName] : [];
     }
-
     return state;
   } catch (e) {
     console.error("❌ Lỗi parse bookingState, reset về mặc định:", e);
@@ -60,29 +56,29 @@ function parseBookingState(raw) {
 // ─────────────────────────────────────────────────────────────
 // processChatFlow — Entry point chính
 // ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+// processChatFlow — Entry point chính
+// ─────────────────────────────────────────────────────────────
 export async function processChatFlow({ sessionId, message, customerId }) {
 
-  // 💡 SỬA TẠI ĐÂY: Kiểm tra nghiêm ngặt để loại bỏ chuỗi "null", "undefined" ma từ Frontend gửi lên nếu có
   const isStrictLoggedIn = customerId && 
                            customerId !== "null" && 
                            customerId !== "undefined" && 
                            customerId !== "";
 
   // ══════════════════════════════════════════════
-  // LOGGED-IN FLOW (Thành viên - Lưu MySQL)
+  // LOGGED-IN FLOW
   // ══════════════════════════════════════════════
   if (isStrictLoggedIn) {
     console.log(`➡️ [BrainService] Khách hàng ${customerId} gửi tin nhắn.`);
 
     let conversation = await Conversation.findOne({ where: { customerId } });
 
-    // Nếu conversation đã đóng → mở lại
     if (conversation?.status === "closed") {
-      await conversation.update({ status: "waiting", mode: "ai", bookingState: null });
+      await conversation.update({ status: "ai_active", mode: "ai", bookingState: null });
       await conversation.reload();
     }
 
-    // Nếu lễ tân đang xử lý → không để AI trả lời
     if (conversation?.status === "in_progress") {
       await saveMessage({
         conversationId: conversation.id,
@@ -93,28 +89,28 @@ export async function processChatFlow({ sessionId, message, customerId }) {
       return { reply: "", needReceptionist: true };
     }
 
-    // Parse bookingState từ DB
     const bookingState = parseBookingState(conversation?.bookingState);
 
-    // Lấy lịch sử hội thoại (Đoạn bạn vừa sửa - Rất an toàn 👍)
+    // ✅ FIX: Đảm bảo history luôn là array
     let history = [];
     if (conversation) {
       const historyData = await getConversationHistory(conversation.id, 10);
       
-      if (historyData && Array.isArray(historyData.messages)) {
-        history = historyData.messages.map((m) => ({
-          role: m.senderType === "customer" ? "user" : "assistant",
-          content: m.content,
-        }));
-      } else if (Array.isArray(historyData)) { 
-        history = historyData.map((m) => ({
+      // ✅ Kiểm tra type an toàn
+      if (historyData) {
+        const messages = Array.isArray(historyData) 
+          ? historyData 
+          : (historyData.messages && Array.isArray(historyData.messages) 
+              ? historyData.messages 
+              : []);
+        
+        history = messages.map((m) => ({
           role: m.senderType === "customer" ? "user" : "assistant",
           content: m.content,
         }));
       }
     }
 
-    // ── Gọi Brain Loop ──
     const { reply, newBookingState, needLogin, needReceptionist } = await processBrainLoop({
       message,
       bookingState,
@@ -123,32 +119,20 @@ export async function processChatFlow({ sessionId, message, customerId }) {
       customerId,
     });
 
-    // Persist conversation + state mới
     if (conversation) {
-      await conversation.update({ bookingState: JSON.stringify(newBookingState) });
+      await conversation.update({ bookingState: newBookingState });
     } else {
       conversation = await Conversation.create({
-        customerId,
-        mode: "ai",
-        status: "waiting",
-        bookingState: JSON.stringify(newBookingState),
-      });
+  customerId,
+  mode: "ai",
+  status: "ai_active",
+  bookingState: newBookingState,
+});
     }
 
-    // Lưu tin nhắn và emit socket
     await saveMessage({ conversationId: conversation.id, senderType: "customer", senderId: customerId, content: message });
     await saveMessage({ conversationId: conversation.id, senderType: "ai", content: reply });
 
-    const io = getIO();
-    if (io) {
-      io.to(String(conversation.id)).emit("receive_message", {
-        conversationId: conversation.id,
-        senderType: "ai",
-        content: reply,
-      });
-    }
-
-    // Dọn dẹp state sau khi đặt lịch thành công
     if (newBookingState.bookingCompleted) {
       await conversation.update({ bookingState: null });
       console.log(`✅ Đặt lịch thành công -> Đã dọn dẹp state`);
@@ -162,30 +146,31 @@ export async function processChatFlow({ sessionId, message, customerId }) {
   }
 
   // ══════════════════════════════════════════════
-  // GUEST FLOW (Khách vãng lai - Lưu Redis)
+  // GUEST FLOW — ✅ FIX CHÍNH
   // ══════════════════════════════════════════════
   else {
     console.log(`➡️ [BrainService] Khách vãng lai gửi tin nhắn (Session: ${sessionId}).`);
     
-    const [history, rawGuestState] = await Promise.all([
+    const [historyData, rawGuestState] = await Promise.all([
       getTodayChatHistory(sessionId),
       getBookingState(sessionId),
     ]);
+
+    // ✅ Đảm bảo history luôn là array
+    const history = Array.isArray(historyData) ? historyData : [];
 
     const guestState = rawGuestState
       ? parseBookingState(rawGuestState)
       : createDefaultBookingState();
 
-    // ── Gọi Brain Loop ──
     const { reply, newBookingState, needLogin } = await processBrainLoop({
       message,
       bookingState: guestState,
-      history: history.map((h) => ({ role: h.role, content: h.content })),
+      history: history.map((h) => ({ role: h.role, content: h.content })), // ✅ Giờ history chắc chắn là array
       isLoggedIn: false,
       customerId: null,
     });
 
-    // Lưu lịch sử chat và state song song
     await Promise.all([
       saveChatMessage(sessionId, { role: "user", content: message }),
       saveChatMessage(sessionId, { role: "assistant", content: reply }),
@@ -214,6 +199,7 @@ export async function syncPostLogin({ sessionId }) {
 
 // ─────────────────────────────────────────────────────────────
 // requestHumanSupport — Yêu cầu kết nối lễ tân từ UI button
+// (ĐÂY là nơi DUY NHẤT chuyển conversation sang "waiting")
 // ─────────────────────────────────────────────────────────────
 export async function requestHumanSupport({ customerId }) {
   if (!customerId) throw new Error("Thiếu customerId");
@@ -249,7 +235,7 @@ export async function closeConversationOnLogout({ customerId }) {
   if (!customerId) throw new Error("Thiếu customerId");
   const [updatedCount] = await Conversation.update(
     { status: "closed" },
-    { where: { customerId, status: ["waiting", "in_progress"] } }
+    { where: { customerId, status: ["ai_active", "waiting", "in_progress"] } }
   );
   if (updatedCount > 0) {
     const io = getIO();

@@ -167,6 +167,31 @@ function coerceIds(args) {
   if (!args || typeof args !== "object") return args || {};
   const result = JSON.parse(JSON.stringify(args));
 
+  if (typeof result.state === "string") {
+    try {
+      result.state = JSON.parse(result.state);
+    } catch {
+      result.state = {};
+    }
+  }
+
+  if (result.state && typeof result.state === "object") {
+    const s = result.state;
+    if (s.idBranch !== undefined) s.idBranch = toNumber(s.idBranch);
+    if (s.idBarber !== undefined) s.idBarber = toNumber(s.idBarber);
+
+    if (typeof s.idServices === "string") {
+      try { s.idServices = JSON.parse(s.idServices); } catch { s.idServices = []; }
+    }
+    if (!Array.isArray(s.idServices)) s.idServices = [];
+    s.idServices = s.idServices.map(toNumber);
+
+    if (typeof s.serviceNames === "string") {
+      try { s.serviceNames = JSON.parse(s.serviceNames); } catch { s.serviceNames = []; }
+    }
+    if (!Array.isArray(s.serviceNames)) s.serviceNames = [];
+  }
+
   if (result.idBranch !== undefined) result.idBranch = toNumber(result.idBranch);
   if (result.idBarber !== undefined) result.idBarber = toNumber(result.idBarber);
 

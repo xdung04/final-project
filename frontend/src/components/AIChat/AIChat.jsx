@@ -160,20 +160,24 @@ export default function AIChat({ onSwitchToLive, onRequestLogin }) {
     };
 
     const handleReceiveMessage = (msg) => {
-      if (msg.senderType === "customer") return;
-      if (Number(msg.conversationId) !== Number(activeConversationIdRef.current)) return;
+       if (msg.senderType === "customer") return;
+  if (Number(msg.conversationId) !== Number(activeConversationIdRef.current)) return;
 
-      if (msg.senderType === "system" && msg.eventType === "leave") {
-        console.log("🔄 [Socket] Lễ tân đã rời phòng. Đưa khách về trạng thái Chờ...");
-        setChatMode("ai");     
-        setWantsLive(true);    
-      }
+  if (msg.senderType === "system" && msg.eventType === "leave") {
+    console.log("🔄 [Socket] Lễ tân đã rời phòng. Đưa khách về trạng thái Chờ...");
+    setChatMode("ai");     
+    setWantsLive(true);    
+  }
+      let msgType = "receptionist";
+      if (msg.senderType === "system") msgType = "system";
+      else if (msg.senderType === "ai") msgType = "ai";
+
 
       setMessages((prev) => [
         ...prev,
         {
           id: msg.id || Date.now().toString(),
-          type: msg.senderType === "system" ? "system" : "receptionist", 
+          type: msgType,
           content: msg.content,
         },
       ]);

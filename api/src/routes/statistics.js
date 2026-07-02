@@ -14,4 +14,10 @@ router.get("/branches", statisticsController.getMonthlyBranchRevenue);
 // GET /statistics/overview?month=..&year=..
 router.get("/overview", statisticsController.getDashboardOverview);
 
+router.get("/ai-rating-summary", statisticsController.getAIRatingSummary);
+
+// GET /statistics/ai-rating-by-face-shape
+router.get("/ai-rating-by-face-shape", statisticsController.getAIRatingByFaceShape);
+
 export default router;
+

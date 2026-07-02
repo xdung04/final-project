@@ -43,4 +43,23 @@ export const StatisticsAPI = {
       throw error;
     }
   },
+  getAIRatingSummary: async () => {
+  try {
+    const res = await statisticsService.getAIRatingSummary();
+    return res;
+  } catch (error) {
+    console.error("Lỗi StatisticsAPI.getAIRatingSummary:", error);
+    throw error;
+  }
+},
+
+getAIRatingByFaceShape: async () => {
+  try {
+    const res = await statisticsService.getAIRatingByFaceShape();
+    return res;
+  } catch (error) {
+    console.error("Lỗi StatisticsAPI.getAIRatingByFaceShape:", error);
+    throw error;
+  }
+},
 };

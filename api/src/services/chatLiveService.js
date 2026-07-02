@@ -38,14 +38,13 @@ export const getOrCreateConversation = async (customerId) => {
     conversation = await Conversation.create({
       customerId,
       mode: "ai",
-      status: "waiting",
+      status: "ai_active",
       unreadCount: 0,
     });
     isNew = true; 
   } else if (conversation.status === "closed") {
-    // 🔥 FIX: Khi mở lại, tin nhắn kích hoạt đó tính là 1 tin chưa đọc
     await conversation.update({
-      status: "waiting",
+      status: "ai_active",
       mode: "ai",
       assignedReceptionistId: null,
       unreadCount: 1,
@@ -130,7 +129,7 @@ export const saveMessage = async ({
   const conv = await Conversation.findByPk(conversationId);
   if (conv && conv.status === "closed" && senderType === "customer") {
     await conv.update({
-      status: "waiting",
+      status: "ai_active",
       mode: "ai",
       assignedReceptionistId: null,
       unreadCount: 1,
@@ -263,27 +262,26 @@ export const receptionistJoin = async (conversationId, receptionistId) => {
   });
 
   // ✅ Ngoài transaction — Bắn tín hiệu socket chuẩn xác gọi Client chuyển phòng
-  const io = getIO();
-  if (io) {
-    const receptionistName = result.receptionist.user?.fullName || "Lễ tân";
+const io = getIO();
+if (io) {
+  const receptionistName = result.receptionist.user?.fullName || "Lễ tân";
+  const roomId = `chat_conv_${conversationId}`; // ✅ FIX: đúng room convention
 
-    // 🔥 GIỮ NGUYÊN EVENT GỐC: Báo chuẩn sự kiện giúp AIChat.jsx tự động nhảy phòng lập tức
-    io.to(String(conversationId)).emit("receptionist_joined", {
-      conversationId,
-      receptionistName,
-    });
+  io.to(roomId).emit("receptionist_joined", {
+    conversationId,
+    receptionistName,
+  });
 
-    io.to(String(conversationId)).emit("receive_message", {
-      conversationId: conversationId,
-      senderType: "system",
-      messageType: "system",
-      eventType: "accepted", 
-      content: `🎯 Lễ tân [${receptionistName}] đã tham gia hỗ trợ trực tiếp!`,
-    });
+  io.to(roomId).emit("receive_message", {
+    conversationId: conversationId,
+    senderType: "system",
+    messageType: "system",
+    eventType: "accepted", 
+    content: `🎯 Lễ tân [${receptionistName}] đã tham gia hỗ trợ trực tiếp!`,
+  });
 
-    // Đồng bộ danh sách sidebar cho toàn bộ các lễ tân khác
-    io.emit("conversation_updated");
-  }
+  io.emit("conversation_updated");
+}
 
   return result;
 };

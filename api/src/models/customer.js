@@ -10,7 +10,11 @@ export default (sequelize) => {
         as: "user",
 
       });
-
+      Customer.hasMany(models.HairAnalysis, {
+  foreignKey: "customerId",
+  sourceKey: "idCustomer",
+  as: "hairAnalyses",
+});
       Customer.belongsToMany(models.Voucher, {
         through: models.CustomerVoucher,
         foreignKey: "customer_id",  
