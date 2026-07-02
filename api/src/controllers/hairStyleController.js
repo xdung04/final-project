@@ -20,19 +20,18 @@ import {
  * GET /api/client/categories-with-hairstyles
  * Lấy danh sách danh mục và kiểu tóc đang hoạt động (Active) để hiển thị trang Home/Booking
  */
+ 
 export const getClientCategoriesWithHairstyles = async (req, res) => {
   try {
-    const data = await getActiveCategoriesWithHairstyles();
-
+    const customerId = req.user?.idUser || null; // idCustomer = idUser
+    const data = await getActiveCategoriesWithHairstyles(customerId);
     return res.status(200).json({
       success: true,
       data,
     });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    console.error("❌ getClientCategoriesWithHairstyles:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 

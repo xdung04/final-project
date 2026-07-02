@@ -478,3 +478,67 @@ export const getStatisticsOverview = async (month, year) => {
     topBarbers,
   };
 };
+export const getAIRatingSummary = async () => {
+  const result = await db.HairAnalysis.findAll({
+    attributes: [
+      [Sequelize.fn("COUNT", Sequelize.col("idAnalysis")), "totalReviewed"],
+      [Sequelize.fn("AVG", Sequelize.col("rating")), "avgRating"],
+      [Sequelize.fn("SUM", Sequelize.literal("CASE WHEN rating = 5 THEN 1 ELSE 0 END")), "star5"],
+      [Sequelize.fn("SUM", Sequelize.literal("CASE WHEN rating = 4 THEN 1 ELSE 0 END")), "star4"],
+      [Sequelize.fn("SUM", Sequelize.literal("CASE WHEN rating = 3 THEN 1 ELSE 0 END")), "star3"],
+      [Sequelize.fn("SUM", Sequelize.literal("CASE WHEN rating = 2 THEN 1 ELSE 0 END")), "star2"],
+      [Sequelize.fn("SUM", Sequelize.literal("CASE WHEN rating = 1 THEN 1 ELSE 0 END")), "star1"],
+    ],
+    where: {
+      rating: { [Sequelize.Op.ne]: null },
+    },
+    raw: true,
+  });
+
+  const r = result[0];
+  return {
+    totalReviewed: parseInt(r.totalReviewed || 0),
+    avgRating: parseFloat(parseFloat(r.avgRating || 0).toFixed(2)),
+    distribution: {
+      star5: parseInt(r.star5 || 0),
+      star4: parseInt(r.star4 || 0),
+      star3: parseInt(r.star3 || 0),
+      star2: parseInt(r.star2 || 0),
+      star1: parseInt(r.star1 || 0),
+    },
+  };
+};
+
+/**
+ * Rating trung bình theo từng khuôn mặt
+ */
+export const getAIRatingByFaceShape = async () => {
+  const result = await db.HairAnalysis.findAll({
+    attributes: [
+      "faceShape",
+      [Sequelize.fn("COUNT", Sequelize.col("idAnalysis")), "total"],
+      [Sequelize.fn("AVG", Sequelize.col("rating")), "avgRating"],
+      [
+        Sequelize.fn(
+          "SUM",
+          Sequelize.literal("CASE WHEN rating >= 4 THEN 1 ELSE 0 END")
+        ),
+        "satisfied",
+      ],
+    ],
+    where: {
+      faceShape: { [Sequelize.Op.ne]: null },
+      rating: { [Sequelize.Op.ne]: null },
+    },
+    group: ["faceShape"],
+    order: [[Sequelize.literal("avgRating"), "DESC"]],
+    raw: true,
+  });
+
+  return result.map((r) => ({
+    faceShape: r.faceShape,
+    total: parseInt(r.total),
+    avgRating: parseFloat(parseFloat(r.avgRating).toFixed(2)),
+    satisfied: parseInt(r.satisfied),
+  }));
+};

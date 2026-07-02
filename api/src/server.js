@@ -34,6 +34,7 @@ import startBranchStatusCron from "./cron/branchStatusCron.js";
 import startSalaryCron from "./cron/salaryCron.js";
 import startBarberLockCron from "./cron/barberStatusCron.js";
 import startExpireVouchersCron from "./cron/expireVouchersCron.js";
+import hairAnalysisRoutes from "./routes/hairAnalysis.js";
 
 import { authenticate, authorize } from "./middlewares/authMiddleware.js";
 import notificationRoute from "./routes/notification.js";
@@ -96,7 +97,7 @@ app.use("/api/hashtags", hashtagRoutes);
 app.use("/api/hair-consult", hairConsultRoutes);
 app.use("/api/notifications", notificationRoute);
 app.use("/api/news", newsRouter);
-
+app.use("/api/hair-analysis", hairAnalysisRoutes);
 app.use("/api/receptionist", receptionistRouter);
 
 app.use("/api/calendar", calendarRoutes);

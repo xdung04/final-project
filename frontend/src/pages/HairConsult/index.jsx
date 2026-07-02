@@ -4,6 +4,7 @@ import RevealSection from "~/components/RevealSection/RevealSection";
 import { HairConsultAPI } from "~/apis/hairConsultAPI";
 import FaceCamera from "./FaceCamera";
 import { useToast } from "~/context/ToastContext";
+import HairConsultResult from "./HairConsult";
 
 const HairConsult = () => {
   const [quizData, setQuizData] = useState(null);
@@ -24,7 +25,7 @@ const HairConsult = () => {
     const fetchQuiz = async () => {
       try {
         const data = await HairConsultAPI.getQuiz();
-        setQuizData(data.quiz);
+        setQuizData(data.data.quiz);
 
         const savedAnswers = sessionStorage.getItem("hairConsultAnswers");
         const savedFlow = sessionStorage.getItem("hairConsultFlow");
@@ -152,7 +153,7 @@ const HairConsult = () => {
       formData.append("quizAnswers", JSON.stringify(filteredAnswers));
 
       const res = await HairConsultAPI.generateRecommendation(formData);
-      setRecommendation(res);
+      setRecommendation(res.data);
       setQuizCompleted(true);
       setShowOverlay(false);
       setIsCameraOpen(false);
@@ -277,35 +278,19 @@ const HairConsult = () => {
         )}
 
         {/* Kết quả phân tích */}
-        {quizCompleted && recommendation && (
-          <div className={styles.quizResult}>
-            <h2>Kết quả phân tích</h2>
-            
-            <div className={styles.faceProgress}>
-              {recommendation.faceBlend?.map((f, i) => (
-                <div className={styles.faceItem} key={i}>
-                  <div className={styles.faceLabel}>{f.faceType}</div>
-                  <div className={styles.progressTrack}>
-                    <div className={styles.progressFillBar} style={{ width: `${f.ratio * 100}%` }} />
-                  </div>
-                  <div className={styles.faceValue}>{Math.round(f.ratio * 100)}%</div>
-                </div>
-              ))}
-            </div>
-
-            <div className={styles.resultDetails}>
-              <p><b>Dáng mặt chính:</b> {recommendation.primaryFaceType}</p>
-              <p><b>Độ tự tin (AI):</b> {recommendation.confidenceLevel}</p>
-              <p><b>Gợi ý kiểu tóc:</b> {recommendation.recommendedStyles?.join(", ")}</p>
-              <p><b>Lý do chọn:</b> {recommendation.reasoning}</p>
-              <p><b>Chăm sóc tóc:</b> {recommendation.careAdvice}</p>
-            </div>
-            
-            <button className={styles.btnPrimary} onClick={() => window.location.href = "/"}>
-              Hoàn tất
-            </button>
-          </div>
-        )}
+{quizCompleted && recommendation && (
+  <HairConsultResult
+    recommendation={recommendation}
+    onReset={() => {
+      setQuizCompleted(false);
+      setRecommendation(null);
+      setAnswers({});
+      setCurrentFlow(null);
+      setCurrentQuestionIndex(0);
+      sessionStorage.clear();
+    }}
+  />
+)}
       </div>
 
       {!isCameraOpen && !quizCompleted && currentFlow && (

@@ -18,8 +18,6 @@ const toSolar = (lunarDay, lunarMonth, year) => {
     return null;
   }
 };
-
-// ─── Ngày lễ cố định dương lịch (không đổi theo năm) ─────────────────────────
 const FIXED_HOLIDAYS = [
   {
     month: 1, day: 1,

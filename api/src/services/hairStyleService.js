@@ -2,7 +2,7 @@
 import db from "../models/index.js";
 import slugify from "slugify";
 import cloudinary from "../config/cloudinary.js";
-const { Category, Hairstyle } = db;
+const { Category, Hairstyle, HairAnalysis  } = db;
 
 // ==========================================
 // 1. CHỨC NĂNG CHO CLIENT (HOME & BOOKING)
@@ -24,8 +24,17 @@ const uploadToCloudinary = (buffer) => {
     stream.end(buffer);
   });
 };
-export const getActiveCategoriesWithHairstyles = async () => {
-  return await Category.findAll({
+export const getActiveCategoriesWithHairstyles = async (customerId = null) => {
+  let faceShape = null;
+  if (customerId && HairAnalysis) {
+    const latest = await HairAnalysis.findOne({
+      where: { customerId },
+      order: [["lastAnalysisAt", "DESC"]],
+      attributes: ["faceShape"],
+    });
+    faceShape = latest?.faceShape || null;
+  }
+  const data = await Category.findAll({
     where: { status: "Active" },
     attributes: ["idCategory", "name", "slug"],
     include: [
@@ -41,10 +50,11 @@ export const getActiveCategoriesWithHairstyles = async () => {
           "difficultyLevel",
           "maintenanceLevel",
           "suitableAge",
+          "suitableFaceShapes", // ← thêm field này
           "coverImage",
           "sideImage",
         ],
-        required: false, // Vẫn hiện danh mục kể cả khi chưa có kiểu tóc nào
+        required: false,
       },
     ],
     order: [
@@ -52,7 +62,33 @@ export const getActiveCategoriesWithHairstyles = async () => {
       [{ model: Hairstyle, as: "hairstyles" }, "name", "ASC"],
     ],
   });
+
+  // Không có faceShape → trả về như cũ, không cần flag
+  if (!faceShape) return data.map(c => c.toJSON());
+
+  const normalized = faceShape.toLowerCase().trim();
+
+  return data.map(category => {
+    const plain = category.toJSON();
+
+    // Gắn isRecommended dựa trên suitableFaceShapes
+    const withFlag = plain.hairstyles.map(style => ({
+      ...style,
+      isRecommended: Array.isArray(style.suitableFaceShapes)
+        ? style.suitableFaceShapes.map(s => s.toLowerCase()).includes(normalized)
+        : false,
+    }));
+
+    // Sort: recommended lên đầu, giữ thứ tự alphabet bên trong mỗi nhóm
+    plain.hairstyles = [
+      ...withFlag.filter(s => s.isRecommended),
+      ...withFlag.filter(s => !s.isRecommended),
+    ];
+
+    return plain;
+  });
 };
+ 
 
 /**
  * Lấy chi tiết kiểu tóc theo Slug (chỉ lấy kiểu tóc đang hoạt động)

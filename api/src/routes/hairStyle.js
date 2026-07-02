@@ -1,7 +1,7 @@
 "use strict";
 import express from "express";
 import * as hairstyleController from "../controllers/hairStyleController.js";
-import { authenticate, authorize } from "../middlewares/authMiddleware.js"; // ← thêm authenticate
+import { authenticate, authorize,optionalAuthenticate } from "../middlewares/authMiddleware.js"; // ← thêm authenticate
 import multer from "multer";
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -11,8 +11,8 @@ const adminOnly = authorize(["admin"]);
 // ==========================================
 // 1. ROUTES CHO CLIENT
 // ==========================================
-router.get("/client/categories-with-hairstyles", hairstyleController.getClientCategoriesWithHairstyles);
-router.get("/client/hairstyles/:slug", hairstyleController.getClientHairstyleDetail);
+router.get("/client/categories-with-hairstyles", optionalAuthenticate, hairstyleController.getClientCategoriesWithHairstyles);
+router.get("/client/hairstyles/:slug", optionalAuthenticate, hairstyleController.getClientHairstyleDetail);
 
 // ==========================================
 // 2. ROUTES CHO ADMIN

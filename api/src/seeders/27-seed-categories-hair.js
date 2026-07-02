@@ -2,7 +2,6 @@
 import slugify from "slugify";
 
 export async function up(queryInterface, Sequelize) {
-  // 1. Chèn dữ liệu vào bảng "categories" trước để làm khóa ngoại
   const categories = [
     { idCategory: 1, name: "Modern", status: "Active" },
     { idCategory: 2, name: "Classic", status: "Active" },
@@ -19,7 +18,6 @@ export async function up(queryInterface, Sequelize) {
 
   await queryInterface.bulkInsert("categories", finalCategories);
 
-  // 2. Chèn dữ liệu 19 kiểu tóc vào bảng "hairstyles" (Khớp 100% các cột với Migration)
   const hairstyles = [
     {
       idCategory: 1,
@@ -28,6 +26,7 @@ export async function up(queryInterface, Sequelize) {
       difficultyLevel: "Medium",
       maintenanceLevel: "Medium",
       suitableAge: "18-30",
+      suitableFaceShapes: JSON.stringify(["oval", "square", "oblong"]),
       status: "Active",
       coverImage: "https://res.cloudinary.com/dewjxowhs/image/upload/v1779174883/HS001_douzch.png",
       sideImage: "https://res.cloudinary.com/dewjxowhs/image/upload/v1779175146/Screenshot_2026-05-19_at_14.18.34_cwm270.png",
@@ -39,6 +38,7 @@ export async function up(queryInterface, Sequelize) {
       difficultyLevel: "Easy",
       maintenanceLevel: "Low",
       suitableAge: "25-45",
+      suitableFaceShapes: JSON.stringify(["oval", "round", "heart"]),
       status: "Active",
       coverImage: "https://res.cloudinary.com/dewjxowhs/image/upload/v1779177840/Screenshot_2026-05-19_at_14.22.38_obxdyd.png",
       sideImage: "https://res.cloudinary.com/dewjxowhs/image/upload/v1779177839/Screenshot_2026-05-19_at_14.53.49_shxfk4.png",
@@ -50,6 +50,7 @@ export async function up(queryInterface, Sequelize) {
       difficultyLevel: "Easy",
       maintenanceLevel: "Medium",
       suitableAge: "15-28",
+      suitableFaceShapes: JSON.stringify(["oval", "round", "heart", "square"]),
       status: "Active",
       coverImage: "https://res.cloudinary.com/dewjxowhs/image/upload/v1779177838/Screenshot_2026-05-19_at_15.02.59_oxdwhc.png",
       sideImage: "https://res.cloudinary.com/dewjxowhs/image/upload/v1779178038/Screenshot_2026-05-19_at_15.07.01_n90i3s.png",
@@ -61,6 +62,7 @@ export async function up(queryInterface, Sequelize) {
       difficultyLevel: "Medium",
       maintenanceLevel: "High",
       suitableAge: "16-30",
+      suitableFaceShapes: JSON.stringify(["oval", "square", "oblong"]),
       status: "Active",
       coverImage: "https://res.cloudinary.com/dewjxowhs/image/upload/v1779177840/Screenshot_2026-05-19_at_14.57.51_ul7azy.png",
       sideImage: "https://res.cloudinary.com/dewjxowhs/image/upload/v1779177838/Screenshot_2026-05-19_at_14.55.40_b6u6nt.png",
@@ -72,6 +74,7 @@ export async function up(queryInterface, Sequelize) {
       difficultyLevel: "Medium",
       maintenanceLevel: "Medium",
       suitableAge: "18-28",
+      suitableFaceShapes: JSON.stringify(["oval", "square", "oblong", "heart"]),
       status: "Active",
       coverImage: "https://res.cloudinary.com/dewjxowhs/image/upload/v1779178230/Screenshot_2026-05-19_at_15.09.26_ycyzi2.png",
       sideImage: "https://res.cloudinary.com/dewjxowhs/image/upload/v1779178227/Screenshot_2026-05-19_at_15.09.59_inva0k.png",
@@ -83,6 +86,7 @@ export async function up(queryInterface, Sequelize) {
       difficultyLevel: "Hard",
       maintenanceLevel: "High",
       suitableAge: "20-35",
+      suitableFaceShapes: JSON.stringify(["round", "square", "heart"]),
       status: "Active",
       coverImage: "https://res.cloudinary.com/dewjxowhs/image/upload/v1779178531/Screenshot_2026-05-19_at_15.14.53_yydk3e.png",
       sideImage: "https://res.cloudinary.com/dewjxowhs/image/upload/v1779178533/Screenshot_2026-05-19_at_15.14.20_yommlz.png",
@@ -94,6 +98,7 @@ export async function up(queryInterface, Sequelize) {
       difficultyLevel: "Medium",
       maintenanceLevel: "High",
       suitableAge: "18-32",
+      suitableFaceShapes: JSON.stringify(["oval", "oblong", "square"]),
       status: "Active",
       coverImage: "https://res.cloudinary.com/dewjxowhs/image/upload/v1779179060/Screenshot_2026-05-19_at_15.19.50_bbj6di.png",
       sideImage: "https://res.cloudinary.com/dewjxowhs/image/upload/v1779178902/Screenshot_2026-05-19_at_15.19.09_x4xmss.png",
@@ -105,6 +110,7 @@ export async function up(queryInterface, Sequelize) {
       difficultyLevel: "Hard",
       maintenanceLevel: "High",
       suitableAge: "16-28",
+      suitableFaceShapes: JSON.stringify(["oblong", "square", "heart"]),
       status: "Active",
       coverImage: "https://res.cloudinary.com/dewjxowhs/image/upload/v1779179061/Screenshot_2026-05-19_at_15.20.38_lldgp9.png",
       sideImage: "https://res.cloudinary.com/dewjxowhs/image/upload/v1779179063/Screenshot_2026-05-19_at_15.21.16_q7pqsi.png",
@@ -116,6 +122,7 @@ export async function up(queryInterface, Sequelize) {
       difficultyLevel: "Hard",
       maintenanceLevel: "High",
       suitableAge: "16-26",
+      suitableFaceShapes: JSON.stringify(["oval", "square", "heart"]),
       status: "Active",
       coverImage: "https://res.cloudinary.com/dewjxowhs/image/upload/v1779179418/Screenshot_2026-05-19_at_15.26.16_mj0p7b.png",
       sideImage: "https://res.cloudinary.com/dewjxowhs/image/upload/v1779179417/Screenshot_2026-05-19_at_15.26.06_jttvai.png",
@@ -127,6 +134,7 @@ export async function up(queryInterface, Sequelize) {
       difficultyLevel: "Easy",
       maintenanceLevel: "Low",
       suitableAge: "18-35",
+      suitableFaceShapes: JSON.stringify(["oval", "square", "oblong"]),
       status: "Active",
       coverImage: "https://res.cloudinary.com/dewjxowhs/image/upload/v1779179420/Screenshot_2026-05-19_at_15.27.37_pfdcpc.png",
       sideImage: "https://res.cloudinary.com/dewjxowhs/image/upload/v1779179419/Screenshot_2026-05-19_at_15.28.10_pmowgb.png",
@@ -138,6 +146,7 @@ export async function up(queryInterface, Sequelize) {
       difficultyLevel: "Easy",
       maintenanceLevel: "Low",
       suitableAge: "20-40",
+      suitableFaceShapes: JSON.stringify(["oval", "square", "oblong", "heart"]),
       status: "Active",
       coverImage: "https://res.cloudinary.com/dewjxowhs/image/upload/v1779179709/Screenshot_2026-05-19_at_15.34.19_rf75rk.png",
       sideImage: "https://res.cloudinary.com/dewjxowhs/image/upload/v1779179710/Screenshot_2026-05-19_at_15.34.35_nwoxy6.png",
@@ -149,6 +158,7 @@ export async function up(queryInterface, Sequelize) {
       difficultyLevel: "Easy",
       maintenanceLevel: "Medium",
       suitableAge: "25-50",
+      suitableFaceShapes: JSON.stringify(["oval", "oblong", "square"]),
       status: "Active",
       coverImage: "https://res.cloudinary.com/dewjxowhs/image/upload/v1779179795/Screenshot_2026-05-19_at_15.35.58_hyihz9.png",
       sideImage: "https://res.cloudinary.com/dewjxowhs/image/upload/v1779179796/Screenshot_2026-05-19_at_15.36.08_nekxgn.png",
@@ -160,6 +170,7 @@ export async function up(queryInterface, Sequelize) {
       difficultyLevel: "Medium",
       maintenanceLevel: "Medium",
       suitableAge: "18-30",
+      suitableFaceShapes: JSON.stringify(["round", "square", "heart"]),
       status: "Active",
       coverImage: "https://res.cloudinary.com/dewjxowhs/image/upload/v1779180004/Screenshot_2026-05-19_at_15.39.47_cbdums.png",
       sideImage: "https://res.cloudinary.com/dewjxowhs/image/upload/v1779180002/Screenshot_2026-05-19_at_15.39.19_kdh8ui.png",
@@ -171,6 +182,7 @@ export async function up(queryInterface, Sequelize) {
       difficultyLevel: "Medium",
       maintenanceLevel: "Medium",
       suitableAge: "18-28",
+      suitableFaceShapes: JSON.stringify(["square", "oblong", "heart"]),
       status: "Active",
       coverImage: "https://res.cloudinary.com/dewjxowhs/image/upload/v1779180864/Screenshot_2026-05-19_at_15.52.29_y3a8mv.png",
       sideImage: "https://res.cloudinary.com/dewjxowhs/image/upload/v1779180864/Screenshot_2026-05-19_at_15.54.02_htrspg.png",
@@ -182,6 +194,7 @@ export async function up(queryInterface, Sequelize) {
       difficultyLevel: "Medium",
       maintenanceLevel: "Medium",
       suitableAge: "22-38",
+      suitableFaceShapes: JSON.stringify(["oval", "oblong", "heart"]),
       status: "Active",
       coverImage: "https://res.cloudinary.com/dewjxowhs/image/upload/v1779180863/Screenshot_2026-05-19_at_15.50.35_spfhgy.png",
       sideImage: "https://res.cloudinary.com/dewjxowhs/image/upload/v1779180862/Screenshot_2026-05-19_at_15.48.34_zw6v1o.png",
@@ -193,6 +206,7 @@ export async function up(queryInterface, Sequelize) {
       difficultyLevel: "Easy",
       maintenanceLevel: "Medium",
       suitableAge: "15-25",
+      suitableFaceShapes: JSON.stringify(["round", "square", "heart"]),
       status: "Active",
       coverImage: "https://res.cloudinary.com/dewjxowhs/image/upload/v1779181504/Screenshot_2026-05-19_at_15.58.32_h6gnkj.png",
       sideImage: "https://res.cloudinary.com/dewjxowhs/image/upload/v1779181193/Screenshot_2026-05-19_at_15.59.35_zqjfxv.png",
@@ -204,6 +218,7 @@ export async function up(queryInterface, Sequelize) {
       difficultyLevel: "Easy",
       maintenanceLevel: "Low",
       suitableAge: "18-30",
+      suitableFaceShapes: JSON.stringify(["oval", "round", "oblong"]),
       status: "Active",
       coverImage: "https://res.cloudinary.com/dewjxowhs/image/upload/v1779181941/Screenshot_2026-05-19_at_16.01.08_qwoziz.png",
       sideImage: "https://res.cloudinary.com/dewjxowhs/image/upload/v1779181940/Screenshot_2026-05-19_at_16.00.44_mhwgx0.png",
@@ -215,6 +230,7 @@ export async function up(queryInterface, Sequelize) {
       difficultyLevel: "Easy",
       maintenanceLevel: "Low",
       suitableAge: "18-35",
+      suitableFaceShapes: JSON.stringify(["oval", "oblong", "heart"]),
       status: "Active",
       coverImage: "https://res.cloudinary.com/dewjxowhs/image/upload/v1779181942/Screenshot_2026-05-19_at_16.04.05_ie21np.png",
       sideImage: "https://res.cloudinary.com/dewjxowhs/image/upload/v1779181941/Screenshot_2026-05-19_at_16.04.46_njsyek.png",
@@ -226,13 +242,13 @@ export async function up(queryInterface, Sequelize) {
       difficultyLevel: "Hard",
       maintenanceLevel: "High",
       suitableAge: "16-25",
+      suitableFaceShapes: JSON.stringify(["oval", "oblong", "square"]),
       status: "Active",
       coverImage: "https://res.cloudinary.com/dewjxowhs/image/upload/v1779181943/Screenshot_2026-05-19_at_16.05.30_gwtv4c.png",
       sideImage: "https://res.cloudinary.com/dewjxowhs/image/upload/v1779181944/Screenshot_2026-05-19_at_16.10.51_q17neq.png",
     }
   ];
 
-  // Tự động map thêm slug và timestamps (createdAt, updatedAt) theo đúng thiết kế database
   const finalHairstyles = hairstyles.map((item) => ({
     ...item,
     slug: slugify(item.name, { lower: true, locale: "vi" }),
@@ -244,7 +260,6 @@ export async function up(queryInterface, Sequelize) {
 }
 
 export async function down(queryInterface, Sequelize) {
-  // Khi rollback seeder: xóa bảng con (hairstyles) trước rồi xóa bảng cha (categories)
   await queryInterface.bulkDelete("hairstyles", null, {});
   await queryInterface.bulkDelete("categories", null, {});
 }

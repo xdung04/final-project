@@ -1,8 +1,9 @@
 // services/summaryStatisticService.js
-import { getBarberRevenue, getBranchMonthlyBookingRevenue } from "./statisticsService.js";
+import { getBarberRevenue, getBranchMonthlyBookingRevenue,getAIRatingSummary, getAIRatingByFaceShape  } from "./statisticsService.js";
 import ratingService from "./ratingService.js";
 import { getSeasonContext } from "../utils/seasonContext.js";
-
+import db from "../models/index.js";
+import { Sequelize } from "sequelize";
 // ─── Gemini client (native fetch — không cần SDK) ─────────────────────────────
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_MODEL   = "gemini-2.5-flash";
@@ -348,6 +349,86 @@ export const getSummary = async (params = {}) => {
       branchRevenue: "Lỗi phân tích dữ liệu.",
       ratings:       "Lỗi phân tích dữ liệu.",
       crossInsight:  raw,
+    };
+  }
+};
+// ─── Fetch AI Data ─────────────────────────────────────────────────────────────
+const fetchAIData = async () => {
+  const [ratingSummary, ratingByFaceShape, feedbacks] = await Promise.all([
+    getAIRatingSummary(),
+    getAIRatingByFaceShape(),
+    db.HairAnalysis.findAll({
+      attributes: ["feedback", "rating", "faceShape"],
+      where: {
+        feedback: {
+          [Sequelize.Op.and]: [
+            { [Sequelize.Op.ne]: null },
+            { [Sequelize.Op.ne]: "" },
+          ],
+        },
+      },
+      raw: true,
+    }),
+  ]);
+
+  return { ratingSummary, ratingByFaceShape, feedbacks };
+};
+
+const buildAIPrompt = ({ ratingSummary, ratingByFaceShape, feedbacks }) => `
+OUTPUT: Return ONE valid JSON object with exactly 4 fields.
+No markdown. No backticks. No text outside the JSON. No newlines inside string values.
+{"overview":"...","faceShapeAnalysis":"...","feedbackInsight":"...","action":"..."}
+
+LANGUAGE: All values MUST be in Vietnamese. Fluent prose, no bullet lists, no line breaks inside strings.
+
+BENCHMARKS:
+- avgRating ≥ 4.0 = tốt; 3.5–3.99 = cần cải thiện; <3.5 = cần xử lý gấp
+- Tỉ lệ satisfied (rating ≥ 4) / total < 60% = tính năng chưa đủ tin cậy
+
+[overview] So sánh avgRating với benchmark. Phân bố sao có đều không? Kết luận tính năng đang ở mức nào.
+[faceShapeAnalysis] Khuôn mặt nào AI tốt nhất, yếu nhất? Đặt tên + điểm số cụ thể.
+[feedbackInsight] Nếu không có feedback → ghi nhận, không suy diễn. Nếu có → điểm tốt, điểm chưa tốt.
+[action] 1 đề xuất cải thiện cụ thể: khuôn mặt nào cần train thêm hoặc UI cần thay đổi gì.
+
+═══════════════════════════════════════
+DATA
+═══════════════════════════════════════
+RatingSummary: ${JSON.stringify(ratingSummary)}
+RatingByFaceShape: ${JSON.stringify(ratingByFaceShape)}
+Feedbacks (${feedbacks.length}): ${
+  feedbacks.length > 0
+    ? feedbacks.map((f, i) => `${i + 1}. [${f.faceShape || "?"} - ${f.rating}⭐] ${f.feedback}`).join("\n")
+    : "Chưa có feedback nào."
+}
+`.trim();
+
+export const getAISummary = async () => {
+  const aiData = await fetchAIData();
+  const prompt = buildAIPrompt(aiData);
+  const raw    = await callGemini(prompt);
+
+  try {
+    const clean  = raw.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
+    const parsed = JSON.parse(clean);
+
+    return {
+      ratingSummary:    aiData.ratingSummary,
+      ratingByFaceShape: aiData.ratingByFaceShape,
+      totalFeedbacks:   aiData.feedbacks.length,
+      analysis: {
+        overview:          parsed.overview          || "Không có dữ liệu.",
+        faceShapeAnalysis: parsed.faceShapeAnalysis || "Không có dữ liệu.",
+        feedbackInsight:   parsed.feedbackInsight   || "Không có dữ liệu.",
+        action:            parsed.action            || "Không có dữ liệu.",
+      },
+    };
+  } catch (parseErr) {
+    console.error("[getAISummary] Gemini JSON parse error:", parseErr.message);
+    return {
+      ratingSummary:    aiData.ratingSummary,
+      ratingByFaceShape: aiData.ratingByFaceShape,
+      totalFeedbacks:   aiData.feedbacks.length,
+      analysis: null,
     };
   }
 };

@@ -22,4 +22,14 @@ export const HairConsultAPI = {
       throw error;
     }
   },
+  validateFace: async (imageFile) => {
+  try {
+    const res = await hairConsultService.validateFace(imageFile);
+    console.log("HairConsultAPI.validateFace trả về:", res);
+    return res;
+  } catch (error) {
+    console.error("Lỗi HairConsultAPI.validateFace:", error);
+    throw error;
+  }
+},
 };

@@ -33,7 +33,9 @@ export const getHistory = async (req, res) => {
   }
 };
 
-// Trong hàm receptionistJoin, thêm emit sau khi join thành công
+// ✅ FIX: chatLiveService.receptionistJoin() đã tự emit "receptionist_joined"
+// và "receive_message" đúng room (chat_conv_${id}) bên trong rồi.
+// Controller KHÔNG emit lại nữa để tránh trùng lặp tin nhắn + sai room.
 export const receptionistJoin = async (req, res) => {
   try {
     const { conversationId, receptionistId } = req.body;
@@ -41,12 +43,6 @@ export const receptionistJoin = async (req, res) => {
       parseInt(conversationId),
       parseInt(receptionistId),
     );
-    const io = getIO();
-    if (io && result.systemMessage) {
-      io.to(conversationId).emit("receive_message", result.systemMessage);
-      // 🔥 Báo cho tất cả lễ tân khác biết conversation đã được nhận
-      io.emit("conversation_updated");
-    }
     res.status(200).json({ success: true, data: result });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -81,8 +77,9 @@ export const transferConversation = async (req, res) => {
     );
     const io = getIO();
     if (io) {
+      const roomId = `chat_conv_${conversationId}`; // ✅ FIX: đúng room convention
       if (result.systemMessage)
-        io.to(conversationId).emit("receive_message", result.systemMessage);
+        io.to(roomId).emit("receive_message", result.systemMessage);
       
       // 🔥 Emit riêng cho receptionist nhận — không phụ thuộc room
       io.emit("conversation_transfer_notify", {
@@ -105,8 +102,7 @@ export const closeConversation = async (req, res) => {
     const result = await chatService.closeConversation(conversationId);
     const io = getIO();
     if (io) {
-      
-      io.to(String(conversationId)).emit("conversation_closed", { conversationId });
+      io.to(`chat_conv_${conversationId}`).emit("conversation_closed", { conversationId }); // ✅ FIX room
       io.emit("conversation_updated");
     }
     res.status(200).json({ success: true, data: result });

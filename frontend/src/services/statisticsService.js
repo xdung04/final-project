@@ -38,3 +38,22 @@ export const getDashboardOverview = async (params = {}) => {
     throw error.response?.data || error;
   }
 };
+export const getAIRatingSummary = async () => {
+  try {
+    const res = await request.get("/statistics/ai-rating-summary");
+    return res;
+  } catch (error) {
+    console.error("Lỗi getAIRatingSummary:", error.response?.data || error);
+    throw error.response?.data || error;
+  }
+};
+
+export const getAIRatingByFaceShape = async () => {
+  try {
+    const res = await request.get("/statistics/ai-rating-by-face-shape");
+    return res;
+  } catch (error) {
+    console.error("Lỗi getAIRatingByFaceShape:", error.response?.data || error);
+    throw error.response?.data || error;
+  }
+};

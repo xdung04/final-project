@@ -70,11 +70,25 @@ function AppointmentCard({ appt, view }) {
             <p className={styles.guest}>
               <strong>Số khách:</strong> {appt.guestCount}
             </p>
-            {appt.description && (
-              <p className={styles.note}>
-                <strong>Ghi chú:</strong> {appt.description}
-              </p>
-            )}
+            {appt.description && (() => {
+              let desc = {};
+              try { desc = JSON.parse(appt.description); } catch { desc = {}; }
+
+              return (
+                <>
+                  {desc.hairstyle && (
+                    <p className={styles.note}>
+                      <strong>Kiểu tóc:</strong> {desc.hairstyle}
+                    </p>
+                  )}
+                  {desc.silentMode && (
+                    <p className={styles.note}>
+                      🤫 Khách yêu cầu giữ im lặng
+                    </p>
+                  )}
+                </>
+              );
+            })()}
           </>
         ) : (
           <p className={styles.service}>{serviceNames}</p>

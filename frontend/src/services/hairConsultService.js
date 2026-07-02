@@ -33,3 +33,24 @@ export const generateRecommendation = async (formData) => {
   }
 };
 
+// Validate ảnh trước khi submit
+export const validateFace = async (imageFile) => {
+  try {
+    const formData = new FormData();
+    formData.append("image", imageFile); // ← khớp với route upload.single("image")
+
+    const res = await request.post(
+      "/hair-consult/validate-face",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+    return res;
+  } catch (error) {
+    // Trả về lỗi validate (422) để frontend xử lý hiển thị message
+    throw error.response?.data || error;
+  }
+};

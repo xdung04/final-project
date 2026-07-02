@@ -30,20 +30,17 @@ export async function searchKnowledge({ query, namespace }) {
     });
 
     const matches = res.matches || [];
+    console.log("=== PINECONE RAW MATCH ===");
+    console.log(JSON.stringify(matches[0], null, 2));
     if (matches.length === 0) {
       return { success: true, results: [], message: "Không tìm thấy thông tin phù hợp." };
     }
 
     const results = matches.map((m) => {
-      let meta = {};
-      try {
-        meta = JSON.parse(m.metadata?.metadata || "{}");
-      } catch {
-        meta = m.metadata || {};
-      }
+      const meta = m.metadata || {};
       return {
         score: m.score,
-        content: meta.text || meta.content || meta.description || JSON.stringify(meta),
+        content: meta.text || meta.content || meta.description || "",
       };
     });
 

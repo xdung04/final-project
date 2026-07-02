@@ -5,7 +5,6 @@ import {
   getBookedSlotsByBarber,
   createBookingService,
 } from "./bookingService.js";
-import { getIO } from "../config/socket.js";
 
 export async function getBranches() {
   try {
@@ -127,8 +126,67 @@ export async function createBooking({ state, customerId }) {
     return { success: false, error: err.message };
   }
 }
-export function updateBookingState({ fields }) {
-  return { success: true, updatedFields: fields };
+// bookingTools.js
+export async function updateBookingState({ fields }) {
+  try {
+    const updatedFields = { ...fields };
+
+    // ✅ Validate idBarber thực sự tồn tại và thuộc đúng idBranch (nếu cả 2 cùng được truyền,
+    // hoặc idBranch đã có sẵn từ trước — nhưng ở đây ta chỉ có fields đơn lẻ nên validate
+    // độc lập: idBarber phải tồn tại và không bị khoá)
+    if (updatedFields.idBarber !== undefined && updatedFields.idBarber !== null) {
+      const barber = await db.Barber.findOne({
+        where: { idBarber: updatedFields.idBarber, isLocked: false },
+        include: [{ model: db.User, as: "user", attributes: ["fullName"] }],
+      });
+      if (!barber) {
+        return {
+          success: false,
+          error: `idBarber ${updatedFields.idBarber} không tồn tại hoặc không khả dụng. Hãy gọi lại getBarbers để lấy đúng ID.`,
+        };
+      }
+      // Đồng bộ luôn tên thật từ DB, không tin tên LLM tự điền
+      updatedFields.barberName = barber.user?.fullName || updatedFields.barberName;
+    }
+
+    // ✅ Validate idBranch
+    if (updatedFields.idBranch !== undefined && updatedFields.idBranch !== null) {
+      const branch = await db.Branch.findOne({
+        where: { idBranch: updatedFields.idBranch, status: "Active" },
+      });
+      if (!branch) {
+        return {
+          success: false,
+          error: `idBranch ${updatedFields.idBranch} không tồn tại hoặc không hoạt động. Hãy gọi lại getBranches.`,
+        };
+      }
+      updatedFields.branchName = branch.name;
+    }
+
+    // ✅ Validate idServices — tất cả ID phải tồn tại và active
+    if (Array.isArray(updatedFields.idServices) && updatedFields.idServices.length > 0) {
+      const services = await db.Service.findAll({
+        where: { idService: updatedFields.idServices, status: "Active" },
+        attributes: ["idService", "name"],
+      });
+      if (services.length !== updatedFields.idServices.length) {
+        const foundIds = services.map((s) => s.idService);
+        const missing = updatedFields.idServices.filter((id) => !foundIds.includes(id));
+        return {
+          success: false,
+          error: `idService không hợp lệ: ${missing.join(", ")}. Hãy gọi lại getServices.`,
+        };
+      }
+      // Đồng bộ tên dịch vụ thật từ DB
+      updatedFields.serviceNames = updatedFields.idServices.map(
+        (id) => services.find((s) => s.idService === id)?.name
+      );
+    }
+
+    return { success: true, updatedFields };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
 }
 export function resetBooking({ fields = [] } = {}) {
   try {
@@ -160,36 +218,8 @@ export function resetBooking({ fields = [] } = {}) {
 
 export async function transferToReceptionist({ customerId }) {
   try {
-    const { Conversation } = db;
-
-    const [conversation] = await Conversation.findOrCreate({
-      where: { customerId },
-      defaults: {
-        mode: "human",
-        status: "waiting",
-        unreadCount: 0,
-        bookingState: null,
-      },
-    });
-
-    await conversation.update({
-      mode: "human",
-      status: "waiting",
-      unreadCount: 0,
-    });
-
-    const io = getIO();
-    if (io) {
-      io.emit("conversation_updated");
-      io.emit("conversation_new_message", {
-        conversationId: conversation.id,
-        lastMessage: "⚠️ Khách hàng đang yêu cầu kết nối với Lễ tân...",
-        senderType: "system",
-        clientId: `req_human_${Date.now()}`,
-      });
-    }
-
-    return { success: true, conversationId: conversation.id };
+    
+    return { success: true };
   } catch (err) {
     return { success: false, error: err.message };
   }
