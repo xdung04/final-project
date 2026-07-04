@@ -2,6 +2,7 @@ import db from "../models/index.js";
 import { upsertBarbers,deleteNamespace } from "./pineconeService.js";
 import { fn, col, Op } from "sequelize";
 import ratingService from "./ratingService.js";
+import bcrypt from "bcryptjs";
 
 const Barber = db.Barber; 
 const Booking = db.Booking;

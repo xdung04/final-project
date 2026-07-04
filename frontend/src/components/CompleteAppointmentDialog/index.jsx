@@ -25,10 +25,10 @@ function CompleteAppointmentDialog({ open, onClose, appointment }) {
   };
 
   const truncateFileName = (name, maxLength = 12) => {
-      if (name.length <= maxLength) return name;
-      const ext = name.split(".").pop();
-      return name.substring(0, maxLength) + "... ." + ext;
-    };
+    if (name.length <= maxLength) return name;
+    const ext = name.split(".").pop();
+    return name.substring(0, maxLength) + "... ." + ext;
+  };
 
   const handleSubmit = async () => {
     // 1. Kiểm tra nếu đang tải, THOÁT NGAY để tránh ấn liên tục
@@ -106,31 +106,18 @@ function CompleteAppointmentDialog({ open, onClose, appointment }) {
             {/* Mô tả */}
             <div className={styles.formGroup}>
               <label>Mô tả</label>
-              <textarea
-                rows={3}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              />
+              <textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
             </div>
 
             {/* Upload ảnh */}
             <div className={styles.formGroup}>
-              <label>Upload ảnh (ít nhất 1)</label>
+              <label>Upload ảnh (tải đủ 4 ảnh)</label>
               <div className={styles.uploadGrid}>
                 {["front", "left", "right", "back"].map((pos) => (
                   <div key={pos} className={styles.uploadBox}>
                     <p>{pos.toUpperCase()}</p>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleFileChange(e, pos)}
-                    />
-                    {images[pos] && (
-                      <span className={styles.fileName}>
-                        {truncateFileName(images[pos].name)}
-                      </span>
-                    )}
-
+                    <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, pos)} />
+                    {images[pos] && <span className={styles.fileName}>{truncateFileName(images[pos].name)}</span>}
                   </div>
                 ))}
               </div>
@@ -145,11 +132,7 @@ function CompleteAppointmentDialog({ open, onClose, appointment }) {
             Hủy
           </button>
           {/* Ẩn / Hiện nội dung nút và vô hiệu hóa nếu đang tải */}
-          <button
-            className={styles.submitBtn}
-            onClick={handleSubmit}
-            disabled={isSubmitDisabled}
-          >
+          <button className={styles.submitBtn} onClick={handleSubmit} disabled={isSubmitDisabled}>
             {isLoading ? "Đang tải..." : "Hoàn thành"}
           </button>
         </div>

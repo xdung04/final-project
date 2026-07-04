@@ -910,36 +910,6 @@ function ChiNhanh() {
                   <label>Số điện thoại</label>
                   <input value={selectedReceptionist?.phoneNumber || "—"} readOnly />
                 </div>
-                <div>
-                  <label>Mật khẩu</label>
-                  <div style={{ position: "relative" }}>
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      value="••••••••"
-                      readOnly
-                      style={{ paddingRight: 44 }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      style={{
-                        position: "absolute",
-                        right: 12,
-                        top: "50%",
-                        transform: "translateY(-50%)",
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                        color: "var(--text-dim)",
-                        display: "flex",
-                        alignItems: "center",
-                        padding: 0,
-                      }}
-                    >
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-                </div>
               </div>
             )}
           </div>

@@ -182,6 +182,7 @@ function BarberTab() {
       fullName: currentProfile.fullName || "",
       phoneNumber: currentProfile.phoneNumber || "",
       email: currentProfile.email || "",
+      password: "",
       idBranch: currentProfile.idBranch || "",
       profileDescription: currentProfile.profileDescription?.trim() || "",
       experienceYears: currentProfile.experienceYears ?? "",
@@ -196,10 +197,13 @@ function BarberTab() {
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
-      await BarberAPI.updateBarber(selectedBarber.idBarber, {
+      const payload = {
         ...editData,
         experienceYears: editData.experienceYears !== "" ? Number(editData.experienceYears) : undefined,
-      });
+      };
+      // Không gửi password nếu để trống (không đổi mật khẩu)
+      if (!payload.password) delete payload.password;
+      await BarberAPI.updateBarber(selectedBarber.idBarber, payload);
       showToast("success", "Cập nhật thông tin thợ thành công!");
       setShowEditModal(false);
       await fetchBarbers();
@@ -726,6 +730,16 @@ function BarberTab() {
                         value={editData.email}
                         onChange={handleEditChange}
                         placeholder="tho@barber.com"
+                      />
+                    </div>
+                    <div className={cx("formGroup")}>
+                      <label>Mật khẩu mới</label>
+                      <input
+                        type="password"
+                        name="password"
+                        value={editData.password}
+                        onChange={handleEditChange}
+                        placeholder="Để trống nếu không đổi"
                       />
                     </div>
                     <div className={cx("formGroup")}>
