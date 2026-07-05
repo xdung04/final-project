@@ -1,843 +1,745 @@
 import Groq from "groq-sdk";
 import {
   getBranches, getBarbers, getSlots, getServices,
-  createBooking, resetBooking, transferToReceptionist, updateBookingState,
+  createBooking, transferToReceptionist, updateBookingState,
+  matchBranch, matchBarber, matchServices,
+  parseDateFromText, parseTimeFromText,
 } from "./bookingTools.js";
 import { searchKnowledge } from "./knowledgeTools.js";
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-const MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
 
 // ─────────────────────────────────────────────────────────────
-// Tool Definitions
+// 2 MODEL RIÊNG BIỆT:
+//   - MODEL_CLASSIFY: model nhỏ/rẻ/nhanh, CHỈ dùng để phân loại ý định
+//     (output vài chục token JSON, không cần "thông minh" nhiều — chỉ
+//     chọn đúng 1 trong vài nhãn cố định theo scope).
+//   - MODEL_MAIN: model lớn hơn, dùng khi cần hiểu ngữ cảnh + viết câu
+//     trả lời tự do (tư vấn kiến thức, tóm tắt hội thoại).
 // ─────────────────────────────────────────────────────────────
-const toolDefinitions = [
-  {
-    type: "function",
-    function: {
-      name: "getBranches",
-      description: "Lấy danh sách chi nhánh đang hoạt động.",
-      parameters: { type: "object", properties: {}, required: [] },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "getBarbers",
-      description: "Lấy danh sách thợ của một chi nhánh. Phải gọi sau khi khách chọn chi nhánh.",
-      parameters: {
-        type: "object",
-        properties: {
-          idBranch: { type: ["number", "string"], description: "ID chi nhánh (integer)." },
-        },
-        required: ["idBranch"],
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "getSlots",
-      description: "Lấy danh sách khung giờ trống. Chỉ gọi sau khi updateBookingState đã lưu bookingDate thành công.",
-      parameters: {
-        type: "object",
-        properties: {
-          idBranch:    { type: ["number", "string"], description: "ID chi nhánh (integer)." },
-          idBarber:    { type: ["number", "string"], description: "ID thợ (integer)." },
-          bookingDate: { type: "string", description: "Ngày đặt định dạng YYYY-MM-DD." },
-        },
-        required: ["idBranch", "idBarber", "bookingDate"],
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "getServices",
-      description: "Lấy danh sách dịch vụ của chi nhánh. Chỉ gọi sau khi updateBookingState đã lưu slotTime thành công.",
-      parameters: {
-        type: "object",
-        properties: {
-          idBranch: { type: ["number", "string"], description: "ID chi nhánh (integer)." },
-        },
-        required: ["idBranch"],
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "updateBookingState",
-      description: `Lưu thông tin khách vừa xác nhận vào booking state. 
-PHẢI gọi tool này NGAY SAU KHI khách xác nhận mỗi thông tin, TRƯỚC KHI gọi bất kỳ tool nào tiếp theo.
-KHÔNG được bỏ qua bước này dù bất kỳ lý do gì.`,
-      parameters: {
-        type: "object",
-        properties: {
-          fields: {
-            type: "object",
-            description: "Các trường cần cập nhật.",
-            properties: {
-              idBranch:     { type: ["number", "string"], description: "ID chi nhánh (integer)." },
-              branchName:   { type: "string" },
-              idBarber:     { type: ["number", "string"], description: "ID thợ (integer)." },
-              barberName:   { type: "string" },
-              bookingDate:  { type: "string", description: "Định dạng YYYY-MM-DD." },
-              slotTime:     { type: "string", description: "Định dạng HH:MM." },
-              // Không khai báo type: "array" — Groq validate phía server sẽ reject
-              // nếu LLM truyền vào dạng string "[1]". coerceIds() sẽ normalize sau.
-              idServices:   { description: "Mảng số ID dịch vụ, ví dụ: [1, 2]. PHẢI là JSON array, KHÔNG phải string." },
-              serviceNames: { description: "Mảng tên dịch vụ, ví dụ: [\"Cắt tóc Classic\"]. PHẢI là JSON array, KHÔNG phải string." },
-            },
-          },
-        },
-        required: ["fields"],
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "createBooking",
-      description: "Tạo lịch hẹn chính thức. Chỉ gọi sau khi khách đã xác nhận toàn bộ thông tin.",
-      parameters: {
-        type: "object",
-        properties: {
-          state: { type: "object", description: "Toàn bộ bookingState hiện tại." },
-        },
-        required: ["state"],
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "resetBooking",
-      description: "Xóa một phần hoặc toàn bộ booking state.",
-      parameters: {
-        type: "object",
-        properties: {
-          fields: {
-            type: "array",
-            items: { type: "string" },
-            description: "Danh sách field cần xóa. Để trống để xóa toàn bộ.",
-          },
-        },
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "transferToReceptionist",
-      description: "Chuyển cuộc trò chuyện sang lễ tân khi khách yêu cầu gặp người thật.",
-      parameters: { type: "object", properties: {} },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "searchKnowledge",
-      description: "Tra cứu kiến thức về tóc, dịch vụ, bảng giá của Nam Barbershop.",
-      parameters: {
-        type: "object",
-        properties: {
-          query:     { type: "string" },
-          namespace: {
-            type: "string",
-            enum: ["hairstyles", "colors", "products", "haircare"],
-          },
-        },
-        required: ["query", "namespace"],
-      },
-    },
-  },
-];
+const MODEL_MAIN = process.env.GROQ_MODEL_MAIN || process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
+const MODEL_CLASSIFY = process.env.GROQ_MODEL_CLASSIFY || "llama-3.1-8b-instant";
 
 // ─────────────────────────────────────────────────────────────
-// Helpers
+// KIẾN TRÚC (giữ nguyên triết lý tiết kiệm token của bản trước, chỉ
+// nâng cấp phần PHÂN LOẠI Ý ĐỊNH):
+//
+// Booking flow vẫn là state machine cố định do CODE điều khiển. Việc
+// match câu trả lời của khách vào 1 bước cụ thể (chọn chi nhánh/thợ/
+// ngày/giờ/dịch vụ) vẫn dùng regex + fuzzy-match cục bộ (matchBranch,
+// matchBarber, matchServices, parseDateFromText, parseTimeFromText) —
+// đây là bài toán so khớp vào MỘT DANH SÁCH ĐÓNG lấy từ DB, quá phù hợp
+// để xử lý bằng code, không cần LLM và regex/fuzzy đang làm tốt.
+//
+// Cái THỰC SỰ yếu ở bản trước là các quyết định "ngôn ngữ tự do, không
+// giới hạn" như: khách đồng ý/từ chối nói kiểu gì cũng được, khách muốn
+// đổi ý giữa chừng nói kiểu gì cũng được, khách chào xen giữa lúc đang
+// hỏi cái khác... Regex liệt kê cứng không bao giờ đủ cho tiếng Việt tự
+// nhiên. Đây chính là chỗ nên dùng 1 MODEL NHỎ để phân loại thay vì cố
+// vá thêm regex.
+//
+// => classifyIntent() thay thế detectIntent/CONFIRM_YES/CONFIRM_NO/
+//    PURE_GREETING/CHANGE_VERB+FIELD_NOUNS của bản cũ. Được gọi CÓ CHỌN
+//    LỌC (không phải mọi tin nhắn):
+//    1. Tin nhắn ĐẦU vào flow (chưa xác định ý định) — cần phân biệt
+//       đặt lịch / hỏi kiến thức / gặp lễ tân.
+//    2. Đang ở bước XÁC NHẬN cuối — cần hiểu đồng ý/từ chối đa dạng.
+//    3. Đang chờ 1 bước cụ thể nhưng local resolve (fuzzy match DB)
+//       THẤT BẠI — cần phân biệt "khách muốn đổi ý"/"chỉ chào xã giao"/
+///      "trả lời không hợp lệ" thay vì suy luận mù bằng regex.
+//
+// Mỗi lần gọi classifyIntent CHỈ đưa ra tập nhãn phù hợp với scope hiện
+// tại (không đưa hết mọi nhãn mọi lúc) — prompt ngắn hơn, model ít
+// nhầm lẫn hơn, JSON output chỉ vài token.
 // ─────────────────────────────────────────────────────────────
-function toNumber(val) {
-  if (val === null || val === undefined) return val;
-  const n = Number(val);
-  return isNaN(n) ? val : n;
-}
 
-function coerceIds(args) {
-  if (!args || typeof args !== "object") return args || {};
-  const result = JSON.parse(JSON.stringify(args));
+// Regex fast-path DUY NHẤT còn giữ lại: từ khoá gặp lễ tân rất tường
+// minh, gần như không có false positive, nên xử lý ngay không cần tốn
+// 1 lượt gọi model. Nếu khách diễn đạt khác đi (không match regex này),
+// classifyIntent ở các scope khác vẫn có nhãn "receptionist" để bắt lại.
+const RECEPTIONIST_KEYWORDS = /(gặp lễ tân|gặp người thật|nhân viên tư vấn|nói chuyện với người|gặp nhân viên)/i;
 
-  if (typeof result.state === "string") {
-    try {
-      result.state = JSON.parse(result.state);
-    } catch {
-      result.state = {};
-    }
-  }
+// Vẫn dùng làm shortcut RẺ bên trong handleGeneral (không phải để
+// routing tầng trên) — tránh tốn thêm 1 lượt gọi model cho câu chào
+// thuần tuý khi đã xác định intent = "other".
+const PURE_GREETING = /^(xin chào|chào( bạn| shop| ạ)?|hi|hello|alo)[\s!.]*$/i;
 
-  if (result.state && typeof result.state === "object") {
-    const s = result.state;
-    if (s.idBranch !== undefined) s.idBranch = toNumber(s.idBranch);
-    if (s.idBarber !== undefined) s.idBarber = toNumber(s.idBarber);
+const STEP_LABEL_VI = {
+  CHI_NHANH: "chọn chi nhánh",
+  THO: "chọn thợ",
+  NGAY: "chọn ngày",
+  GIO: "chọn giờ",
+  DICH_VU: "chọn dịch vụ",
+  XAC_NHAN: "xác nhận thông tin đặt lịch",
+};
 
-    if (typeof s.idServices === "string") {
-      try { s.idServices = JSON.parse(s.idServices); } catch { s.idServices = []; }
-    }
-    if (!Array.isArray(s.idServices)) s.idServices = [];
-    s.idServices = s.idServices.map(toNumber);
+// ✅ Đổi field: dictionary field -> field cần reset kèm theo (cascade),
+// giữ nguyên từ bản trước — chỉ khác là "field muốn đổi" giờ do
+// classifyIntent() trả về (change_field) thay vì suy ra từ regex.
+const FIELD_LABEL_VI = {
+  idBranch: "chi nhánh", idBarber: "thợ", bookingDate: "ngày", slotTime: "giờ", idServices: "dịch vụ",
+};
 
-    if (typeof s.serviceNames === "string") {
-      try { s.serviceNames = JSON.parse(s.serviceNames); } catch { s.serviceNames = []; }
-    }
-    if (!Array.isArray(s.serviceNames)) s.serviceNames = [];
-  }
+const FIELD_RESET_MAP = {
+  idBranch:    { idBranch: null, branchName: null, idBarber: null, barberName: null, bookingDate: null, slotTime: null, idServices: [], serviceNames: [] },
+  idBarber:    { idBarber: null, barberName: null, bookingDate: null, slotTime: null, idServices: [], serviceNames: [] },
+  bookingDate: { bookingDate: null, slotTime: null, idServices: [], serviceNames: [] },
+  slotTime:    { slotTime: null, idServices: [], serviceNames: [] },
+  idServices:  { idServices: [], serviceNames: [] },
+};
 
-  if (result.idBranch !== undefined) result.idBranch = toNumber(result.idBranch);
-  if (result.idBarber !== undefined) result.idBarber = toNumber(result.idBarber);
+const CACHE_CLEAR_ON_RESET = {
+  idBranch: ["_barbers", "_slots", "_services"],
+  idBarber: ["_slots", "_services"],
+  bookingDate: ["_slots", "_services"],
+  slotTime: ["_services"],
+  idServices: [],
+};
 
-  if (result.fields && typeof result.fields === "object") {
-    const f = result.fields;
-    if (f.idBranch !== undefined) f.idBranch = toNumber(f.idBranch);
-    if (f.idBarber !== undefined) f.idBarber = toNumber(f.idBarber);
-
-    if (typeof f.idServices === "string") {
-      try { f.idServices = JSON.parse(f.idServices); } catch { f.idServices = []; }
-    }
-    if (!Array.isArray(f.idServices)) f.idServices = [];
-    f.idServices = f.idServices.map(toNumber);
-
-    if (typeof f.serviceNames === "string") {
-      try { f.serviceNames = JSON.parse(f.serviceNames); } catch { f.serviceNames = []; }
-    }
-    if (!Array.isArray(f.serviceNames)) f.serviceNames = [];
-  }
-
-  return result;
-}
-
-function getVietnamDate(offsetDays = 0) {
-  const d = new Date(Date.now() + offsetDays * 86400000);
-  return d.toLocaleDateString("sv-SE", { timeZone: "Asia/Ho_Chi_Minh" });
-}
-
-function getVietnamDateLabel(offsetDays = 0) {
-  const d = new Date(Date.now() + offsetDays * 86400000);
-  return d.toLocaleDateString("vi-VN", {
-    timeZone: "Asia/Ho_Chi_Minh",
-    weekday: "long", day: "2-digit", month: "2-digit", year: "numeric",
-  });
-}
-
-function getMissingStepHint(state) {
-  if (!state.idBranch)            return "CHI_NHÁNH";
-  if (!state.idBarber)            return "THỢ";
-  if (!state.bookingDate)         return "NGÀY";
-  if (!state.slotTime)            return "GIỜ";
-  if (!state.idServices?.length)  return "DỊCH_VỤ";
-  return "XÁC_NHẬN";
-}
-
-// ─────────────────────────────────────────────────────────────
-// FIX 1 — Pre-extract ngày/giờ từ message, không phụ thuộc LLM
-// ─────────────────────────────────────────────────────────────
-function preExtractFields(message, missingStep, today, tomorrow) {
-  const msg = message.trim();
-
-  if (missingStep === "NGÀY") {
-    // "hôm nay"
-    if (/hôm nay/i.test(msg)) return { bookingDate: today };
-    // "ngày mai"
-    if (/ngày mai/i.test(msg)) return { bookingDate: tomorrow };
-    // "thứ 2/3/.../7" hoặc "chủ nhật" trong tuần tới / tuần này
-    const weekdayMap = {
-      "thứ 2": 1, "thứ hai": 1,
-      "thứ 3": 2, "thứ ba": 2,
-      "thứ 4": 3, "thứ tư": 3,
-      "thứ 5": 4, "thứ năm": 4,
-      "thứ 6": 5, "thứ sáu": 5,
-      "thứ 7": 6, "thứ bảy": 6,
-      "chủ nhật": 0, "chủ nhât": 0,
-    };
-    for (const [keyword, targetDay] of Object.entries(weekdayMap)) {
-      if (msg.toLowerCase().includes(keyword)) {
-        const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Ho_Chi_Minh" }));
-        const currentDay = now.getDay();
-        let diff = targetDay - currentDay;
-        if (diff <= 0) diff += 7; // luôn lấy ngày tới
-        const target = new Date(now.getTime() + diff * 86400000);
-        const bookingDate = target.toLocaleDateString("sv-SE", { timeZone: "Asia/Ho_Chi_Minh" });
-        return { bookingDate };
-      }
-    }
-    // "23/6" hoặc "23-6" hoặc "23/06/2026"
-    const dmMatch = msg.match(/(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{4}))?/);
-    if (dmMatch) {
-      const year = dmMatch[3] || new Date().getFullYear();
-      const month = String(dmMatch[2]).padStart(2, "0");
-      const day   = String(dmMatch[1]).padStart(2, "0");
-      return { bookingDate: `${year}-${month}-${day}` };
-    }
-    return null;
-  }
-
-  if (missingStep === "GIỜ") {
-    // "12 giờ", "12h", "12:30", "12h30", "8 giờ sáng", "3 giờ chiều"
-    const timeMatch = msg.match(/(\d{1,2})\s*(?:[:h](\d{2}))?\s*(?:giờ)?\s*(sáng|chiều|tối)?/i);
-    if (timeMatch) {
-      let h = parseInt(timeMatch[1], 10);
-      const min = timeMatch[2] ? String(timeMatch[2]).padStart(2, "0") : "00";
-      const period = timeMatch[3]?.toLowerCase();
-      if (period === "chiều" || period === "tối") {
-        if (h < 12) h += 12;
-      }
-      if (period === "sáng" && h === 12) h = 0;
-      return { slotTime: `${String(h).padStart(2, "0")}:${min}` };
-    }
-    return null;
-  }
-
-  return null;
-}
-
-// ─────────────────────────────────────────────────────────────
-// FIX 2 — Validation dùng pendingState (không phải currentState 2 lần)
-// ─────────────────────────────────────────────────────────────
-function validateToolCall(toolName, pendingState) {
-  const checks = {
-    getSlots: () => {
-      if (!pendingState.bookingDate) {
-        return {
-          valid: false,
-          error: "Bạn phải gọi updateBookingState để lưu bookingDate trước khi gọi getSlots. Hãy retry.",
-        };
-      }
-      return { valid: true };
-    },
-    getServices: () => {
-      if (!pendingState.slotTime) {
-        return {
-          valid: false,
-          error: "Bạn phải gọi updateBookingState để lưu slotTime trước khi gọi getServices. Hãy retry.",
-        };
-      }
-      return { valid: true };
-    },
-    createBooking: () => {
-      if (
-        !pendingState.idBranch || !pendingState.idBarber ||
-        !pendingState.bookingDate || !pendingState.slotTime ||
-        !pendingState.idServices?.length
-      ) {
-        return {
-          valid: false,
-          error: "Khách chưa xác nhận đủ thông tin. Không thể tạo booking.",
-        };
-      }
-      return { valid: true };
-    },
-    default: () => ({ valid: true }),
-  };
-
-  const check = checks[toolName] || checks.default;
-  return check();
-}
-
-// ─────────────────────────────────────────────────────────────
-// Dynamic Action Rules
-// ─────────────────────────────────────────────────────────────
-function getDynamicActionRules(state) {
-  const nextStep = getMissingStepHint(state);
-
-  const actionRules = {
-    "CHI_NHÁNH": `
-[HÀNH ĐỘNG TIẾP THEO] Khách cần chọn chi nhánh:
-  1️⃣ CALL: getBranches()
-  2️⃣ Chờ danh sách
-  3️⃣ CALL: updateBookingState({ fields: { idBranch: NUMBER, branchName: "Tên chi nhánh" } })
-  4️⃣ Chờ { success: true }
-  5️⃣ Hiển thị danh sách thợ
-⚠️ CÁCH BIỆT: Không được gọi tool khác!`,
-
-    "THỢ": `
-[HÀNH ĐỘNG TIẾP THEO] Khách cần chọn thợ:
-  1️⃣ CALL: getBarbers({ idBranch: ${state.idBranch} })
-  2️⃣ Chờ danh sách
-  3️⃣ Khách chọn → CALL: updateBookingState({ fields: { idBarber: NUMBER, barberName: "Tên thợ" } })
-  4️⃣ Chờ { success: true }
-  5️⃣ Hỏi khách chọn ngày nào
-⚠️ CÁCH BIỆT: Không được gọi getSlots, getServices, hay tool khác!`,
-
-    "NGÀY": `
-[HÀNH ĐỘNG TIẾP THEO] Khách cần chọn ngày:
-  1️⃣ Khách chọn ngày → CALL: updateBookingState({ fields: { bookingDate: "YYYY-MM-DD" } })
-  2️⃣ Chờ { success: true }
-  3️⃣ CALL: getSlots({ idBranch: ${state.idBranch}, idBarber: ${state.idBarber}, bookingDate: "YYYY-MM-DD" })
-  4️⃣ Hiển thị danh sách giờ
-⚠️ CÁCH BIỆT: Không được gọi getServices hay updateBookingState 2 lần!
-⚠️ LỖI THƯỜNG GẶP: Quên updateBookingState trước getSlots → HỆ THỐNG SẼ REJECT!`,
-
-    "GIỜ": `
-[HÀNH ĐỘNG TIẾP THEO] Khách cần chọn giờ:
-  1️⃣ Khách chọn giờ → CALL: updateBookingState({ fields: { slotTime: "HH:MM" } })
-  2️⃣ Chờ { success: true }
-  3️⃣ CALL: getServices({ idBranch: ${state.idBranch} })
-  4️⃣ Hiển thị danh sách dịch vụ
-⚠️ CÁCH BIỆT: Không được gọi getServices trước updateBookingState!`,
-
-    "DỊCH_VỤ": `
-[HÀNH ĐỘNG TIẾP THEO] Khách cần chọn dịch vụ:
-  1️⃣ Khách chọn dịch vụ từ danh sách → CALL: updateBookingState({ fields: { idServices: [NUMBER, ...], serviceNames: ["Tên", ...] } })
-  2️⃣ Chờ { success: true }
-  3️⃣ Hiển thị tóm tắt đặt lịch
-  4️⃣ Hỏi khách có chắc chứ
-⚠️ CÁCH BIỆT: Không được gọi createBooking hay tool khác!`,
-
-    "XÁC_NHẬN": `
-[HÀNH ĐỘNG TIẾP THEO] Khách xác nhận tất cả:
-  1️⃣ Hiển thị tóm tắt đầy đủ
-  2️⃣ Khách đồng ý → CALL: createBooking({ state: currentBookingState })
-  3️⃣ Thông báo tạo lịch thành công
-⚠️ CÁCH BIỆT: Không được gọi updateBookingState hay tool khác!`,
-  };
-
-  return actionRules[nextStep] || "";
-}
-
-// ─────────────────────────────────────────────────────────────
-// Execute Tool
-// ─────────────────────────────────────────────────────────────
-async function executeTool(toolName, toolArgs, context) {
-  const args = coerceIds(toolArgs);
-  console.log(`🔧 [brainService] Executing ${toolName}:`, JSON.stringify(args));
-
-  switch (toolName) {
-    case "getBranches":            return await getBranches();
-    case "getBarbers":             return await getBarbers(args);
-    case "getSlots":               return await getSlots(args);
-    case "getServices":            return await getServices(args);
-    case "updateBookingState":     return updateBookingState(args);
-    case "createBooking":          return await createBooking({ state: args.state || args, customerId: context.customerId });
-    case "resetBooking":           return resetBooking({ fields: args.fields || [] });
-    case "transferToReceptionist": return await transferToReceptionist({ customerId: context.customerId });
-    case "searchKnowledge":        return await searchKnowledge(args);
-    default:
-      return { success: false, error: `Tool không tồn tại: ${toolName}` };
-  }
-}
-
-// ─────────────────────────────────────────────────────────────
-// Update local state after tool
-// ─────────────────────────────────────────────────────────────
-function updateStateFromTool(toolName, toolResult, currentState) {
-  if (toolResult?.success === false) return currentState;
-  const next = { ...currentState };
-
-  switch (toolName) {
-    case "updateBookingState":
-      if (toolResult.success && toolResult.updatedFields) {
-        return { ...next, ...toolResult.updatedFields };
-      }
-      break;
-    case "resetBooking":
-      if (toolResult.clearedState) return { ...toolResult.clearedState, bookingCompleted: false };
-      if (toolResult.clearedFields) return { ...next, ...toolResult.clearedFields };
-      break;
-    case "createBooking":
-      if (toolResult.success) {
-        next.bookingCompleted = true;
-        next.idBooking = toolResult.idBooking;
-      }
-      break;
-  }
+function clearFieldAndCascade(field, state) {
+  const next = { ...state, ...FIELD_RESET_MAP[field], _pendingStep: null };
+  CACHE_CLEAR_ON_RESET[field].forEach((k) => delete next[k]);
   return next;
 }
 
-// ─────────────────────────────────────────────────────────────
-// Build System Prompt
-// ─────────────────────────────────────────────────────────────
-function buildSystemPrompt({ isLoggedIn, customerId, currentState }) {
-  const timeContext = new Date().toLocaleString("vi-VN", {
-    timeZone: "Asia/Ho_Chi_Minh",
-    dateStyle: "full",
-    timeStyle: "short",
-  });
-
-  const today     = getVietnamDate(0);
-  const tomorrow  = getVietnamDate(1);
-  const todayLabel    = getVietnamDateLabel(0);
-  const tomorrowLabel = getVietnamDateLabel(1);
-
-  const missingStep  = getMissingStepHint(currentState);
-  const dynamicRules = getDynamicActionRules(currentState);
-
-  const stateDisplay = `
-Chi nhánh  : ${currentState.branchName  || "chưa chọn"} ${currentState.idBranch ? `(id: ${currentState.idBranch})` : ""}
-Thợ        : ${currentState.barberName  || "chưa chọn"} ${currentState.idBarber ? `(id: ${currentState.idBarber})` : ""}
-Ngày       : ${currentState.bookingDate || "chưa chọn"}
-Giờ        : ${currentState.slotTime    || "chưa chọn"}
-Dịch vụ   : ${currentState.serviceNames?.length ? currentState.serviceNames.join(", ") : "chưa chọn"}
-`.trim();
-
-  return `Bạn là trợ lý AI của Nam Barbershop — tiệm tóc nam cao cấp.
-
-━━━ THÔNG TIN PHIÊN ━━━
-Thời gian hiện tại : ${timeContext}
-"hôm nay"          = ${today} (${todayLabel})
-"ngày mai"         = ${tomorrow} (${tomorrowLabel})
-Trạng thái đăng nhập: ${isLoggedIn ? "Đã đăng nhập (customerId: " + customerId + ")" : "Chưa đăng nhập"}
-
-━━━ BOOKING STATE HIỆN TẠI ━━━
-${stateDisplay}
-⚡ BƯỚC CẦN XỬ LÝ TIẾP THEO: ${missingStep}
-
-━━━ VAI TRÒ ━━━
-Chỉ làm 2 việc:
-1. Hỗ trợ đặt lịch tại Nam Barbershop.
-2. Tư vấn kiến thức về tóc/dịch vụ (qua searchKnowledge).
-Từ chối lịch sự mọi yêu cầu ngoài phạm vi.
-
-━━━ QUY TẮC BẮT BUỘC — ĐỌC KỸ ━━━
-
-[RULE 1] TOOL LÀ NGUỒN SỰ THẬT DUY NHẤT
-- Mọi dữ liệu (chi nhánh, thợ, giờ, dịch vụ, giá) PHẢI lấy từ tool.
-- TUYỆT ĐỐI KHÔNG tự bịa, không dùng trí nhớ hội thoại thay dữ liệu tool.
-- TUYỆT ĐỐI KHÔNG nhúng JSON raw vào tin nhắn trả lời khách.
-  ✗ SAI: liệt kê {"idService": 1, "serviceName": "Cắt tóc"} ra chat
-  ✓ ĐÚNG: "Em có 4 dịch vụ: 1. Cắt tóc nam  2. Tẩy tóc  3. Nhuộm tóc  4. Chăm sóc tóc"
-
-[RULE 2] AUTH GATE (isLoggedIn = ${isLoggedIn})
-${!isLoggedIn ? `- Khách CHƯA đăng nhập.
-- KHÔNG gọi bất kỳ booking tool nào (getBranches, getBarbers, getSlots, getServices, createBooking, resetBooking, transferToReceptionist, updateBookingState).
-- Yêu cầu đặt lịch → thông báo cần đăng nhập trước.
-- Hỏi kiến thức tóc → vẫn được phép gọi searchKnowledge.`
-: `- Khách đã đăng nhập. Được phép gọi tất cả tool.`}
-
-[RULE 3] BOOKING FLOW — ĐÚNG THỨ TỰ, KHÔNG BỎ BƯỚC
-Bước 1: Chi nhánh  → getBranches() → khách chọn → updateBookingState(idBranch, branchName) → getBarbers()
-Bước 2: Thợ        → khách chọn từ danh sách → updateBookingState(idBarber, barberName) → hỏi ngày
-Bước 3: Ngày       → khách cung cấp → updateBookingState(bookingDate:"YYYY-MM-DD") → getSlots()
-Bước 4: Giờ        → khách chọn slot có trong kết quả getSlots → updateBookingState(slotTime:"HH:MM") → getServices()
-Bước 5: Dịch vụ   → khách chọn từ danh sách getServices → updateBookingState(idServices:[], serviceNames:[]) → hiển thị tóm tắt
-Bước 6: Xác nhận  → tóm tắt đầy đủ → khách đồng ý → createBooking(state)
-
-[RULE 4] updateBookingState — BẮT BUỘC TUYỆT ĐỐI
-Mỗi khi khách xác nhận thông tin, PHẢI:
-  (a) Gọi updateBookingState NGAY LẬP TỨC — TRƯỚC MỌI TOOL KHÁC.
-  (b) Chờ tool trả { success: true } rồi mới gọi tool tiếp theo.
-  (c) KHÔNG được text reply khi vẫn còn tool cần gọi trong cùng lượt.
-
-⚠️ LỖI NGUY HIỂM — HỆ THỐNG SẼ REJECT:
-  ✗ getSlots gọi trước updateBookingState(bookingDate)
-  ✗ getServices gọi trước updateBookingState(slotTime)
-  ✗ createBooking gọi khi chưa updateBookingState(idServices)
-
-✓ ĐÚNG khi khách nói "hôm nay":
-  1. updateBookingState({ fields: { bookingDate: "${today}" } })
-  2. getSlots({ idBranch: X, idBarber: Y, bookingDate: "${today}" })
-  3. Trả lời text hiển thị danh sách slot
-
-✓ ĐÚNG khi khách nói "12 giờ":
-  1. updateBookingState({ fields: { slotTime: "12:00" } })
-  2. getServices({ idBranch: 1 })
-  3. Trả lời text hiển thị danh sách dịch vụ
-
-✓ ĐÚNG khi khách nói "cắt tóc classic":
-  1. updateBookingState({ fields: { idServices: [1], serviceNames: ["Cắt tóc classic"] } })
-  2. Chờ { success: true }
-  3. Trả lời text tóm tắt và xác nhận
-
-[RULE 5] ENTITY SAFETY
-- idBarber, idBranch, idService PHẢI lấy từ kết quả tool, KHÔNG được tự đặt.
-- Tin nhắn vô nghĩa ("???", "wtf", "ngu vc") → lịch sự hỏi lại, không gọi tool.
-
-[RULE 6] CHUYỂN LỄ TÂN
-- Khách yêu cầu gặp người thật → gọi transferToReceptionist.
-- Chỉ thông báo chuyển thành công khi tool trả { success: true }.
-
-[RULE 7] KNOWLEDGE
-- Câu hỏi về kiến thức tóc → gọi searchKnowledge với namespace đúng:
-  hairstyles: kiểu tóc, tư vấn theo khuôn mặt
-  colors    : màu nhuộm, tẩy tóc
-  products  : sáp, pomade, gel, gôm, tinh dầu
-  haircare  : rụng tóc, gàu, tóc khô xơ
-- Bảng giá, thông tin salon → searchKnowledge namespace phù hợp.
-
-━━━ 🎯 HÀNH ĐỘNG TIẾP THEO (BƯỚC ${missingStep}) ━━━
-${dynamicRules}
-
-━━━ PHONG CÁCH ━━━
-- Xưng em, gọi khách là anh/chị. Lịch sự, thân thiện, ngắn gọn.
-- Mỗi lượt chỉ hỏi đúng một thông tin cần thiết tiếp theo.
-- KHÔNG hiển thị ID kỹ thuật (idBranch, idBarber, idService...) ra chat.
-- KHÔNG dùng từ kỹ thuật: "bookingState", "state", "lưu vào bộ nhớ", "hệ thống đã lưu".
-  ✗ SAI: "Em đã lưu Quận 1 vào bookingState"
-  ✓ ĐÚNG: "Dạ em ghi nhận anh chọn chi nhánh Quận 1 rồi ạ"`;
+// ── Helpers ngày giờ ──────────────────────────────────────────
+function getVietnamDate(offset = 0) {
+  return new Date(Date.now() + offset * 86400000).toLocaleDateString("sv-SE", { timeZone: "Asia/Ho_Chi_Minh" });
 }
 
-// ─────────────────────────────────────────────────────────────
-// processBrainLoop
-// ─────────────────────────────────────────────────────────────
-export async function processBrainLoop({
-  message,
-  bookingState,
-  history = [],
-  isLoggedIn,
-  customerId,
-}) {
-  console.log(`\n===== 🧠 BRAIN LOOP =====`);
-  console.log(`[Message]: "${message}"`);
-  console.log(`[BookingState]:`, JSON.stringify(bookingState, null, 2));
+function getMissingStepHint(state) {
+  if (!state.idBranch) return "CHI_NHANH";
+  if (!state.idBarber) return "THO";
+  if (!state.bookingDate) return "NGAY";
+  if (!state.slotTime) return "GIO";
+  if (!state.idServices?.length) return "DICH_VU";
+  return "XAC_NHAN";
+}
 
-  let currentState = { ...bookingState };
-  let needLogin = false;
-  let needReceptionist = false;
-
-  const today    = getVietnamDate(0);
-  const tomorrow = getVietnamDate(1);
-
-  const BOOKING_TOOLS = [
-    "getBranches", "getBarbers", "getSlots", "getServices",
-    "createBooking", "resetBooking", "transferToReceptionist", "updateBookingState",
-  ];
-
-  // ── FIX 1: Pre-extract ngày/giờ từ message trước khi gọi LLM ────────────
-  const missingStepBeforeLoop = getMissingStepHint(currentState);
-  const extractedFields = isLoggedIn
-    ? preExtractFields(message, missingStepBeforeLoop, today, tomorrow)
-    : null;
-
-  const messages = [
-    {
-      role: "system",
-      content: buildSystemPrompt({ isLoggedIn, customerId, currentState }),
-    },
-    ...history.map((h) => ({
-      role: h.role === "user" ? "user" : "assistant",
-      content: h.content,
-    })),
-    { role: "user", content: message },
-  ];
-
-  // Nếu pre-extract thành công → chèn tool call giả vào messages
-  // để LLM biết state đã được cập nhật và tiếp tục gọi tool tiếp theo
-  if (extractedFields) {
-    console.log(`⚡ [PreExtract] Detected ${missingStepBeforeLoop}:`, extractedFields);
-
-    const fakeArgs = { fields: extractedFields };
-    const fakeId   = `pre_${Date.now()}`;
-
-    // Gọi thật updateBookingState
-    const preResult = updateBookingState(coerceIds(fakeArgs));
-    if (preResult.success) {
-      currentState = updateStateFromTool("updateBookingState", preResult, currentState);
-      console.log(`⚡ [PreExtract] State updated:`, currentState);
-
-      // Inject vào message history để LLM thấy và tiếp tục flow
-      messages.push({
-        role: "assistant",
-        content: null,
-        tool_calls: [{
-          id: fakeId,
-          type: "function",
-          function: {
-            name: "updateBookingState",
-            arguments: JSON.stringify(fakeArgs),
-          },
-        }],
-      });
-      messages.push({
-        role: "tool",
-        tool_call_id: fakeId,
-        content: JSON.stringify(preResult),
-      });
-    }
-  }
-  // ────────────────────────────────────────────────────────────────────────
-
-  const MAX_ITERATIONS = 12;
-  let iterations = 0;
-
-  while (iterations < MAX_ITERATIONS) {
-    iterations++;
-
-    let response;
-    try {
-      response = await groq.chat.completions.create({
-        model: MODEL,
-        messages,
-        tools: toolDefinitions,
-        tool_choice: "auto",
-        temperature: 0.05,
-        max_tokens: 1024, // FIX 3: tăng từ 512 → 1024
-      });
-    } catch (err) {
-      console.error(`❌ [brainService] Groq API error (iter ${iterations}):`, err.message);
-
-      if (err.status === 400 && err.message?.includes("tool_use_failed")) {
-        // Thử parse failed_generation từ error body để tự fix args và execute
-        try {
-          // err.message có dạng: "400 { \"error\": { ..., \"failed_generation\": \"...\" } }"
-          const bodyStr = err.message.replace(/^400\s*/, "");
-          const body    = JSON.parse(bodyStr);
-          const rawGen  = body?.error?.failed_generation;
-
-          if (rawGen) {
-            const failedCalls = JSON.parse(rawGen); // array of { name, parameters }
-            console.warn(`🔧 [ErrorRecovery] Fixing ${failedCalls.length} failed tool call(s)...`);
-
-            const fakeToolCalls = failedCalls.map((fc, i) => ({
-              id: `fix_${Date.now()}_${i}`,
-              type: "function",
-              function: {
-                name: fc.name,
-                arguments: JSON.stringify(fc.parameters ?? fc.arguments ?? {}),
-              },
-            }));
-
-            // Inject assistant message với tool_calls đã fix
-            messages.push({
-              role: "assistant",
-              content: null,
-              tool_calls: fakeToolCalls,
-            });
-
-            let pendingStateRecovery = { ...currentState };
-
-            for (const tc of fakeToolCalls) {
-              const toolName = tc.function.name;
-              let toolArgs   = {};
-              try { toolArgs = JSON.parse(tc.function.arguments || "{}"); } catch { toolArgs = {}; }
-
-              // Auth gate
-              if (!isLoggedIn && BOOKING_TOOLS.includes(toolName)) {
-                needLogin = true;
-                messages.push({ role: "tool", tool_call_id: tc.id, content: JSON.stringify({ success: false, error: "Chưa đăng nhập." }) });
-                continue;
-              }
-
-              // Validate
-              const validation = validateToolCall(toolName, pendingStateRecovery);
-              if (!validation.valid) {
-                messages.push({ role: "tool", tool_call_id: tc.id, content: JSON.stringify({ success: false, error: validation.error }) });
-                continue;
-              }
-
-              // coerceIds sẽ tự normalize string "[1]" → array [1]
-              const toolResult = await executeTool(toolName, toolArgs, { customerId });
-              currentState        = updateStateFromTool(toolName, toolResult, currentState);
-              pendingStateRecovery = updateStateFromTool(toolName, toolResult, pendingStateRecovery);
-
-              if (toolName === "transferToReceptionist" && toolResult?.success) needReceptionist = true;
-              console.log(`[State sau ${toolName} (recovery)]:`, JSON.stringify(currentState, null, 2));
-
-              messages.push({ role: "tool", tool_call_id: tc.id, content: JSON.stringify(toolResult) });
-            }
-
-            continue; // tiếp tục vòng loop để LLM generate reply text
-          }
-        } catch (parseErr) {
-          console.error(`❌ [ErrorRecovery] Không parse được failed_generation:`, parseErr.message);
-        }
-
-        // Fallback cuối: xoá assistant msg lỗi, yêu cầu LLM reply text
-        const lastAssistant = messages.findLastIndex(m => m.role === "assistant");
-        if (lastAssistant !== -1) messages.splice(lastAssistant, 1);
-        messages.push({
-          role: "user",
-          content: "[SYSTEM] Hãy trả lời bằng text thuần túy, không gọi tool trong lượt này.",
-        });
-        continue;
-      }
-      throw err;
-    }
-
-    const choice       = response.choices[0];
-    const assistantMsg = choice.message;
-    messages.push(assistantMsg);
-
-    // Không có tool call → trả về text
-    if (!assistantMsg.tool_calls || assistantMsg.tool_calls.length === 0) {
-      const reply = assistantMsg.content || "";
-      console.log(`[BookingState sau loop]:`, JSON.stringify(currentState, null, 2));
-      return { reply, newBookingState: currentState, needLogin, needReceptionist };
-    }
-
-    // ── FIX 2: pendingState tích lũy trong batch tool calls ─────────────
-    let pendingState = { ...currentState };
-
-    for (const toolCall of assistantMsg.tool_calls) {
-      const toolName = toolCall.function.name;
-      let toolArgs   = {};
-
-      try {
-        toolArgs = JSON.parse(toolCall.function.arguments || "{}");
-      } catch {
-        toolArgs = {};
-      }
-
-      // Auth Gate
-      if (!isLoggedIn && BOOKING_TOOLS.includes(toolName)) {
-        needLogin = true;
-        messages.push({
-          role: "tool",
-          tool_call_id: toolCall.id,
-          content: JSON.stringify({
-            success: false,
-            error: "Khách chưa đăng nhập. Yêu cầu khách đăng nhập trước khi đặt lịch.",
-          }),
-        });
-        continue;
-      }
-
-      // Validation dùng pendingState (đã tích lũy kết quả tool trước trong cùng batch)
-      const validation = validateToolCall(toolName, pendingState);
-      if (!validation.valid) {
-        console.warn(`⚠️ [Validation Failed] ${toolName}:`, validation.error);
-        messages.push({
-          role: "tool",
-          tool_call_id: toolCall.id,
-          content: JSON.stringify({ success: false, error: validation.error }),
-        });
-        continue;
-      }
-
-      const toolResult = await executeTool(toolName, toolArgs, { customerId });
-
-      // Cập nhật cả currentState lẫn pendingState
-      currentState = updateStateFromTool(toolName, toolResult, currentState);
-      pendingState = updateStateFromTool(toolName, toolResult, pendingState);
-
-      if (toolName === "transferToReceptionist" && toolResult?.success) {
-        needReceptionist = true;
-      }
-
-      console.log(`[State sau ${toolName}]:`, JSON.stringify(currentState, null, 2));
-
-      messages.push({
-        role: "tool",
-        tool_call_id: toolCall.id,
-        content: JSON.stringify(toolResult),
-      });
-    }
-    // ────────────────────────────────────────────────────────────────────
-  }
-
-  console.warn("⚠️ [brainService] Vượt quá MAX_ITERATIONS.");
+function freshState() {
   return {
-    reply: "Dạ hệ thống đang bận, anh vui lòng thử lại sau ít phút nha ạ.",
-    newBookingState: currentState,
-    needLogin,
-    needReceptionist,
+    idBranch: null, branchName: null,
+    idBarber: null, barberName: null,
+    bookingDate: null, slotTime: null,
+    idServices: [], serviceNames: [],
+    bookingCompleted: false, bookingFlowStarted: false,
+    _pendingStep: null,
   };
 }
 
+const CACHE_CASCADE = {
+  idBranch: ["_barbers", "_slots", "_services"],
+  idBarber: ["_slots", "_services"],
+  bookingDate: ["_slots", "_services"],
+  slotTime: ["_services"],
+};
+
+function applyCascadeCacheClear(field, state) {
+  const toClear = CACHE_CASCADE[field];
+  if (toClear) toClear.forEach((k) => delete state[k]);
+}
+
+// ── Fetch + cache list cho từng bước (không tốn token — chỉ query DB) ──
+async function ensureListForStep(step, state) {
+  switch (step) {
+    case "CHI_NHANH": {
+      if (!state._branches) state._branches = await getBranches();
+      return state._branches;
+    }
+    case "THO": {
+      if (!state._barbers) state._barbers = await getBarbers({ idBranch: state.idBranch });
+      return state._barbers;
+    }
+    case "GIO": {
+      const result = await getSlots({ idBranch: state.idBranch, idBarber: state.idBarber, bookingDate: state.bookingDate });
+      state._slots = result.availableSlots || [];
+      return state._slots;
+    }
+    case "DICH_VU": {
+      if (!state._services) state._services = await getServices({ idBranch: state.idBranch });
+      return state._services;
+    }
+    default:
+      return null;
+  }
+}
+
+// ── Render text hiển thị (template, không cần LLM viết) ──────────
+function money(n) {
+  return Number(n || 0).toLocaleString("vi-VN") + "đ";
+}
+
+function renderList(step, list) {
+  switch (step) {
+    case "CHI_NHANH":
+      return (
+        "Dạ Nam Barbershop hiện có các chi nhánh:\n" +
+        list.map((b, i) => `${i + 1}. ${b.name} - ${b.address}`).join("\n") +
+        "\n\nAnh/chị muốn đặt lịch ở chi nhánh nào ạ?"
+      );
+    case "THO":
+      if (!list.length) return "Dạ chi nhánh này hiện chưa có thợ nhận lịch, anh/chị vui lòng chọn chi nhánh khác giúp em ạ.";
+      return (
+        "Dạ chi nhánh này có các thợ:\n" +
+        list.map((b, i) => `${i + 1}. ${b.name}`).join("\n") +
+        "\n\nAnh/chị muốn chọn thợ nào ạ?"
+      );
+    case "GIO":
+      if (!list.length) return "Dạ ngày này thợ đã kín lịch rồi, anh/chị chọn ngày khác giúp em nhé.";
+      return `Dạ các khung giờ còn trống: ${list.join(", ")}.\n\nAnh/chị muốn đặt giờ nào ạ?`;
+    case "DICH_VU":
+      return (
+        "Dạ các dịch vụ hiện có:\n" +
+        list.map((s, i) => `${i + 1}. ${s.name} - ${money(s.price)}`).join("\n") +
+        "\n\nAnh/chị muốn chọn dịch vụ nào ạ? (có thể chọn nhiều, cách nhau bằng dấu phẩy)"
+      );
+    default:
+      return "";
+  }
+}
+
+function renderSummary(state) {
+  return `Dạ em xin xác nhận lại thông tin đặt lịch:
+- Chi nhánh: ${state.branchName}
+- Thợ: ${state.barberName}
+- Ngày: ${state.bookingDate}
+- Giờ: ${state.slotTime}
+- Dịch vụ: ${state.serviceNames?.join(", ")}
+
+Anh/chị xác nhận đặt lịch chứ ạ?`;
+}
+
+function stripInternal(state) {
+  const { _branches, _barbers, _slots, _services, ...rest } = state;
+  return rest;
+}
+
+// ── Local resolver cho từng bước (fuzzy-match DB — không tốn token) ──
+async function tryResolveStep(step, message, state) {
+  switch (step) {
+    case "CHI_NHANH": {
+      const list = await ensureListForStep(step, state);
+      const b = matchBranch(message, list);
+      return b ? { field: "idBranch", value: b.idBranch, label: "branchName", labelValue: b.name } : null;
+    }
+    case "THO": {
+      const list = await ensureListForStep(step, state);
+      const b = matchBarber(message, list);
+      return b ? { field: "idBarber", value: b.idBarber, label: "barberName", labelValue: b.name } : null;
+    }
+    case "NGAY": {
+      const d = parseDateFromText(message, getVietnamDate(0), getVietnamDate(1));
+      return d ? { field: "bookingDate", value: d } : null;
+    }
+    case "GIO": {
+      const t = parseTimeFromText(message);
+      if (!t) return null;
+      const available = await ensureListForStep(step, state);
+      if (!available.includes(t)) return { invalidTime: true, available };
+      return { field: "slotTime", value: t };
+    }
+    case "DICH_VU": {
+      const list = await ensureListForStep(step, state);
+      const matched = matchServices(message, list);
+      if (!matched.length) return null;
+      return {
+        field: "idServices",
+        value: matched.map((s) => s.idService),
+        label: "serviceNames",
+        labelValue: matched.map((s) => s.name),
+      };
+    }
+    default:
+      return null;
+  }
+}
+
+async function saveResolvedField(resolved, state) {
+  const fields = { [resolved.field]: resolved.value };
+  if (resolved.label) fields[resolved.label] = resolved.labelValue;
+
+  const result = await updateBookingState({ fields }, state);
+  if (!result.success) return { ok: false, error: result.error };
+
+  const next = { ...state, ...result.updatedFields };
+  applyCascadeCacheClear(resolved.field, next);
+  next._pendingStep = null;
+  return { ok: true, state: next };
+}
+
+async function presentStep(step, state) {
+  if (step === "NGAY") {
+    state._pendingStep = "NGAY";
+    return { reply: "Dạ anh/chị muốn đặt lịch vào ngày nào ạ? (vd: hôm nay, ngày mai, 20/7...)", state };
+  }
+  if (step === "XAC_NHAN") {
+    state._pendingStep = "XAC_NHAN";
+    return { reply: renderSummary(state), state };
+  }
+
+  const list = await ensureListForStep(step, state);
+
+  if (step === "GIO" && (!list || list.length === 0)) {
+    const reset = clearFieldAndCascade("bookingDate", state);
+    reset._pendingStep = "NGAY";
+    return {
+      reply: "Dạ ngày này thợ đã kín lịch rồi, anh/chị chọn ngày khác giúp em nhé ạ. (vd: ngày mai, 20/7...)",
+      state: reset,
+    };
+  }
+
+  state._pendingStep = step;
+  return { reply: renderList(step, list), state };
+}
+
+function resolveByIndex(step, index, state) {
+  const idx = index - 1;
+  switch (step) {
+    case "CHI_NHANH": {
+      const b = state._branches?.[idx];
+      return b ? { field: "idBranch", value: b.idBranch, label: "branchName", labelValue: b.name } : null;
+    }
+    case "THO": {
+      const b = state._barbers?.[idx];
+      return b ? { field: "idBarber", value: b.idBarber, label: "barberName", labelValue: b.name } : null;
+    }
+    case "GIO": {
+      const t = state._slots?.[idx];
+      return t ? { field: "slotTime", value: t } : null;
+    }
+    case "DICH_VU": {
+      const s = state._services?.[idx];
+      return s ? { field: "idServices", value: [s.idService], label: "serviceNames", labelValue: [s.name] } : null;
+    }
+    default:
+      return null;
+  }
+}
+
 // ─────────────────────────────────────────────────────────────
-// generateChatSummary
+// classifyIntent — 1 lệnh gọi model NHỎ (MODEL_CLASSIFY), output JSON
+// vài token, nhãn giới hạn theo scope để giảm nhầm lẫn.
+//
+// scope:
+//   "entry"   → chưa có flow đặt lịch nào đang chạy. Cần phân biệt
+//               receptionist / booking_start / other.
+//   "confirm" → đang ở bước XÁC NHẬN cuối. Cần hiểu đồng ý/từ chối/
+//               đổi ý/chào giữa chừng/gặp lễ tân.
+//   "midflow" → đang chờ khách trả lời 1 bước cụ thể NHƯNG local
+//               resolve (fuzzy-match DB) đã thất bại. Cần phân biệt
+//               đổi ý / chào giữa chừng / gặp lễ tân / hay chỉ là câu
+//               trả lời không hợp lệ (booking_answer → cho retry).
+// ─────────────────────────────────────────────────────────────
+const SCOPE_LABELS = {
+  entry: {
+    labels: `- "receptionist": khách muốn gặp lễ tân / nhân viên thật
+- "booking_start": khách muốn đặt lịch cắt tóc
+- "other": hỏi kiến thức (tóc, giá, dịch vụ...), chào hỏi, hoặc không liên quan đặt lịch`,
+    fallback: (flowInProgress) => ({ intent: "other", change_field: null }),
+  },
+  confirm: {
+    labels: `- "receptionist": khách muốn gặp lễ tân / nhân viên thật
+- "confirm_yes": khách đồng ý / xác nhận đặt lịch như tóm tắt
+- "confirm_no": khách không đồng ý với tóm tắt, muốn sửa lại
+- "change": khách muốn đổi 1 thông tin ĐÃ chọn (chi nhánh/thợ/ngày/giờ/dịch vụ) thay vì trả lời có/không
+- "greeting_midflow": khách chỉ chào hỏi/nói chuyện xã giao, không phải trả lời xác nhận
+- "other": câu hỏi khác không liên quan tới việc xác nhận`,
+    fallback: () => ({ intent: "other", change_field: null }),
+  },
+  midflow: {
+    labels: `- "receptionist": khách muốn gặp lễ tân / nhân viên thật
+- "change": khách muốn quay lại đổi 1 thông tin ĐÃ chọn trước đó (không phải bước đang chờ)
+- "greeting_midflow": khách chỉ chào hỏi/nói chuyện xã giao, không phải câu trả lời cho bước đang chờ
+- "booking_answer": khách CÓ ý định trả lời cho bước đang chờ nhưng nội dung không khớp lựa chọn nào / không rõ ràng
+- "other": câu hỏi kiến thức không liên quan tới bước đang chờ`,
+    fallback: () => ({ intent: "booking_answer", change_field: null }),
+  },
+};
+
+async function classifyIntent(message, state, scope, currentStep) {
+  const msg = (message || "").trim();
+  if (!msg) return { intent: scope === "midflow" ? "booking_answer" : "other", change_field: null };
+
+  const { labels, fallback } = SCOPE_LABELS[scope];
+  const stepLabel = currentStep ? (STEP_LABEL_VI[currentStep] || currentStep) : "chưa bắt đầu";
+
+  const sys = `Bạn là bộ phân loại ý định tin nhắn cho chatbot đặt lịch cắt tóc (Nam Barbershop).
+
+Ngữ cảnh hiện tại:
+- Bước đang chờ khách trả lời: ${stepLabel}
+- Đã chọn trước đó: chi nhánh=${state.branchName || "chưa"}, thợ=${state.barberName || "chưa"}, ngày=${state.bookingDate || "chưa"}, giờ=${state.slotTime || "chưa"}, dịch vụ=${(state.serviceNames || []).join(", ") || "chưa"}
+
+Phân loại tin nhắn khách vào ĐÚNG MỘT nhãn "intent" trong các nhãn sau (không tự bịa nhãn khác):
+${labels}
+
+Nếu intent là "change", xác định thêm "change_field" là một trong: idBranch, idBarber, bookingDate, slotTime, idServices — dựa vào thứ khách nhắc tới (chi nhánh/thợ/ngày/giờ/dịch vụ). Nếu khách chưa nói rõ đổi cái gì, để null.
+Nếu intent khác "change", change_field luôn là null.
+
+CHỈ trả lời JSON thuần, không thêm chữ nào khác, không markdown, đúng format:
+{"intent":"...","change_field":null}`;
+
+  try {
+    const resp = await groq.chat.completions.create({
+      model: MODEL_CLASSIFY,
+      temperature: 0,
+      max_tokens: 40,
+      messages: [
+        { role: "system", content: sys },
+        { role: "user", content: msg },
+      ],
+    });
+    const raw = resp.choices[0]?.message?.content?.trim() || "{}";
+    const parsed = JSON.parse(raw.replace(/```json|```/g, "").trim());
+    if (!parsed.intent) throw new Error("missing intent field");
+    return { intent: parsed.intent, change_field: parsed.change_field || null };
+  } catch (err) {
+    console.warn(`⚠️ [classifyIntent:${scope}] lỗi hoặc rate limit, dùng fallback an toàn:`, err.message);
+    if (RECEPTIONIST_KEYWORDS.test(msg)) return { intent: "receptionist", change_field: null };
+    return fallback(msg);
+  }
+}
+
+// ── Fallback: chỉ khi local parse thất bại VÀ classify xác nhận đây
+// đúng là 1 câu trả lời cho bước hiện tại (booking_answer) — gọi model
+// nhỏ lần 2, RẤT NHỎ, chỉ để map về đúng 1 mục trong danh sách theo số
+// thứ tự (không phải phân loại ý định nữa, mà là "chọn mục nào") ──
+async function resolveIndexWithLLM(step, message, state) {
+  const listMap = {
+    CHI_NHANH: state._branches?.map((b, i) => `${i + 1}. ${b.name}`).join("\n"),
+    THO: state._barbers?.map((b, i) => `${i + 1}. ${b.name}`).join("\n"),
+    GIO: state._slots?.join(", "),
+    DICH_VU: state._services?.map((s, i) => `${i + 1}. ${s.name}`).join("\n"),
+    NGAY: "(khách cần nhập một ngày cụ thể, vd: hôm nay / ngày mai / 20/7)",
+  };
+
+  const sys = `Khách đang ở bước "${step}" trong quy trình đặt lịch cắt tóc. Danh sách lựa chọn:
+${listMap[step] || "(không có danh sách, khách cần nhập tự do)"}
+
+Xác định khách chọn mục số mấy (theo số thứ tự 1-based) trong danh sách trên. Nếu không xác định được, trả về index null.
+
+CHỈ trả lời JSON thuần: {"index": <số hoặc null>}`;
+
+  try {
+    const resp = await groq.chat.completions.create({
+      model: MODEL_CLASSIFY,
+      temperature: 0,
+      max_tokens: 20,
+      messages: [
+        { role: "system", content: sys },
+        { role: "user", content: message },
+      ],
+    });
+    const raw = resp.choices[0]?.message?.content?.trim() || "{}";
+    const parsed = JSON.parse(raw.replace(/```json|```/g, "").trim());
+    return Number.isInteger(parsed.index) ? parsed.index : null;
+  } catch (err) {
+    console.warn("⚠️ [resolveIndexWithLLM] lỗi hoặc rate limit:", err.message);
+    return null;
+  }
+}
+
+// ── Nhánh câu hỏi kiến thức / chào hỏi ngoài booking flow ─────────
+// Dùng vòng lặp tool-calling thực sự (không giả định chỉ gọi tool đúng 1
+// lần) — model có thể cần tra cứu nhiều lượt (vd hỏi kiểu tóc rồi hỏi tiếp
+// độ tuổi phù hợp). Luôn truyền `tools` ở MỌI lượt gọi, kể cả các lượt sau
+// khi đã có tool_result — nếu bỏ `tools` ở lượt sau mà model vẫn cố gọi
+// tool tiếp, Groq sẽ trả lỗi 400 "Tool choice is none, but model called a
+// tool" (đúng lỗi đã gặp). Giới hạn số vòng để tránh loop vô hạn nếu model
+// cứ liên tục đòi gọi tool.
+const MAX_TOOL_ROUNDS = 3;
+
+async function handleGeneral(message, history, isLoggedIn) {
+  if (PURE_GREETING.test(message.trim())) {
+    return {
+      reply: "Dạ em chào anh/chị! Nam Barbershop có thể giúp anh/chị đặt lịch cắt tóc hoặc tư vấn về tóc/dịch vụ. Anh/chị cần hỗ trợ gì ạ?",
+    };
+  }
+
+  const sys = `Bạn là trợ lý Nam Barbershop. Dùng tool searchKnowledge để tra cứu thông tin, không tự bịa.
+searchKnowledge có 4 loại namespace:
+- "hairstyles"/"colors"/"products"/"haircare": kiến thức chung về kiểu tóc, màu tóc, sản phẩm, chăm sóc tóc.
+- "barbers": thông tin từng thợ (chuyên môn, phong cách, kinh nghiệm, đánh giá, chứng chỉ). Dùng namespace này khi khách hỏi về tay nghề/chuyên môn/phong cách của thợ, hoặc hỏi "ai cắt đẹp kiểu X". Nếu khách có nhắc tên chi nhánh cụ thể, LUÔN truyền kèm branchName đúng như tên chi nhánh (vd "Chi nhánh Quận 1") để lọc đúng chi nhánh — không lọc sẽ trả về cả thợ chi nhánh khác.
+- "branches": thông tin chi nhánh (địa chỉ, giờ mở cửa). Dùng khi khách hỏi địa chỉ/giờ hoạt động của chi nhánh.
+- "services": thông tin các dịch vụ, giá, thời lượng...
+Xưng em, gọi khách là anh/chị, trả lời ngắn gọn, không dùng markdown thô, không nhúng JSON.`;
+
+  const tools = [
+    {
+      type: "function",
+      function: {
+        name: "searchKnowledge",
+        description: "Tra cứu kiến thức về tóc/dịch vụ, thông tin thợ, hoặc thông tin chi nhánh của Nam Barbershop.",
+        parameters: {
+          type: "object",
+          properties: {
+            query: { type: "string", description: "Nội dung cần tra cứu, viết tự nhiên bằng tiếng Việt" },
+            namespace: { type: "string", enum: ["hairstyles", "colors", "products", "haircare", "barbers", "branches", "services"] },
+            branchName: {
+              type: "string",
+              description: "CHỈ dùng khi namespace là 'barbers' và khách có nhắc tên chi nhánh cụ thể — truyền đúng tên chi nhánh (vd 'Chi nhánh Quận 1') để lọc thợ đúng chi nhánh đó. Bỏ trống nếu khách không chỉ định chi nhánh hoặc namespace khác.",
+            },
+          },
+          required: ["query", "namespace"],
+        },
+      },
+    },
+  ];
+
+  const messages = [
+    { role: "system", content: sys },
+    ...history.slice(-6).map((h) => ({ role: h.role === "user" ? "user" : "assistant", content: h.content })),
+    { role: "user", content: message },
+  ];
+
+  try {
+    let choice;
+    for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+      const isLastAllowedRound = round === MAX_TOOL_ROUNDS - 1;
+      const resp = await groq.chat.completions.create({
+        model: MODEL_MAIN,
+        messages,
+        // Ở vòng cuối cùng, ép model PHẢI trả lời bằng lời chứ không được
+        // gọi tool thêm nữa — tránh lặp vô hạn hoặc lỗi tool_choice.
+        tools: isLastAllowedRound ? undefined : tools,
+        tool_choice: isLastAllowedRound ? undefined : "auto",
+        temperature: 0.3,
+        max_tokens: 400,
+      });
+      choice = resp.choices[0].message;
+
+      if (!choice.tool_calls?.length) break;
+
+      messages.push(choice);
+      for (const tc of choice.tool_calls) {
+        let args = {};
+        try { args = JSON.parse(tc.function.arguments || "{}"); } catch {}
+        const result = await searchKnowledge(args);
+        messages.push({ role: "tool", tool_call_id: tc.id, content: JSON.stringify(result) });
+      }
+    }
+
+    return { reply: choice?.content || "Dạ anh/chị cần em tư vấn thêm gì không ạ?" };
+  } catch (err) {
+    if (err.status === 429) {
+      return { reply: "Dạ hệ thống đang tạm thời quá tải, anh/chị vui lòng nhắn lại giúp em sau ít phút nha ạ 🙏" };
+    }
+    console.error("❌ [handleGeneral] lỗi:", err.message);
+    return { reply: "Dạ hiện em chưa xử lý được câu hỏi này, anh/chị thử lại giúp em ạ." };
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// processBrainLoop — entrypoint chính
+// ─────────────────────────────────────────────────────────────
+export async function processBrainLoop({ message, bookingState, history = [], isLoggedIn, customerId }) {
+  console.log(`\n===== 🧠 BRAIN LOOP (classify-scoped) =====`);
+  console.log(`[Message]: "${message}"`);
+
+  let state = { ...bookingState };
+  let needLogin = false;
+  let needReceptionist = false;
+
+  const respond = (reply) => ({ reply, newBookingState: stripInternal(state), needLogin, needReceptionist });
+
+  const flowInProgress = !!(
+    state.idBranch || state.idBarber || state.bookingDate ||
+    state.slotTime || state.idServices?.length || state.bookingFlowStarted
+  );
+
+  // ── Fast-path rẻ, không tốn token: từ khoá gặp lễ tân quá tường minh ──
+  if (RECEPTIONIST_KEYWORDS.test(message)) {
+    if (!isLoggedIn) { needLogin = true; return respond("Dạ anh/chị vui lòng đăng nhập để em chuyển máy cho lễ tân ạ."); }
+    const r = await transferToReceptionist({ customerId });
+    needReceptionist = !!r.success;
+    return respond(needReceptionist
+      ? "Dạ em đã chuyển cuộc trò chuyện cho lễ tân, anh/chị vui lòng chờ trong giây lát ạ."
+      : "Dạ hiện chưa thể chuyển máy, anh/chị thử lại sau ít phút giúp em ạ.");
+  }
+
+  // ── CHƯA có flow đặt lịch nào đang chạy → cần phân biệt ý định đầu vào ──
+  if (!flowInProgress) {
+    const classified = await classifyIntent(message, state, "entry", null);
+
+    if (classified.intent === "receptionist") {
+      if (!isLoggedIn) { needLogin = true; return respond("Dạ anh/chị vui lòng đăng nhập để em chuyển máy cho lễ tân ạ."); }
+      const r = await transferToReceptionist({ customerId });
+      needReceptionist = !!r.success;
+      return respond(needReceptionist
+        ? "Dạ em đã chuyển cuộc trò chuyện cho lễ tân, anh/chị vui lòng chờ trong giây lát ạ."
+        : "Dạ hiện chưa thể chuyển máy, anh/chị thử lại sau ít phút giúp em ạ.");
+    }
+
+    if (classified.intent !== "booking_start") {
+      const { reply } = await handleGeneral(message, history, isLoggedIn);
+      return respond(reply);
+    }
+
+    if (!isLoggedIn) {
+      return respond("Dạ để đặt lịch, anh/chị vui lòng đăng nhập trước giúp em ạ.");
+    }
+
+    state.bookingFlowStarted = true;
+    const step = getMissingStepHint(state);
+    const { reply, state: next } = await presentStep(step, state);
+    state = next;
+    return respond(reply);
+  }
+
+  // ── Từ đây trở đi: đang dở flow đặt lịch, bắt buộc đã đăng nhập ──
+  if (!isLoggedIn) {
+    return respond("Dạ để đặt lịch, anh/chị vui lòng đăng nhập trước giúp em ạ.");
+  }
+
+  const step = getMissingStepHint(state);
+
+  // ── Bước hiện tại CHƯA từng được hiển thị cho khách trong lượt trước
+  // → hiển thị list/câu hỏi, chưa cố hiểu tin nhắn hiện tại (nó có thể
+  // chỉ là câu "tôi muốn đặt lịch" kích hoạt flow) ──
+  if (state._pendingStep !== step) {
+    const { reply, state: next } = await presentStep(step, state);
+    state = next;
+    return respond(reply);
+  }
+
+  // ── Bước XÁC NHẬN cuối: dùng scope "confirm" ──
+  if (step === "XAC_NHAN") {
+    const classified = await classifyIntent(message, state, "confirm", step);
+
+    if (classified.intent === "receptionist") {
+      const r = await transferToReceptionist({ customerId });
+      needReceptionist = !!r.success;
+      return respond(needReceptionist
+        ? "Dạ em đã chuyển cuộc trò chuyện cho lễ tân, anh/chị vui lòng chờ trong giây lát ạ."
+        : "Dạ hiện chưa thể chuyển máy, anh/chị thử lại sau ít phút giúp em ạ.");
+    }
+
+    if (classified.intent === "confirm_yes") {
+      const result = await createBooking({ state, customerId });
+      if (!result.success) {
+        return respond(`Dạ có lỗi xảy ra khi tạo lịch: ${result.error}. Anh/chị thử lại giúp em ạ.`);
+      }
+      state = freshState();
+      return respond(`Dạ em đã đặt lịch thành công cho anh/chị! Mã lịch hẹn: #${result.idBooking}. Hẹn gặp anh/chị tại Nam Barbershop ạ 🎉`);
+    }
+
+    if (classified.intent === "confirm_no") {
+      return respond("Dạ vâng, anh/chị muốn thay đổi thông tin nào ạ? (chi nhánh, thợ, ngày, giờ hay dịch vụ)");
+    }
+
+    if (classified.intent === "change") {
+      const changed = await applyChange(classified.change_field, state);
+      state = changed.state;
+      return respond(changed.reply);
+    }
+
+    if (classified.intent === "greeting_midflow") {
+      return respond(`Dạ em chào anh/chị! Mình tiếp tục nha ạ 🙂\n\n${renderSummary(state)}`);
+    }
+
+    // other / không xác định → nhắc lại tóm tắt
+    return respond(renderSummary(state));
+  }
+
+  // ── Đang chờ khách trả lời đúng 1 bước cụ thể → thử resolve cục bộ trước ──
+  const resolved = await tryResolveStep(step, message, state);
+
+  if (resolved?.invalidTime) {
+    return respond(`Dạ giờ đó không còn trống. Các giờ còn trống: ${resolved.available.join(", ") || "không còn giờ nào trong ngày này"}.`);
+  }
+
+  if (resolved) {
+    const saved = await saveResolvedField(resolved, state);
+    if (!saved.ok) return respond(`Dạ ${saved.error}`);
+    state = saved.state;
+    const nextStep = getMissingStepHint(state);
+    const { reply, state: next } = await presentStep(nextStep, state);
+    state = next;
+    return respond(reply);
+  }
+
+  // ── Local resolve thất bại → gọi classify scope "midflow" để hiểu
+  // đúng ý khách (đổi ý / chào giữa chừng / gặp lễ tân / hay chỉ là câu
+  // trả lời chưa khớp) thay vì đoán mù bằng regex như bản cũ ──
+  const classified = await classifyIntent(message, state, "midflow", step);
+
+  if (classified.intent === "receptionist") {
+    const r = await transferToReceptionist({ customerId });
+    needReceptionist = !!r.success;
+    return respond(needReceptionist
+      ? "Dạ em đã chuyển cuộc trò chuyện cho lễ tân, anh/chị vui lòng chờ trong giây lát ạ."
+      : "Dạ hiện chưa thể chuyển máy, anh/chị thử lại sau ít phút giúp em ạ.");
+  }
+
+  if (classified.intent === "change") {
+    const changed = await applyChange(classified.change_field, state);
+    state = changed.state;
+    return respond(changed.reply);
+  }
+
+  if (classified.intent === "greeting_midflow") {
+    const { reply } = await presentStep(step, { ...state });
+    return respond(`Dạ em nghe rồi ạ 🙂\n\n${reply}`);
+  }
+
+  if (classified.intent === "other") {
+    const { reply } = await handleGeneral(message, history, isLoggedIn);
+    return respond(reply);
+  }
+
+  // classified.intent === "booking_answer" (hoặc fallback) → khách có vẻ
+  // đang cố trả lời nhưng không khớp gì → thử map theo số thứ tự bằng 1
+  // lệnh gọi model RẤT NHỎ, nếu vẫn không được thì yêu cầu chọn lại.
+  const idx = await resolveIndexWithLLM(step, message, state);
+  const resolvedByIdx = idx ? resolveByIndex(step, idx, state) : null;
+
+  if (resolvedByIdx) {
+    const saved = await saveResolvedField(resolvedByIdx, state);
+    if (!saved.ok) return respond(`Dạ ${saved.error}`);
+    state = saved.state;
+    const nextStep = getMissingStepHint(state);
+    const { reply, state: next } = await presentStep(nextStep, state);
+    state = next;
+    return respond(reply);
+  }
+
+  const { reply } = await presentStep(step, { ...state, _pendingStep: null });
+  return respond(`Dạ em chưa rõ ý anh/chị lắm, anh/chị chọn lại giúp em nhé ạ.\n\n${reply}`);
+}
+
+// ── Áp dụng yêu cầu "đổi 1 field đã chọn" — dùng chung cho scope confirm &
+// midflow. QUAN TRỌNG: hàm này PHẢI trả về state mới qua return value, KHÔNG
+// được tự gọi respond() ở đây — vì respond() được định nghĩa trong
+// processBrainLoop và đóng gói (closure) biến `state` của processBrainLoop,
+// không phải tham số `state` cục bộ trong hàm này. Nếu gọi respond() ngay
+// tại đây, nó sẽ dùng state CŨ (trước khi reset field), khiến state lưu vào
+// DB không được cập nhật dù reply hiển thị đúng — gây đứng hình toàn bộ flow
+// ở các lượt sau.
+async function applyChange(field, state) {
+  if (!field) {
+    const chosen = ["idBranch", "idBarber", "bookingDate", "slotTime", "idServices"]
+      .filter((f) => f === "idServices" ? state.idServices?.length : state[f]);
+    const options = chosen.map((f) => FIELD_LABEL_VI[f]).join(", ") || "chi nhánh, thợ, ngày, giờ, dịch vụ";
+    return { reply: `Dạ anh/chị muốn đổi thông tin nào ạ? (${options})`, state };
+  }
+
+  const hasValue = field === "idServices" ? state.idServices?.length : state[field];
+  if (!hasValue) {
+    return { reply: `Dạ anh/chị chưa chọn ${FIELD_LABEL_VI[field]} nên chưa có gì để đổi ạ.`, state };
+  }
+
+  const reset = clearFieldAndCascade(field, state);
+  const nextStep = getMissingStepHint(reset);
+  const { reply, state: next } = await presentStep(nextStep, reset);
+  return { reply, state: next };
+}
+
+// ─────────────────────────────────────────────────────────────
+// generateChatSummary — giữ nguyên, dùng model chính
 // ─────────────────────────────────────────────────────────────
 export async function generateChatSummary(historyText) {
   try {
     const response = await groq.chat.completions.create({
-      model: MODEL,
+      model: MODEL_MAIN,
       temperature: 0.2,
       max_tokens: 512,
       messages: [

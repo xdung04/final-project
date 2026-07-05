@@ -1,6 +1,6 @@
 import db from "../models/index.js";
 import { Sequelize,Op  } from "sequelize";
-
+import { upsertServices,deleteNamespace } from "./pineconeService.js";
 const { Service, Branch, ServiceAssignment, BookingDetail,Booking  } = db;
 
 // 🔹 Lấy dịch vụ mới nhất
@@ -215,4 +215,50 @@ export const unassignServiceFromBranch = async (idService, idBranch) => {
   });
   if (!deleted) throw new Error("Not assigned or already removed");
   return true;
+};
+export const syncServicesToPinecone = async () => {
+  try {
+    const services = await db.Service.findAll({
+      include: [
+        {
+          model: db.Branch,
+          as: "branches",
+          attributes: ["idBranch", "name"],
+          through: { attributes: [] },
+        },
+      ],
+    });
+
+    if (!services.length) {
+      return { message: "Không có dữ liệu service để đồng bộ." };
+    }
+
+    const serviceData = services.map((s) => ({
+      idService: s.idService,
+      name: s.name,
+      description: s.description || "Không có mô tả",
+      price: Number(s.price),
+      duration: s.duration,
+      image: s.image || "",
+      status: s.status,
+
+      // Quan trọng
+      branchIds: s.branches.map((b) => b.idBranch),
+      branchNames: s.branches.map((b) => b.name),
+    }));
+
+    await deleteNamespace("services");
+
+    await upsertServices(serviceData);
+
+    return {
+      message: "Service data synced to Pinecone.",
+      total: serviceData.length,
+    };
+  } catch (error) {
+    return {
+      message: "Lỗi server",
+      error: error.message,
+    };
+  }
 };

@@ -266,14 +266,36 @@ export default function AIChat({ onSwitchToLive, onRequestLogin }) {
     }
   };
 
+  // ✅ FIX (bug format): hàm cũ KHÔNG hề convert markdown **đậm** → <strong>,
+  // nên "**Combo Cắt + Gội**" hiển thị y nguyên dấu ** ra chat thay vì chữ đậm.
+  // Đồng thời escape HTML trước khi chèn tag của mình, tránh vỡ layout nếu
+  // text chứa ký tự <, >, & và tránh double-escape các tag <br>/<strong> tự chèn.
+  const escapeHtml = (str) =>
+    str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
   const formatMessage = (text) => {
     if (!text) return "";
-    return text
-      .replace(/\n/g, "<br>")
-      .replace(/(<br>|^)(\d+\.\s)/g, "<br><strong>$2</strong>")
-      .replace(/(<br>)\s*([•–])\s*/g, "<br>▸ ")
-      .replace(/(<br>)\s*-\s+(?!\d)/g, "<br>▸ ")  
-      .replace(/(💈|✂️|🔥)/g, "<strong>$1</strong>");
+
+    let html = escapeHtml(text);
+
+    // **đậm** → <strong>đậm</strong> (PHẢI làm trước khi thay \n → <br>,
+    // vì nội dung đậm có thể nằm giữa 1 dòng, không ảnh hưởng bởi <br>)
+    html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+
+    // Xuống dòng
+    html = html.replace(/\n/g, "<br>");
+
+    // "1. " đầu dòng → in đậm cả số thứ tự
+    html = html.replace(/(<br>|^)(\d+)\.\s/g, "$1<strong>$2.</strong> ");
+
+    // Bullet "•", "–", "-", "*" đầu dòng → ▸ (đặt "-" cuối character class
+    // để tránh bị hiểu nhầm thành range trong regex)
+    html = html.replace(/(<br>|^)\s*[•–*-]\s+(?!\d)/g, "$1▸ ");
+
+    // Icon nổi bật
+    html = html.replace(/(💈|✂️|🔥)/g, "<strong>$1</strong>");
+
+    return html;
   };
 
   // Click xử lý nút hành động trên Banner gợi ý

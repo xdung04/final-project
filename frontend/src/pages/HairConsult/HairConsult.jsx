@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { HairAnalysisAPI } from '~/apis/hairAnalysisAPI';
 import { useToast } from '~/context/ToastContext';
 
-const HairConsultResult = ({ recommendation, onReset }) => {
+const HairConsultResult = ({ recommendation, onReset, error, onRetake }) => {
   const face    = recommendation?.face_analysis;
   const rec     = recommendation?.aiResult;
   const matched = recommendation?.matchedStyles || [];
@@ -115,6 +115,43 @@ const HairConsultResult = ({ recommendation, onReset }) => {
     setShowExitPrompt(false);
     setShowRatingForm(true);
   };
+
+  // ✅ FIX (yêu cầu mới): nếu phân tích khuôn mặt lỗi (component cha truyền
+  // prop `error`, hoặc `recommendation` rỗng/có field `error`) → hiển thị
+  // màn hình lỗi với nút "Chụp lại" thay vì cố render phần phân tích với
+  // dữ liệu rỗng (trước đây sẽ ra toàn "undefined"/trắng trang vì face/rec
+  // đều undefined).
+  const hasAnalysisError = Boolean(error) || !recommendation || Boolean(recommendation?.error);
+
+  if (hasAnalysisError) {
+    const errorMessage =
+      error || recommendation?.error || "Không thể phân tích ảnh, vui lòng thử lại với ảnh khác.";
+
+    return (
+      <div style={{ position: "fixed", inset: 0, background: "#0a0a0a", zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'DM Sans', sans-serif", color: "#f5f0e8", padding: 24 }}>
+        <div style={{ maxWidth: 420, width: "100%", textAlign: "center" }}>
+          <span style={{ fontSize: 40, display: "block", marginBottom: 20 }}>📷</span>
+          <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, color: "#fafaf8", marginBottom: 12 }}>
+            Không thể phân tích khuôn mặt
+          </h2>
+          <p style={{ fontSize: 14, color: "rgba(245,240,232,0.55)", lineHeight: 1.7, marginBottom: 32 }}>
+            {errorMessage}
+          </p>
+          <button
+            onClick={onRetake || onReset}
+            style={{
+              background: "#b8966a", color: "#0a0a0a", border: "none",
+              padding: "16px 40px", fontFamily: "'DM Sans', sans-serif",
+              fontSize: 12, letterSpacing: 2, textTransform: "uppercase",
+              cursor: "pointer", width: "100%",
+            }}
+          >
+            📸 Chụp lại ảnh
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const faceShapeVI   = { oval: "Trái xoan", round: "Tròn", square: "Vuông", heart: "Trái tim", oblong: "Dài" };
   const undertoneVI   = { warm: "Ấm", cool: "Lạnh", neutral: "Trung tính" };
