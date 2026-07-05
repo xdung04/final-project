@@ -53,26 +53,25 @@ export async function upsertBarbers(barbers) {
             Đánh giá trung bình: ${b.avgRate}.
           `.trim();
 
-          return {
-            id: b.idBarber.toString(),
-            values: await createEmbedding(text),
-            metadata: {
-              text,
-              metadata: JSON.stringify({
-                idBarber:           b.idBarber,
-                idBranch:           b.idBranch,
-                fullName:           b.fullName,
-                branchName:         b.branchName,
-                profileDescription: b.profileDescription,
-                experienceYears:    b.experienceYears,
-                specialty:          b.specialty,
-                style:              b.style,
-                certificates:       b.certificates,
-                philosophy:         b.philosophy,
-                avgRate:            b.avgRate,
-              }),
-            },
-          };
+return {
+  id: b.idBarber.toString(),
+  values: await createEmbedding(text),
+  metadata: {
+    text,
+
+    idBarber: b.idBarber,
+    idBranch: b.idBranch,
+    fullName: b.fullName,
+    branchName: b.branchName,
+    profileDescription: b.profileDescription,
+    experienceYears: b.experienceYears,
+    specialty: b.specialty,
+    style: b.style,
+    certificates: b.certificates,
+    philosophy: b.philosophy,
+    avgRate: b.avgRate,
+  },
+};
         })
       );
 
@@ -103,23 +102,21 @@ export async function upsertBranches(branches) {
           Trạng thái: ${isActive ? "Đang hoạt động" : "Ngừng hoạt động"}.
           Giờ mở cửa: ${b.openTime || "N/A"}.
           Giờ đóng cửa: ${b.closeTime || "N/A"}.
-          Dịch vụ: ${b.displayText || "Chưa có thông tin"}.
         `.trim();
 
         return {
           id: b.idBranch.toString(),
           values: await createEmbedding(text),
-          metadata: {
-            text,
-            metadata: JSON.stringify({
-              idBranch: b.idBranch,
-              name: b.name || "",
-              address: b.address || "",
-              isActive,
-              openTime: b.openTime || "",
-              closeTime: b.closeTime || "",
-            }),
-          },
+      metadata: {
+        text,
+
+        idBranch: b.idBranch,
+        name: b.name,
+        address: b.address,
+        isActive,
+        openTime: b.openTime,
+        closeTime: b.closeTime,
+      }
         };
       })
     );
@@ -129,6 +126,44 @@ export async function upsertBranches(branches) {
   } catch (error) {
     console.error("Upsert Branch Error:", error);
     throw new Error("Không thể upsert branches vào Pinecone");
+  }
+}
+export async function upsertServices(services) {
+  try {
+    const index = getPineconeIndex();
+
+    await getEmbedder();
+
+    const records = await Promise.all(
+      services.map(async (s) => {
+        const text = `
+Tên dịch vụ: ${s.name}.
+Mô tả: ${s.description || "Không có mô tả"}.
+Giá: ${s.price} VNĐ.
+Thời lượng: ${s.duration} phút.
+`.trim();
+
+        return {
+          id: s.idService.toString(),
+          values: await createEmbedding(text),
+          metadata: {
+            text,
+            idService: s.idService,
+            name: s.name,
+            description: s.description,
+            price: s.price,
+            duration: s.duration,
+          },
+        };
+      })
+    );
+
+    await index.namespace("services").upsert(records);
+
+    console.log(`✅ Upserted ${records.length} services`);
+  } catch (err) {
+    console.error(err);
+    throw err;
   }
 }
 // pineconeService.js — thêm vào cuối

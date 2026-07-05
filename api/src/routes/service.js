@@ -9,6 +9,7 @@ import {
   getAllServices,
   unassignServiceFromBranch,
   uploadServiceImage ,
+  syncServices,
 checkAndHideController  } from "../controllers/serviceController.js";
 
 const router = express.Router();
@@ -31,4 +32,5 @@ router.put(
 router.delete("/:id", deleteService);
 router.get("/", getAllServices);
 router.post("/:id/check-hide", checkAndHideController );
+router.post("/sync", syncServices);
 export default router;

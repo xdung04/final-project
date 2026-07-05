@@ -146,3 +146,16 @@ export const checkAndHideController = async (req, res) => {
   }
 };
 
+export const syncServices = async (req, res) => {
+  try {
+    const result = await serviceService.syncServicesToPinecone();
+
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error("Lỗi syncServices:", error);
+
+    return res.status(500).json({
+      message: "Lỗi server",
+    });
+  }
+};

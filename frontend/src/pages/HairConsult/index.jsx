@@ -19,6 +19,8 @@ const HairConsult = () => {
   const [sending, setSending] = useState(false);
   const [showOverlay, setShowOverlay] = useState(false);
   const [capturedImage, setCapturedImage] = useState(null);
+  // ✅ FIX: lưu lỗi phân tích khuôn mặt để hiển thị + cho phép chụp lại
+  const [analysisError, setAnalysisError] = useState(null);
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -60,7 +62,6 @@ const HairConsult = () => {
     });
   };
 
-  // 👉 SỬA: Cắt chuỗi lấy tối đa 300 ký tự phòng trường hợp khách cố tình copy paste văn bản dài
   const handleCustomInputChange = (qid, text) => {
     setAnswers({
       ...answers,
@@ -68,7 +69,6 @@ const HairConsult = () => {
     });
   };
 
-  // 👉 SỬA: Cắt chuỗi lấy tối đa 300 ký tự cho ô nhập văn bản thuần túy
   const handlePureTextChange = (qid, text) => {
     setAnswers({
       ...answers,
@@ -118,6 +118,7 @@ const HairConsult = () => {
     if (!capturedImage || !currentFlow) return;
 
     setSending(true);
+    setAnalysisError(null); // ✅ FIX: xoá lỗi cũ mỗi lần thử lại
     try {
       const flowData = quizData.flows[currentFlow];
       const filteredAnswers = {};
@@ -159,11 +160,34 @@ const HairConsult = () => {
       setIsCameraOpen(false);
       sessionStorage.clear();
     } catch (err) {
-      console.error(err);
-      return showToast({ text: "Lỗi khi gửi dữ liệu phân tích khuôn mặt", type: "error" });
+      console.log(err);
+
+      const message =
+        err.error?.details ||
+        err.error?.message ||
+        err.message ||
+        "Lỗi khi gửi dữ liệu phân tích khuôn mặt";
+
+      // ✅ FIX: lưu lại lỗi để hiển thị kèm nút "Chụp lại", không chỉ toast
+      // thoáng qua rồi để khách đứng yên không biết làm gì tiếp theo.
+      setAnalysisError(message);
+      showToast({
+        text: message,
+        type: "error",
+      });
     } finally {
       setSending(false);
     }
+  };
+
+  // ✅ FIX: quay lại hẳn bước chụp ảnh (mở lại camera, xoá ảnh cũ + lỗi cũ)
+  // thay vì chỉ cho thử lại với đúng tấm ảnh có thể đang bị lỗi (mờ, thiếu sáng,
+  // không nhận diện được mặt...).
+  const handleRetakePhoto = () => {
+    setAnalysisError(null);
+    setCapturedImage(null);
+    setShowOverlay(false);
+    setIsCameraOpen(true);
   };
 
   const currentQuestion = !currentFlow
@@ -207,13 +231,12 @@ const HairConsult = () => {
                         <div className={styles.inputWrapper}>
                           <input
                             type="text"
-                            maxLength={300} // 👉 THÊM: Ngăn người dùng gõ tiếp khi chạm mốc 300 chữ
+                            maxLength={300}
                             className={styles.customInputField}
                             placeholder="Mô tả cụ thể ý của bạn tại đây..."
                             value={answers[currentQuestion.id]?.customText || ""}
                             onChange={(e) => handleCustomInputChange(currentQuestion.id, e.target.value)}
                           />
-                          {/* Đếm số ký tự nhỏ dưới ô input (Tùy chọn hiển thị) */}
                           <span className={styles.charCount}>
                             {(answers[currentQuestion.id]?.customText || "").length}/300
                           </span>
@@ -229,7 +252,7 @@ const HairConsult = () => {
               <div className={styles.inputWrapper}>
                 <input 
                   type="text" 
-                  maxLength={300} // 👉 THÊM: Ngăn gõ quá 300 chữ ở ô text thuần túy
+                  maxLength={300}
                   className={styles.pureTextInput}
                   placeholder="Nhập câu trả lời của bạn..." 
                   value={answers[currentQuestion.id]?.value || ""} 
@@ -270,10 +293,28 @@ const HairConsult = () => {
 
         {showOverlay && !quizCompleted && (
           <div className={styles.overlay}>
-            <button className={styles.btnPrimary} onClick={handleSendMetrics} disabled={sending}>
-              {sending ? "Đang phân tích..." : "Bắt đầu phân tích khuôn mặt"}
-            </button>
-            {sending && <div className={styles.spinner}></div>}
+            {!analysisError ? (
+              <>
+                <button className={styles.btnPrimary} onClick={handleSendMetrics} disabled={sending}>
+                  {sending ? "Đang phân tích..." : "Bắt đầu phân tích khuôn mặt"}
+                </button>
+                {sending && <div className={styles.spinner}></div>}
+              </>
+            ) : (
+              // ✅ FIX: khi phân tích lỗi, hiện rõ thông báo + 2 lựa chọn:
+              // thử lại với ảnh cũ, hoặc chụp lại ảnh mới.
+              <div className={styles.analysisErrorBox}>
+                <p className={styles.analysisErrorText}>{analysisError}</p>
+                <div className={styles.btnGroup}>
+                  <button className={styles.btnOutline} onClick={handleRetakePhoto}>
+                    📸 Chụp lại
+                  </button>
+                  <button className={styles.btnPrimary} onClick={handleSendMetrics} disabled={sending}>
+                    {sending ? "Đang phân tích..." : "Thử lại"}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

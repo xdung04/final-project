@@ -6,14 +6,96 @@ import { Pinecone } from "@pinecone-database/pinecone";
 const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY });
 const index = pc.index("project", "project-yfyk5m4.svc.aped-4627-b74a.pinecone.io");
 
-const VALID_NAMESPACES = ["hairstyles", "colors", "products", "haircare"];
+// ─────────────────────────────────────────────────────────────
+// 2 nhóm namespace khác bản chất dữ liệu:
+//   - "text namespaces" (hairstyles, colors, products, haircare): mỗi
+//     record đã có sẵn field metadata.text soạn sẵn cho con người đọc.
+//   - "structured namespaces" (barbers, branches): metadata là các field
+//     rời (fullName, specialty, avgRate, address, openTime...), CHƯA có
+//     field "text" nào cả — nếu dùng chung logic format cũ
+//     (meta.text || meta.content || meta.description || "") thì sẽ trả
+//     về chuỗi RỖNG cho 2 namespace mới này. Phải format riêng.
+// ─────────────────────────────────────────────────────────────
+const TEXT_NAMESPACES = ["hairstyles", "colors", "products", "haircare"];
+const STRUCTURED_NAMESPACES = ["barbers", "branches","services"];
+const VALID_NAMESPACES = [...TEXT_NAMESPACES, ...STRUCTURED_NAMESPACES];
+
 const TOP_K = 5;
 
+function formatTextResult(meta) {
+  return meta.text || meta.content || meta.description || "";
+}
+function formatServiceResult(meta) {
+  const parts = [
+    `Dịch vụ: ${meta.name || "Không rõ tên"}`,
+    meta.description ? `Mô tả: ${meta.description}` : null,
+    meta.price != null ? `Giá: ${Number(meta.price).toLocaleString("vi-VN")} VNĐ` : null,
+    meta.duration != null ? `Thời lượng: ${meta.duration} phút` : null,
+    meta.branchNames?.length
+      ? `Có tại: ${meta.branchNames.join(", ")}`
+      : null,
+  ].filter(Boolean);
+
+  return parts.join(". ");
+}
+function formatBarberResult(meta) {
+  const parts = [
+    `Thợ: ${meta.fullName || "Không rõ tên"}`,
+    meta.branchName ? `Chi nhánh: ${meta.branchName}` : null,
+    meta.specialty ? `Chuyên môn: ${meta.specialty}` : null,
+    meta.style ? `Phong cách: ${meta.style}` : null,
+    meta.experienceYears != null ? `Kinh nghiệm: ${meta.experienceYears} năm` : null,
+    meta.avgRate != null ? `Đánh giá trung bình: ${meta.avgRate}/5` : null,
+    meta.certificates ? `Chứng chỉ: ${meta.certificates}` : null,
+    meta.philosophy ? `Triết lý: ${meta.philosophy}` : null,
+    meta.profileDescription || null,
+  ].filter(Boolean);
+  return parts.join(". ");
+}
+
+function formatBranchResult(meta) {
+  const parts = [
+    `Chi nhánh: ${meta.name || "Không rõ tên"}`,
+    meta.address ? `Địa chỉ: ${meta.address}` : null,
+    meta.openTime && meta.closeTime ? `Giờ mở cửa: ${meta.openTime} - ${meta.closeTime}` : null,
+    meta.isActive === false ? "Hiện đang tạm ngưng hoạt động" : null,
+  ].filter(Boolean);
+  return parts.join(". ");
+}
+
+function formatResult(namespace, meta) {
+  if (namespace === "barbers")
+    return formatBarberResult(meta);
+
+  if (namespace === "branches")
+    return formatBranchResult(meta);
+
+  if (namespace === "services")
+    return formatServiceResult(meta);
+
+  return formatTextResult(meta);
+}
+
 // ─────────────────────────────────────────────────────────────
-// searchKnowledge
-// LLM tự chọn namespace dựa vào nội dung câu hỏi
+export async function debugIndexStats() {
+  try {
+    const stats = await index.describeIndexStats();
+    console.log("=== PINECONE INDEX STATS ===");
+    console.log(JSON.stringify(stats.namespaces, null, 2));
+    return stats.namespaces;
+  } catch (err) {
+    console.error("[knowledgeTools] debugIndexStats error:", err.message);
+    return null;
+  }
+}
+// LLM tự chọn namespace dựa vào nội dung câu hỏi. Với namespace
+// "barbers", LLM có thể truyền thêm branchName để LỌC kết quả chỉ trong
+// 1 chi nhánh — bắt buộc cần thiết vì semantic search trên "chuyên môn/
+// phong cách" không tự động giới hạn theo chi nhánh (vd hỏi "quận 1 có
+// ai cắt undercut đẹp" mà không lọc branchName sẽ trả về cả thợ chi
+// nhánh khác miễn là chuyên môn khớp).
 // ─────────────────────────────────────────────────────────────
-export async function searchKnowledge({ query, namespace }) {
+export async function searchKnowledge({ query, namespace, branchName }) {
   if (!VALID_NAMESPACES.includes(namespace)) {
     return {
       success: false,
@@ -23,28 +105,98 @@ export async function searchKnowledge({ query, namespace }) {
 
   try {
     const vec = await createEmbedding(query);
-    const res = await index.namespace(namespace).query({
-      vector: vec,
-      topK: TOP_K,
-      includeMetadata: true,
-    });
 
-    const matches = res.matches || [];
-    console.log("=== PINECONE RAW MATCH ===");
-    console.log(JSON.stringify(matches[0], null, 2));
-    if (matches.length === 0) {
-      return { success: true, results: [], message: "Không tìm thấy thông tin phù hợp." };
+    const baseOptions = { vector: vec, topK: TOP_K, includeMetadata: true };
+let appliedFilter = null;
+
+if (branchName) {
+  if (namespace === "barbers") {
+    appliedFilter = {
+      branchName: {
+        $eq: branchName,
+      },
+    };
+  }
+
+  if (namespace === "services") {
+    appliedFilter = {
+      branchNames: {
+        $in: [branchName],
+      },
+    };
+  }
+}
+    console.log(`=== searchKnowledge: namespace="${namespace}" query="${query}" filter=${JSON.stringify(appliedFilter)} ===`);
+
+    let res = await index.namespace(namespace).query(
+      appliedFilter ? { ...baseOptions, filter: appliedFilter } : baseOptions
+    );
+    let matches = res.matches || [];
+    let filterWasDroppedAsFallback = false;
+
+    // ✅ Fallback: nếu lọc theo branchName mà không ra kết quả nào, có thể
+    // do tên chi nhánh trong metadata Pinecone không khớp CHÍNH XÁC với
+    // branchName truyền vào (khác cách viết/viết hoa/dấu). Thay vì trả về
+    // rỗng ngay (buộc model phải tốn thêm 1 lượt gọi lại), tự động thử lại
+    // KHÔNG filter ngay tại đây — rẻ hơn (không tốn token) và vẫn có cơ hội
+    // trả được thông tin hữu ích, kèm cảnh báo để model biết kết quả này
+    // CHƯA chắc đúng chi nhánh khách hỏi.
+    if (appliedFilter && matches.length === 0) {
+      console.log(`=== searchKnowledge: filter branchName="${branchName}" không ra kết quả, thử lại không filter ===`);
+      res = await index.namespace(namespace).query(baseOptions);
+      matches = res.matches || [];
+      filterWasDroppedAsFallback = true;
+
+      // Debug: in ra giá trị branchName THẬT của các record tìm được (khi
+      // không filter) để so sánh trực tiếp với giá trị vừa dùng để filter
+      // — cách nhanh nhất để phát hiện lệch chính tả/khoảng trắng/viết hoa
+      // giữa branchName truyền vào và branchName lưu thật trong metadata.
+     const actualBranchNames = [
+  ...new Set(
+    matches.flatMap((m) =>
+      m.metadata?.branchNames ?? [m.metadata?.branchName]
+    )
+  ),
+];
+      console.log(`=== searchKnowledge: branchName THẬT trong metadata các match = ${JSON.stringify(actualBranchNames)} (so với filter đang dùng: "${branchName}") ===`);
     }
 
-    const results = matches.map((m) => {
-      const meta = m.metadata || {};
-      return {
-        score: m.score,
-        content: meta.text || meta.content || meta.description || "",
-      };
-    });
+    console.log(`=== searchKnowledge: số match tìm được = ${matches.length} ===`);
 
-    return { success: true, results };
+    if (matches.length === 0) {
+let message = "Không tìm thấy thông tin phù hợp.";
+
+if (namespace === "barbers" && branchName) {
+  message = `Không tìm thấy thợ phù hợp ở ${branchName}.`;
+}
+
+if (namespace === "services" && branchName) {
+  message = `Không tìm thấy dịch vụ tại ${branchName}.`;
+}
+
+return {
+    success:true,
+    results:[],
+    message
+}
+    }
+
+    const results = matches.map((m) => ({
+      score: m.score,
+      content: formatResult(namespace, m.metadata || {}),
+    }));
+const warning =
+  namespace === "barbers"
+    ? `Không tìm thấy thợ nào khớp chính xác chi nhánh "${branchName}"...`
+    : namespace === "services"
+      ? `Không tìm thấy dịch vụ nào khớp chính xác chi nhánh "${branchName}"...`
+      : undefined;
+
+return {
+  success: true,
+  results,
+  ...(filterWasDroppedAsFallback && warning && { warning }),
+};
   } catch (err) {
     console.error(`[knowledgeTools] searchKnowledge error:`, err.message);
     return { success: false, error: err.message };

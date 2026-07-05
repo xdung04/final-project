@@ -260,9 +260,13 @@ export const analyzeFace = async (imageBuffer) => {
     console.log(JSON.stringify(data, null, 2));
     console.log("================================");
 
-    if (!data.face_shape || !data.skin_tone || !data.skin_condition) {
-      throw new Error("Python API response format không đúng");
-    }
+if (data.error) {
+    throw new Error(data.error);
+}
+
+if (!data.face_shape || !data.skin_tone || !data.skin_condition) {
+    throw new Error("Python API response format không đúng");
+}
 
     const faceConfidence = data.face_shape?.confidence ?? 0;
     if (faceConfidence < 0.5) {
@@ -272,8 +276,15 @@ export const analyzeFace = async (imageBuffer) => {
     return data;
   } catch (err) {
     console.error("Lỗi Python /predict:", err.message);
-    throw new Error("AI phân tích khuôn mặt thất bại");
-  }
+
+    // Nếu Python trả HTTP 4xx/5xx kèm body
+    if (err.response?.data?.error) {
+        throw new Error(err.response.data.error);
+    }
+
+    // Nếu mình đã throw ở trên
+    throw err;
+}
 };
 
 // =============================================
