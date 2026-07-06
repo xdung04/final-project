@@ -1,6 +1,7 @@
 // services/hairAnalysisService.js
 import { Op } from "sequelize";
 import db from "../models/index.js";
+import axios from "axios";
 
 const { HairAnalysis, sequelize } = db;
 
@@ -157,4 +158,56 @@ export const getAnalysisStats = async () => {
     })),
     recentFeedbacks,
   };
+};
+
+const downloadImage = async (url) => {
+  try {
+    const response = await axios.get(url, { responseType: 'arraybuffer' });
+    return Buffer.from(response.data);
+  } catch (error) {
+    console.error(`Lỗi tải ảnh từ ${url}:`, error.message);
+    throw new Error(`Không thể tải ảnh kiểu tóc: ${url}`);
+  }
+};
+
+export const callHairTryOnAI = async (faceImageBuffer, selectedHairstyles) => {
+  const formData = new FormData();
+
+  // 1. Thêm ảnh khuôn mặt — bọc Buffer thành Blob
+  formData.append("faceImage", new Blob([faceImageBuffer], { type: "image/jpeg" }), "face.jpg");
+
+  // 2. Tải từng ảnh kiểu tóc từ URL rồi thêm vào formData
+  for (let i = 0; i < selectedHairstyles.length; i++) {
+    const style = selectedHairstyles[i];
+
+    if (!style.imageUrl && !style.coverImage) {
+      throw new Error(`Kiểu tóc "${style.name}" không có link ảnh`);
+    }
+
+    const imageUrl = style.imageUrl || style.coverImage;
+    const imageBuffer = await downloadImage(imageUrl);
+
+    formData.append(
+      "hairstyleImages",
+      new Blob([imageBuffer], { type: "image/jpeg" }), // ✅ bọc Blob
+      `${style.name.replace(/\s+/g, '_')}.jpg`
+    );
+  }
+
+  try {
+    const response = await fetch("http://127.0.0.1:8000/try-on", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`AI Server: ${response.status} - ${errorText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Lỗi gọi AI Server:", error);
+    throw new Error("Không thể kết nối với AI Server hoặc xử lý thất bại.");
+  }
 };

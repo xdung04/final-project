@@ -32,3 +32,18 @@ export const getMyHistory = async () => {
     throw error.response?.data || error;
   }
 };
+
+// Thử kiểu tóc (Try-on)
+export const tryOn = async (formData) => {
+  try {
+    const res = await request.post("/hair-analysis/try-on", formData, {
+      headers: {
+        "Content-Type": undefined, 
+      },
+    });
+    return res;
+  } catch (error) {
+    console.error("Lỗi tryOn:", error);
+    throw error.response?.data || error;
+  }
+};
