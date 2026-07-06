@@ -275,8 +275,9 @@ function Profile() {
       console.error("Lỗi handleTryOn:", err);
       showToast({
         text:
-          err.response?.data?.error?.message ||
-          err.message ||
+          err?.error?.message || 
+          err?.response?.data?.error?.message || 
+          err?.message ||
           "Lỗi khi thử kiểu tóc",
         type: "error",
       });

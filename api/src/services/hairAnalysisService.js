@@ -173,10 +173,8 @@ const downloadImage = async (url) => {
 export const callHairTryOnAI = async (faceImageBuffer, selectedHairstyles) => {
   const formData = new FormData();
 
-  // 1. Thêm ảnh khuôn mặt — bọc Buffer thành Blob
   formData.append("faceImage", new Blob([faceImageBuffer], { type: "image/jpeg" }), "face.jpg");
 
-  // 2. Tải từng ảnh kiểu tóc từ URL rồi thêm vào formData
   for (let i = 0; i < selectedHairstyles.length; i++) {
     const style = selectedHairstyles[i];
 
@@ -189,25 +187,42 @@ export const callHairTryOnAI = async (faceImageBuffer, selectedHairstyles) => {
 
     formData.append(
       "hairstyleImages",
-      new Blob([imageBuffer], { type: "image/jpeg" }), // ✅ bọc Blob
+      new Blob([imageBuffer], { type: "image/jpeg" }),
       `${style.name.replace(/\s+/g, '_')}.jpg`
     );
   }
 
+  let response;
   try {
-    const response = await fetch("http://127.0.0.1:8000/try-on", {
+    response = await fetch("https://paver-nickname-bartender.ngrok-free.dev/try-on", {
       method: "POST",
       body: formData,
     });
+  } catch (networkError) {
+    // Lỗi thật sự do không kết nối được (mất mạng, server sập, timeout...)
+    console.error("Lỗi kết nối AI Server:", networkError);
+    throw new Error("Không thể kết nối với AI Server. Vui lòng thử lại sau.");
+  }
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`AI Server: ${response.status} - ${errorText}`);
+  if (!response.ok) {
+    // ✅ Đọc đúng lỗi thực tế mà FastAPI trả về (HTTPException detail)
+    let detailMessage = `Lỗi không xác định (mã ${response.status})`;
+
+    try {
+      const errorData = await response.json();
+      if (errorData?.detail) {
+        detailMessage = errorData.detail; // VD: "Ảnh khuôn mặt: Không phát hiện khuôn mặt..."
+      }
+    } catch {
+      // Trường hợp response không phải JSON (VD lỗi 502 từ ngrok/proxy trả HTML)
+      const rawText = await response.text().catch(() => "");
+      if (rawText) detailMessage = rawText.slice(0, 300);
     }
 
-    return await response.json();
-  } catch (error) {
-    console.error("Lỗi gọi AI Server:", error);
-    throw new Error("Không thể kết nối với AI Server hoặc xử lý thất bại.");
+    const err = new Error(detailMessage);
+    err.status = response.status; // giữ lại status để controller phía trên biết là lỗi 400 (do người dùng) hay 500 (do server)
+    throw err;
   }
+
+  return await response.json();
 };
