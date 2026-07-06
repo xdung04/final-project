@@ -386,3 +386,512 @@
     font-style: italic;
   }
 }
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: var(--charcoal);
+  border: 1px solid var(--gold);
+  border-radius: 8px;
+  width: 90%;
+  max-width: 1100px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 30px;
+  border-bottom: 1px solid rgba(184,150,106,0.3);
+
+  h3 {
+    margin: 0;
+    font-family: var(--ff-serif);
+    color: var(--gold);
+  }
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 28px;
+  color: var(--text-dim);
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-body {
+  padding: 30px;
+}
+
+.modal-footer {
+  padding: 20px 30px;
+  border-top: 1px solid rgba(184,150,106,0.3);
+  display: flex;
+  gap: 16px;
+  justify-content: flex-end;
+}
+
+/* ==================== THỬ KIỂU TÓC ==================== */
+.tryon-btn {
+  background: var(--gold);
+  color: var(--black);
+  border: none;
+  padding: 12px 28px;
+  font-size: 13px;
+  letter-spacing: 1.5px;
+  font-weight: 500;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: #d4a57a;
+    transform: translateY(-1px);
+  }
+}
+
+/* Step indicator (Bước 1 - Bước 2) */
+.stepIndicator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 28px;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+
+  .stepDone {
+    color: var(--gold);
+  }
+
+  .stepDivider {
+    color: rgba(184, 150, 106, 0.3);
+  }
+}
+
+.tryon-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  margin-bottom: 40px;
+
+  @media (max-width: 992px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.face-upload, .suggestions {
+  background: var(--charcoal);
+  padding: 24px;
+  border-radius: 8px;
+  border: 1px solid rgba(184, 150, 106, 0.2);
+}
+
+/* Ảnh khuôn mặt + nút xoá */
+.uploadBoxWrapper {
+  position: relative;
+  width: fit-content;
+  margin: auto;
+}
+
+.upload-box {
+  width: 100%;
+  max-width: 300px; // tùy chỉnh nếu muốn lớn hơn
+  aspect-ratio: 3 / 4;
+  margin: 0 auto 16px;
+
+  border: 2px dashed rgba(184,150,106,.5);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #111;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; // cắt vừa khung
+    display: block;
+  }
+}
+
+.removeFaceBtn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.65);
+  color: var(--white);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 28px;
+  text-align: center;
+  padding: 0;
+  transition: background 0.2s;
+  z-index: 2;
+
+  &:hover {
+    background: rgba(255, 60, 60, 0.75);
+  }
+}
+
+.placeholder {
+  color: rgba(255,255,255,0.3);
+  font-style: italic;
+  text-align: center;
+  padding: 0 20px;
+}
+
+.upload-btn {
+  display: inline-block;
+  padding: 10px 24px;
+  background: transparent;
+  color: var(--gold);
+  border: 1px solid var(--gold);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  letter-spacing: 2px;
+  transition: all 0.3s;
+
+  &:hover {
+    background: var(--gold);
+    color: var(--black);
+  }
+}
+
+/* Chip kiểu tóc đã chọn */
+.selectedChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  border: 1px solid var(--gold);
+  border-radius: 20px;
+  color: var(--gold);
+  background: rgba(184, 150, 106, 0.08);
+
+  button {
+    background: none;
+    border: none;
+    color: var(--gold);
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 1;
+    padding: 0;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+
+    &:hover { opacity: 1; }
+  }
+}
+
+/* Vùng cuộn danh sách kiểu tóc */
+.styleScroll {
+  max-height: 380px;
+  overflow-y: auto;
+  padding-right: 8px;
+
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold) rgba(255, 255, 255, 0.05);
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: var(--gold);
+    border-radius: 3px;
+
+    &:hover {
+      background: var(--brown-xlt);
+    }
+  }
+}
+
+.style-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.styleCardWrap {
+  position: relative;
+}
+
+.style-card {
+  position: relative;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all .3s ease;
+
+  display: flex;
+  flex-direction: column;
+
+  &:hover,
+  &.selected {
+    border-color: var(--gold);
+    transform: translateY(-4px);
+  }
+
+  img {
+    width: 100%;
+
+    // cố định khung ảnh
+    aspect-ratio: 3 / 4;
+    height: auto;
+
+    object-fit: cover;
+    display: block;
+    flex-shrink: 0;
+  }
+
+  p {
+    margin: 0;
+    padding: 10px;
+    text-align: center;
+    background: rgba(0,0,0,.7);
+
+    font-size: 10px;
+
+    // tránh tên dài làm card lệch
+    min-height: 44px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+.checkBadge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--gold);
+  color: var(--black);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  z-index: 2;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.styleCardDisabled {
+  opacity: 0.35;
+  cursor: not-allowed !important;
+
+  &:hover {
+    border-color: transparent !important;
+    transform: none !important;
+  }
+}
+
+.reset-btn {
+  padding: 14px 32px;
+  background: transparent;
+  color: var(--cream);
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.try-btn {
+  padding: 14px 40px;
+  background: var(--gold);
+  color: var(--black);
+  border: none;
+  border-radius: 4px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &:hover:not(:disabled) {
+    background: #d4a57a;
+  }
+}
+
+/* Kết quả thử tóc */
+.results {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 24px;
+  }
+}
+
+.resultsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+
+  h4 {
+    margin: 0;
+    font-family: var(--ff-serif);
+    color: var(--gold);
+    font-size: 20px;
+  }
+}
+
+.tryAgainBtn {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: var(--cream);
+  padding: 8px 18px;
+  font-size: 12px;
+  letter-spacing: 1px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s;
+
+  &:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+}
+
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 24px;
+}
+
+.resultCard {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid rgba(184,150,106,0.25);
+  cursor: pointer;
+  transition: transform .3s;
+
+  &:hover {
+    transform: translateY(-4px);
+
+    .resultOverlay {
+      opacity: 1;
+    }
+
+    img {
+      transform: scale(1.05);
+    }
+  }
+
+  img {
+    width: 100%;
+    height: 300px;
+    object-fit: cover;
+    display: block;
+    transition: transform .4s;
+  }
+}
+
+.resultOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(0,0,0,.85),
+    rgba(0,0,0,.2)
+  );
+
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+
+  padding: 16px;
+  opacity: 0;
+  transition: opacity .3s;
+
+  p {
+    margin: 0;
+    color: var(--white);
+    font-size: 14px;
+    font-weight: 500;
+    max-width: 80%;
+  }
+}
+
+.downloadMiniBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: var(--gold);
+  color: var(--black);
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .3s;
+
+  &:hover {
+    transform: scale(1.1);
+  }
+}
+.recommendBadge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: #22c55e;
+  color: #000;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.style-card.recommended {
+  border-color: #22c55e;
+}

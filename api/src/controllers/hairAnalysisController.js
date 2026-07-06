@@ -4,6 +4,7 @@ import {
   rateAnalysis,
   getLatestAnalysis,
   getAnalysisStats,
+  callHairTryOnAI,
 } from "../services/hairAnalysisService.js";
 import { APIResponse } from "../services/hairConsultService.js";
 import db from "../models/index.js";
@@ -147,10 +148,62 @@ export const getModelStats = async (req, res) => {
   }
 };
 
+// =============================================
+// POST /api/hair-analysis/try-on
+// Body: FormData (faceImage + hairstyles)
+// =============================================
+// =============================================
+// POST /api/hair-analysis/try-on
+// =============================================
+export const tryOnHairstyles = async (req, res) => {
+  try {
+    console.log("=== DEBUG TRY-ON CONTROLLER ===");
+    console.log("req.file:", req.file ? "Có file" : "Không có file");
+    console.log("req.body:", req.body);
+
+    const customerId = req.user?.idUser;
+    if (!customerId) {
+      return res.status(401).json(APIResponse.error("Chưa đăng nhập"));
+    }
+
+    const faceImage = req.file; // upload.single() sẽ đưa vào req.file
+
+    if (!faceImage) {
+      console.log("❌ Không nhận được faceImage");
+      return res.status(400).json(APIResponse.error("Thiếu ảnh khuôn mặt"));
+    }
+
+    let hairstyles;
+    try {
+      hairstyles = JSON.parse(req.body.hairstyles);
+    } catch (e) {
+      console.log("❌ Parse hairstyles thất bại");
+      return res.status(400).json(APIResponse.error("Dữ liệu kiểu tóc không hợp lệ"));
+    }
+
+    if (!hairstyles || !Array.isArray(hairstyles) || hairstyles.length === 0) {
+      return res.status(400).json(APIResponse.error("Phải chọn ít nhất 1 kiểu tóc"));
+    }
+
+    console.log(`✅ Nhận được ${hairstyles.length} kiểu tóc`);
+
+    const aiResult = await callHairTryOnAI(faceImage.buffer, hairstyles);
+
+    return res.json(APIResponse.success({
+      results: aiResult.results || [],
+      message: `Đã xử lý ${aiResult.results?.length || 0} kiểu tóc`
+    }));
+
+  } catch (err) {
+    console.error("Lỗi tryOnHairstyles:", err);
+    return res.status(500).json(APIResponse.error(err.message || "Lỗi server"));
+  }
+};
+
 export default {
   saveAnalysisResult,
   rateAnalysisResult,
-
   getMyHistory,
   getModelStats,
+  tryOnHairstyles,
 };

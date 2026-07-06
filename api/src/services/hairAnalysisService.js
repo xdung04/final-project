@@ -1,6 +1,7 @@
 // services/hairAnalysisService.js
 import { Op } from "sequelize";
 import db from "../models/index.js";
+import axios from "axios";
 
 const { HairAnalysis, sequelize } = db;
 
@@ -157,4 +158,71 @@ export const getAnalysisStats = async () => {
     })),
     recentFeedbacks,
   };
+};
+
+const downloadImage = async (url) => {
+  try {
+    const response = await axios.get(url, { responseType: 'arraybuffer' });
+    return Buffer.from(response.data);
+  } catch (error) {
+    console.error(`Lỗi tải ảnh từ ${url}:`, error.message);
+    throw new Error(`Không thể tải ảnh kiểu tóc: ${url}`);
+  }
+};
+
+export const callHairTryOnAI = async (faceImageBuffer, selectedHairstyles) => {
+  const formData = new FormData();
+
+  formData.append("faceImage", new Blob([faceImageBuffer], { type: "image/jpeg" }), "face.jpg");
+
+  for (let i = 0; i < selectedHairstyles.length; i++) {
+    const style = selectedHairstyles[i];
+
+    if (!style.imageUrl && !style.coverImage) {
+      throw new Error(`Kiểu tóc "${style.name}" không có link ảnh`);
+    }
+
+    const imageUrl = style.imageUrl || style.coverImage;
+    const imageBuffer = await downloadImage(imageUrl);
+
+    formData.append(
+      "hairstyleImages",
+      new Blob([imageBuffer], { type: "image/jpeg" }),
+      `${style.name.replace(/\s+/g, '_')}.jpg`
+    );
+  }
+
+  let response;
+  try {
+    response = await fetch("https://paver-nickname-bartender.ngrok-free.dev/try-on", {
+      method: "POST",
+      body: formData,
+    });
+  } catch (networkError) {
+    // Lỗi thật sự do không kết nối được (mất mạng, server sập, timeout...)
+    console.error("Lỗi kết nối AI Server:", networkError);
+    throw new Error("Không thể kết nối với AI Server. Vui lòng thử lại sau.");
+  }
+
+  if (!response.ok) {
+    // ✅ Đọc đúng lỗi thực tế mà FastAPI trả về (HTTPException detail)
+    let detailMessage = `Lỗi không xác định (mã ${response.status})`;
+
+    try {
+      const errorData = await response.json();
+      if (errorData?.detail) {
+        detailMessage = errorData.detail; // VD: "Ảnh khuôn mặt: Không phát hiện khuôn mặt..."
+      }
+    } catch {
+      // Trường hợp response không phải JSON (VD lỗi 502 từ ngrok/proxy trả HTML)
+      const rawText = await response.text().catch(() => "");
+      if (rawText) detailMessage = rawText.slice(0, 300);
+    }
+
+    const err = new Error(detailMessage);
+    err.status = response.status; // giữ lại status để controller phía trên biết là lỗi 400 (do người dùng) hay 500 (do server)
+    throw err;
+  }
+
+  return await response.json();
 };

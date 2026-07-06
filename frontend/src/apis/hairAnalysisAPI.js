@@ -42,5 +42,16 @@ export const HairAnalysisAPI = {
       throw error;
     }
   },
+
+  tryOn: async (formData) => {
+    try {
+      const res = await hairAnalysisService.tryOn(formData);
+      console.log("HairAnalysisAPI.tryOn trả về:", res);
+      return res;
+    } catch (error) {
+      console.error("Lỗi HairAnalysisAPI.tryOn:", error);
+      throw error;
+    }
+  },
 };
  
