@@ -1,23 +1,11 @@
 "use strict";
 import slugify from "slugify";
 
+// ════════════════════════════════════════════════════════════════════════════
+// FILE 29 — hairstyles
+// ════════════════════════════════════════════════════════════════════════════
+
 export async function up(queryInterface, Sequelize) {
-  const categories = [
-    { idCategory: 1, name: "Modern", status: "Active" },
-    { idCategory: 2, name: "Classic", status: "Active" },
-    { idCategory: 3, name: "Korean", status: "Active" },
-    { idCategory: 4, name: "Fade", status: "Active" },
-  ];
-
-  const finalCategories = categories.map(cat => ({
-    ...cat,
-    slug: slugify(cat.name, { lower: true, locale: "vi" }),
-    createdAt: new Date(),
-    updatedAt: new Date()
-  }));
-
-  await queryInterface.bulkInsert("categories", finalCategories);
-
   const hairstyles = [
     {
       idCategory: 1,
@@ -57,7 +45,7 @@ export async function up(queryInterface, Sequelize) {
     },
     {
       idCategory: 3,
-      name: "Long Hair", // Thay thế cho Comma Hair
+      name: "Long Hair",
       shortDescription: "Kiểu tóc dài nam lãng tử, có độ bồng bềnh tự nhiên, tôn lên nét nghệ sĩ và phong trần.",
       difficultyLevel: "Easy",
       maintenanceLevel: "High",
@@ -69,7 +57,7 @@ export async function up(queryInterface, Sequelize) {
     },
     {
       idCategory: 4,
-      name: "90s Pretty Boy", // Thay thế cho Low Fade Textured Crop
+      name: "90s Pretty Boy",
       shortDescription: "Kiểu tóc rủ bổ luống hoặc uốn nhẹ lãng mạn đặc trưng thập niên 90, thanh lịch và cuốn hút.",
       difficultyLevel: "Medium",
       maintenanceLevel: "Medium",
@@ -105,7 +93,7 @@ export async function up(queryInterface, Sequelize) {
     },
     {
       idCategory: 3,
-      name: "Short Quiff", // Thay thế cho Shadow Perm
+      name: "Short Quiff",
       shortDescription: "Kiểu tóc ngắn được tỉa gọn và vuốt nhẹ phần mái ra trước, mang phong cách trẻ trung và thanh lịch.",
       difficultyLevel: "Easy",
       maintenanceLevel: "Low",
@@ -237,7 +225,7 @@ export async function up(queryInterface, Sequelize) {
     },
     {
       idCategory: 4,
-      name: "Messy Crop", // Thay thế cho Burst Fade Mohawk
+      name: "Messy Crop",
       shortDescription: "Kiểu tóc mái ngố được cắt ngắn đánh rối tạo texture tự nhiên, cá tính và không cần chải chuốt.",
       difficultyLevel: "Easy",
       maintenanceLevel: "Medium",
@@ -257,9 +245,9 @@ export async function up(queryInterface, Sequelize) {
   }));
 
   await queryInterface.bulkInsert("hairstyles", finalHairstyles);
+  console.log(`✅ [29] Inserted ${finalHairstyles.length} hairstyles`);
 }
 
 export async function down(queryInterface, Sequelize) {
   await queryInterface.bulkDelete("hairstyles", null, {});
-  await queryInterface.bulkDelete("categories", null, {});
 }
