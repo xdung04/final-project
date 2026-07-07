@@ -41,6 +41,8 @@ const ReelPlayer = forwardRef(
     const isViewTrackedRef = useRef(false);
     const isScrollLockedRef = useRef(false);
     const [slideDirection, setSlideDirection] = useState(null);
+    const [titleExpanded, setTitleExpanded] = useState(false);
+    const titleRef = useRef(null);
     const { isLogin } = useAuth();
     const { showToast } = useToast();
 
@@ -242,7 +244,15 @@ const ReelPlayer = forwardRef(
             >
               <span className={styles.username}>{creatorFullName}</span>
             </Link>
-            <p className={styles.titleText}>
+            <p
+              ref={titleRef}
+              className={`${styles.titleText} ${titleExpanded ? styles.titleExpanded : ""}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                setTitleExpanded((prev) => !prev);
+              }}
+              title={titleExpanded ? "Thu gọn" : "Xem đầy đủ"}
+            >
               {renderTitleWithHashtags(reel.title || "Không có tiêu đề")}
             </p>
           </div>

@@ -23,7 +23,7 @@
   display: flex;
   flex-direction: row;
   height: 100vh;
-  padding: 100px 40px 40px; 
+  padding: 30px 24px 24px; 
   background: var(--black);
   color: var(--cream);
   font-family: var(--ff-body);
@@ -58,15 +58,15 @@
 .leftColumn {
   position: relative;
   z-index: 2;
-  width: 320px;
-  padding: 24px;
+  width: 340px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
   background-color: var(--charcoal);
   border-radius: 12px;
   border: 1px solid rgba(184, 150, 106, 0.2);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-  margin-right: 24px;
+  margin-right: 16px;
   height: calc(100vh - 140px);
   overflow-y: auto;
 
@@ -86,46 +86,51 @@
 .searchBar {
   display: flex;
   align-items: center;
-  padding: 6px;
+  padding: 4px;
   border-radius: 30px;
   background-color: var(--graphite);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  margin-bottom: 24px;
-  transition: border-color 0.3s;
+  border: 1px solid rgba(184, 150, 106, 0.2);
+  margin-bottom: 14px;
+  transition: all 0.3s;
+  flex-shrink: 0;
 
-  &:focus-within { border-color: var(--gold); }
+  &:focus-within { border-color: var(--gold); box-shadow: 0 0 12px rgba(184, 150, 106, 0.15); }
 
   input {
     flex: 1;
-    padding: 10px 16px;
+    min-width: 0;
+    width: 100%;
+    padding: 10px 18px;
     border: none;
     outline: none;
-    background: transparent;
-    color: var(--white);
+    background: var(--graphite);
+    color: var(--cream);
     font-family: var(--ff-body);
     font-size: 13px;
-    &::placeholder { color: var(--text-dim); }
+    border-radius: 30px;
+    &::placeholder { color: rgba(245, 240, 232, 0.3); letter-spacing: 1.5px; }
   }
 
   button {
-    height: 38px;
-    padding: 0 20px;
-    border-radius: 20px;
+    height: 36px;
+    padding: 0 18px;
+    border-radius: 30px;
     border: none;
     background: var(--gold);
     color: var(--black);
     font-family: var(--ff-body);
     font-weight: 600;
     font-size: 11px;
-    letter-spacing: 1px;
+    letter-spacing: 1.5px;
     cursor: pointer;
     transition: all 0.3s;
-    &:hover { background: var(--white); transform: scale(1.05); }
+    flex-shrink: 0;
+    &:hover { background: var(--cream); color: var(--charcoal); transform: scale(1.02); }
   }
 }
 
 .clearBtn {
-  margin-top: 16px;
+  margin-top: 10px;
   background: transparent;
   color: var(--text-dim);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -141,8 +146,8 @@
 }
 
 .suggestionBox, .topHashtagBox {
-  margin-top: 16px;
-  padding: 20px;
+  margin-top: 10px;
+  padding: 14px;
   background: var(--graphite);
   border-radius: 12px;
   border: 1px solid rgba(184, 150, 106, 0.1);
@@ -150,9 +155,9 @@
 
 .suggestionTitle, .topHashtagTitle {
   font-family: var(--ff-serif);
-  font-size: 16px;
+  font-size: 15px;
   color: var(--gold);
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   letter-spacing: 1px;
 }
 
@@ -211,14 +216,14 @@
   align-items: center;
   justify-content: center;
   background: transparent; 
-  padding: 10px 0; /* Thêm padding an toàn để viền phát sáng không bị cắt */
+  padding: 0;
 }
 
 /* KHUNG VIỀN SÁNG TRỰC TIẾP BAO QUANH VIDEO */
 .videoHighlightContainer {
   /* Ép chiều cao tối đa ngắn lại để không lố khỏi màn hình */
   height: 100%;
-  max-height: calc(100vh - 240px); /* Trừ hao 240px cho Header và khoảng trống an toàn */
+  max-height: calc(100vh - 130px); /* Trừ hao 130px cho Header + padding an toàn */
   aspect-ratio: 9 / 16; /* Chuẩn dọc Tiktok/Reels */
   
   border-radius: 20px;

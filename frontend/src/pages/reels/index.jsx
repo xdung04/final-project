@@ -14,7 +14,7 @@ const SCROLL_COOLDOWN_MS = 1500;
 
 function Reel() {
   const location = useLocation();
-  const {  isLogin, loading: isAuthLoading } = useAuth();
+  const { isLogin, loading: isAuthLoading } = useAuth();
   const { showToast } = useToast();
 
   const [hashtagSuggestions, setHashtagSuggestions] = useState([]);
@@ -309,7 +309,7 @@ function Reel() {
         <form onSubmit={handleSearchSubmit} className={styles.searchBar}>
           <input
             type="text"
-            placeholder="TÌM KIẾM HASHTAG, THỢ CẮT..."
+            placeholder="Tìm kiếm hashtag, nội dung"
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
           />
@@ -414,7 +414,6 @@ function Reel() {
                 <div className={styles.videoHighlightContainer}>
                   <ReelPlayer
                     reel={reel}
-                  
                     isActive={i === currentIndex && !showDetail}
                     globalMuted={globalMuted}
                     onToggleGlobalMuted={() => setGlobalMuted((prev) => !prev)}
