@@ -294,9 +294,8 @@ export default function CustomerTab() {
   const [selectedVoucherId, setSelectedVoucherId] = useState("");
   const [sending, setSending] = useState(false);
 
-  const [occasionalMinDays, setOccasionalMinDays] = useState(60);
+  const [occasionalMinDays, setOccasionalMinDays] = useState(0);
   const [inactiveMaxDays, setInactiveMaxDays] = useState(null);
-  const [showNoBooking, setShowNoBooking] = useState(false);
 
   useEffect(() => {
     loadMonthly();
@@ -339,19 +338,13 @@ export default function CustomerTab() {
 
     if (segKey === "occasional") {
       list = list.filter((c) => {
-        if (showNoBooking) {
-          return c.totalBookings === 0;
-        }
-        if (c.totalBookings === 0) return false;
+        if (c.totalBookings === 0) return true;
         if (c.daysAgo === null) return false;
         return c.daysAgo >= occasionalMinDays && c.daysAgo <= 90;
       });
     } else if (segKey === "inactive") {
       list = list.filter((c) => {
-        if (showNoBooking) {
-          return c.totalBookings === 0;
-        }
-        if (c.totalBookings === 0) return false;
+        if (c.totalBookings === 0) return true;
         if (c.daysAgo === null) return false;
         if (c.daysAgo < 90) return false;
         if (inactiveMaxDays !== null && c.daysAgo > inactiveMaxDays)
@@ -460,14 +453,17 @@ export default function CustomerTab() {
 
   const displayedCustomers = useMemo(() => {
     if (!isVoucherSeg) return activeSegData;
-    return getFilteredList(activeSegment);
+    const list = getFilteredList(activeSegment);
+    if (activeSegment === "occasional" || activeSegment === "inactive") {
+      list.sort((a, b) => (b.daysAgo ?? 0) - (a.daysAgo ?? 0));
+    }
+    return list;
   }, [
     activeSegment,
     activeSegData,
     filterStatus,
     occasionalMinDays,
     inactiveMaxDays,
-    showNoBooking,
   ]);
 
   return (
@@ -635,19 +631,6 @@ export default function CustomerTab() {
                     </select>
                   </div>
 
-                  <div className={cx("fGroup")}>
-                    <label className={cx("fLabel")}>
-                      Khách chưa có đơn hàng
-                    </label>
-
-                    <label className={cx("fCheckLabel")}>
-                      <input
-                        type="checkbox"
-                        checked={showNoBooking}
-                        onChange={(e) => setShowNoBooking(e.target.checked)}
-                      />
-                    </label>
-                  </div>
                 </div>
 
                 <div className={cx("vRow", "vActionsRow")}>
