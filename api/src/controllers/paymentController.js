@@ -8,6 +8,10 @@ const { sequelize, Booking } = db;
 
 const paymentCache = new NodeCache({ stdTTL: 900, checkperiod: 120 });
 
+// ✅ Lấy từ .env, fallback về localhost nếu không set
+// Khi test trên iPad/thiết bị khác, chỉ cần đổi FRONTEND_URL trong .env rồi restart server
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
+
 export const createPayment = async (req, res) => {
   const { idBooking } = req.params;
   const { method, total, tip, rating, services, totalPaid, totalServicePrice, voucherReverted, customerVoucherId } = req.body;
@@ -96,7 +100,7 @@ export const vnpayReturn = async (req, res) => {
     if (!vnp_TxnRef) {
       await t.rollback();
       console.error("[vnpayReturn] Thiếu vnp_TxnRef");
-      return res.redirect(`http://localhost:3000/kiosk?vnp_ResponseCode=error&reason=missing_txnref`);
+      return res.redirect(`${FRONTEND_URL}/kiosk?vnp_ResponseCode=error&reason=missing_txnref`);
     }
 
     // ✅ Fix: dùng "-" vì TxnRef format là "81870-20260626103806"
@@ -116,7 +120,7 @@ export const vnpayReturn = async (req, res) => {
 
       if (!booking) {
         await t.rollback();
-        return res.redirect(`http://localhost:3000/kiosk?vnp_ResponseCode=error&reason=not_found`);
+        return res.redirect(`${FRONTEND_URL}/kiosk?vnp_ResponseCode=error&reason=not_found`);
       }
 
       const idBranch = booking.barber?.idBranch;
@@ -138,14 +142,14 @@ export const vnpayReturn = async (req, res) => {
             idBooking
           });
         }
-        return res.redirect(`http://localhost:3000/kiosk?vnp_ResponseCode=00&idBranch=${idBranch}`);
+        return res.redirect(`${FRONTEND_URL}/kiosk?vnp_ResponseCode=00&idBranch=${idBranch}`);
       }
 
       const pendingData = paymentCache.get(`vnpay_data_${idBooking}`);
       if (!pendingData || !Array.isArray(pendingData.services) || pendingData.services.length === 0) {
         await t.rollback();
         console.error(`[vnpayReturn] Cache miss cho booking ${idBooking}`);
-        return res.redirect(`http://localhost:3000/kiosk?vnp_ResponseCode=error&reason=cache_miss&idBranch=${idBranch}`);
+        return res.redirect(`${FRONTEND_URL}/kiosk?vnp_ResponseCode=error&reason=cache_miss&idBranch=${idBranch}`);
       }
 
       await paymentService.finalizePayment(
@@ -177,15 +181,15 @@ export const vnpayReturn = async (req, res) => {
         });
       }
 
-      return res.redirect(`http://localhost:3000/kiosk?vnp_ResponseCode=00&idBranch=${idBranch}`);
+      return res.redirect(`${FRONTEND_URL}/kiosk?vnp_ResponseCode=00&idBranch=${idBranch}`);
     } else {
       await t.rollback();
-      return res.redirect(`http://localhost:3000/kiosk?vnp_ResponseCode=error`);
+      return res.redirect(`${FRONTEND_URL}/kiosk?vnp_ResponseCode=error`);
     }
   } catch (error) {
     if (t) await t.rollback();
     console.error("[vnpayReturn] Error:", error);
-    return res.redirect(`http://localhost:3000/kiosk?error=system`);
+    return res.redirect(`${FRONTEND_URL}/kiosk?error=system`);
   }
 };
 

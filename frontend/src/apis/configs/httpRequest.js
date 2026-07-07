@@ -3,7 +3,8 @@ import axios from "axios";
 // 1. Instance chính của hệ thống
 const request = axios.create({
   baseURL: process.env.REACT_APP_API_BASE_URL,
-  headers: { "Content-Type": "application/json" },
+  headers: { "Content-Type": "application/json"
+   },
   withCredentials: true, // BẮT BUỘC để cookie (accessToken/refreshToken) được gửi kèm mỗi request
 });
 
@@ -97,7 +98,8 @@ request.interceptors.response.use(
         await axios.post(
           `${process.env.REACT_APP_API_BASE_URL}/auth/refresh`,
           {},
-          { withCredentials: true },
+          { withCredentials: true
+         },
         );
 
         console.log(">>> Đổi token ngầm thành công! (cookie đã được BE set mới)");

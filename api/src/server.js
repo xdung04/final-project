@@ -53,10 +53,21 @@ const app = express();
 const server = http.createServer(app);
 const io = initSocket(server);
 
+const allowedOrigins = [
+  "http://localhost:3000",
+  process.env.FRONTEND_URL, // IP LAN hiện tại, đổi trong .env khi đổi mạng
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3000", // PHẢI là domain cụ thể, không để "*"
-    credentials: true, // cho phép gửi/nhận cookie
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS blocked: ${origin}`));
+      }
+    },
+    credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   }),

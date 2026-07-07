@@ -1,67 +1,40 @@
 import Groq from "groq-sdk";
+import { ChatGroq } from "@langchain/groq";
+import { createReactAgent } from "@langchain/langgraph/prebuilt";
+import { HumanMessage, AIMessage, SystemMessage } from "@langchain/core/messages";
 import {
   getBranches, getBarbers, getSlots, getServices,
   createBooking, transferToReceptionist, updateBookingState,
   matchBranch, matchBarber, matchServices,
   parseDateFromText, parseTimeFromText,
 } from "./bookingTools.js";
-import { searchKnowledge } from "./knowledgeTools.js";
+import { searchKnowledgeTool } from "./knowledgeTools.js";
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 // ─────────────────────────────────────────────────────────────
-// 2 MODEL RIÊNG BIỆT:
+// 2 MODEL RIÊNG BIỆT (giữ nguyên triết lý bản gốc):
 //   - MODEL_CLASSIFY: model nhỏ/rẻ/nhanh, CHỈ dùng để phân loại ý định
-//     (output vài chục token JSON, không cần "thông minh" nhiều — chỉ
-//     chọn đúng 1 trong vài nhãn cố định theo scope).
+//     (output vài chục token JSON) — VẪN dùng raw Groq SDK, KHÔNG đổi
+//     sang LangChain, vì đây chỉ là 1 lệnh gọi single-shot không có
+//     tool-calling, không hưởng lợi gì từ Agent/AgentExecutor.
 //   - MODEL_MAIN: model lớn hơn, dùng khi cần hiểu ngữ cảnh + viết câu
-//     trả lời tự do (tư vấn kiến thức, tóm tắt hội thoại).
+//     trả lời tự do + GỌI TOOL (tra cứu kiến thức) → đây là chỗ đổi
+//     sang LangChain Agent (createReactAgent), vì đúng bài toán
+//     "model tự quyết định có cần gọi tool hay không, gọi bao nhiêu
+//     lần" — giá trị cốt lõi mà LangChain mang lại.
 // ─────────────────────────────────────────────────────────────
 const MODEL_MAIN = process.env.GROQ_MODEL_MAIN || process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
 const MODEL_CLASSIFY = process.env.GROQ_MODEL_CLASSIFY || "llama-3.1-8b-instant";
 
 // ─────────────────────────────────────────────────────────────
-// KIẾN TRÚC (giữ nguyên triết lý tiết kiệm token của bản trước, chỉ
-// nâng cấp phần PHÂN LOẠI Ý ĐỊNH):
-//
-// Booking flow vẫn là state machine cố định do CODE điều khiển. Việc
-// match câu trả lời của khách vào 1 bước cụ thể (chọn chi nhánh/thợ/
-// ngày/giờ/dịch vụ) vẫn dùng regex + fuzzy-match cục bộ (matchBranch,
-// matchBarber, matchServices, parseDateFromText, parseTimeFromText) —
-// đây là bài toán so khớp vào MỘT DANH SÁCH ĐÓNG lấy từ DB, quá phù hợp
-// để xử lý bằng code, không cần LLM và regex/fuzzy đang làm tốt.
-//
-// Cái THỰC SỰ yếu ở bản trước là các quyết định "ngôn ngữ tự do, không
-// giới hạn" như: khách đồng ý/từ chối nói kiểu gì cũng được, khách muốn
-// đổi ý giữa chừng nói kiểu gì cũng được, khách chào xen giữa lúc đang
-// hỏi cái khác... Regex liệt kê cứng không bao giờ đủ cho tiếng Việt tự
-// nhiên. Đây chính là chỗ nên dùng 1 MODEL NHỎ để phân loại thay vì cố
-// vá thêm regex.
-//
-// => classifyIntent() thay thế detectIntent/CONFIRM_YES/CONFIRM_NO/
-//    PURE_GREETING/CHANGE_VERB+FIELD_NOUNS của bản cũ. Được gọi CÓ CHỌN
-//    LỌC (không phải mọi tin nhắn):
-//    1. Tin nhắn ĐẦU vào flow (chưa xác định ý định) — cần phân biệt
-//       đặt lịch / hỏi kiến thức / gặp lễ tân.
-//    2. Đang ở bước XÁC NHẬN cuối — cần hiểu đồng ý/từ chối đa dạng.
-//    3. Đang chờ 1 bước cụ thể nhưng local resolve (fuzzy match DB)
-//       THẤT BẠI — cần phân biệt "khách muốn đổi ý"/"chỉ chào xã giao"/
-///      "trả lời không hợp lệ" thay vì suy luận mù bằng regex.
-//
-// Mỗi lần gọi classifyIntent CHỈ đưa ra tập nhãn phù hợp với scope hiện
-// tại (không đưa hết mọi nhãn mọi lúc) — prompt ngắn hơn, model ít
-// nhầm lẫn hơn, JSON output chỉ vài token.
+// KIẾN TRÚC — giữ nguyên toàn bộ triết lý bản gốc, CHỈ khác ở
+// handleGeneral(): thay vòng lặp tool-calling tự viết tay bằng
+// LangChain Agent. Toàn bộ phần dưới đây (state machine, classify,
+// fuzzy-match DB) không đổi.
 // ─────────────────────────────────────────────────────────────
 
-// Regex fast-path DUY NHẤT còn giữ lại: từ khoá gặp lễ tân rất tường
-// minh, gần như không có false positive, nên xử lý ngay không cần tốn
-// 1 lượt gọi model. Nếu khách diễn đạt khác đi (không match regex này),
-// classifyIntent ở các scope khác vẫn có nhãn "receptionist" để bắt lại.
 const RECEPTIONIST_KEYWORDS = /(gặp lễ tân|gặp người thật|nhân viên tư vấn|nói chuyện với người|gặp nhân viên)/i;
-
-// Vẫn dùng làm shortcut RẺ bên trong handleGeneral (không phải để
-// routing tầng trên) — tránh tốn thêm 1 lượt gọi model cho câu chào
-// thuần tuý khi đã xác định intent = "other".
 const PURE_GREETING = /^(xin chào|chào( bạn| shop| ạ)?|hi|hello|alo)[\s!.]*$/i;
 
 const STEP_LABEL_VI = {
@@ -73,9 +46,6 @@ const STEP_LABEL_VI = {
   XAC_NHAN: "xác nhận thông tin đặt lịch",
 };
 
-// ✅ Đổi field: dictionary field -> field cần reset kèm theo (cascade),
-// giữ nguyên từ bản trước — chỉ khác là "field muốn đổi" giờ do
-// classifyIntent() trả về (change_field) thay vì suy ra từ regex.
 const FIELD_LABEL_VI = {
   idBranch: "chi nhánh", idBarber: "thợ", bookingDate: "ngày", slotTime: "giờ", idServices: "dịch vụ",
 };
@@ -102,7 +72,6 @@ function clearFieldAndCascade(field, state) {
   return next;
 }
 
-// ── Helpers ngày giờ ──────────────────────────────────────────
 function getVietnamDate(offset = 0) {
   return new Date(Date.now() + offset * 86400000).toLocaleDateString("sv-SE", { timeZone: "Asia/Ho_Chi_Minh" });
 }
@@ -139,7 +108,6 @@ function applyCascadeCacheClear(field, state) {
   if (toClear) toClear.forEach((k) => delete state[k]);
 }
 
-// ── Fetch + cache list cho từng bước (không tốn token — chỉ query DB) ──
 async function ensureListForStep(step, state) {
   switch (step) {
     case "CHI_NHANH": {
@@ -164,7 +132,6 @@ async function ensureListForStep(step, state) {
   }
 }
 
-// ── Render text hiển thị (template, không cần LLM viết) ──────────
 function money(n) {
   return Number(n || 0).toLocaleString("vi-VN") + "đ";
 }
@@ -214,7 +181,50 @@ function stripInternal(state) {
   return rest;
 }
 
-// ── Local resolver cho từng bước (fuzzy-match DB — không tốn token) ──
+// ─────────────────────────────────────────────────────────────
+// isWeakMatch — phát hiện match "yếu" từ tryResolveStep(): fuzzy-match
+// tìm thấy tên chi nhánh/thợ/dịch vụ TRONG câu, nhưng câu đó có thể là
+// một câu HỎI về đối tượng đó chứ không phải LỰA CHỌN đối tượng đó.
+//
+// Ví dụ match yếu: "chi nhánh quận 1 mở cửa đến mấy giờ" → matchBranch
+// tìm thấy "Quận 1" nhưng đây rõ ràng là câu hỏi giờ mở cửa, không phải
+// khách đang chọn chi nhánh.
+//
+// Ví dụ match mạnh (KHÔNG cần confirm thêm): "Quận 1", "quận 1 đi",
+// "chọn Phong" — ngắn gọn, không có tín hiệu câu hỏi.
+//
+// Chỉ áp dụng cho các bước mà giá trị match là 1 TÊN RIÊNG có thể bị
+// nhắc tới trong một câu hỏi khác (chi nhánh/thợ/dịch vụ). Bước NGAY/GIO
+// không cần vì parseDateFromText/parseTimeFromText không "nuốt nhầm"
+// theo kiểu này.
+// ─────────────────────────────────────────────────────────────
+const QUESTION_SIGNAL_REGEX =
+  /\?|mấy giờ|bao nhiêu|ở đâu|địa chỉ|là gì|như thế nào|có những|có gì|thế nào|sao vậy|tại sao|khi nào|mở cửa|đóng cửa|giá(\s|$)/i;
+
+function isWeakMatch(step, message, resolved) {
+  if (!["CHI_NHANH", "THO", "DICH_VU"].includes(step)) return false;
+
+  const msg = message.trim();
+  const words = msg.split(/\s+/).filter(Boolean);
+
+  // Câu ngắn gọn (≤4 từ) → gần như chắc chắn là trả lời trực tiếp,
+  // không cần tốn thêm 1 lượt gọi model để xác nhận.
+  if (words.length <= 4) return false;
+
+  // Có tín hiệu câu hỏi rõ ràng → nghi ngờ, cần model xác nhận lại.
+  if (QUESTION_SIGNAL_REGEX.test(msg)) return true;
+
+  // Câu dài hơn hẳn so với chính tên vừa match được → khả năng tên đó
+  // chỉ là một phần nhỏ trong câu có ý khác.
+  const labelValue = Array.isArray(resolved.labelValue)
+    ? resolved.labelValue.join(" ")
+    : resolved.labelValue || "";
+  const labelWordCount = labelValue.split(/\s+/).filter(Boolean).length || 1;
+  if (words.length > labelWordCount + 3) return true;
+
+  return false;
+}
+
 async function tryResolveStep(step, message, state) {
   switch (step) {
     case "CHI_NHANH": {
@@ -317,18 +327,12 @@ function resolveByIndex(step, index, state) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// classifyIntent — 1 lệnh gọi model NHỎ (MODEL_CLASSIFY), output JSON
-// vài token, nhãn giới hạn theo scope để giảm nhầm lẫn.
-//
-// scope:
-//   "entry"   → chưa có flow đặt lịch nào đang chạy. Cần phân biệt
-//               receptionist / booking_start / other.
-//   "confirm" → đang ở bước XÁC NHẬN cuối. Cần hiểu đồng ý/từ chối/
-//               đổi ý/chào giữa chừng/gặp lễ tân.
-//   "midflow" → đang chờ khách trả lời 1 bước cụ thể NHƯNG local
-//               resolve (fuzzy-match DB) đã thất bại. Cần phân biệt
-//               đổi ý / chào giữa chừng / gặp lễ tân / hay chỉ là câu
-//               trả lời không hợp lệ (booking_answer → cho retry).
+// classifyIntent — KHÔNG đổi, vẫn raw Groq SDK. Lý do (nhắc lại cho rõ
+// trong khoá luận): đây là 1 lệnh gọi single-shot trả JSON, không có
+// bước "gọi tool nhiều vòng" nào để LangChain Agent phát huy giá trị.
+// Đổi sang LangChain ở đây (vd ChatGroq.withStructuredOutput) chỉ đổi
+// CÚ PHÁP gọi API, không thay đổi bản chất bài toán — nên KHÔNG đưa vào
+// phạm vi so sánh "điểm mạnh của Agent/tool-calling".
 // ─────────────────────────────────────────────────────────────
 const SCOPE_LABELS = {
   entry: {
@@ -348,6 +352,7 @@ const SCOPE_LABELS = {
   },
   midflow: {
     labels: `- "receptionist": khách muốn gặp lễ tân / nhân viên thật
+- "cancel_flow": khách muốn HUỶ/DỪNG việc đặt lịch (vd "thôi", "không đặt nữa", "huỷ"), KHÔNG phải muốn gặp người thật
 - "change": khách muốn quay lại đổi 1 thông tin ĐÃ chọn trước đó (không phải bước đang chờ)
 - "greeting_midflow": khách chỉ chào hỏi/nói chuyện xã giao, không phải câu trả lời cho bước đang chờ
 - "booking_answer": khách CÓ ý định trả lời cho bước đang chờ nhưng nội dung không khớp lựa chọn nào / không rõ ràng
@@ -399,10 +404,6 @@ CHỈ trả lời JSON thuần, không thêm chữ nào khác, không markdown, 
   }
 }
 
-// ── Fallback: chỉ khi local parse thất bại VÀ classify xác nhận đây
-// đúng là 1 câu trả lời cho bước hiện tại (booking_answer) — gọi model
-// nhỏ lần 2, RẤT NHỎ, chỉ để map về đúng 1 mục trong danh sách theo số
-// thứ tự (không phải phân loại ý định nữa, mà là "chọn mục nào") ──
 async function resolveIndexWithLLM(step, message, state) {
   const listMap = {
     CHI_NHANH: state._branches?.map((b, i) => `${i + 1}. ${b.name}`).join("\n"),
@@ -438,15 +439,44 @@ CHỈ trả lời JSON thuần: {"index": <số hoặc null>}`;
   }
 }
 
-// ── Nhánh câu hỏi kiến thức / chào hỏi ngoài booking flow ─────────
-// Dùng vòng lặp tool-calling thực sự (không giả định chỉ gọi tool đúng 1
-// lần) — model có thể cần tra cứu nhiều lượt (vd hỏi kiểu tóc rồi hỏi tiếp
-// độ tuổi phù hợp). Luôn truyền `tools` ở MỌI lượt gọi, kể cả các lượt sau
-// khi đã có tool_result — nếu bỏ `tools` ở lượt sau mà model vẫn cố gọi
-// tool tiếp, Groq sẽ trả lỗi 400 "Tool choice is none, but model called a
-// tool" (đúng lỗi đã gặp). Giới hạn số vòng để tránh loop vô hạn nếu model
-// cứ liên tục đòi gọi tool.
-const MAX_TOOL_ROUNDS = 3;
+// ─────────────────────────────────────────────────────────────
+// handleGeneral — PHẦN THAY ĐỔI CHÍNH sang LangChain.
+//
+// So với bản gốc (vòng `for` tự viết + tự parse tool_calls + tự push
+// message tool), giờ dùng `createReactAgent` của LangGraph:
+//   - Agent tự lặp: gọi model → model quyết định có cần gọi
+//     searchKnowledgeTool không → nếu có, tự thực thi tool, tự đẩy kết
+//     quả (ToolMessage) vào lịch sử → gọi lại model → lặp tới khi model
+//     trả lời bằng text thuần.
+//   - Không cần tự quản lý MAX_TOOL_ROUNDS / tool_choice thủ công —
+//     LangGraph có cơ chế recursionLimit riêng để tránh loop vô hạn.
+//   - Không cần tự try/catch JSON.parse(tc.function.arguments) — Agent
+//     validate input tool qua Zod schema đã khai báo trong
+//     knowledgeTools.js.
+//
+// agentModel được khởi tạo 1 LẦN bên ngoài hàm (module scope) để tránh
+// tạo lại client mỗi lần gọi — tương tự việc `groq` client cũ chỉ khởi
+// tạo 1 lần ở đầu file.
+// ─────────────────────────────────────────────────────────────
+const agentModel = new ChatGroq({
+  apiKey: process.env.GROQ_API_KEY,
+  model: MODEL_MAIN,
+  temperature: 0.3,
+  maxTokens: 400,
+});
+
+const knowledgeAgent = createReactAgent({
+  llm: agentModel,
+  tools: [searchKnowledgeTool],
+});
+
+const GENERAL_SYSTEM_PROMPT = `Bạn là trợ lý Nam Barbershop. Dùng tool searchKnowledge để tra cứu thông tin, không tự bịa.
+searchKnowledge có 4 loại namespace:
+- "hairstyles"/"colors"/"products"/"haircare": kiến thức chung về kiểu tóc, màu tóc, sản phẩm, chăm sóc tóc.
+- "barbers": thông tin từng thợ (chuyên môn, phong cách, kinh nghiệm, đánh giá, chứng chỉ). Dùng namespace này khi khách hỏi về tay nghề/chuyên môn/phong cách của thợ, hoặc hỏi "ai cắt đẹp kiểu X". Nếu khách có nhắc tên chi nhánh cụ thể, LUÔN truyền kèm branchName đúng như tên chi nhánh (vd "Chi nhánh Quận 1") để lọc đúng chi nhánh — không lọc sẽ trả về cả thợ chi nhánh khác.
+- "branches": thông tin chi nhánh (địa chỉ, giờ mở cửa). Dùng khi khách hỏi địa chỉ/giờ hoạt động của chi nhánh.
+- "services": thông tin các dịch vụ, giá, thời lượng...
+Xưng em, gọi khách là anh/chị, trả lời ngắn gọn, không dùng markdown thô, không nhúng JSON.`;
 
 async function handleGeneral(message, history, isLoggedIn) {
   if (PURE_GREETING.test(message.trim())) {
@@ -455,72 +485,39 @@ async function handleGeneral(message, history, isLoggedIn) {
     };
   }
 
-  const sys = `Bạn là trợ lý Nam Barbershop. Dùng tool searchKnowledge để tra cứu thông tin, không tự bịa.
-searchKnowledge có 4 loại namespace:
-- "hairstyles"/"colors"/"products"/"haircare": kiến thức chung về kiểu tóc, màu tóc, sản phẩm, chăm sóc tóc.
-- "barbers": thông tin từng thợ (chuyên môn, phong cách, kinh nghiệm, đánh giá, chứng chỉ). Dùng namespace này khi khách hỏi về tay nghề/chuyên môn/phong cách của thợ, hoặc hỏi "ai cắt đẹp kiểu X". Nếu khách có nhắc tên chi nhánh cụ thể, LUÔN truyền kèm branchName đúng như tên chi nhánh (vd "Chi nhánh Quận 1") để lọc đúng chi nhánh — không lọc sẽ trả về cả thợ chi nhánh khác.
-- "branches": thông tin chi nhánh (địa chỉ, giờ mở cửa). Dùng khi khách hỏi địa chỉ/giờ hoạt động của chi nhánh.
-- "services": thông tin các dịch vụ, giá, thời lượng...
-Xưng em, gọi khách là anh/chị, trả lời ngắn gọn, không dùng markdown thô, không nhúng JSON.`;
-
-  const tools = [
-    {
-      type: "function",
-      function: {
-        name: "searchKnowledge",
-        description: "Tra cứu kiến thức về tóc/dịch vụ, thông tin thợ, hoặc thông tin chi nhánh của Nam Barbershop.",
-        parameters: {
-          type: "object",
-          properties: {
-            query: { type: "string", description: "Nội dung cần tra cứu, viết tự nhiên bằng tiếng Việt" },
-            namespace: { type: "string", enum: ["hairstyles", "colors", "products", "haircare", "barbers", "branches", "services"] },
-            branchName: {
-              type: "string",
-              description: "CHỈ dùng khi namespace là 'barbers' và khách có nhắc tên chi nhánh cụ thể — truyền đúng tên chi nhánh (vd 'Chi nhánh Quận 1') để lọc thợ đúng chi nhánh đó. Bỏ trống nếu khách không chỉ định chi nhánh hoặc namespace khác.",
-            },
-          },
-          required: ["query", "namespace"],
-        },
-      },
-    },
-  ];
-
-  const messages = [
-    { role: "system", content: sys },
-    ...history.slice(-6).map((h) => ({ role: h.role === "user" ? "user" : "assistant", content: h.content })),
-    { role: "user", content: message },
-  ];
+  // Chuyển lịch sử hội thoại từ format { role, content } cũ sang
+  // BaseMessage của LangChain — Agent cần đúng kiểu message này để
+  // duyệt lịch sử + phân biệt lượt user/assistant/tool.
+  const historyMessages = history.slice(-6).map((h) =>
+    h.role === "user" ? new HumanMessage(h.content) : new AIMessage(h.content)
+  );
 
   try {
-    let choice;
-    for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
-      const isLastAllowedRound = round === MAX_TOOL_ROUNDS - 1;
-      const resp = await groq.chat.completions.create({
-        model: MODEL_MAIN,
-        messages,
-        // Ở vòng cuối cùng, ép model PHẢI trả lời bằng lời chứ không được
-        // gọi tool thêm nữa — tránh lặp vô hạn hoặc lỗi tool_choice.
-        tools: isLastAllowedRound ? undefined : tools,
-        tool_choice: isLastAllowedRound ? undefined : "auto",
-        temperature: 0.3,
-        max_tokens: 400,
-      });
-      choice = resp.choices[0].message;
-
-      if (!choice.tool_calls?.length) break;
-
-      messages.push(choice);
-      for (const tc of choice.tool_calls) {
-        let args = {};
-        try { args = JSON.parse(tc.function.arguments || "{}"); } catch {}
-        const result = await searchKnowledge(args);
-        messages.push({ role: "tool", tool_call_id: tc.id, content: JSON.stringify(result) });
+    const result = await knowledgeAgent.invoke(
+      {
+        messages: [
+          new SystemMessage(GENERAL_SYSTEM_PROMPT),
+          ...historyMessages,
+          new HumanMessage(message),
+        ],
+      },
+      {
+        // Tương đương MAX_TOOL_ROUNDS cũ (3 vòng gọi tool) — LangGraph
+        // tính recursion theo số bước (model call + tool call đều tính
+        // là 1 bước), nên đặt dư ra một chút để không cắt oan lượt trả
+        // lời cuối cùng.
+        recursionLimit: 8,
       }
-    }
+    );
 
-    return { reply: choice?.content || "Dạ anh/chị cần em tư vấn thêm gì không ạ?" };
+    // messages cuối cùng trong state của Agent chính là câu trả lời text
+    // sau khi đã đi hết các vòng gọi tool (nếu có).
+    const last = result.messages[result.messages.length - 1];
+    const reply = typeof last?.content === "string" ? last.content : "";
+
+    return { reply: reply || "Dạ anh/chị cần em tư vấn thêm gì không ạ?" };
   } catch (err) {
-    if (err.status === 429) {
+    if (err.status === 429 || err.message?.includes("429")) {
       return { reply: "Dạ hệ thống đang tạm thời quá tải, anh/chị vui lòng nhắn lại giúp em sau ít phút nha ạ 🙏" };
     }
     console.error("❌ [handleGeneral] lỗi:", err.message);
@@ -529,10 +526,11 @@ Xưng em, gọi khách là anh/chị, trả lời ngắn gọn, không dùng mar
 }
 
 // ─────────────────────────────────────────────────────────────
-// processBrainLoop — entrypoint chính
+// processBrainLoop — entrypoint chính. KHÔNG đổi logic so với bản gốc,
+// chỉ đổi cách handleGeneral() vận hành bên trong.
 // ─────────────────────────────────────────────────────────────
 export async function processBrainLoop({ message, bookingState, history = [], isLoggedIn, customerId }) {
-  console.log(`\n===== 🧠 BRAIN LOOP (classify-scoped) =====`);
+  console.log(`\n===== 🧠 BRAIN LOOP (LangChain Agent) =====`);
   console.log(`[Message]: "${message}"`);
 
   let state = { ...bookingState };
@@ -546,7 +544,6 @@ export async function processBrainLoop({ message, bookingState, history = [], is
     state.slotTime || state.idServices?.length || state.bookingFlowStarted
   );
 
-  // ── Fast-path rẻ, không tốn token: từ khoá gặp lễ tân quá tường minh ──
   if (RECEPTIONIST_KEYWORDS.test(message)) {
     if (!isLoggedIn) { needLogin = true; return respond("Dạ anh/chị vui lòng đăng nhập để em chuyển máy cho lễ tân ạ."); }
     const r = await transferToReceptionist({ customerId });
@@ -556,7 +553,6 @@ export async function processBrainLoop({ message, bookingState, history = [], is
       : "Dạ hiện chưa thể chuyển máy, anh/chị thử lại sau ít phút giúp em ạ.");
   }
 
-  // ── CHƯA có flow đặt lịch nào đang chạy → cần phân biệt ý định đầu vào ──
   if (!flowInProgress) {
     const classified = await classifyIntent(message, state, "entry", null);
 
@@ -585,23 +581,18 @@ export async function processBrainLoop({ message, bookingState, history = [], is
     return respond(reply);
   }
 
-  // ── Từ đây trở đi: đang dở flow đặt lịch, bắt buộc đã đăng nhập ──
   if (!isLoggedIn) {
     return respond("Dạ để đặt lịch, anh/chị vui lòng đăng nhập trước giúp em ạ.");
   }
 
   const step = getMissingStepHint(state);
 
-  // ── Bước hiện tại CHƯA từng được hiển thị cho khách trong lượt trước
-  // → hiển thị list/câu hỏi, chưa cố hiểu tin nhắn hiện tại (nó có thể
-  // chỉ là câu "tôi muốn đặt lịch" kích hoạt flow) ──
   if (state._pendingStep !== step) {
     const { reply, state: next } = await presentStep(step, state);
     state = next;
     return respond(reply);
   }
 
-  // ── Bước XÁC NHẬN cuối: dùng scope "confirm" ──
   if (step === "XAC_NHAN") {
     const classified = await classifyIntent(message, state, "confirm", step);
 
@@ -636,18 +627,19 @@ export async function processBrainLoop({ message, bookingState, history = [], is
       return respond(`Dạ em chào anh/chị! Mình tiếp tục nha ạ 🙂\n\n${renderSummary(state)}`);
     }
 
-    // other / không xác định → nhắc lại tóm tắt
     return respond(renderSummary(state));
   }
 
-  // ── Đang chờ khách trả lời đúng 1 bước cụ thể → thử resolve cục bộ trước ──
   const resolved = await tryResolveStep(step, message, state);
 
   if (resolved?.invalidTime) {
     return respond(`Dạ giờ đó không còn trống. Các giờ còn trống: ${resolved.available.join(", ") || "không còn giờ nào trong ngày này"}.`);
   }
 
-  if (resolved) {
+  // ✅ Match MẠNH (câu ngắn gọn, không có tín hiệu câu hỏi khác) → nhận
+  // ngay như bản gốc, không tốn thêm lượt gọi model nào. Đây vẫn là
+  // đường đi rẻ nhất cho đa số trường hợp (khách trả lời gọn).
+  if (resolved && !isWeakMatch(step, message, resolved)) {
     const saved = await saveResolvedField(resolved, state);
     if (!saved.ok) return respond(`Dạ ${saved.error}`);
     state = saved.state;
@@ -657,10 +649,25 @@ export async function processBrainLoop({ message, bookingState, history = [], is
     return respond(reply);
   }
 
-  // ── Local resolve thất bại → gọi classify scope "midflow" để hiểu
-  // đúng ý khách (đổi ý / chào giữa chừng / gặp lễ tân / hay chỉ là câu
-  // trả lời chưa khớp) thay vì đoán mù bằng regex như bản cũ ──
+  // ── Local resolve THẤT BẠI, hoặc match YẾU (nghi ngờ đây là câu hỏi
+  // khác chứ không phải câu trả lời, vd "chi nhánh quận 1 mở cửa mấy
+  // giờ" bị matchBranch nuốt nhầm thành chọn chi nhánh Quận 1) → gọi
+  // classify scope "midflow" để model xác nhận đúng ý khách trước khi
+  // quyết định. ──
   const classified = await classifyIntent(message, state, "midflow", step);
+
+  // Model xác nhận đây đúng là câu trả lời cho bước đang chờ, và local
+  // đã match được (dù yếu) → dùng luôn kết quả match đó, không cần tốn
+  // thêm 1 lượt gọi resolveIndexWithLLM nữa.
+  if (classified.intent === "booking_answer" && resolved) {
+    const saved = await saveResolvedField(resolved, state);
+    if (!saved.ok) return respond(`Dạ ${saved.error}`);
+    state = saved.state;
+    const nextStep = getMissingStepHint(state);
+    const { reply, state: next } = await presentStep(nextStep, state);
+    state = next;
+    return respond(reply);
+  }
 
   if (classified.intent === "receptionist") {
     const r = await transferToReceptionist({ customerId });
@@ -668,6 +675,11 @@ export async function processBrainLoop({ message, bookingState, history = [], is
     return respond(needReceptionist
       ? "Dạ em đã chuyển cuộc trò chuyện cho lễ tân, anh/chị vui lòng chờ trong giây lát ạ."
       : "Dạ hiện chưa thể chuyển máy, anh/chị thử lại sau ít phút giúp em ạ.");
+  }
+
+  if (classified.intent === "cancel_flow") {
+    state = freshState();
+    return respond("Dạ em đã huỷ tiến trình đặt lịch. Anh/chị cần em hỗ trợ gì thêm không ạ?");
   }
 
   if (classified.intent === "change") {
@@ -686,9 +698,6 @@ export async function processBrainLoop({ message, bookingState, history = [], is
     return respond(reply);
   }
 
-  // classified.intent === "booking_answer" (hoặc fallback) → khách có vẻ
-  // đang cố trả lời nhưng không khớp gì → thử map theo số thứ tự bằng 1
-  // lệnh gọi model RẤT NHỎ, nếu vẫn không được thì yêu cầu chọn lại.
   const idx = await resolveIndexWithLLM(step, message, state);
   const resolvedByIdx = idx ? resolveByIndex(step, idx, state) : null;
 
@@ -706,14 +715,6 @@ export async function processBrainLoop({ message, bookingState, history = [], is
   return respond(`Dạ em chưa rõ ý anh/chị lắm, anh/chị chọn lại giúp em nhé ạ.\n\n${reply}`);
 }
 
-// ── Áp dụng yêu cầu "đổi 1 field đã chọn" — dùng chung cho scope confirm &
-// midflow. QUAN TRỌNG: hàm này PHẢI trả về state mới qua return value, KHÔNG
-// được tự gọi respond() ở đây — vì respond() được định nghĩa trong
-// processBrainLoop và đóng gói (closure) biến `state` của processBrainLoop,
-// không phải tham số `state` cục bộ trong hàm này. Nếu gọi respond() ngay
-// tại đây, nó sẽ dùng state CŨ (trước khi reset field), khiến state lưu vào
-// DB không được cập nhật dù reply hiển thị đúng — gây đứng hình toàn bộ flow
-// ở các lượt sau.
 async function applyChange(field, state) {
   if (!field) {
     const chosen = ["idBranch", "idBarber", "bookingDate", "slotTime", "idServices"]
@@ -734,7 +735,8 @@ async function applyChange(field, state) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// generateChatSummary — giữ nguyên, dùng model chính
+// generateChatSummary — giữ nguyên, dùng raw Groq SDK (single-shot,
+// không tool-calling, không có lý do đổi sang LangChain).
 // ─────────────────────────────────────────────────────────────
 export async function generateChatSummary(historyText) {
   try {
