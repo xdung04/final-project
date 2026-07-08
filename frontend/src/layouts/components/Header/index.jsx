@@ -110,7 +110,6 @@ function Header() {
   return (
     <>
       <nav className={cx("nav", { scrolled })}>
-        {/* LOGO MẪU */}
         <a href="/" className={cx("navLogo")}>
           <div className={cx("logoIcon")}>
             <svg viewBox="0 0 24 24"><path d="M12 2L2 22h20L12 2zm0 4.5l6.5 13.5h-13L12 6.5z"/></svg>

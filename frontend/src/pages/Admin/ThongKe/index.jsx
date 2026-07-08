@@ -5,9 +5,6 @@ import styles from "./ThongKe.module.scss";
 // Import các Tab con
 import AiHubTab from "./Tabs/AiHubTab";
 import CustomerTab from "./Tabs/CustomerTab";
-import BarberTab from "./Tabs/BarberTab";
-import OpsTab from "./Tabs/OpsTab";
-import TrendTab from "./Tabs/TrendTab";
 import RevenueTab from "./Tabs/RevenueTab";
 
 import { 
@@ -21,9 +18,6 @@ const tabs = [
   { id: "revenue",  label: "Doanh thu",     icon: <DollarSign  size={15} strokeWidth={2} /> },
   { id: "ai-hub",   label: "AI Smart Hub",  icon: <BrainCircuit size={15} strokeWidth={2} /> },
   { id: "customer", label: "Khách hàng",    icon: <Users        size={15} strokeWidth={2} /> },
-  { id: "barber",   label: "Năng lực Thợ",  icon: <Scissors     size={15} strokeWidth={2} /> },
-  { id: "ops",      label: "Vận hành",      icon: <CalendarDays size={15} strokeWidth={2} /> },
-  { id: "trend",    label: "Xu hướng",      icon: <TrendingUp   size={15} strokeWidth={2} /> },
 ];
 
 function ThongKe() {
@@ -61,9 +55,7 @@ function ThongKe() {
         {activeTab === "revenue"  && <RevenueTab />}
         {activeTab === "ai-hub"   && <AiHubTab />}
         {activeTab === "customer" && <CustomerTab />}
-        {activeTab === "barber"   && <BarberTab />}
-        {activeTab === "ops"      && <OpsTab />}
-        {activeTab === "trend"    && <TrendTab />}
+
       </div>
     </div>
   );

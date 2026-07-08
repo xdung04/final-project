@@ -11,28 +11,9 @@ import {
 import { searchKnowledgeTool } from "./knowledgeTools.js";
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-
-// ─────────────────────────────────────────────────────────────
-// 2 MODEL RIÊNG BIỆT (giữ nguyên triết lý bản gốc):
-//   - MODEL_CLASSIFY: model nhỏ/rẻ/nhanh, CHỈ dùng để phân loại ý định
-//     (output vài chục token JSON) — VẪN dùng raw Groq SDK, KHÔNG đổi
-//     sang LangChain, vì đây chỉ là 1 lệnh gọi single-shot không có
-//     tool-calling, không hưởng lợi gì từ Agent/AgentExecutor.
-//   - MODEL_MAIN: model lớn hơn, dùng khi cần hiểu ngữ cảnh + viết câu
-//     trả lời tự do + GỌI TOOL (tra cứu kiến thức) → đây là chỗ đổi
-//     sang LangChain Agent (createReactAgent), vì đúng bài toán
-//     "model tự quyết định có cần gọi tool hay không, gọi bao nhiêu
-//     lần" — giá trị cốt lõi mà LangChain mang lại.
 // ─────────────────────────────────────────────────────────────
 const MODEL_MAIN = process.env.GROQ_MODEL_MAIN || process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
 const MODEL_CLASSIFY = process.env.GROQ_MODEL_CLASSIFY || "llama-3.1-8b-instant";
-
-// ─────────────────────────────────────────────────────────────
-// KIẾN TRÚC — giữ nguyên toàn bộ triết lý bản gốc, CHỈ khác ở
-// handleGeneral(): thay vòng lặp tool-calling tự viết tay bằng
-// LangChain Agent. Toàn bộ phần dưới đây (state machine, classify,
-// fuzzy-match DB) không đổi.
-// ─────────────────────────────────────────────────────────────
 
 const RECEPTIONIST_KEYWORDS = /(gặp lễ tân|gặp người thật|nhân viên tư vấn|nói chuyện với người|gặp nhân viên)/i;
 const PURE_GREETING = /^(xin chào|chào( bạn| shop| ạ)?|hi|hello|alo)[\s!.]*$/i;
@@ -181,23 +162,6 @@ function stripInternal(state) {
   return rest;
 }
 
-// ─────────────────────────────────────────────────────────────
-// isWeakMatch — phát hiện match "yếu" từ tryResolveStep(): fuzzy-match
-// tìm thấy tên chi nhánh/thợ/dịch vụ TRONG câu, nhưng câu đó có thể là
-// một câu HỎI về đối tượng đó chứ không phải LỰA CHỌN đối tượng đó.
-//
-// Ví dụ match yếu: "chi nhánh quận 1 mở cửa đến mấy giờ" → matchBranch
-// tìm thấy "Quận 1" nhưng đây rõ ràng là câu hỏi giờ mở cửa, không phải
-// khách đang chọn chi nhánh.
-//
-// Ví dụ match mạnh (KHÔNG cần confirm thêm): "Quận 1", "quận 1 đi",
-// "chọn Phong" — ngắn gọn, không có tín hiệu câu hỏi.
-//
-// Chỉ áp dụng cho các bước mà giá trị match là 1 TÊN RIÊNG có thể bị
-// nhắc tới trong một câu hỏi khác (chi nhánh/thợ/dịch vụ). Bước NGAY/GIO
-// không cần vì parseDateFromText/parseTimeFromText không "nuốt nhầm"
-// theo kiểu này.
-// ─────────────────────────────────────────────────────────────
 const QUESTION_SIGNAL_REGEX =
   /\?|mấy giờ|bao nhiêu|ở đâu|địa chỉ|là gì|như thế nào|có những|có gì|thế nào|sao vậy|tại sao|khi nào|mở cửa|đóng cửa|giá(\s|$)/i;
 
@@ -206,9 +170,6 @@ function isWeakMatch(step, message, resolved) {
 
   const msg = message.trim();
   const words = msg.split(/\s+/).filter(Boolean);
-
-  // Câu ngắn gọn (≤4 từ) → gần như chắc chắn là trả lời trực tiếp,
-  // không cần tốn thêm 1 lượt gọi model để xác nhận.
   if (words.length <= 4) return false;
 
   // Có tín hiệu câu hỏi rõ ràng → nghi ngờ, cần model xác nhận lại.
@@ -733,11 +694,6 @@ async function applyChange(field, state) {
   const { reply, state: next } = await presentStep(nextStep, reset);
   return { reply, state: next };
 }
-
-// ─────────────────────────────────────────────────────────────
-// generateChatSummary — giữ nguyên, dùng raw Groq SDK (single-shot,
-// không tool-calling, không có lý do đổi sang LangChain).
-// ─────────────────────────────────────────────────────────────
 export async function generateChatSummary(historyText) {
   try {
     const response = await groq.chat.completions.create({
