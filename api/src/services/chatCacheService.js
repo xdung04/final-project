@@ -69,14 +69,12 @@ export async function deleteChatHistory(sessionId) {
   await redis.del(key);
 }
 
-// ✅ Lấy booking state từ Redis
 export async function getBookingState(sessionId) {
   const key = `${BOOKING_PREFIX}${sessionId}`;
   const raw = await redis.get(key);
   return raw ? JSON.parse(raw) : null;
 }
 
-// ✅ Lưu booking state vào Redis (TTL theo session chat)
 export async function saveBookingState(sessionId, state) {
   const key = `${BOOKING_PREFIX}${sessionId}`;
   if (!state) {

@@ -1,7 +1,7 @@
 // src/services/chatFlowService.js
 import { processBrainLoop } from "./brainService.js";
 import {
-  getTodayChatHistory,
+  getChatHistory,
   saveChatMessage,
   deleteChatHistory,
   getBookingState,
@@ -146,13 +146,13 @@ export async function processChatFlow({ sessionId, message, customerId }) {
   }
 
   // ══════════════════════════════════════════════
-  // GUEST FLOW — ✅ FIX CHÍNH
+  // GUEST FLOW 
   // ══════════════════════════════════════════════
   else {
     console.log(`➡️ [BrainService] Khách vãng lai gửi tin nhắn (Session: ${sessionId}).`);
     
     const [historyData, rawGuestState] = await Promise.all([
-      getTodayChatHistory(sessionId),
+      getChatHistory(sessionId),
       getBookingState(sessionId),
     ]);
 

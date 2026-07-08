@@ -3,8 +3,6 @@ import { getIO } from "../config/socket.js";
 const { Conversation, Message, Customer, Receptionist, User, Sequelize } = db;
 const { Op } = Sequelize;
 
-// Helper: cập nhật last_message và unread_count cho conversation
-// Helper: cập nhật last_message và unread_count cho conversation
 export const updateConversationStats = async (
   conversationId,
   newMessage,

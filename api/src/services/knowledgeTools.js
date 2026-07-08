@@ -1,25 +1,4 @@
-// src/services/knowledgeTools.js
-//
-// ─────────────────────────────────────────────────────────────
-// PHIÊN BẢN LANGCHAIN — thay đổi so với bản gốc:
-//
-//   - Toàn bộ logic Pinecone (format kết quả, filter branchName, fallback
-//     bỏ filter khi không match, xử lý lỗi...) GIỮ NGUYÊN 100%. Đây là
-//     phần xử lý dữ liệu thuần, không liên quan gì tới LangChain.
-//
-//   - Khác biệt duy nhất: thêm export `searchKnowledgeTool`, bọc hàm
-//     `searchKnowledge` gốc (đổi tên nội bộ thành `_searchKnowledgeImpl`)
-//     bằng `tool()` của LangChain + schema Zod. Trước đây schema
-//     (name/description/parameters JSON) được định nghĩa TAY, RIÊNG BIỆT
-//     bên trong bookingBrain.js — tách khỏi hàm thực thi thật. Với
-//     LangChain, schema + hàm thực thi gộp làm MỘT, tránh lệch nhau khi
-//     sửa (vd sửa tham số hàm mà quên sửa JSON schema mô tả cho model).
-//
-//   - `searchKnowledgeTool` là 1 StructuredTool chuẩn của LangChain, có
-//     thể truyền thẳng vào `tools: [...]` khi tạo Agent (createReactAgent)
-//     ở bookingBrain.js — Agent sẽ tự đọc `.name`, `.description`,
-//     `.schema` để quyết định khi nào gọi, gọi với tham số gì.
-// ─────────────────────────────────────────────────────────────
+
 
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
