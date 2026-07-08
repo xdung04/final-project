@@ -42,6 +42,11 @@ export default (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
         allowNull: true,   // null = booking không dùng voucher
       },
+      slotKey: {
+        type: DataTypes.STRING,
+        unique: true,
+        allowNull: true,
+      },
       guestCount: {
         type: DataTypes.INTEGER,
         defaultValue: 1,

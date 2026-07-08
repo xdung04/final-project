@@ -206,18 +206,43 @@ export const createBookingService = async ({
     }
   }
 
-  // Tạo booking với total đã được giảm giá
-  const booking = await db.Booking.create({
-    idCustomer,
-    idBranch,
-    idBarber,
-    idCustomerVoucher,
-    bookingDate,
-    bookingTime,
-    status: "Pending",
-    description,
-    finalTotal,
+  // [FIX] Tạo slotKey để chống double-booking
+  const normalizedDate = new Date(bookingDate).toISOString().split("T")[0];
+  const slotKey = `${idBarber}_${normalizedDate}_${bookingTime}`;
+
+  // Dùng transaction để kiểm tra + tạo booking nguyên tử
+  const result = await db.sequelize.transaction(async (transaction) => {
+    // Kiểm tra slot đã có booking chưa (không tính Cancelled)
+    const existing = await db.Booking.findOne({
+      where: {
+        slotKey,
+        status: { [Op.not]: "Cancelled" },
+      },
+      lock: Sequelize.Transaction.LOCK.UPDATE,
+      transaction,
+    });
+
+    if (existing) {
+      throw new Error("Khung giờ này đã có người đặt, vui lòng chọn khung giờ khác.");
+    }
+
+    // Tạo booking với slotKey
+    const booking = await db.Booking.create({
+      idCustomer,
+      idBranch,
+      idBarber,
+      idCustomerVoucher,
+      bookingDate,
+      bookingTime,
+      slotKey,
+      status: "Pending",
+      description,
+      finalTotal,
+    }, { transaction });
+
+    return booking;
   });
+  const booking = result;
 
   // Tạo chi tiết dịch vụ
   for (const s of services) {
@@ -819,6 +844,7 @@ export const cancelBookingService = async (idBooking) => {
     );
   }
   booking.status = "Cancelled";
+  booking.slotKey = null; // [FIX] Giải phóng slot cho người khác đặt lại
   await booking.save();
   return { message: "Đã hủy lịch hẹn thành công" };
 };
