@@ -8,16 +8,7 @@ import { Pinecone } from "@pinecone-database/pinecone";
 const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY });
 const index = pc.index("project", "project-yfyk5m4.svc.aped-4627-b74a.pinecone.io");
 
-// ─────────────────────────────────────────────────────────────
-// 2 nhóm namespace khác bản chất dữ liệu:
-//   - "text namespaces" (hairstyles, colors, products, haircare): mỗi
-//     record đã có sẵn field metadata.text soạn sẵn cho con người đọc.
-//   - "structured namespaces" (barbers, branches): metadata là các field
-//     rời (fullName, specialty, avgRate, address, openTime...), CHƯA có
-//     field "text" nào cả — nếu dùng chung logic format cũ
-//     (meta.text || meta.content || meta.description || "") thì sẽ trả
-//     về chuỗi RỖNG cho 2 namespace mới này. Phải format riêng.
-// ─────────────────────────────────────────────────────────────
+
 const TEXT_NAMESPACES = ["hairstyles", "colors", "products", "haircare"];
 const STRUCTURED_NAMESPACES = ["barbers", "branches", "services"];
 const VALID_NAMESPACES = [...TEXT_NAMESPACES, ...STRUCTURED_NAMESPACES];
@@ -91,17 +82,6 @@ export async function debugIndexStats() {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-// _searchKnowledgeImpl — GIỮ NGUYÊN 100% logic gốc (chỉ đổi tên hàm để
-// nội bộ dùng, còn export ra ngoài là bản bọc Tool bên dưới).
-//
-// LLM tự chọn namespace dựa vào nội dung câu hỏi. Với namespace
-// "barbers"/"services", LLM có thể truyền thêm branchName để LỌC kết quả
-// chỉ trong 1 chi nhánh — bắt buộc cần thiết vì semantic search trên
-// "chuyên môn/phong cách" không tự động giới hạn theo chi nhánh (vd hỏi
-// "quận 1 có ai cắt undercut đẹp" mà không lọc branchName sẽ trả về cả
-// thợ chi nhánh khác miễn là chuyên môn khớp).
-// ─────────────────────────────────────────────────────────────
 async function _searchKnowledgeImpl({ query, namespace, branchName }) {
   if (!VALID_NAMESPACES.includes(namespace)) {
     return {
