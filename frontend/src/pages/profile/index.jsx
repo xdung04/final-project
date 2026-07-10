@@ -3,7 +3,7 @@ import classNames from "classnames/bind";
 import { useAuth } from "~/context/AuthContext";
 import { ProfileAPI } from "~/apis/profileApi";
 import { HairAnalysisAPI } from "~/apis/hairAnalysisAPI";
-import { hairStyleAPIfz } from "~/apis/hairStyleAPI"; // ← Thêm dòng này
+import { hairStyleAPI} from "~/apis/hairStyleAPI"; // ← Thêm dòng này
 import { useToast } from "~/context/ToastContext";
 import styles from "./Profile.module.scss";
 import WorkCard from "~/components/CustomerGalleryCard";
