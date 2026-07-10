@@ -218,12 +218,6 @@ const HairCatalog = ({ onBook }) => {
           Hiển thị <strong>{filtered.length}</strong> /{" "}
           <strong>{hairstyles.length}</strong> kiểu tóc
         </p>
-        <button
-          className={styles.btnOutline}
-          onClick={() => navigate("/hairstyles")}
-        >
-          <span>Xem toàn bộ danh mục</span>
-        </button>
       </div>
     </section>
   );
@@ -413,52 +407,6 @@ const Home = () => {
         </div>
       </div>
 
-      {/* ── SERVICES ── */}
-      <section id="services" className={styles.services}>
-        <div className={styles.servicesHeader}>
-          <div>
-            <div className={styles.sectionLabel}>BẢNG GIÁ DỊCH VỤ</div>
-            <h2 className={styles.sectionTitle}>
-              Các dịch vụ <em>Nổi bật</em>
-            </h2>
-          </div>
-        </div>
-        <div className={styles.servicesGrid}>
-          {hot.map((service, index) => (
-            <div
-              key={service.idService}
-              className={`${styles.serviceCard} ${
-                index === 0 ? styles.featured : ""
-              }`}
-            >
-              {service.image && (
-                <img
-                  src={service.image}
-                  alt={service.name}
-                  className={styles.serviceImg}
-                  onError={(e) => {
-                    e.target.style.display = "none";
-                  }}
-                />
-              )}
-              <div className={styles.serviceOverlay} />
-              <div className={styles.serviceContent}>
-                <div className={styles.serviceNum}>
-                  {String(index + 1).padStart(2, "0")}
-                </div>
-                <h3 className={styles.serviceName}>{service.name}</h3>
-                <p className={styles.serviceDesc}>
-                  {service.description || "Dịch vụ đẳng cấp."}
-                </p>
-                <div className={styles.servicePrice}>
-                  {formatPrice(service.price)} <span>VNĐ</span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* ── AI SCAN ── */}
       <section className={styles.aiScanSection}>
         <div className={styles.aiContent}>
@@ -511,70 +459,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* ── BARBERS ── */}
-      <section id="barbers" className={styles.barbers}>
-        <div className={styles.barbersHeader}>
-          <div className={styles.sectionLabel}>MASTER BARBERS</div>
-          <h2 className={styles.sectionTitle}>
-            Đội ngũ <em>Thợ Cạo</em>
-          </h2>
-        </div>
-        <div className={styles.barbersGrid}>
-          {hotBarbers.map((barber, index) => (
-            <div key={barber.idBarber} className={styles.barberCard}>
-              <div className={styles.barberPhoto}>
-                <img src={barber.avatar} alt={barber.name} />
-              </div>
-              <span className={styles.barberRole}>TOP #{index + 1}</span>
-              <div className={styles.barberOverlay}>
-                <h4 className={styles.barberName}>{barber.name}</h4>
-                <span className={styles.barberExp}>{barber.branch}</span>
-                <div className={styles.barberStats}>
-                  <span className={styles.barberBadge}>
-                    ⭐ {barber.rating}
-                  </span>
-                  <span className={styles.barberBadge}>
-                    {barber.totalBookings} lượt đặt
-                  </span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── STATS ── */}
-      <section className={styles.stats}>
-        <div className={styles.statItem}>
-          <div className={styles.statNum}>
-            10<span className={styles.statUnit}>K+</span>
-          </div>
-          <div className={styles.statLabel}>Khách hàng hài lòng</div>
-        </div>
-        <div className={styles.statItem}>
-          <div className={styles.statNum}>
-            15<span className={styles.statUnit}>+</span>
-          </div>
-          <div className={styles.statLabel}>Thợ cạo tay nghề cao</div>
-        </div>
-        <div className={styles.statItem}>
-          <div className={styles.statNum}>
-            5<span className={styles.statUnit}>+</span>
-          </div>
-          <div className={styles.statLabel}>Chi nhánh trên toàn quốc</div>
-        </div>
-        <div className={styles.statItem}>
-          <div className={styles.statNum}>
-            4.9<span className={styles.statUnit}>/5</span>
-          </div>
-          <div className={styles.statLabel}>Đánh giá trung bình</div>
-        </div>
-      </section>
-
-      {/* ══ HAIRSTYLE CATALOG (RENDER ĐỘNG API) ══ */}
-      <HairCatalog onBook={(name) => handleBookingClick()} />
-
-      {/* ══ REELS ══ */}
+      {/* ── REELS ── */}
       <section id="reels" className={styles.reels}>
         <div className={styles.reelsHeader}>
           <div className={styles.sectionLabel}>VIDEO & MEDIA</div>
@@ -651,6 +536,115 @@ const Home = () => {
           >
             <span>Xem tất cả video</span>
           </button>
+        </div>
+      </section>
+
+      {/* ── HAIRSTYLE CATALOG ── */}
+      <HairCatalog onBook={(name) => handleBookingClick()} />
+
+      {/* ── SERVICES ── */}
+      <section id="services" className={styles.services}>
+        <div className={styles.servicesHeader}>
+          <div>
+            <div className={styles.sectionLabel}>BẢNG GIÁ DỊCH VỤ</div>
+            <h2 className={styles.sectionTitle}>
+              Các dịch vụ <em>Nổi bật</em>
+            </h2>
+          </div>
+        </div>
+        <div className={styles.servicesGrid}>
+          {hot.map((service, index) => (
+            <div
+              key={service.idService}
+              className={`${styles.serviceCard} ${
+                index === 0 ? styles.featured : ""
+              }`}
+            >
+              {service.image && (
+                <img
+                  src={service.image}
+                  alt={service.name}
+                  className={styles.serviceImg}
+                  onError={(e) => {
+                    e.target.style.display = "none";
+                  }}
+                />
+              )}
+              <div className={styles.serviceOverlay} />
+              <div className={styles.serviceContent}>
+                <div className={styles.serviceNum}>
+                  {String(index + 1).padStart(2, "0")}
+                </div>
+                <h3 className={styles.serviceName}>{service.name}</h3>
+                <p className={styles.serviceDesc}>
+                  {service.description || "Dịch vụ đẳng cấp."}
+                </p>
+                <div className={styles.servicePrice}>
+                  {formatPrice(service.price)} <span>VNĐ</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── STATS ── */}
+      <section className={styles.stats}>
+        <div className={styles.statItem}>
+          <div className={styles.statNum}>
+            10<span className={styles.statUnit}>K+</span>
+          </div>
+          <div className={styles.statLabel}>Khách hàng hài lòng</div>
+        </div>
+        <div className={styles.statItem}>
+          <div className={styles.statNum}>
+            15<span className={styles.statUnit}>+</span>
+          </div>
+          <div className={styles.statLabel}>Thợ cạo tay nghề cao</div>
+        </div>
+        <div className={styles.statItem}>
+          <div className={styles.statNum}>
+            5<span className={styles.statUnit}>+</span>
+          </div>
+          <div className={styles.statLabel}>Chi nhánh trên toàn quốc</div>
+        </div>
+        <div className={styles.statItem}>
+          <div className={styles.statNum}>
+            4.9<span className={styles.statUnit}>/5</span>
+          </div>
+          <div className={styles.statLabel}>Đánh giá trung bình</div>
+        </div>
+      </section>
+
+      {/* ── BARBERS ── */}
+      <section id="barbers" className={styles.barbers}>
+        <div className={styles.barbersHeader}>
+          <div className={styles.sectionLabel}>MASTER BARBERS</div>
+          <h2 className={styles.sectionTitle}>
+            Đội ngũ <em>Thợ Cạo</em>
+          </h2>
+        </div>
+        <div className={styles.barbersGrid}>
+          {hotBarbers.map((barber, index) => (
+            <div key={barber.idBarber} className={styles.barberCard}>
+              <div className={styles.barberPhoto}>
+                <img src={barber.avatar} alt={barber.name} />
+              </div>
+              <span className={styles.barberRole}>TOP #{index + 1}</span>
+              <div className={styles.barberOverlay}>
+                <h4 className={styles.barberName}>{barber.name}</h4>
+                <span className={styles.barberExp}>{barber.branch}</span>
+                <div className={styles.barberStats}>
+                  <span className={styles.barberBadge}>
+                    ⭐ {barber.rating}
+                  </span>
+                  <span className={styles.barberBadge}>
+                    {barber.totalBookings} lượt đặt
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
