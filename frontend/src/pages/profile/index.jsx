@@ -148,7 +148,7 @@ function Profile() {
 
   // Load danh sách kiểu tóc gợi ý
   useEffect(() => {
-    if (activeTab !== "analysis" || analysisHistory.length === 0) return;
+    if (activeTab !== "analysis" ) return;
 
     const loadSuggestions = async () => {
       setLoadingSuggestions(true);
@@ -579,14 +579,12 @@ function Profile() {
                     Lịch sử <em>Tư vấn AI</em>
                   </h2>
 
-                  {analysisHistory.length > 0 && (
                     <button
                       className={cx("tryon-btn")}
                       onClick={openTryOnModal}
                     >
                       Thử kiểu tóc AI ✂️
                     </button>
-                  )}
                 </div>
 
                 {analysisLoading ? (
@@ -839,30 +837,42 @@ function Profile() {
                     </div>
 
                     <div className={cx("results-grid")}>
-                      {tryOnResults.map((result, index) => (
-                        <div key={index} className={cx("resultCard")}>
-                          <img
-                            src={result.resultImageBase64}
-                            alt={result.hairstyleName || "Kết quả"}
-                          />
-
-                          <div className={cx("resultOverlay")}>
-                            <p>
-                              {result.hairstyleName || `Kiểu tóc ${index + 1}`}
-                            </p>
-
-                            <button
-                              type="button"
-                              className={cx("downloadMiniBtn")}
-                              onClick={() =>
-                                handleDownloadResult(result, index)
-                              }
-                            >
-                              ⬇
-                            </button>
+                      {tryOnResults.map((result, index) => {
+                        const matchedStyle = selectedHairstyles[index];
+                        return (
+                          <div key={index} className={cx("resultCard")}>
+                            <img
+                              src={result.resultImageBase64}
+                              alt={result.hairstyleName || "Kết quả"}
+                            />
+                            <div className={cx("resultOverlay")}>
+                              {matchedStyle?.coverImage && (
+                                <div className={cx("overlayOriginal")}>
+                                  <img
+                                    src={matchedStyle.coverImage}
+                                    alt={matchedStyle.name}
+                                  />
+                                </div>
+                              )}
+                              <div className={cx("overlayInfo")}>
+                                <p>
+                                  {result.hairstyleName ||
+                                    `Kiểu tóc ${index + 1}`}
+                                </p>
+                                <button
+                                  type="button"
+                                  className={cx("downloadMiniBtn")}
+                                  onClick={() =>
+                                    handleDownloadResult(result, index)
+                                  }
+                                >
+                                  ⬇
+                                </button>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
