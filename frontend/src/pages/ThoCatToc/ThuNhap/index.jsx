@@ -12,6 +12,7 @@ import {
 
 import { SalaryAPI } from "~/apis/salaryAPI";
 import { useAuth } from "~/context/AuthContext";
+import { useToast } from "~/context/ToastContext";
 
 const cx = classNames.bind(styles);
 
@@ -452,6 +453,7 @@ const originalBaseSalary = ps.originalBaseSalary
 // ═══════════════════════════════════════════════════════════════════════════
 function ThuNhap() {
   const { user } = useAuth();
+  const { showToast } = useToast();
   const [payslips,      setPayslips]      = useState([]);
   const [loading,       setLoading]       = useState(true);
   const [expandedId,    setExpandedId]    = useState(null);
@@ -483,12 +485,12 @@ function ThuNhap() {
         prev.map((ps) => ps.idSalary === id ? { ...ps, status: "Confirmed" } : ps)
       );
     } catch {
-      alert("Lỗi xác nhận!");
+      showToast({ text: "Lỗi xác nhận!", type: "error" });
     }
   };
 
   const handleSubmitDispute = async (id) => {
-    if (!disputeText.trim()) return alert("Vui lòng nhập lý do!");
+    if (!disputeText.trim()) return showToast({ text: "Vui lòng nhập lý do!", type: "error" });
     try {
       await SalaryAPI.disputeMyPayslip(id, disputeText);
       setPayslips((prev) =>
@@ -499,7 +501,7 @@ function ThuNhap() {
       setDisputeFormId(null);
       setDisputeText("");
     } catch {
-      alert("Lỗi gửi khiếu nại!");
+      showToast({ text: "Lỗi gửi khiếu nại!", type: "error" });
     }
   };
 

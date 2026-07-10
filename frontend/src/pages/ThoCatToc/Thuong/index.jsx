@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import styles from "./Thuong.module.scss";
 import { BarberAPI } from "~/apis/barberAPI";
 import { useAuth } from "~/context/AuthContext";
+import { useToast } from "~/context/ToastContext";
 import { 
   Loader2, Award, TrendingUp, Target, Coins, Gift, 
   CheckCircle2, ChevronRight, Crown, Users, Star, Wallet
@@ -17,6 +18,7 @@ const formatPercent = (num) => {
 
 const Thuong = () => {
   const { user, loading: isAuthLoading } = useAuth();
+  const { showToast } = useToast();
   const idBarber = user?.idUser;
 
   const [data, setData] = useState(null);
@@ -37,6 +39,7 @@ const Thuong = () => {
         setData(res);
       } catch (err) {
         console.error("Lỗi tải dữ liệu lương thưởng:", err);
+        showToast({ text: "Không thể tải dữ liệu lương thưởng. Vui lòng thử lại.", type: "error" });
       } finally {
         setLoading(false);
       }

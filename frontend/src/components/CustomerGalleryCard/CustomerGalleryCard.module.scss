@@ -1,61 +1,90 @@
-// Giữ nguyên phần .card
+/* CustomerGalleryCard.module.scss
+   NOULE Barber — Work Card
+   Design System: Editorial · Luxury Barber · Dark-Gold
+--------------------------------------------------------------- */
 
+// ─── Tokens ──────────────────────────────────────────────────
+$gold:        #C9A84C;
+$gold-hover:  #BA9A3E;
+$gold-dim:    #8A6A28;
+$gold-faint:  rgba(201, 168, 76, 0.15);
+$gold-border: rgba(201, 168, 76, 0.3);
+
+$ink:         #1A1612;
+$ink-2:       #2C2720;
+
+$card-bg:     #FFFFFF;
+$input-bg:    #F9F6F1;
+
+$border:      1px solid rgba(0, 0, 0, 0.07);
+$border-hover: 1px solid rgba(201, 168, 76, 0.5);
+
+$radius-sm:   6px;
+$radius-md:   10px;
+$radius-lg:   14px;
+
+$ff-serif:    Georgia, 'Times New Roman', serif;
+$transition:  0.15s;
+
+// ─── Card ────────────────────────────────────────────────────
 .card {
-  background: #fff;
-  border: 1px solid #e8e1dc;
-  border-radius: 10px;
+  background: $card-bg;
+  border: $border;
+  border-radius: $radius-lg;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: all 0.2s ease;
+  transition: border $transition, box-shadow $transition;
 
   &:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 4px 10px rgba(43, 35, 35, 0.12);
+    border: $border-hover;
+    box-shadow: 0 4px 16px rgba(26, 22, 18, 0.08);
   }
 }
 
-// Cần thiết lập overflow: hidden để chỉ hiển thị một ảnh
+// ─── Image Box ───────────────────────────────────────────────
 .imgBox {
   position: relative;
   width: 100%;
   aspect-ratio: 3 / 4;
-  overflow: hidden; /* QUAN TRỌNG: Ẩn các ảnh không ở vị trí hiện tại */
+  overflow: hidden;
+  background: $input-bg;
 }
 
-/* Vùng chứa các ảnh, cần rộng bằng Tổng số ảnh * 100% để hiển thị chúng trên 1 hàng */
 .photoContainer {
-  display: flex; /* Đặt các ảnh cạnh nhau */
+  display: flex;
   width: 100%;
   height: 100%;
-  /* Hiệu ứng trượt mượt mà */
-  transition: transform 0.4s ease-in-out; 
+  transition: transform 0.4s ease-in-out;
 }
 
-/* Mỗi ảnh sẽ rộng 100% của imgBox (vì photoContainer có display: flex) */
 .photo {
-  flex-shrink: 0; /* KHÔNG cho ảnh bị co lại */
+  flex-shrink: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-// Giữ nguyên .navBtn, .left, .right
-
+// ─── Navigation Buttons ──────────────────────────────────────
 .navBtn {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background: rgba(43, 35, 35, 0.4);
+  background: rgba(26, 22, 18, 0.4);
   color: #fff;
   border: none;
   border-radius: 50%;
-  padding: 6px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  z-index: 10; /* Đảm bảo nút nằm trên ảnh */
-  
+  z-index: 10;
+  transition: background $transition;
+
   &:hover {
-    background: rgba(43, 35, 35, 0.6);
+    background: rgba(26, 22, 18, 0.6);
   }
 }
 
@@ -67,7 +96,7 @@
   right: 8px;
 }
 
-/* --- Thêm Dot Indicators (Dấu chấm chỉ báo) --- */
+// ─── Dot Indicators ──────────────────────────────────────────
 .dotIndicators {
   position: absolute;
   bottom: 10px;
@@ -75,25 +104,26 @@
   transform: translateX(-50%);
   display: flex;
   gap: 6px;
-  z-index: 10; /* Đảm bảo nằm trên ảnh */
+  z-index: 10;
 }
 
 .dot {
   width: 7px;
   height: 7px;
-  background-color: rgba(255, 255, 255, 0.6); /* Màu trắng mờ cho chấm không hoạt động */
+  background-color: rgba(255, 255, 255, 0.5);
   border-radius: 50%;
   transition: background-color 0.3s ease;
   cursor: pointer;
+
+  &.active {
+    background-color: $gold;
+    transform: scale(1.15);
+  }
 }
 
-.dot.active {
-  background-color: #fff; /* Màu trắng đậm cho chấm hoạt động */
-  transform: scale(1.15);
-}
-
+// ─── Info ────────────────────────────────────────────────────
 .info {
-  padding: 10px;
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -101,23 +131,30 @@
 
 .customer {
   font-weight: 600;
-  font-size: 16px;
-  color: #3b2f2f;
+  font-size: 15px;
+  color: $ink;
+  margin: 0;
+  font-family: $ff-serif;
 }
 
 .barber {
-  font-size: 14px;
-  color: #5c4033;
+  font-size: 12px;
+  color: #888;
+  margin: 0;
 }
 
 .service {
-  font-size: 14px;
-  color: #5c4033;
+  font-size: 12px;
+  color: $gold-dim;
+  margin: 0;
+  font-weight: 500;
 }
 
 .desc {
-  font-size: 13px;
-  color: #7a6b6b;
+  font-size: 12px;
+  color: #999;
+  margin: 4px 0 0;
+  line-height: 1.5;
 }
 
 .meta {
@@ -125,8 +162,10 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 13px;
-  color: #7a6b6b;
+  font-size: 11px;
+  color: #bbb;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  padding-top: 8px;
 }
 
 .stats {

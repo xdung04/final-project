@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import classNames from "classnames/bind";
 import styles from "./ThoCatToc.module.scss";
@@ -15,10 +15,17 @@ import {
   ChevronLeft, 
   ChevronRight,
   Scissors,
-  Search
+  Search,
+  FileText,
+  TrendingUp,
+  Clock,
+  CheckCheck,
+  CalendarCheck,
+  DollarSign,
+  Megaphone,
+  Inbox
 } from "lucide-react";
 
-import StatCard from "~/components/StatCard";
 import LichHen from "./LichHen";
 import HoSoCaNhan from "./HoSoCaNhan";
 import VideoTayNghe from "./VideoTayNghe";
@@ -26,38 +33,50 @@ import SanPham from "./SanPham";
 import Thuong from "./Thuong";
 import ThuNhap from "./ThuNhap"; 
 import HopDong from "./HopDong"; 
-import { fetchBarberDashboardStats } from "~/services/barberService";
 import { fetchMyNotifications, markNotificationAsRead } from "~/services/notificationService";
 import { useAuth } from "~/context/AuthContext";
 
 const cx = classNames.bind(styles);
 
-const formatCurrency = (num) => {
-    const value = parseFloat(num);
-    if (isNaN(value)) return "0đ";
-    return Math.round(value).toLocaleString("vi-VN") + "đ";
-};
-
 const menuItems = [
-    { id: "lichhen", label: "Lịch hẹn hôm nay", path: "/tho-cat-toc", icon: <Calendar size={15} strokeWidth={2.2} /> },
-    { id: "hoso", label: "Hồ sơ cá nhân", path: "/tho-cat-toc/profile", icon: <User size={15} strokeWidth={2.2} /> },
-    { id: "video", label: "Video tay nghề", path: "/tho-cat-toc/videos", icon: <MonitorPlay size={15} strokeWidth={2.2} /> },
-    { id: "sanpham", label: "Sản phẩm", path: "/tho-cat-toc/products", icon: <ShoppingBag size={15} strokeWidth={2.2} /> },
-    { id: "thuong", label: "Thưởng", path: "/tho-cat-toc/rewards", icon: <Award size={15} strokeWidth={2.2} /> },
-    { id: "thunhap", label: "Thu nhập", path: "/tho-cat-toc/income", icon: <Wallet size={15} strokeWidth={2.2} /> },
-    { id: "hopdong", label: "Hợp đồng", path: "/tho-cat-toc/contracts", icon: <Wallet size={15} strokeWidth={2.2} /> },
+  { id: "lichhen", label: "Lịch hẹn", path: "/tho-cat-toc", icon: <Calendar size={20} strokeWidth={1.5} />, category: "dashboard" },
+  { id: "thunhap", label: "Thu nhập", path: "/tho-cat-toc/income", icon: <Wallet size={20} strokeWidth={1.5} />, category: "dashboard" },
+  { id: "thuong", label: "Thưởng", path: "/tho-cat-toc/rewards", icon: <Award size={20} strokeWidth={1.5} />, category: "dashboard" },
+  { id: "hoso", label: "Hồ sơ cá nhân", path: "/tho-cat-toc/profile", icon: <User size={20} strokeWidth={1.5} />, category: "profile" },
+  { id: "video", label: "Video tay nghề", path: "/tho-cat-toc/videos", icon: <MonitorPlay size={20} strokeWidth={1.5} />, category: "profile" },
+  { id: "hopdong", label: "Hợp đồng", path: "/tho-cat-toc/contracts", icon: <FileText size={20} strokeWidth={1.5} />, category: "profile" },
+  { id: "sanpham", label: "Sản phẩm", path: "/tho-cat-toc/products", icon: <ShoppingBag size={20} strokeWidth={1.5} />, category: "utilities" },
 ];
 
+// ─── Helpers ────────────────────────────────────────────────────────
+const NOTI_ICONS = {
+  BOOKING: <CalendarCheck size={14} />,
+  SALARY:  <DollarSign size={14} />,
+  SYSTEM:  <Megaphone size={14} />,
+};
+
+function formatTimeAgo(dateStr) {
+  if (!dateStr) return "";
+  const now = new Date();
+  const date = new Date(dateStr);
+  const diffMs = now - date;
+  const diffMin = Math.floor(diffMs / 60000);
+  const diffHour = Math.floor(diffMs / 3600000);
+  const diffDay = Math.floor(diffMs / 86400000);
+  if (diffMin < 1) return "Vừa xong";
+  if (diffMin < 60) return `${diffMin} phút trước`;
+  if (diffHour < 24) return `${diffHour} giờ trước`;
+  if (diffDay < 7) return `${diffDay} ngày trước`;
+  return date.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
+}
+
 function ThoCatToc() {
-    const { user,loading: isAuthLoading } = useAuth();
+    const { user, loading: isAuthLoading } = useAuth();
     const location = useLocation();
     const navigate = useNavigate();
     
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     
-    const [stats, setStats] = useState(null);
-    const [loadingStats, setLoadingStats] = useState(true);
-
     const [showNotify, setShowNotify] = useState(false);
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
@@ -66,11 +85,28 @@ function ThoCatToc() {
     const notifyRef = useRef(null);
     const dialogRef = useRef(null);
 
-    const idBarber = user?.idUser;
     const barberName = user?.fullName || "Barber";
     const avatarLetter = barberName.charAt(0).toUpperCase();
 
-    const currentMenuItem = menuItems.find(item => item.path === location.pathname) || menuItems[0];
+    const menuCategories = useMemo(() => {
+      const categories = {
+        dashboard: { label: "Dashboard", items: [] },
+        profile: { label: "Hồ Sơ", items: [] },
+        utilities: { label: "Tiện Ích", items: [] }
+      };
+      
+      menuItems.forEach(item => {
+        if (categories[item.category]) {
+          categories[item.category].items.push(item);
+        }
+      });
+      return categories;
+    }, []);
+
+    const currentMenuItem = useMemo(() => {
+      return menuItems.find(item => item.path === location.pathname) || menuItems[0];
+    }, [location.pathname]);
+
     const activeId = currentMenuItem.id;
 
     const handleMenuClick = (path) => {
@@ -78,35 +114,26 @@ function ThoCatToc() {
     };
 
     useEffect(() => {
-        if (isAuthLoading || !idBarber ) {
-            if (!isAuthLoading) setLoadingStats(false);
-            return;
+      let isMounted = true;
+
+      const loadData = async () => {
+        try {
+          const notifyData = await fetchMyNotifications();
+          if (notifyData && isMounted) {
+            setUnreadCount(notifyData.unreadCount || 0);
+            setNotifications(notifyData.notifications || []);
+          }
+        } catch (error) {
+          console.error("Lỗi tải thông báo:", error);
         }
+      };
 
-        const loadData = async () => {
-            setLoadingStats(true);
-            try {
-                const [statsData, notifyData] = await Promise.all([
-                    fetchBarberDashboardStats(idBarber),
-                    fetchMyNotifications()
-                ]);
-                
-                setStats(statsData);
-                
-                if (notifyData) {
-                    setUnreadCount(notifyData.unreadCount || 0);
-                    setNotifications(notifyData.notifications || []);
-                }
-            } catch (error) {
-                console.error("Lỗi tải data dashboard:", error);
-                setStats(null);
-            } finally {
-                setLoadingStats(false);
-            }
-        };
+      loadData();
 
-        loadData();
-    }, [idBarber, isAuthLoading]);
+      return () => {
+        isMounted = false;
+      };
+    }, []);
 
     useEffect(() => {
         function handleClickOutside(event) {
@@ -137,22 +164,28 @@ function ThoCatToc() {
         }
     };
 
-    if (isAuthLoading || loadingStats) {
-        return (
-            <div className={cx("loadingWrapper")}>
-                <div className={cx("loader")}></div>
-                <p>Đang chuẩn bị không gian làm việc...</p>
-            </div>
-        );
-    }
+    const handleMarkRead = async (e, noti) => {
+      e.stopPropagation();
+      if (!noti.isRead) {
+        const success = await markNotificationAsRead(noti.idNotification);
+        if (success) {
+          setNotifications((prev) =>
+            prev.map((n) =>
+              n.idNotification === noti.idNotification ? { ...n, isRead: true } : n
+            )
+          );
+          setUnreadCount((prev) => Math.max(0, prev - 1));
+        }
+      }
+    };
 
     return (
         <div className={cx("barberLayout")}>
             {/* ====== SIDEBAR ====== */}
             <aside className={cx("sidebar", { collapsed: sidebarCollapsed })}>
                 <div className={cx("sidebarHeader")}>
-                    <div className={cx("logoWrapper")}>
-                        <Scissors size={18} strokeWidth={2.2} className={cx("logoIcon")} />
+                    <div className={cx("sidebarLogo")}>
+                        <Scissors size={20} />
                     </div>
                     {!sidebarCollapsed && (
                         <div className={cx("sidebarBrand")}>
@@ -163,32 +196,26 @@ function ThoCatToc() {
                 </div>
 
                 <nav className={cx("sidebarNav")}>
-                    <div className={cx("navGroup")}>
-                        {menuItems.map(item => (
-                            <button
-                                key={item.id}
-                                onClick={() => handleMenuClick(item.path)}
-                                className={cx("navItem", { active: activeId === item.id })}
-                                title={sidebarCollapsed ? item.label : ""}
-                            >
-                                <span className={cx("navIcon")}>{item.icon}</span>
-                                {!sidebarCollapsed && (
-                                    <span className={cx("navLabel")}>{item.label}</span>
-                                )}
-                            </button>
+                  {Object.entries(menuCategories).map(([key, category]) => {
+                    if (category.items.length === 0) return null;
+                    return (
+                      <div key={key} className={cx("navGroup")}>
+                        {!sidebarCollapsed && <div className={cx("navGroupLabel")}>{category.label}</div>}
+                        {category.items.map(item => (
+                          <button
+                            key={item.id}
+                            onClick={() => handleMenuClick(item.path)}
+                            className={cx("navItem", { active: activeId === item.id })}
+                            title={sidebarCollapsed ? item.label : ""}
+                          >
+                            <span className={cx("navIcon")}>{item.icon}</span>
+                            {!sidebarCollapsed && <span className={cx("navLabel")}>{item.label}</span>}
+                          </button>
                         ))}
-                    </div>
+                      </div>
+                    );
+                  })}
                 </nav>
-
-                {!sidebarCollapsed && (
-                    <div className={cx("sidebarFooter")}>
-                        <div className={cx("footerAvatar")}>{avatarLetter}</div>
-                        <div className={cx("footerInfo")}>
-                            <span className={cx("footerName")}>{barberName}</span>
-                            <span className={cx("footerRole")}>Senior Barber</span>
-                        </div>
-                    </div>
-                )}
 
                 <button
                     onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
@@ -205,7 +232,7 @@ function ThoCatToc() {
                     <div className={cx("headerLeft")}>
                         <h1 className={cx("pageTitle")}>{currentMenuItem.label}</h1>
                         <div className={cx("breadcrumb")}>
-                            <span>Workspace</span>
+                            <span>Stylist Portal</span>
                             <span className={cx("separator")}>/</span>
                             <span className={cx("current")}>{currentMenuItem.label}</span>
                         </div>
@@ -213,7 +240,7 @@ function ThoCatToc() {
                     
                     <div className={cx("headerRight")}>
                         <button className={cx("iconBtn")}>
-                            <Search size={15} strokeWidth={2} />
+                            <Search size={18} strokeWidth={1.5} />
                         </button>
 
                         {/* === THÔNG BÁO WRAPPER === */}
@@ -222,7 +249,7 @@ function ThoCatToc() {
                                 className={cx("iconBtn", "bellTrigger")}
                                 onClick={() => setShowNotify((prev) => !prev)}
                             >
-                                <Bell size={15} strokeWidth={2} />
+                                <Bell size={18} strokeWidth={1.5} />
                                 {unreadCount > 0 && (
                                     <span className={cx("badge")}>
                                         {unreadCount > 99 ? "99+" : unreadCount}
@@ -232,21 +259,42 @@ function ThoCatToc() {
 
                             {showNotify && (
                                 <div className={cx("notifyDropdown")}>
-                                    <div className={cx("notifyHeader")}>Thông báo</div>
+                                    <div className={cx("notifyHeader")}>
+                                        <span>Thông báo</span>
+                                        {unreadCount > 0 && <span className={cx("notifyHeaderBadge")}>{unreadCount} mới</span>}
+                                    </div>
                                     <div className={cx("notifyList")}>
                                         {notifications.length === 0 ? (
-                                            <div className={cx("notifyItem")}>Không có thông báo mới</div>
+                                            <div className={cx("notifyEmpty")}>
+                                                <Inbox size={32} />
+                                                <p>Không có thông báo</p>
+                                            </div>
                                         ) : (
-                                            notifications.map((noti) => (
+                                            notifications.map((noti) => {
+                                              const type = noti.type || "SYSTEM";
+                                              return (
                                                 <div
                                                     key={noti.idNotification}
                                                     className={cx("notifyItem", { unread: !noti.isRead })}
                                                     onClick={() => handleNotificationClick(noti)}
                                                 >
-                                                    <span className={cx("notifyDot")}></span>
-                                                    <p className={cx("notifyTitle")}>{noti.title}</p>
+                                                    <span className={cx("notifyIcon", type.toLowerCase())}>
+                                                      {NOTI_ICONS[type] || NOTI_ICONS.SYSTEM}
+                                                    </span>
+                                                    <div className={cx("notifyBody")}>
+                                                        <p className={cx("notifyTitle")}>{noti.title}</p>
+                                                        <span className={cx("notifyTime")}>
+                                                          <Clock size={10} /> {formatTimeAgo(noti.createdAt)}
+                                                        </span>
+                                                    </div>
+                                                    {!noti.isRead && (
+                                                      <button className={cx("notifyMarkBtn")} onClick={(e) => handleMarkRead(e, noti)} title="Đánh dấu đã đọc">
+                                                        <CheckCheck size={14} />
+                                                      </button>
+                                                    )}
                                                 </div>
-                                            ))
+                                              );
+                                            })
                                         )}
                                     </div>
                                 </div>
@@ -255,21 +303,15 @@ function ThoCatToc() {
 
                         <div className={cx("divider")}></div>
 
-                        <div className={cx("userInfo")}>
-                            <div className={cx("userText")}>
-                                <span className={cx("greeting")}>Chào ngày mới,</span>
-                                <strong className={cx("name")}>{barberName}</strong>
-                            </div>
-                            <div className={cx("avatar")}>
-                                {avatarLetter}
-                            </div>
+                        <div className={cx("adminInfo")}>
+                            <div className={cx("adminAvatar")}>{avatarLetter}</div>
+                            {!sidebarCollapsed && <span className={cx("adminName")}>{barberName}</span>}
                         </div>
                     </div>
                 </header>
 
                 {/* Content Area */}
                 <main className={cx("contentArea")}>
-
                     <div className={cx("tabContainer")}>
                         {activeId === "lichhen" && <LichHen />}
                         {activeId === "hoso" && <HoSoCaNhan />}
@@ -286,6 +328,10 @@ function ThoCatToc() {
             {selectedNotification && (
                 <div className={cx("customDialogOverlay")} onClick={() => setSelectedNotification(null)}>
                     <div ref={dialogRef} className={cx("customDialog")} onClick={(e) => e.stopPropagation()}>
+                        <div className={cx("dialogTypeBadge")}>
+                          {NOTI_ICONS[selectedNotification.type] || NOTI_ICONS.SYSTEM}
+                          <span>{selectedNotification.type || "HỆ THỐNG"}</span>
+                        </div>
                         <h3 className={cx("dialogTitle")}>{selectedNotification.title}</h3>
                         {selectedNotification.content ? (
                             <p className={cx("dialogContent")}>{selectedNotification.content}</p>

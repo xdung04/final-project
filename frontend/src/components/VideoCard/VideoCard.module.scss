@@ -1,25 +1,48 @@
-/* VideoCard.module.scss */
+/* VideoCard.module.scss
+   NOULE Barber — Video Card
+   Design System: Editorial · Luxury Barber · Dark-Gold
+--------------------------------------------------------------- */
+
+$gold:        #C9A84C;
+$gold-hover:  #BA9A3E;
+$gold-dim:    #8A6A28;
+$gold-faint:  rgba(201, 168, 76, 0.15);
+$gold-border: rgba(201, 168, 76, 0.3);
+
+$ink:         #1A1612;
+$ink-2:       #2C2720;
+
+$card-bg:     #FFFFFF;
+$input-bg:    #F9F6F1;
+
+$border:      1px solid rgba(0, 0, 0, 0.07);
+$border-hover: 1px solid rgba(201, 168, 76, 0.5);
+
+$radius-sm:   6px;
+$radius-md:   10px;
+$radius-lg:   14px;
+
+$transition:  0.2s;
 
 .reelCard {
-  background: var(--charcoal, #1a1a1a);
-  border: 1px solid rgba(184, 150, 106, 0.1); /* Viền vàng cực mờ */
-  border-radius: 12px; /* Bo góc đồng bộ với Grid */
+  background: $card-bg;
+  border: $border;
+  border-radius: $radius-lg;
   overflow: hidden;
   cursor: pointer;
-  position: relative;
   display: block;
-  transition: all 0.3s ease;
+  transition: border $transition, box-shadow $transition;
 
   &:hover {
-    border-color: var(--gold, #b8966a);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.6), 0 0 15px rgba(184, 150, 106, 0.15);
+    border: $border-hover;
+    box-shadow: 0 4px 16px rgba(26, 22, 18, 0.08);
     
     .hoverOverlay {
-      opacity: 1; /* Hiển thị overlay khi hover */
+      opacity: 1;
     }
 
     .videoThumb {
-      transform: scale(1.05); /* Zoom nhẹ ảnh tạo cảm giác sống động */
+      transform: scale(1.05);
     }
   }
 }
@@ -27,11 +50,10 @@
 .videoBox {
   position: relative;
   width: 100%;
-  padding-top: 177.77%; /* Tỷ lệ 16:9 dọc chuẩn Reels/TikTok */
-  background: #000;
+  padding-top: 177.77%;
+  background: $input-bg;
   overflow: hidden;
 
-  /* Lớp phủ gradient mờ ở đáy để đảm bảo số View luôn dễ đọc trên mọi nền ảnh */
   &::after {
     content: '';
     position: absolute;
@@ -39,7 +61,7 @@
     left: 0;
     width: 100%;
     height: 35%;
-    background: linear-gradient(to top, rgba(10, 10, 10, 0.9), transparent);
+    background: linear-gradient(to top, rgba(26, 22, 18, 0.85), transparent);
     z-index: 1;
     pointer-events: none;
   }
@@ -55,7 +77,7 @@
   transition: transform 0.5s ease;
 }
 
-/* --- 1. VIEW COUNT (Cố định, góc dưới trái) --- */
+// ─── View Count (bottom left) ─────────────────────────────────
 .viewCountFixed {
   position: absolute;
   bottom: 12px;
@@ -64,29 +86,28 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  color: var(--white, #fafaf8);
-  font-size: 13px;
+  color: #F5F0E8;
+  font-size: 12px;
   font-weight: 500;
-  font-family: var(--ff-body, 'DM Sans', sans-serif);
 }
 
 .viewIcon {
-  color: var(--gold, #b8966a); /* Icon mắt màu Vàng đồng */
+  color: $gold;
 }
 
-/* --- 2. HOVER OVERLAY (Like & Comment) --- */
+// ─── Hover Overlay ────────────────────────────────────────────
 .hoverOverlay {
   position: absolute;
   inset: 0;
   z-index: 10;
-  background: rgba(10, 10, 10, 0.65); /* Nền đen Than chì mờ */
-  backdrop-filter: blur(2px); /* Làm mờ nhẹ background phía sau */
+  background: rgba(26, 22, 18, 0.65);
+  backdrop-filter: blur(2px);
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 24px;
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity $transition;
 }
 
 .statItem {
@@ -97,27 +118,26 @@
 }
 
 .statIcon {
-  color: var(--gold, #b8966a); /* Icon tim & cmt màu vàng */
+  color: $gold;
 }
 
 .statCount {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
-  color: var(--white, #fff);
-  font-family: var(--ff-body, 'DM Sans', sans-serif);
+  color: #fff;
 }
 
-/* --- 3. DURATION (Góc trên phải) --- */
+// ─── Duration ─────────────────────────────────────────────────
 .duration {
   position: absolute;
   top: 10px;
   right: 10px;
-  background: rgba(10, 10, 10, 0.75);
-  color: var(--gold, #b8966a);
-  border: 1px solid rgba(184, 150, 106, 0.3);
+  background: rgba(26, 22, 18, 0.75);
+  color: $gold;
+  border: 1px solid $gold-border;
   font-size: 11px;
   padding: 4px 8px;
-  border-radius: 6px;
+  border-radius: $radius-sm;
   z-index: 11;
   font-weight: 600;
   letter-spacing: 0.5px;

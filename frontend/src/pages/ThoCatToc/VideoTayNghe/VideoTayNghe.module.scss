@@ -1,83 +1,133 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap');
+/* VideoTayNghe.module.scss
+   NOULE Barber — Video Tay Nghề
+   Design System: Editorial · Luxury Barber · Dark-Gold
+--------------------------------------------------------------- */
 
-:root {
-  --black:    #0a0a0a;
-  --charcoal: #151515;
-  --graphite: #1f1f1f;
-  --cream:    #fdfbf8;
-  --gold:     #b8966a;
-  --gold-dark:#967a54;
-  --text-dim: #8a8580;
-  --border:   rgba(184, 150, 106, 0.25);
+// ─── Tokens ──────────────────────────────────────────────────
+$gold:        #C9A84C;
+$gold-hover:  #BA9A3E;
+$gold-dim:    #8A6A28;
+$gold-faint:  rgba(201, 168, 76, 0.15);
+$gold-border: rgba(201, 168, 76, 0.3);
 
-  --ff-serif:  'Playfair Display', Georgia, serif;
-  --ff-display:'Bebas Neue', sans-serif;
-  --ff-body:   'DM Sans', sans-serif;
-}
+$ink:         #1A1612;
+$ink-2:       #2C2720;
+$ink-text:    #F5F0E8;
+$ink-muted:   rgba(245, 240, 232, 0.5);
 
-/* --- CONTAINER CHÍNH --- */
-.container {
-  padding: 25px;
-  font-family: var(--ff-body);
-  color: var(--cream);
-  background: var(--charcoal);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-  min-height: calc(100vh - 100px); /* Đảm bảo chiều cao để fill đẹp */
-}
+$card-bg:     #FFFFFF;
+$input-bg:    #F9F6F1;
+$page-bg:     #F7F4EF;
 
-/* --- HEADER QUẢN LÝ --- */
-.headerInfo {
+$border:      1px solid rgba(0, 0, 0, 0.07);
+$border-hover: 1px solid rgba(201, 168, 76, 0.5);
+
+$radius-sm:   6px;
+$radius-md:   10px;
+$radius-lg:   14px;
+
+$ff-serif:    Georgia, 'Times New Roman', serif;
+$transition:  0.15s;
+
+// ─── Loading / Empty ─────────────────────────────────────────
+.loadingState,
+.emptyState {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 30px;
-  border-bottom: 1px dashed var(--border);
-  padding-bottom: 20px;
-}
-
-.title {
-  font-family: var(--ff-serif);
-  font-size: 26px;
-  font-weight: 700;
-  color: var(--gold);
-  margin: 0 0 8px 0;
-  letter-spacing: 0.5px;
-}
-
-.subtitle {
-  font-size: 14px;
-  color: var(--text-dim);
-  margin: 0;
-}
-
-/* --- NÚT UPLOAD --- */
-.uploadBtn {
-  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
-  background: var(--graphite);
-  color: var(--gold);
-  border: 1px solid var(--gold-dark);
-  padding: 10px 20px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  font-family: var(--ff-body);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  transition: all 0.3s ease;
+  justify-content: center;
+  padding: 80px 20px;
+  background: $card-bg;
+  border: $border;
+  border-radius: $radius-lg;
+  text-align: center;
 
-  &:hover {
-    background: var(--gold);
-    color: var(--black);
-    box-shadow: 0 0 15px rgba(184, 150, 106, 0.4);
+  .spinner {
+    color: $gold;
+    animation: spin 0.9s linear infinite;
+    margin-bottom: 8px;
+  }
+
+  .emptyIcon {
+    color: #ccc;
+    margin-bottom: 8px;
+  }
+
+  p {
+    font-size: 13px;
+    color: #bbb;
+    font-style: italic;
+    margin: 0;
   }
 }
 
-/* --- KHU VỰC HIỂN THỊ --- */
+// ─── Container ───────────────────────────────────────────────
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  color: $ink;
+}
+
+// ─── Header Info — dark hero card ────────────────────────────
+.headerInfo {
+  background: $ink;
+  border: 1px solid $gold-border;
+  border-radius: $radius-lg;
+  padding: 24px 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.title {
+  font-family: $ff-serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: $ink-text;
+  margin: 0 0 6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  .titleIcon { color: $gold; }
+}
+
+.subtitle {
+  font-size: 11px;
+  color: $ink-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin: 0;
+}
+
+// ─── Upload Button ───────────────────────────────────────────
+.uploadBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: $gold;
+  color: $ink;
+  border: none;
+  padding: 10px 20px;
+  border-radius: $radius-md;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: background $transition;
+  white-space: nowrap;
+  text-transform: uppercase;
+
+  &:hover {
+    background: $gold-hover;
+  }
+
+  svg { flex-shrink: 0; }
+}
+
+// ─── Grid Container ──────────────────────────────────────────
 .gridContainer {
   position: relative;
 }
@@ -85,9 +135,8 @@
 .grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
+  gap: 16px;
 
-  /* Responsive cho các màn hình nhỏ hơn */
   @media (max-width: 1200px) {
     grid-template-columns: repeat(3, 1fr);
   }
@@ -99,37 +148,8 @@
   }
 }
 
-/* --- TRẠNG THÁI LOADING & TRỐNG --- */
-.loadingState, .emptyState {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 80px 20px;
-  background: var(--graphite);
-  border: 1px dashed var(--border);
-  border-radius: 4px;
-  color: var(--gold);
-  text-align: center;
-  
-  p {
-    margin-top: 15px;
-    font-size: 15px;
-    color: var(--text-dim);
-  }
-}
-
-.spinner {
-  animation: spin 1s linear infinite;
-  color: var(--gold);
-}
-
-.emptyIcon {
-  color: var(--gold-dark);
-  opacity: 0.5;
-}
-
+// ─── Animations ──────────────────────────────────────────────
 @keyframes spin {
   from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  to   { transform: rotate(360deg); }
 }

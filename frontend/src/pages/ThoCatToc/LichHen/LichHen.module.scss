@@ -1,6 +1,6 @@
 // LichHen.module.scss
 // Barber — Lịch Hẹn | NOULE Barber
-// Design: NOULE gold/dark system
+// Design: ledger-timeline (NOULE gold/dark system)
 
 $gold:        #C9A84C;
 $gold-hover:  #BA9A3E;
@@ -25,7 +25,10 @@ $radius-md:   10px;
 $radius-lg:   14px;
 $radius-xl:   18px;
 
-// ── Loading / Empty ───────────────────────────────────────────────────────────
+$green: #3B9B5E;
+$blue:  #1A73E8;
+
+// ── Loading / Empty ────────────────────────────────────────────
 .loadingContainer,
 .emptyContainer {
   display: flex;
@@ -56,11 +59,11 @@ $radius-xl:   18px;
   to   { transform: rotate(360deg); }
 }
 
-// ── Container ─────────────────────────────────────────────────────────────────
+// ── Container ───────────────────────────────────────────────────
 .container {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
   background: $page-bg;
   font-family: inherit;
   color: $ink;
@@ -72,13 +75,13 @@ $radius-xl:   18px;
   to   { opacity: 1; transform: translateY(0); }
 }
 
-// ── Header (khớp TongQuan .pageHead) ─────────────────────────────────────────
+// ── Header ────────────────────────────────────────────────────
 .header {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
   padding-bottom: 22px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid $border-md;
   flex-shrink: 0;
 }
 
@@ -91,7 +94,7 @@ $radius-xl:   18px;
   font-family: Georgia, 'Times New Roman', serif;
 }
 
-// ── View Select ───────────────────────────────────────────────────────────────
+// ── View Select ─────────────────────────────────────────────────
 .select {
   padding: 7px 10px;
   font-size: 12px;
@@ -109,25 +112,31 @@ $radius-xl:   18px;
   &:hover, &:focus { border-color: $gold; }
 }
 
-// ── Navigation (date picker) ──────────────────────────────────────────────────
-.nav {
+// ── Nav bar: date navigator + day stats, dark ledger header ─────
+.navBar {
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
   gap: 16px;
-  background: $card-bg;
-  border: 1px solid $border-md;
+  background: $ink;
   border-radius: $radius-lg;
-  padding: 10px 18px;
+  padding: 14px 22px;
+}
+
+.navDate {
+  display: flex;
+  align-items: center;
+  gap: 14px;
 }
 
 .navBtn {
-  width: 32px;
-  height: 32px;
-  border-radius: $radius-sm;
-  border: 1px solid $border-md;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.18);
   background: transparent;
-  color: #aaa;
+  color: $gold;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -136,33 +145,114 @@ $radius-xl:   18px;
   flex-shrink: 0;
 
   &:hover {
-    background: $ink;
-    color: $gold;
-    border-color: $ink;
+    background: $gold-faint;
+    border-color: $gold;
   }
 }
 
-.rangeText {
-  font-size: 14px;
-  font-weight: 600;
-  color: $ink;
-  min-width: 180px;
+.dateBlock {
   text-align: center;
-  font-family: Georgia, 'Times New Roman', serif;
-  letter-spacing: 0.02em;
+  min-width: 170px;
 }
 
-// ── Day View — List ───────────────────────────────────────────────────────────
-.list {
+.dateValue {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
-  max-height: 560px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: $ink-text;
+  letter-spacing: 0.01em;
+
+  svg { color: $gold; }
+}
+
+.dateWeekday {
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: $ink-muted;
+  margin-top: 3px;
+}
+
+.navStats {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+}
+
+.statItem {
+  text-align: center;
+  min-width: 44px;
+}
+
+.statValue {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 19px;
+  font-weight: 700;
+  color: $ink-text;
+
+  &.total    { color: $gold; }
+  &.done     { color: $green; }
+  &.progress { color: $blue; }
+}
+
+.statLabel {
+  font-size: 10px;
+  color: $ink-muted;
+  margin-top: 2px;
+  white-space: nowrap;
+}
+
+// ── Day view — Timeline ───────────────────────────────────────
+.timeline {
+  position: relative;
+  padding-top: 2px;
+
+  // the vertical rail every card's dot lines up against
+  &::before {
+    content: "";
+    position: absolute;
+    top: 8px;
+    bottom: 22px;
+    left: 78px;
+    width: 1px;
+    background: $border-md;
+  }
+
+  max-height: 620px;
   overflow-y: auto;
   padding-right: 2px;
 
   &::-webkit-scrollbar       { width: 3px; }
   &::-webkit-scrollbar-thumb { background: $border-md; border-radius: 10px; }
+}
+
+.nowMarker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: 96px;
+  margin-top: -2px;
+  margin-bottom: 12px;
+
+  .nowLine {
+    flex: 1;
+    border-top: 1px dashed $gold;
+  }
+
+  .nowLabel {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    color: $gold;
+    background: $ink;
+    padding: 3px 11px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
 }
 
 .emptyState {
@@ -176,7 +266,7 @@ $radius-xl:   18px;
   border-radius: $radius-lg;
 }
 
-// ── Week View — Grid ──────────────────────────────────────────────────────────
+// ── Week View — Grid ──────────────────────────────────────────
 .weekGrid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -199,7 +289,6 @@ $radius-xl:   18px;
   &:hover { border-color: $gold-border; }
 }
 
-// ── Week Column Header (dark — giống sectionHead TongQuan) ───────────────────
 .weekHeader {
   padding: 9px 6px;
   background: $ink;
