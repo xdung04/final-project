@@ -236,7 +236,12 @@ function Reel() {
   };
 
   const handleNext = () => {
-    if (currentIndex + 1 >= reels.length) return;
+    if (currentIndex + 1 >= reels.length) {
+      if (hasMore && !loading) {
+        loadMore();
+      }
+      return;
+    }
     const next = currentIndex + 1;
     setCurrentIndex(next);
     scrollToVideo(next);
@@ -507,7 +512,7 @@ function Reel() {
                     onNavDown={handleNext}
                     onHashtagClick={handleHashtagSearch}
                     hasPrev={currentIndex > 0}
-                    hasNext={currentIndex + 1 < reels.length}
+                    hasNext={currentIndex + 1 < reels.length || (hasMore && !loading)}
                   />
                 </div>
               </div>
