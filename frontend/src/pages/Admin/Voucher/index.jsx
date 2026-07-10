@@ -1,16 +1,6 @@
 import { useState, useEffect } from "react";
 import classNames from "classnames/bind";
-import { 
-  Plus, 
-  Ticket, 
-  Tag, 
-  Users, 
-  Megaphone, 
-  Edit2, 
-  Trash2,
-  Calendar,
-  Layers
-} from "lucide-react";
+import { Plus, Ticket, Tag, Users, Megaphone, Edit2, Trash2, Calendar, Layers } from "lucide-react";
 import { useAuth } from "~/context/AuthContext";
 import { useToast } from "~/context/ToastContext";
 import { fetchAllVouchers, deleteVoucher } from "~/services/voucherService";
@@ -55,18 +45,11 @@ function renderDiscountValue(voucher) {
 // Thiết kế Card Voucher dạng cuống vé Barber cao cấp
 function VoucherCard({ voucher, color, onEdit, onDelete }) {
   return (
-    <div 
-      className={cx("voucherTicket", { inactive: !voucher.is_active })}
-      style={{ "--ticket-color": color }}
-    >
+    <div className={cx("voucherTicket", { inactive: !voucher.is_active })} style={{ "--ticket-color": color }}>
       {/* Khối trái: Giá trị giảm giá đã được xử lý làm đẹp */}
       <div className={cx("ticketLeft")}>
-        <div className={cx("discountBadge")}>
-          {renderDiscountValue(voucher)}
-        </div>
-        <div className={cx("conditionText")}>
-          Đơn tối thiểu: {formatMoney(voucher.min_invoice_amount)}
-        </div>
+        <div className={cx("discountBadge")}>{renderDiscountValue(voucher)}</div>
+        <div className={cx("conditionText")}>Đơn tối thiểu: {formatMoney(voucher.min_invoice_amount)}</div>
       </div>
 
       {/* Đường xé vé răng cưa ở giữa */}
@@ -84,16 +67,19 @@ function VoucherCard({ voucher, color, onEdit, onDelete }) {
             {voucher.is_active ? "Đang chạy" : "Tạm dừng"}
           </span>
         </div>
-        
-        {voucher.description && (
-          <p className={cx("ticketDesc")}>{voucher.description}</p>
-        )}
+
+        {voucher.description && <p className={cx("ticketDesc")}>{voucher.description}</p>}
 
         <div className={cx("ticketFooter")}>
           <div className={cx("metaInfo")}>
             {voucher.type === "CAMPAIGN" && (
               <div className={cx("metaItem")}>
-                <span>Đã phát: <strong>{voucher.issued_count}/{voucher.total_quantity ?? "∞"}</strong></span>
+                <span>
+                  Đã phát:{" "}
+                  <strong>
+                    {voucher.issued_count}/{voucher.total_quantity ?? "∞"}
+                  </strong>
+                </span>
               </div>
             )}
             <div className={cx("metaItem", "expiry")}>
@@ -123,7 +109,6 @@ function VoucherCard({ voucher, color, onEdit, onDelete }) {
 }
 
 function Voucher() {
-
   const { showToast } = useToast();
 
   const [vouchers, setVouchers] = useState([]);
@@ -146,7 +131,9 @@ function Voucher() {
     }
   };
 
-  useEffect(() => { loadVouchers(); }, []);
+  useEffect(() => {
+    loadVouchers();
+  }, []);
 
   const handleEdit = (voucher) => {
     setEditingVoucher(voucher);
@@ -160,7 +147,7 @@ function Voucher() {
 
   const handleDelete = async (id) => {
     try {
-      await deleteVoucher( id);
+      await deleteVoucher(id);
       showToast({ text: "Đã xoá voucher", type: "success", duration: 3000 });
       setConfirmDelete(null);
       loadVouchers();
@@ -179,22 +166,16 @@ function Voucher() {
   ];
 
   // Lọc danh sách các group sẽ được hiển thị trên giao diện dựa vào tab đang chọn
-  const activeGroups = filterType === "ALL" 
-    ? SECTION_GROUPS 
-    : SECTION_GROUPS.filter(g => g.key === filterType);
+  const activeGroups = filterType === "ALL" ? SECTION_GROUPS : SECTION_GROUPS.filter((g) => g.key === filterType);
 
   // Kiểm tra tổng số voucher sau khi lọc để hiển thị màn hình trống nếu không có gì
-  const currentFilteredVouchers = filterType === "ALL"
-    ? vouchers
-    : vouchers.filter(v => v.type === filterType);
+  const currentFilteredVouchers = filterType === "ALL" ? vouchers : vouchers.filter((v) => v.type === filterType);
 
   return (
     <div className={cx("voucherPage")}>
-      
       {/* ── PAGE HEADING ──────────────────────────────────────────────── */}
       <div className={cx("pageHead")}>
         <div>
-          <p className={cx("pageHead__eyebrow")}>Hệ thống ưu đãi shop</p>
           <h2 className={cx("pageHead__title")}>
             Chương trình <em>Voucher</em>
           </h2>
@@ -231,18 +212,17 @@ function Voucher() {
         <div className={cx("zonesContainer")}>
           {activeGroups.map((group) => {
             const groupVouchers = vouchers.filter((v) => v.type === group.key);
-            
+
             // Nếu chọn Tab "Tất cả" mà nhóm này không có voucher thì ẩn cả nhóm đi cho gọn
             if (filterType === "ALL" && groupVouchers.length === 0) return null;
 
             return (
               <div key={group.key} className={cx("zoneBlock")}>
-                
                 {/* Tên nhóm Voucher */}
                 <h3 className={cx("zoneTitle")} style={{ "--title-color": group.color }}>
                   {group.label}
                 </h3>
-                
+
                 {/* Đường phân cách NÉT LIỀN tinh tế theo yêu cầu của bạn */}
                 <div className={cx("zoneLine")} style={{ "--line-color": group.color }}></div>
 
@@ -273,11 +253,18 @@ function Voucher() {
               <span>Xác nhận thu hồi voucher</span>
             </div>
             <div className={cx("modalBox__body")}>
-              <p>Mã voucher này sẽ bị đóng lập tức, khách hàng không thể nhìn thấy hoặc áp dụng mã này nữa. Bạn chắc chắn chứ?</p>
+              <p>
+                Mã voucher này sẽ bị đóng lập tức, khách hàng không thể nhìn thấy hoặc áp dụng mã này nữa. Bạn chắc chắn
+                chứ?
+              </p>
             </div>
             <div className={cx("modalBox__actions")}>
-              <button className={cx("btnCancel")} onClick={() => setConfirmDelete(null)}>Huỷ</button>
-              <button className={cx("btnConfirmDelete")} onClick={() => handleDelete(confirmDelete)}>Đồng ý xoá</button>
+              <button className={cx("btnCancel")} onClick={() => setConfirmDelete(null)}>
+                Huỷ
+              </button>
+              <button className={cx("btnConfirmDelete")} onClick={() => handleDelete(confirmDelete)}>
+                Đồng ý xoá
+              </button>
             </div>
           </div>
         </div>

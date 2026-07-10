@@ -51,7 +51,6 @@ $purple-bg:   #F3EDFA;
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 .page {
-  padding: 28px 32px 48px;
   background: $page-bg;
   min-height: 100vh;
   font-family: "Merriweather", serif;
@@ -1755,7 +1754,6 @@ $purple-bg:   #F3EDFA;
 }
 
 @media (max-width: 640px) {
-  .page        { padding: 16px 16px 40px; }
   .formGrid    { grid-template-columns: 1fr; }
   .commRow     { flex-wrap: wrap; }
   .tabs        { flex-wrap: wrap; }

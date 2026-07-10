@@ -25,7 +25,7 @@ $radius-lg:   16px;
   gap: 28px;
   background: $page-bg;
   min-height: 100vh;
-  padding: 0 8px 64px 8px;
+  padding-bottom: 64px;
   color: $ink;
 }
 
@@ -345,3 +345,82 @@ $radius-lg:   16px;
 
 .globalEmpty { text-align: center; padding: 80px 24px; color: #bbb; font-size: 13px; }
 .loading { text-align: center; padding: 100px 24px; color: #aaa; }
+
+// ── MODAL XÁC NHẬN XOÁ ──────────────────────────────────────────────
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 12, 10, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 20px;
+}
+
+.modalBox {
+  background: #fff;
+  border-radius: $radius-lg;
+  padding: 24px 26px;
+  width: 320px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+
+  &__head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    color: $ink;
+  }
+
+  &__icon {
+    color: $gold-dim;
+    flex-shrink: 0;
+  }
+
+  &__body {
+    font-size: 13px;
+    color: #666;
+    line-height: 1.6;
+    margin-bottom: 18px;
+
+    p { margin: 0; }
+  }
+
+  &__actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+}
+
+.btnCancel {
+  padding: 8px 16px;
+  font-size: 12px;
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: $radius-md;
+  color: #666;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+
+  &:hover { background: rgba(0, 0, 0, 0.04); }
+}
+
+.btnConfirmDelete {
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #E24B4A;
+  color: #fff;
+  border: none;
+  border-radius: $radius-md;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.15s;
+
+  &:hover { opacity: 0.88; }
+}
