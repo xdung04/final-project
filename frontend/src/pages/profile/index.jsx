@@ -3,7 +3,7 @@ import classNames from "classnames/bind";
 import { useAuth } from "~/context/AuthContext";
 import { ProfileAPI } from "~/apis/profileApi";
 import { HairAnalysisAPI } from "~/apis/hairAnalysisAPI";
-import { hairStyleAPIfz } from "~/apis/hairStyleAPI"; // ← Thêm dòng này
+import { hairStyleAPI } from "~/apis/hairStyleAPI"; // ← Thêm dòng này
 import { useToast } from "~/context/ToastContext";
 import styles from "./Profile.module.scss";
 import WorkCard from "~/components/CustomerGalleryCard";
@@ -148,14 +148,13 @@ function Profile() {
 
   // Load danh sách kiểu tóc gợi ý
   useEffect(() => {
-    if (activeTab !== "analysis" ) return;
+    if (activeTab !== "analysis") return;
 
     const loadSuggestions = async () => {
       setLoadingSuggestions(true);
       try {
         console.log("🔄 Đang gọi API lấy kiểu tóc..."); // Debug
-        const categoriesData =
-          await hairStyleAPI.getClientCategoriesWithHairstyles();
+        const categoriesData = await hairStyleAPI.getClientCategoriesWithHairstyles();
 
         console.log("📦 Dữ liệu trả về từ API:", categoriesData); // Debug
 
@@ -259,10 +258,7 @@ function Profile() {
 
       // Debug
       console.log("FaceImage trước khi gửi:", faceImage);
-      console.log(
-        "Type của faceImage:",
-        faceImage instanceof File ? "File ✓" : "Không phải File",
-      );
+      console.log("Type của faceImage:", faceImage instanceof File ? "File ✓" : "Không phải File");
 
       formData.append("faceImage", faceImage); // ← Quan trọng
       formData.append("hairstyles", JSON.stringify(selectedHairstyles));
@@ -274,11 +270,7 @@ function Profile() {
     } catch (err) {
       console.error("Lỗi handleTryOn:", err);
       showToast({
-        text:
-          err?.error?.message || 
-          err?.response?.data?.error?.message || 
-          err?.message ||
-          "Lỗi khi thử kiểu tóc",
+        text: err?.error?.message || err?.response?.data?.error?.message || err?.message || "Lỗi khi thử kiểu tóc",
         type: "error",
       });
     } finally {
@@ -348,8 +340,7 @@ function Profile() {
       });
     } catch (err) {
       showToast({
-        text:
-          err.response?.data?.message || err.message || "Có lỗi khi cập nhật!",
+        text: err.response?.data?.message || err.message || "Có lỗi khi cập nhật!",
         type: "error",
         duration: 3000,
       });
@@ -450,17 +441,8 @@ function Profile() {
                   </div>
                   {isEditing && (
                     <>
-                      <input
-                        type="file"
-                        id="avatarUpload"
-                        accept="image/*"
-                        hidden
-                        onChange={handleFileChange}
-                      />
-                      <label
-                        htmlFor="avatarUpload"
-                        className={cx("upload-btn")}
-                      >
+                      <input type="file" id="avatarUpload" accept="image/*" hidden onChange={handleFileChange} />
+                      <label htmlFor="avatarUpload" className={cx("upload-btn")}>
                         Thay đổi ảnh
                       </label>
                     </>
@@ -504,9 +486,7 @@ function Profile() {
                       setIsEditing(false);
                     }}
                   >
-                    <span>
-                      {isEditing ? "Lưu thay đổi" : "Chỉnh sửa hồ sơ"}
-                    </span>
+                    <span>{isEditing ? "Lưu thay đổi" : "Chỉnh sửa hồ sơ"}</span>
                   </button>
                 </div>
               </div>
@@ -548,10 +528,7 @@ function Profile() {
                     placeholder="Nhập lại mật khẩu..."
                   />
                 </div>
-                <button
-                  className={cx("save-btn")}
-                  onClick={handleChangePassword}
-                >
+                <button className={cx("save-btn")} onClick={handleChangePassword}>
                   <span>Đổi mật khẩu</span>
                 </button>
               </div>
@@ -579,18 +556,13 @@ function Profile() {
                     Lịch sử <em>Tư vấn AI</em>
                   </h2>
 
-                    <button
-                      className={cx("tryon-btn")}
-                      onClick={openTryOnModal}
-                    >
-                      Thử kiểu tóc AI ✂️
-                    </button>
+                  <button className={cx("tryon-btn")} onClick={openTryOnModal}>
+                    Thử kiểu tóc AI ✂️
+                  </button>
                 </div>
 
                 {analysisLoading ? (
-                  <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14 }}>
-                    Đang tải...
-                  </p>
+                  <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14 }}>Đang tải...</p>
                 ) : analysisHistory.length === 0 ? (
                   <div
                     style={{
@@ -602,8 +574,7 @@ function Profile() {
                     <div style={{ fontSize: 48, marginBottom: 16 }}>✂️</div>
                     <p>Bạn chưa có lần tư vấn nào được lưu.</p>
                     <p style={{ fontSize: 14, marginTop: 12 }}>
-                      Hãy thực hiện phân tích khuôn mặt để mở khóa tính năng thử
-                      kiểu tóc.
+                      Hãy thực hiện phân tích khuôn mặt để mở khóa tính năng thử kiểu tóc.
                     </p>
                   </div>
                 ) : (
@@ -618,10 +589,7 @@ function Profile() {
                       }}
                     >
                       {analysisHistory.map((item) => (
-                        <AnalysisHistoryCard
-                          key={item.idAnalysis}
-                          item={item}
-                        />
+                        <AnalysisHistoryCard key={item.idAnalysis} item={item} />
                       ))}
                     </div>
                   </>
@@ -654,10 +622,7 @@ function Profile() {
         {/* Try-On Modal */}
         {showTryOnModal && (
           <div className={cx("modal-overlay")}>
-            <div
-              className={cx("modal-content")}
-              style={{ maxWidth: tryOnResults.length > 0 ? 960 : 1100 }}
-            >
+            <div className={cx("modal-content")} style={{ maxWidth: tryOnResults.length > 0 ? 960 : 1100 }}>
               <div className={cx("modal-header")}>
                 <h3>Thử Kiểu Tóc AI</h3>
                 <button className={cx("modal-close")} onClick={closeTryOnModal}>
@@ -670,9 +635,7 @@ function Profile() {
                   <>
                     {/* Step indicator */}
                     <div className={cx("stepIndicator")}>
-                      <span className={cx({ stepDone: !!faceImage })}>
-                        ① Ảnh khuôn mặt
-                      </span>
+                      <span className={cx({ stepDone: !!faceImage })}>① Ảnh khuôn mặt</span>
                       <span className={cx("stepDivider")}>—</span>
                       <span
                         className={cx({
@@ -692,9 +655,7 @@ function Profile() {
                             {facePreview ? (
                               <img src={facePreview} alt="Khuôn mặt" />
                             ) : (
-                              <div className={cx("placeholder")}>
-                                Chọn ảnh khuôn mặt rõ nét, chính diện
-                              </div>
+                              <div className={cx("placeholder")}>Chọn ảnh khuôn mặt rõ nét, chính diện</div>
                             )}
                           </div>
                           {facePreview && (
@@ -712,17 +673,8 @@ function Profile() {
                             </button>
                           )}
                         </div>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleFaceUpload}
-                          hidden
-                          id="faceUploadModal"
-                        />
-                        <label
-                          htmlFor="faceUploadModal"
-                          className={cx("upload-btn")}
-                        >
+                        <input type="file" accept="image/*" onChange={handleFaceUpload} hidden id="faceUploadModal" />
+                        <label htmlFor="faceUploadModal" className={cx("upload-btn")}>
                           {faceImage ? "Đổi ảnh khác" : "Tải ảnh khuôn mặt"}
                         </label>
                       </div>
@@ -736,10 +688,7 @@ function Profile() {
                             {selectedHairstyles.map((s) => (
                               <span key={s.id} className={cx("chip")}>
                                 {s.name}
-                                <button
-                                  type="button"
-                                  onClick={() => removeHairstyle(s.id)}
-                                >
+                                <button type="button" onClick={() => removeHairstyle(s.id)}>
                                   ×
                                 </button>
                               </span>
@@ -761,13 +710,9 @@ function Profile() {
                           <div className={cx("styleScroll")}>
                             <div className={cx("style-grid")}>
                               {suggestedHairstyles.map((style) => {
-                                const isSelected = selectedHairstyles.some(
-                                  (s) => s.id === style.id,
-                                );
-                                const isRecommended =
-                                  style.isRecommended === true;
-                                const isDisabled =
-                                  !isSelected && selectedHairstyles.length >= 4;
+                                const isSelected = selectedHairstyles.some((s) => s.id === style.id);
+                                const isRecommended = style.isRecommended === true;
+                                const isDisabled = !isSelected && selectedHairstyles.length >= 4;
 
                                 return (
                                   <div
@@ -775,9 +720,7 @@ function Profile() {
                                     className={cx("styleCardWrap")}
                                     onClick={() =>
                                       !isDisabled &&
-                                      (isSelected
-                                        ? removeHairstyle(style.id)
-                                        : handleSelectHairstyle(style))
+                                      (isSelected ? removeHairstyle(style.id) : handleSelectHairstyle(style))
                                     }
                                   >
                                     <div
@@ -787,21 +730,10 @@ function Profile() {
                                         recommended: isRecommended,
                                       })}
                                     >
-                                      {isRecommended && (
-                                        <div className={cx("recommendBadge")}>
-                                          Phù hợp
-                                        </div>
-                                      )}
-                                      {isSelected && (
-                                        <div className={cx("checkBadge")}>
-                                          ✓
-                                        </div>
-                                      )}
+                                      {isRecommended && <div className={cx("recommendBadge")}>Phù hợp</div>}
+                                      {isSelected && <div className={cx("checkBadge")}>✓</div>}
 
-                                      <img
-                                        src={style.coverImage}
-                                        alt={style.name}
-                                      />
+                                      <img src={style.coverImage} alt={style.name} />
                                       <p>{style.name}</p>
                                     </div>
                                   </div>
@@ -828,10 +760,7 @@ function Profile() {
                   <div className={cx("results")}>
                     <div className={cx("resultsHeader")}>
                       <h4>Kết quả thử tóc ({tryOnResults.length} kiểu)</h4>
-                      <button
-                        className={cx("tryAgainBtn")}
-                        onClick={handleTryAgain}
-                      >
+                      <button className={cx("tryAgainBtn")} onClick={handleTryAgain}>
                         ← Thử lại
                       </button>
                     </div>
@@ -841,30 +770,19 @@ function Profile() {
                         const matchedStyle = selectedHairstyles[index];
                         return (
                           <div key={index} className={cx("resultCard")}>
-                            <img
-                              src={result.resultImageBase64}
-                              alt={result.hairstyleName || "Kết quả"}
-                            />
+                            <img src={result.resultImageBase64} alt={result.hairstyleName || "Kết quả"} />
                             <div className={cx("resultOverlay")}>
                               {matchedStyle?.coverImage && (
                                 <div className={cx("overlayOriginal")}>
-                                  <img
-                                    src={matchedStyle.coverImage}
-                                    alt={matchedStyle.name}
-                                  />
+                                  <img src={matchedStyle.coverImage} alt={matchedStyle.name} />
                                 </div>
                               )}
                               <div className={cx("overlayInfo")}>
-                                <p>
-                                  {result.hairstyleName ||
-                                    `Kiểu tóc ${index + 1}`}
-                                </p>
+                                <p>{result.hairstyleName || `Kiểu tóc ${index + 1}`}</p>
                                 <button
                                   type="button"
                                   className={cx("downloadMiniBtn")}
-                                  onClick={() =>
-                                    handleDownloadResult(result, index)
-                                  }
+                                  onClick={() => handleDownloadResult(result, index)}
                                 >
                                   ⬇
                                 </button>
@@ -881,24 +799,15 @@ function Profile() {
               <div className={cx("modal-footer")}>
                 {tryOnResults.length === 0 ? (
                   <>
-                    <button
-                      className={cx("reset-btn")}
-                      onClick={resetTryOnInModal}
-                    >
+                    <button className={cx("reset-btn")} onClick={resetTryOnInModal}>
                       Đặt lại
                     </button>
                     <button
                       className={cx("try-btn")}
                       onClick={handleTryOn}
-                      disabled={
-                        tryOnLoading ||
-                        !faceImage ||
-                        selectedHairstyles.length === 0
-                      }
+                      disabled={tryOnLoading || !faceImage || selectedHairstyles.length === 0}
                     >
-                      {tryOnLoading
-                        ? "Đang xử lý..."
-                        : `Tạo ${selectedHairstyles.length} ảnh thử tóc`}
+                      {tryOnLoading ? "Đang xử lý..." : `Tạo ${selectedHairstyles.length} ảnh thử tóc`}
                     </button>
                   </>
                 ) : (
@@ -962,9 +871,7 @@ function AnalysisHistoryCard({ item }) {
               {"★".repeat(item.rating)}
               {"☆".repeat(5 - item.rating)}
             </span>
-            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>
-              {ratingLabel[item.rating]}
-            </span>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>{ratingLabel[item.rating]}</span>
           </div>
         ) : (
           <span
@@ -988,16 +895,8 @@ function AnalysisHistoryCard({ item }) {
           marginBottom: 16,
         }}
       >
-        <InfoChip
-          label="Khuôn mặt"
-          value={faceShapeVI[item.faceShape] || item.faceShape || "—"}
-        />
-        <InfoChip
-          label="Tông da"
-          value={
-            undertoneVI[item.skinToneUndertone] || item.skinToneUndertone || "—"
-          }
-        />
+        <InfoChip label="Khuôn mặt" value={faceShapeVI[item.faceShape] || item.faceShape || "—"} />
+        <InfoChip label="Tông da" value={undertoneVI[item.skinToneUndertone] || item.skinToneUndertone || "—"} />
         <InfoChip label="Loại da" value={item.skinType || "—"} />
       </div>
 
@@ -1022,9 +921,7 @@ function AnalysisHistoryCard({ item }) {
           >
             KIỂU TÓC ĐÃ CHỌN
           </span>
-          <span style={{ fontSize: 14, color: "rgba(255,255,255,0.8)" }}>
-            {item.selectedHairstyleName}
-          </span>
+          <span style={{ fontSize: 14, color: "rgba(255,255,255,0.8)" }}>{item.selectedHairstyleName}</span>
         </div>
       )}
 
