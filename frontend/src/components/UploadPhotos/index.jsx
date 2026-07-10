@@ -1,5 +1,9 @@
 import React, { useRef, useState } from "react";
+import classNames from "classnames/bind";
 import styles from "./UploadPhotos.module.scss";
+import { Upload, Image as ImageIcon } from "lucide-react";
+
+const cx = classNames.bind(styles);
 
 function UploadPhotos({ onUpload }) {
   const fileInputRef = useRef(null);
@@ -12,28 +16,28 @@ function UploadPhotos({ onUpload }) {
   };
 
   return (
-    <div className={styles.wrapper}>
+    <div className={cx("wrapper")}>
       <input
         type="file"
         ref={fileInputRef}
         multiple
         accept="image/*"
-        className={styles.input}
+        className={cx("input")}
         onChange={handleFileChange}
       />
       <button
-        className={styles.btn}
+        className={cx("btn")}
         onClick={() => fileInputRef.current.click()}
       >
-        + Upload ảnh
+        <Upload size={16} /> Upload ảnh
       </button>
-      <div className={styles.preview}>
+      <div className={cx("preview")}>
         {files.map((file, idx) => (
           <img
             key={idx}
             src={URL.createObjectURL(file)}
             alt={`upload-${idx}`}
-            className={styles.thumb}
+            className={cx("thumb")}
           />
         ))}
       </div>

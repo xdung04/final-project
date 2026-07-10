@@ -3,10 +3,12 @@ import styles from "./UploadVideoDialog.module.scss";
 import { uploadReel } from "~/services/reelService";
 import { getHashtags } from "~/services/hashtagService";
 import { useAuth } from "~/context/AuthContext";
+import { useToast } from "~/context/ToastContext";
 import { X, Film, Image as ImageIcon, Loader2, UploadCloud } from "lucide-react";
 
 function UploadVideoDialog({ open, onClose, onUpload }) {
   const { user, isLogin } = useAuth();
+  const { showToast } = useToast();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [videoFile, setVideoFile] = useState(null);
@@ -37,7 +39,7 @@ function UploadVideoDialog({ open, onClose, onUpload }) {
 
   const handleSubmit = async () => {
     if (!videoFile) {
-      alert("Vui lòng chọn video!");
+      showToast({ text: "Vui lòng chọn video!", type: "error" });
       return;
     }
 
@@ -48,13 +50,13 @@ function UploadVideoDialog({ open, onClose, onUpload }) {
 
     tempVideo.onloadedmetadata = async () => {
       if (tempVideo.duration > 90) {
-        alert("Video quá dài! Vui lòng chọn video dưới 1 phút 30 giây.");
-        URL.revokeObjectURL(videoUrl); // giải phóng bộ nhớ
+        showToast({ text: "Video quá dài! Vui lòng chọn video dưới 1 phút 30 giây.", type: "error" });
+        URL.revokeObjectURL(videoUrl);
         return;
       }
 
       if (!isLogin) {
-        alert("Vui lòng đăng nhập để tải video lên!");
+        showToast({ text: "Vui lòng đăng nhập để tải video lên!", type: "error" });
         return;
       }
 
@@ -78,7 +80,7 @@ function UploadVideoDialog({ open, onClose, onUpload }) {
         onClose();
       } catch (err) {
         console.error(err);
-        alert("Lỗi khi upload video. Vui lòng kiểm tra lại thông tin và đăng nhập.");
+        showToast({ text: "Lỗi khi upload video. Vui lòng kiểm tra lại thông tin và đăng nhập.", type: "error" });
       } finally {
         setLoading(false);
         URL.revokeObjectURL(videoUrl); // giải phóng bộ nhớ
@@ -86,7 +88,7 @@ function UploadVideoDialog({ open, onClose, onUpload }) {
     };
 
     tempVideo.onerror = () => {
-      alert("Không thể đọc video. Vui lòng thử lại với file khác.");
+      showToast({ text: "Không thể đọc video. Vui lòng thử lại với file khác.", type: "error" });
       URL.revokeObjectURL(videoUrl);
     };
   };

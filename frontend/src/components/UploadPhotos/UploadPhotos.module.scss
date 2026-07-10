@@ -1,3 +1,26 @@
+/* UploadPhotos.module.scss
+   NOULE Barber — Upload Photos
+   Design System: Editorial · Luxury Barber · Dark-Gold
+--------------------------------------------------------------- */
+
+// ─── Tokens ──────────────────────────────────────────────────
+$gold:        #C9A84C;
+$gold-hover:  #BA9A3E;
+$gold-dim:    #8A6A28;
+$gold-faint:  rgba(201, 168, 76, 0.15);
+$gold-border: rgba(201, 168, 76, 0.3);
+
+$ink:         #1A1612;
+
+$card-bg:     #FFFFFF;
+$input-bg:    #F9F6F1;
+
+$border:      1px solid rgba(0, 0, 0, 0.07);
+$radius-sm:   6px;
+$radius-md:   10px;
+
+$transition:  0.15s;
+
 .wrapper {
   margin-top: 8px;
 }
@@ -7,18 +30,25 @@
 }
 
 .btn {
-  padding: 6px 12px;
-  background: #3b2f2f;
-  color: white;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: $gold;
+  color: $ink;
   border: none;
-  border-radius: 6px;
+  padding: 8px 16px;
+  border-radius: $radius-md;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
   cursor: pointer;
-  font-size: 13px;
-  transition: background 0.2s ease;
+  transition: background $transition;
 
   &:hover {
-    background: #1f1b1a;
+    background: $gold-hover;
   }
+
+  svg { flex-shrink: 0; }
 }
 
 .preview {
@@ -29,9 +59,14 @@
 }
 
 .thumb {
-  width: 60px;
-  height: 60px;
+  width: 64px;
+  height: 64px;
   object-fit: cover;
-  border-radius: 6px;
-  border: 1px solid #e8e1dc;
+  border-radius: $radius-sm;
+  border: $border;
+  transition: border $transition;
+
+  &:hover {
+    border: 1px solid $gold-border;
+  }
 }

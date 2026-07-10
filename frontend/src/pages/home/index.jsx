@@ -337,6 +337,14 @@ const Home = () => {
     }
   };
 
+  const handleAIClick = () => {
+    if (isLogin) {
+      window.location.href = "/hair-consult";
+    } else {
+      setShowLoginModal(true);
+    }
+  };
+
   const handleReelClick = (reel) => {
     navigate("/reels", { state: { openReelId: reel.idReel } });
   };
@@ -423,7 +431,7 @@ const Home = () => {
           </p>
           <button
             className={styles.aiScanBtn}
-            onClick={() => (window.location.href = "/hair-consult")}
+            onClick={handleAIClick}
           >
             <div className={styles.aiBtnInner}>
               <div className={styles.aiBtnIcon}>

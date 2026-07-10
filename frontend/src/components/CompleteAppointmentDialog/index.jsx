@@ -1,10 +1,16 @@
 import React, { useState } from "react";
+import ReactDOM from "react-dom";
+import classNames from "classnames/bind";
 import styles from "./CompleteAppointmentDialog.module.scss";
 import { completeBooking } from "~/services/bookingService";
+import { useToast } from "~/context/ToastContext";
+import { X, Upload, Loader2, CheckCircle2 } from "lucide-react";
+
+const cx = classNames.bind(styles);
 
 function CompleteAppointmentDialog({ open, onClose, appointment }) {
+  const { showToast } = useToast();
   const [description, setDescription] = useState("");
-  // Thêm state để kiểm soát trạng thái tải (loading)
   const [isLoading, setIsLoading] = useState(false);
   const [images, setImages] = useState({
     front: null,
@@ -31,23 +37,18 @@ function CompleteAppointmentDialog({ open, onClose, appointment }) {
   };
 
   const handleSubmit = async () => {
-    // 1. Kiểm tra nếu đang tải, THOÁT NGAY để tránh ấn liên tục
     if (isLoading) {
       return;
     }
-    // 🌟 THAY ĐỔI: BẮT BUỘC upload đủ 4 ảnh
     const uploadedCount = Object.values(images).filter((img) => img !== null).length;
 
-    // Nếu chưa đủ 4 ảnh, hiện cảnh báo và thoát
     if (uploadedCount < 4) {
-      alert("Vui lòng upload đủ 4 ảnh (FRONT, LEFT, RIGHT, BACK) trước khi hoàn thành.");
+      showToast({ text: "Vui lòng upload đủ 4 ảnh (FRONT, LEFT, RIGHT, BACK) trước khi hoàn thành.", type: "error" });
       return;
     }
 
-    // Bắt đầu tải: Set isLoading = true
     setIsLoading(true);
 
-    // ... (logic tạo formData và gọi API giữ nguyên)
     const formData = new FormData();
     formData.append("description", description);
     formData.append("idBarber", appointment.idBarber);
@@ -55,20 +56,18 @@ function CompleteAppointmentDialog({ open, onClose, appointment }) {
     formData.append("idBooking", appointment.idBooking);
 
     Object.entries(images).forEach(([key, file]) => {
-      // Ở đây có thể bỏ kiểm tra if (file) vì đã chắc chắn có 4 file
       if (file) formData.append(key, file);
     });
 
     try {
       const result = await completeBooking(appointment.idBooking, formData);
       console.log("Kết quả hoàn tất:", result);
-      alert("Hoàn tất dịch vụ thành công!");
+      showToast({ text: "Hoàn tất dịch vụ thành công!", type: "success" });
       onClose();
     } catch (err) {
       console.error(err);
-      alert("Lỗi khi hoàn tất dịch vụ.");
+      showToast({ text: "Lỗi khi hoàn tất dịch vụ.", type: "error" });
     } finally {
-      // Kết thúc tải: Set isLoading = false
       setIsLoading(false);
     }
   };
@@ -76,48 +75,52 @@ function CompleteAppointmentDialog({ open, onClose, appointment }) {
   const isAllImagesUploaded = Object.values(images).every((img) => img !== null);
   const isSubmitDisabled = !isAllImagesUploaded || isLoading;
 
-  return (
-    <div className={styles.overlay}>
-      <div className={styles.dialog}>
-        {/* ... Header và Body giữ nguyên ... */}
-        <div className={styles.header}>
+  return ReactDOM.createPortal(
+    <div className={cx("overlay")}>
+      <div className={cx("dialog")}>
+        <div className={cx("header")}>
           <h2>Hoàn tất dịch vụ</h2>
-          {/* Vô hiệu hóa nút đóng khi đang tải */}
-          <button className={styles.closeBtn} onClick={onClose} disabled={isLoading}>
-            ✕
+          <button className={cx("closeBtn")} onClick={onClose} disabled={isLoading}>
+            <X size={20} />
           </button>
         </div>
 
-        <div className={styles.body}>
-          {/* Vô hiệu hóa toàn bộ input khi đang tải */}
+        <p className={cx("description")}>
+          Tải ảnh trước/sau khi cắt để lưu vào bộ sưu tập
+        </p>
+
+        <div className={cx("body")}>
           <fieldset disabled={isLoading}>
-            {/* Tên khách hàng */}
-            <div className={styles.formGroup}>
+            <div className={cx("formGroup")}>
               <label>Tên khách hàng</label>
               <input type="text" value={appointment.customerName || "Khách vãng lai"} readOnly />
             </div>
 
-            {/* Dịch vụ */}
-            <div className={styles.formGroup}>
+            <div className={cx("formGroup")}>
               <label>Dịch vụ đã thực hiện</label>
               <input type="text" value={appointment.services || "—"} readOnly />
             </div>
 
-            {/* Mô tả */}
-            <div className={styles.formGroup}>
+            <div className={cx("formGroup")}>
               <label>Mô tả</label>
-              <textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
+              <textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Ghi chú thêm về kiểu tóc..." />
             </div>
 
-            {/* Upload ảnh */}
-            <div className={styles.formGroup}>
+            <div className={cx("formGroup")}>
               <label>Upload ảnh (tải đủ 4 ảnh)</label>
-              <div className={styles.uploadGrid}>
+              <div className={cx("uploadGrid")}>
                 {["front", "left", "right", "back"].map((pos) => (
-                  <div key={pos} className={styles.uploadBox}>
-                    <p>{pos.toUpperCase()}</p>
-                    <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, pos)} />
-                    {images[pos] && <span className={styles.fileName}>{truncateFileName(images[pos].name)}</span>}
+                  <div key={pos} className={cx("uploadBox", { hasFile: !!images[pos] })}>
+                    <div className={cx("uploadBoxHeader")}>
+                      <span className={cx("uploadBoxLabel")}>{pos.toUpperCase()}</span>
+                      {images[pos] && <CheckCircle2 size={14} className={cx("checkIcon")} />}
+                    </div>
+                    <label className={cx("fileLabel")}>
+                      <Upload size={16} />
+                      <span>{images[pos] ? "Đổi ảnh" : "Chọn ảnh"}</span>
+                      <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, pos)} hidden />
+                    </label>
+                    {images[pos] && <span className={cx("fileName")}>{truncateFileName(images[pos].name)}</span>}
                   </div>
                 ))}
               </div>
@@ -125,19 +128,21 @@ function CompleteAppointmentDialog({ open, onClose, appointment }) {
           </fieldset>
         </div>
 
-        {/* Footer */}
-        <div className={styles.footer}>
-          {/* Vô hiệu hóa nút Hủy khi đang tải */}
-          <button className={styles.cancelBtn} onClick={onClose} disabled={isLoading}>
+        <div className={cx("footer")}>
+          <button className={cx("cancelBtn")} onClick={onClose} disabled={isLoading}>
             Hủy
           </button>
-          {/* Ẩn / Hiện nội dung nút và vô hiệu hóa nếu đang tải */}
-          <button className={styles.submitBtn} onClick={handleSubmit} disabled={isSubmitDisabled}>
-            {isLoading ? "Đang tải..." : "Hoàn thành"}
+          <button className={cx("submitBtn")} onClick={handleSubmit} disabled={isSubmitDisabled}>
+            {isLoading ? (
+              <><Loader2 size={16} className={cx("spin")} /> Đang tải...</>
+            ) : (
+              <><CheckCircle2 size={16} /> Hoàn thành</>
+            )}
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

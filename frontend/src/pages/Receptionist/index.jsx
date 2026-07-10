@@ -3,7 +3,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import classNames from "classnames/bind";
 import {
   LayoutDashboard, MessageSquare, History,
-  Bell, LogOut, MapPin, X,
+  Bell, MapPin, X, Clock, CheckCheck,
+  CalendarCheck, DollarSign, Megaphone, Inbox
 } from "lucide-react";
 
 import styles from "./Receptionist.module.scss";
@@ -75,9 +76,44 @@ function Receptionist() {
     return () => document.removeEventListener("mousedown", handle);
   }, []);
 
+  // ─── Helpers ────────────────────────────────────────────────────────
+  const NOTI_ICONS = {
+    BOOKING: <CalendarCheck size={14} />,
+    SALARY:  <DollarSign size={14} />,
+    SYSTEM:  <Megaphone size={14} />,
+  };
+
+  function formatTimeAgo(dateStr) {
+    if (!dateStr) return "";
+    const now = new Date();
+    const date = new Date(dateStr);
+    const diffMs = now - date;
+    const diffMin = Math.floor(diffMs / 60000);
+    const diffHour = Math.floor(diffMs / 3600000);
+    const diffDay = Math.floor(diffMs / 86400000);
+    if (diffMin < 1) return "Vừa xong";
+    if (diffMin < 60) return `${diffMin} phút trước`;
+    if (diffHour < 24) return `${diffHour} giờ trước`;
+    if (diffDay < 7) return `${diffDay} ngày trước`;
+    return date.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
+  }
+
   // ── Click thông báo → đánh dấu đã đọc ───────────────────────────────────
   const handleNotificationClick = async (noti) => {
     setSelectedNotification(noti);
+    if (!noti.isRead) {
+      const ok = await markNotificationAsRead(noti.idNotification);
+      if (ok) {
+        setNotifications((prev) =>
+          prev.map((n) => n.idNotification === noti.idNotification ? { ...n, isRead: true } : n)
+        );
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+      }
+    }
+  };
+
+  const handleMarkRead = async (e, noti) => {
+    e.stopPropagation();
     if (!noti.isRead) {
       const ok = await markNotificationAsRead(noti.idNotification);
       if (ok) {
@@ -161,41 +197,47 @@ function Receptionist() {
               {showNotify && (
                 <div className={cx("notifyDropdown")}>
                   <div className={cx("notifyHeader")}>
-                    Thông báo
-                    {unreadCount > 0 && (
-                      <span className={cx("notifyUnreadBadge")}>{unreadCount} mới</span>
-                    )}
+                    <span>Thông báo</span>
+                    {unreadCount > 0 && <span className={cx("notifyHeaderBadge")}>{unreadCount} mới</span>}
                   </div>
                   <div className={cx("notifyList")}>
                     {notifications.length === 0 ? (
-                      <div className={cx("notifyEmpty")}>Không có thông báo mới</div>
+                      <div className={cx("notifyEmpty")}>
+                        <Inbox size={32} />
+                        <p>Không có thông báo</p>
+                      </div>
                     ) : (
-                      notifications.map((noti) => (
-                        <div
-                          key={noti.idNotification}
-                          className={cx("notifyItem", { unread: !noti.isRead })}
-                          onClick={() => handleNotificationClick(noti)}
-                        >
-                          <span className={cx("notifyDot")} />
-                          <div className={cx("notifyItemBody")}>
-                            <p className={cx("notifyTitle")}>{noti.title}</p>
-                            {noti.content && (
-                              <p className={cx("notifyPreview")}>
-                                {noti.content.length > 60
-                                  ? noti.content.substring(0, 60) + "..."
-                                  : noti.content}
-                              </p>
+                      notifications.map((noti) => {
+                        const type = noti.type || "SYSTEM";
+                        return (
+                          <div
+                            key={noti.idNotification}
+                            className={cx("notifyItem", { unread: !noti.isRead })}
+                            onClick={() => handleNotificationClick(noti)}
+                          >
+                            <span className={cx("notifyIcon", type.toLowerCase())}>
+                              {NOTI_ICONS[type] || NOTI_ICONS.SYSTEM}
+                            </span>
+                            <div className={cx("notifyBody")}>
+                              <p className={cx("notifyTitle")}>{noti.title}</p>
+                              <span className={cx("notifyTime")}>
+                                <Clock size={10} /> {formatTimeAgo(noti.createdAt)}
+                              </span>
+                            </div>
+                            {!noti.isRead && (
+                              <button className={cx("notifyMarkBtn")} onClick={(e) => handleMarkRead(e, noti)} title="Đánh dấu đã đọc">
+                                <CheckCheck size={14} />
+                              </button>
                             )}
                           </div>
-                        </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
                 </div>
               )}
             </div>
 
-            <button className="admin-btn-outline"><LogOut size={16} /> Thoát</button>
           </div>
         </header>
 

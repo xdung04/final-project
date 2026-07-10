@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import classNames from "classnames/bind";
 import styles from "./VideoTayNghe.module.scss";
 import VideoCard from "~/components/VideoCard";
 import VideoDetailDialog from "~/components/VideoDetailDialog";
@@ -7,7 +8,9 @@ import { fetchReelsByBarberId } from "~/services/reelService";
 import { useAuth } from "~/context/AuthContext";
 import { useToast } from "~/context/ToastContext";
 import { useNavigate } from "react-router-dom";
-import { Film, UploadCloud, Loader2 } from "lucide-react"; // Thêm icons
+import { Film, UploadCloud, Loader2, MonitorPlay } from "lucide-react";
+
+const cx = classNames.bind(styles);
 
 function VideoTayNghe() {
   const {  user, loading: isAuthLoading } = useAuth();
@@ -66,31 +69,33 @@ function VideoTayNghe() {
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.headerInfo}>
+    <div className={cx("container")}>
+      <div className={cx("headerInfo")}>
         <div>
-          <h2 className={styles.title}>Video Tay Nghề</h2>
-          <p className={styles.subtitle}>Upload và quản lý video showcase kỹ năng cắt tóc</p>
+          <h2 className={cx("title")}>
+            <MonitorPlay className={cx("titleIcon")} size={24} /> Video Tay Nghề
+          </h2>
+          <p className={cx("subtitle")}>Upload và quản lý video showcase kỹ năng cắt tóc</p>
         </div>
-        <button className={styles.uploadBtn} onClick={() => setIsUploadOpen(true)}>
-          <UploadCloud size={20} />
+        <button className={cx("uploadBtn")} onClick={() => setIsUploadOpen(true)}>
+          <UploadCloud size={18} />
           Upload Video
         </button>
       </div>
 
-      <div className={styles.gridContainer}>
+      <div className={cx("gridContainer")}>
         {loading ? (
-          <div className={styles.loadingState}>
-            <Loader2 className={styles.spinner} size={40} />
+          <div className={cx("loadingState")}>
+            <Loader2 className={cx("spinner")} size={40} />
             <p>Đang tải danh sách video...</p>
           </div>
         ) : reels.length === 0 ? (
-          <div className={styles.emptyState}>
-            <Film size={48} className={styles.emptyIcon} />
+          <div className={cx("emptyState")}>
+            <Film size={48} className={cx("emptyIcon")} />
             <p>Chưa có video nào. Hãy đăng tải tác phẩm đầu tiên của bạn!</p>
           </div>
         ) : (
-          <div className={styles.grid}>
+          <div className={cx("grid")}>
             {reels.map((reel, idx) => (
               <VideoCard
                 key={reel.idReel}

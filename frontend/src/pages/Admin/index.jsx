@@ -14,7 +14,13 @@ import {
   Bell,
   Search,
   Newspaper,
-  Wand2
+  Wand2,
+  Clock,
+  CheckCheck,
+  CalendarCheck,
+  DollarSign,
+  Megaphone,
+  Inbox
 } from "lucide-react";
 
 import styles from "./Admin.module.scss";
@@ -49,12 +55,33 @@ const menuItems = [
   { id: "tintuc", label: "Tin Tức", path: "/admin/news", icon: <Newspaper size={20} strokeWidth={1.5} />, category: "management" },
 ];
 
+// ─── Helpers ────────────────────────────────────────────────────────
+const NOTI_ICONS = {
+  BOOKING: <CalendarCheck size={14} />,
+  SALARY:  <DollarSign size={14} />,
+  SYSTEM:  <Megaphone size={14} />,
+};
+
+function formatTimeAgo(dateStr) {
+  if (!dateStr) return "";
+  const now = new Date();
+  const date = new Date(dateStr);
+  const diffMs = now - date;
+  const diffMin = Math.floor(diffMs / 60000);
+  const diffHour = Math.floor(diffMs / 3600000);
+  const diffDay = Math.floor(diffMs / 86400000);
+  if (diffMin < 1) return "Vừa xong";
+  if (diffMin < 60) return `${diffMin} phút trước`;
+  if (diffHour < 24) return `${diffHour} giờ trước`;
+  if (diffDay < 7) return `${diffDay} ngày trước`;
+  return date.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
+}
+
 function Admin() {
   const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
-  // States
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showNotify, setShowNotify] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -64,14 +91,12 @@ function Admin() {
   const notifyRef = useRef(null);
   const dialogRef = useRef(null);
 
-  // ✅ TỐI ƯU: Sử dụng useMemo phân loại menu để TRÁNH biến đổi biến toàn cục (Global Mutation)
   const menuCategories = useMemo(() => {
     const categories = {
       dashboard: { label: "Dashboard", items: [] },
       management: { label: "Quản Lý", items: [] },
       finance: { label: "Tài Chính", items: [] }
     };
-    
     menuItems.forEach(item => {
       if (categories[item.category]) {
         categories[item.category].items.push(item);
@@ -86,11 +111,8 @@ function Admin() {
 
   const activeId = currentMenuItem.id;
 
-  // ✅ TỐI ƯU: Thêm cờ dọn dẹp (isMounted) tránh leak và crash khi React bóc tách component đột ngột
   useEffect(() => {
-    
     let isMounted = true;
-
     const loadData = async () => {
       try {
         const notifyData = await fetchMyNotifications();
@@ -102,15 +124,10 @@ function Admin() {
         console.error("Lỗi tải thông báo:", error);
       }
     };
-
     loadData();
-
-    return () => {
-      isMounted = false; // Ngắt cập nhật state nếu component đã bị unmount
-    };
+    return () => { isMounted = false; };
   }, []);
 
-  // Đóng thông báo khi click ngoài
   useEffect(() => {
     function handleClickOutside(event) {
       if (notifyRef.current && !notifyRef.current.contains(event.target) && 
@@ -124,7 +141,18 @@ function Admin() {
 
   const handleNotificationClick = async (noti) => {
     setSelectedNotification(noti);
-    if (!noti.isRead ) {
+    if (!noti.isRead) {
+      const success = await markNotificationAsRead(noti.idNotification);
+      if (success) {
+        setNotifications(prev => prev.map(n => n.idNotification === noti.idNotification ? { ...n, isRead: true } : n));
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+    }
+  };
+
+  const handleMarkRead = async (e, noti) => {
+    e.stopPropagation();
+    if (!noti.isRead) {
       const success = await markNotificationAsRead(noti.idNotification);
       if (success) {
         setNotifications(prev => prev.map(n => n.idNotification === noti.idNotification ? { ...n, isRead: true } : n));
@@ -201,17 +229,38 @@ function Admin() {
 
               {showNotify && (
                 <div className={cx("notifyDropdown")}>
-                  <div className={cx("notifyHeader")}>Thông báo hệ thống</div>
+                  <div className={cx("notifyHeader")}>
+                    <span>Thông báo</span>
+                    {unreadCount > 0 && <span className={cx("notifyHeaderBadge")}>{unreadCount} mới</span>}
+                  </div>
                   <div className={cx("notifyList")}>
                     {notifications.length === 0 ? (
-                      <div className={cx("notifyItem")}>Không có thông báo mới</div>
+                      <div className={cx("notifyEmpty")}>
+                        <Inbox size={32} />
+                        <p>Không có thông báo</p>
+                      </div>
                     ) : (
-                      notifications.map(noti => (
-                        <div key={noti.idNotification} className={cx("notifyItem", { unread: !noti.isRead })} onClick={() => handleNotificationClick(noti)}>
-                          <span className={cx("notifyDot")}></span>
-                          <p className={cx("notifyTitle")}>{noti.title}</p>
-                        </div>
-                      ))
+                      notifications.map(noti => {
+                        const type = noti.type || "SYSTEM";
+                        return (
+                          <div key={noti.idNotification} className={cx("notifyItem", { unread: !noti.isRead })} onClick={() => handleNotificationClick(noti)}>
+                            <span className={cx("notifyIcon", type.toLowerCase())}>
+                              {NOTI_ICONS[type] || NOTI_ICONS.SYSTEM}
+                            </span>
+                            <div className={cx("notifyBody")}>
+                              <p className={cx("notifyTitle")}>{noti.title}</p>
+                              <span className={cx("notifyTime")}>
+                                <Clock size={10} /> {formatTimeAgo(noti.createdAt)}
+                              </span>
+                            </div>
+                            {!noti.isRead && (
+                              <button className={cx("notifyMarkBtn")} onClick={(e) => handleMarkRead(e, noti)} title="Đánh dấu đã đọc">
+                                <CheckCheck size={14} />
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })
                     )}
                   </div>
                 </div>
@@ -245,6 +294,10 @@ function Admin() {
       {selectedNotification && (
         <div className={cx("customDialogOverlay")} onClick={() => setSelectedNotification(null)}>
           <div ref={dialogRef} className={cx("customDialog")} onClick={e => e.stopPropagation()}>
+            <div className={cx("dialogTypeBadge")}>
+              {NOTI_ICONS[selectedNotification.type] || NOTI_ICONS.SYSTEM}
+              <span>{selectedNotification.type || "HỆ THỐNG"}</span>
+            </div>
             <h3 className={cx("dialogTitle")}>{selectedNotification.title}</h3>
             <p className={cx("dialogContent")}>{selectedNotification.content || "Không có nội dung chi tiết."}</p>
             <button className={cx("dialogCloseBtn")} onClick={() => setSelectedNotification(null)}>Đóng</button>

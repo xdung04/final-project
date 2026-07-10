@@ -3,6 +3,7 @@ import classNames from "classnames/bind";
 import styles from "./HopDong.module.scss";
 import { Printer, Download, ArrowLeft } from "lucide-react";
 import { ContractAPI } from "~/apis/contractAPI";
+import { useToast } from "~/context/ToastContext";
 
 const cx = classNames.bind(styles);
 
@@ -25,6 +26,7 @@ const getContractDuration = (start, end) => {
 };
 
 function ContractDocument({ onBack }) {
+  const { showToast } = useToast();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -66,6 +68,7 @@ function ContractDocument({ onBack }) {
         });
       } catch (err) {
         setError(err?.message || "Không thể tải hợp đồng");
+        showToast({ text: "Không thể tải hợp đồng. Vui lòng thử lại.", type: "error" });
       } finally {
         setLoading(false);
       }

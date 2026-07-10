@@ -1,48 +1,116 @@
+/* CompleteAppointmentDialog.module.scss
+   NOULE Barber — Hoàn tất dịch vụ (Upload ảnh sau cắt)
+   Design System: Editorial · Luxury Barber · Dark-Gold
+--------------------------------------------------------------- */
+
+// ─── Tokens ──────────────────────────────────────────────────
+$gold:        #C9A84C;
+$gold-hover:  #BA9A3E;
+$gold-dim:    #8A6A28;
+$gold-faint:  rgba(201, 168, 76, 0.15);
+$gold-border: rgba(201, 168, 76, 0.3);
+
+$ink:         #1A1612;
+$ink-2:       #2C2720;
+$ink-text:    #F5F0E8;
+
+$card-bg:     #FFFFFF;
+$input-bg:    #F9F6F1;
+$page-bg:     #F7F4EF;
+
+$border:      1px solid rgba(0, 0, 0, 0.07);
+
+$radius-sm:   6px;
+$radius-md:   10px;
+$radius-lg:   14px;
+
+$ff-serif:    Georgia, 'Times New Roman', serif;
+$transition:  0.15s;
+
+// ─── Overlay ─────────────────────────────────────────────────
 .overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
+  inset: 0;
+  background: rgba(26, 22, 18, 0.8);
+  backdrop-filter: blur(4px);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 999;
+  animation: fadeIn 0.2s ease-out;
 }
 
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+// ─── Dialog ──────────────────────────────────────────────────
 .dialog {
-  background: #fff;
-  border-radius: 8px;
-  padding: 20px;
-  width: 500px;
-  max-width: 90%;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  background: $card-bg;
+  border: 2px solid $ink;
+  border-radius: $radius-lg;
+  padding: 28px 32px;
+  width: 540px;
+  max-width: 95%;
+  box-shadow: 6px 6px 0 $ink;
   display: flex;
   flex-direction: column;
+  gap: 16px;
+  animation: slideUp 0.25s ease;
 }
 
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+// ─── Header ──────────────────────────────────────────────────
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
 
   h2 {
-    font-size: 18px;
-    font-weight: 600;
-    color: #333;
+    font-family: $ff-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: $ink;
+    margin: 0;
   }
 }
 
 .closeBtn {
   background: transparent;
   border: none;
-  font-size: 18px;
+  color: #aaa;
   cursor: pointer;
-  color: #666;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 50%;
+  transition: all $transition;
+
+  &:hover:not(:disabled) {
+    color: $gold;
+    background: $gold-faint;
+    transform: rotate(90deg);
+  }
+
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
+.description {
+  font-size: 12px;
+  color: #999;
+  margin-top: -10px;
+  margin-bottom: 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  padding-bottom: 14px;
+}
+
+// ─── Body ────────────────────────────────────────────────────
 .body {
   display: flex;
   flex-direction: column;
@@ -55,80 +123,188 @@
   gap: 6px;
 
   label {
-    font-weight: 500;
-    color: #222;
+    font-weight: 600;
+    color: $ink;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
   }
 
-  input,
+  input[type="text"],
   textarea {
-    border: 1px solid #e5e5e5;
-    border-radius: 6px;
-    padding: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: $radius-md;
+    padding: 10px 12px;
     font-size: 14px;
+    background: $input-bg;
+    color: $ink;
+    font-family: inherit;
+    outline: none;
+    transition: border-color $transition, box-shadow $transition;
+
+    &::placeholder { color: #bbb; }
+
+    &:focus {
+      border-color: $gold;
+      box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.1);
+    }
+
+    &:disabled { opacity: 0.6; cursor: not-allowed; }
   }
+
+  textarea { resize: vertical; min-height: 70px; }
 }
 
+// ─── Upload Grid ─────────────────────────────────────────────
 .uploadGrid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  gap: 10px;
 }
 
 .uploadBox {
-  border: 2px dashed #ccc;
-  border-radius: 6px;
-  padding: 12px;
+  border: 2px dashed rgba(0, 0, 0, 0.12);
+  border-radius: $radius-md;
+  padding: 14px;
   text-align: center;
-  background: #f5f5f5;
+  background: $input-bg;
+  transition: border $transition, background $transition;
+
+  &.hasFile {
+    border-style: solid;
+    border-color: $gold-border;
+    background: $gold-faint;
+  }
+
+  &:hover {
+    border-color: $gold-border;
+  }
+}
+
+.uploadBoxHeader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.uploadBoxLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: $ink;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.checkIcon {
+  color: #3B9B5E;
+}
+
+.fileLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: $gold;
+  color: $ink;
+  border: none;
+  padding: 6px 14px;
+  border-radius: $radius-sm;
+  font-size: 11px;
+  font-weight: 600;
   cursor: pointer;
+  transition: background $transition;
 
-  p {
-    font-size: 13px;
-    color: #444;
-    margin-bottom: 8px;
+  &:hover {
+    background: $gold-hover;
   }
 
-  input {
-    width: 100%;
-  }
+  svg { flex-shrink: 0; }
+}
 
-  .fileName {
+.fileName {
   display: block;
-  font-size: 12px;
+  font-size: 11px;
   margin-top: 6px;
-  color: #222;
-  width: 100%;
+  color: $gold-dim;
+  font-style: italic;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  }
 }
 
+// ─── Footer ──────────────────────────────────────────────────
 .footer {
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
-  margin-top: 20px;
+  gap: 10px;
+  margin-top: 6px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.cancelBtn, .submitBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 20px;
+  border-radius: $radius-md;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all $transition;
 }
 
 .cancelBtn {
-  background: #e5e5e5;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 6px;
-  cursor: pointer;
+  background: transparent;
+  color: #888;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+
+  &:hover:not(:disabled) {
+    background: $input-bg;
+    color: $ink;
+    border-color: rgba(0, 0, 0, 0.15);
+  }
 }
 
 .submitBtn {
-  background: #555;
-  color: #fff;
+  background: $gold;
+  color: $ink;
   border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
+  font-weight: 700;
+
+  &:hover:not(:disabled) {
+    background: $gold-hover;
+  }
 
   &:disabled {
-    background: #999;
+    opacity: 0.5;
     cursor: not-allowed;
   }
+}
+
+.cancelBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+// ─── fieldset reset ──────────────────────────────────────────
+fieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }

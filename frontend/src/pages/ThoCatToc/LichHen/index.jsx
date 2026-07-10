@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
 import styles from "./LichHen.module.scss";
-import AppointmentCard from "~/components/AppointmentCard";
-import { ChevronLeft, ChevronRight, CalendarClock } from "lucide-react";
+import AppointmentCard, { getApptStatusKey } from "~/components/AppointmentCard";
+import { ChevronLeft, ChevronRight, CalendarClock, CalendarDays } from "lucide-react";
 import { fetchBookingsForBarber } from "~/services/bookingService";
 import { useAuth } from "~/context/AuthContext";
+import { useToast } from "~/context/ToastContext";
 
 function LichHen() {
   const { user, loading: isAuthLoading } = useAuth();
+  const { showToast } = useToast();
   const BARBER_ID = user?.idUser;
 
   const [calendarView, setCalendarView] = useState("day");
@@ -22,11 +24,11 @@ function LichHen() {
     let end = new Date(date);
 
     if (view === "week") {
-      const dayOfWeek = start.getDay(); 
+      const dayOfWeek = start.getDay();
       const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
       start.setDate(start.getDate() - daysToSubtract);
       end = new Date(start);
-      end.setDate(start.getDate() + 6); 
+      end.setDate(start.getDate() + 6);
     }
     const startStr = start.toISOString().split("T")[0];
     const endStr = end.toISOString().split("T")[0];
@@ -34,7 +36,7 @@ function LichHen() {
   };
 
   useEffect(() => {
-    if (isAuthLoading || !BARBER_ID ) {
+    if (isAuthLoading || !BARBER_ID) {
       if (!isAuthLoading) setLoading(false);
       return;
     }
@@ -48,6 +50,7 @@ function LichHen() {
         setAppointments(data);
       } catch (err) {
         console.error("Lỗi tải lịch hẹn:", err);
+        showToast({ text: "Không thể tải lịch hẹn. Vui lòng thử lại.", type: "error" });
       } finally {
         setLoading(false);
       }
@@ -98,12 +101,57 @@ function LichHen() {
     });
   };
 
+  // ── Day view: sorted chronologically so the rail reads top-to-bottom ──
   const filteredAppointments =
     calendarView === "day"
-      ? appointments.filter(
-          (appt) => normalizeDate(appt.bookingDate) === formatDate(currentDate)
-        )
+      ? appointments
+          .filter((appt) => normalizeDate(appt.bookingDate) === formatDate(currentDate))
+          .sort((a, b) => new Date(a.bookingDate) - new Date(b.bookingDate))
       : [];
+
+  const isToday = formatDate(currentDate) === formatDate(new Date());
+  const now = new Date();
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  const getApptMinutes = (appt) => {
+    const d = new Date(appt.bookingDate);
+    return d.getHours() * 60 + d.getMinutes();
+  };
+
+  // index of the next upcoming appointment today (first one starting after "now")
+  const nextIdx = isToday
+    ? filteredAppointments.findIndex((appt) => getApptMinutes(appt) > nowMinutes)
+    : -1;
+
+  // build the render list, injecting the "now" marker at the right spot
+  const dayRows = [];
+  if (calendarView === "day") {
+    let markerInserted = false;
+    filteredAppointments.forEach((appt, i) => {
+      if (isToday && !markerInserted && getApptMinutes(appt) > nowMinutes) {
+        dayRows.push({ type: "now" });
+        markerInserted = true;
+      }
+      dayRows.push({ type: "appt", data: appt, isNext: i === nextIdx });
+    });
+    if (isToday && !markerInserted && filteredAppointments.length > 0) {
+      dayRows.push({ type: "now" });
+    }
+  }
+
+  const stats = {
+    total: filteredAppointments.length,
+    done: filteredAppointments.filter((a) => getApptStatusKey(a.status) === "completed").length,
+    inProgress: filteredAppointments.filter((a) => getApptStatusKey(a.status) === "inprogress").length,
+  };
+
+  // TODO: wire this up to your real "update booking status" endpoint in bookingService.
+  // For now this optimistically flips the card to "completed" and notifies the user.
+  const handleComplete = (appt) => {
+    setAppointments((prev) =>
+      prev.map((a) => (a.idBooking === appt.idBooking ? { ...a, status: "completed" } : a))
+    );
+    showToast({ text: `Đã đánh dấu hoàn thành lịch hẹn của ${appt.customerName || appt.name || "khách"}.`, type: "success" });
+  };
 
   if (isAuthLoading || loading) return (
     <div className={styles.loadingContainer}>
@@ -112,7 +160,7 @@ function LichHen() {
     </div>
   );
 
-  if (!BARBER_ID ) return (
+  if (!BARBER_ID) return (
     <div className={styles.emptyContainer}>
       <p>Vui lòng đăng nhập để xem lịch hẹn.</p>
     </div>
@@ -122,37 +170,79 @@ function LichHen() {
     <div className={styles.container}>
       <div className={styles.header}>
         <h2 className={styles.title}>Lịch Hẹn Khách Hàng</h2>
-        <select
-          value={calendarView}
-          onChange={handleViewChange}
-          className={styles.select}
-        >
+        <select value={calendarView} onChange={handleViewChange} className={styles.select}>
           <option value="day">Theo Ngày</option>
           <option value="week">Theo Tuần</option>
         </select>
       </div>
 
-      <div className={styles.nav}>
-        <button onClick={() => navigateDate("prev")} className={styles.navBtn}>
-          <ChevronLeft size={20} />
-        </button>
-        <span className={styles.rangeText}>{getDateRangeText()}</span>
-        <button onClick={() => navigateDate("next")} className={styles.navBtn}>
-          <ChevronRight size={20} />
-        </button>
+      <div className={styles.navBar}>
+        <div className={styles.navDate}>
+          <button onClick={() => navigateDate("prev")} className={styles.navBtn}>
+            <ChevronLeft size={16} />
+          </button>
+          <div className={styles.dateBlock}>
+            <div className={styles.dateValue}>
+              <CalendarDays size={13} />
+              {getDateRangeText()}
+            </div>
+            {calendarView === "day" && (
+              <div className={styles.dateWeekday}>
+                {currentDate.toLocaleDateString("vi-VN", { weekday: "long" })}
+              </div>
+            )}
+          </div>
+          <button onClick={() => navigateDate("next")} className={styles.navBtn}>
+            <ChevronRight size={16} />
+          </button>
+        </div>
+
+        {calendarView === "day" && (
+          <div className={styles.navStats}>
+            <div className={styles.statItem}>
+              <div className={`${styles.statValue} ${styles.total}`}>{stats.total}</div>
+              <div className={styles.statLabel}>Lịch hẹn</div>
+            </div>
+            <div className={styles.statItem}>
+              <div className={`${styles.statValue} ${styles.done}`}>{stats.done}</div>
+              <div className={styles.statLabel}>Hoàn thành</div>
+            </div>
+            <div className={styles.statItem}>
+              <div className={`${styles.statValue} ${styles.progress}`}>{stats.inProgress}</div>
+              <div className={styles.statLabel}>Đang phục vụ</div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Day View */}
       {calendarView === "day" && (
-        <div className={styles.list}>
+        <>
           {filteredAppointments.length > 0 ? (
-            filteredAppointments.map((appt) => (
-              <AppointmentCard key={appt.idBooking} appt={appt} view="day" />
-            ))
+            <div className={styles.timeline}>
+              {dayRows.map((row, i) =>
+                row.type === "now" ? (
+                  <div className={styles.nowMarker} key={`now-${i}`}>
+                    <span className={styles.nowLine} />
+                    <span className={styles.nowLabel}>
+                      Bây giờ · {now.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                  </div>
+                ) : (
+                  <AppointmentCard
+                    key={row.data.idBooking}
+                    appt={row.data}
+                    view="day"
+                    isNext={row.isNext}
+                    onComplete={handleComplete}
+                  />
+                )
+              )}
+            </div>
           ) : (
             <div className={styles.emptyState}>Không có lịch hẹn trong ngày này</div>
           )}
-        </div>
+        </>
       )}
 
       {/* Week View */}

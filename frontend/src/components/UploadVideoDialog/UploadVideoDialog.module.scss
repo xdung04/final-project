@@ -1,24 +1,39 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap');
+/* UploadVideoDialog.module.scss
+   NOULE Barber — Upload Video Dialog
+   Design System: Editorial · Luxury Barber · Dark-Gold
+--------------------------------------------------------------- */
 
-:root {
-  --black:    #0a0a0a;
-  --charcoal: #151515;
-  --graphite: #1f1f1f;
-  --cream:    #fdfbf8;
-  --gold:     #b8966a;
-  --gold-dark:#967a54;
-  --text-dim: #8a8580;
-  --border:   rgba(184, 150, 106, 0.25);
+// ─── Tokens ──────────────────────────────────────────────────
+$gold:        #C9A84C;
+$gold-hover:  #BA9A3E;
+$gold-dim:    #8A6A28;
+$gold-faint:  rgba(201, 168, 76, 0.15);
+$gold-border: rgba(201, 168, 76, 0.3);
 
-  --ff-serif:  'Playfair Display', Georgia, serif;
-  --ff-display:'Bebas Neue', sans-serif;
-  --ff-body:   'DM Sans', sans-serif;
-}
+$ink:         #1A1612;
+$ink-2:       #2C2720;
+$ink-text:    #F5F0E8;
+$ink-muted:   rgba(245, 240, 232, 0.5);
 
+$card-bg:     #FFFFFF;
+$input-bg:    #F9F6F1;
+$page-bg:     #F7F4EF;
+
+$border:      1px solid rgba(0, 0, 0, 0.07);
+$border-hover: 1px solid rgba(201, 168, 76, 0.5);
+
+$radius-sm:   6px;
+$radius-md:   10px;
+$radius-lg:   14px;
+
+$ff-serif:    Georgia, 'Times New Roman', serif;
+$transition:  0.15s;
+
+// ─── Overlay ─────────────────────────────────────────────────
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(10, 10, 10, 0.85); /* Tối hơn để tôn lên Dialog */
+  background: rgba(26, 22, 18, 0.8);
   backdrop-filter: blur(4px);
   display: flex;
   justify-content: center;
@@ -32,18 +47,19 @@
   to { opacity: 1; }
 }
 
+// ─── Dialog ──────────────────────────────────────────────────
 .dialog {
-  background: var(--charcoal);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 30px;
+  background: $card-bg;
+  border: 2px solid $ink;
+  border-radius: $radius-lg;
+  padding: 28px 32px;
   width: 550px;
   max-width: 95%;
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+  box-shadow: 6px 6px 0 $ink;
   display: flex;
   flex-direction: column;
   gap: 20px;
-  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: slideUp 0.25s ease;
 }
 
 @keyframes slideUp {
@@ -51,36 +67,36 @@
   to { transform: translateY(0); opacity: 1; }
 }
 
+// ─── Header ──────────────────────────────────────────────────
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
 
   h2 {
-    font-family: var(--ff-serif);
-    font-size: 24px;
+    font-family: $ff-serif;
+    font-size: 22px;
     font-weight: 700;
-    color: var(--gold);
+    color: $ink;
     margin: 0;
-    letter-spacing: 0.5px;
   }
 }
 
 .closeBtn {
   background: transparent;
   border: none;
-  color: var(--text-dim);
+  color: #aaa;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 4px;
   border-radius: 50%;
-  transition: all 0.2s ease;
+  transition: all $transition;
 
   &:hover:not(:disabled) {
-    color: var(--gold);
-    background: var(--graphite);
+    color: $gold;
+    background: $gold-faint;
     transform: rotate(90deg);
   }
 
@@ -91,20 +107,19 @@
 }
 
 .description {
-  font-family: var(--ff-body);
-  font-size: 14px;
-  color: var(--text-dim);
-  margin-top: -15px;
-  margin-bottom: 5px;
-  border-bottom: 1px dashed var(--border);
-  padding-bottom: 15px;
+  font-size: 12px;
+  color: #999;
+  margin-top: -14px;
+  margin-bottom: 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  padding-bottom: 14px;
 }
 
+// ─── Body ────────────────────────────────────────────────────
 .body {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  font-family: var(--ff-body);
 }
 
 .fileInputsGrid {
@@ -123,32 +138,32 @@
   gap: 8px;
 
   label {
-    font-weight: 500;
-    color: var(--cream);
-    font-size: 14px;
-    letter-spacing: 0.3px;
+    font-weight: 600;
+    color: $ink;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
   }
 
   input[type="text"],
   textarea {
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 12px;
-    font-size: 15px;
-    background: var(--graphite);
-    color: var(--cream);
-    font-family: var(--ff-body);
-    transition: all 0.3s ease;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: $radius-md;
+    padding: 10px 12px;
+    font-size: 14px;
+    background: $input-bg;
+    color: $ink;
+    font-family: inherit;
+    outline: none;
+    transition: border-color $transition, box-shadow $transition;
 
     &::placeholder {
-      color: var(--text-dim);
-      opacity: 0.7;
+      color: #bbb;
     }
 
     &:focus {
-      outline: none;
-      border-color: var(--gold);
-      box-shadow: 0 0 8px rgba(184, 150, 106, 0.2);
+      border-color: $gold;
+      box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.1);
     }
 
     &:disabled {
@@ -159,45 +174,46 @@
 
   textarea {
     resize: vertical;
-    min-height: 90px;
+    min-height: 80px;
   }
 }
 
-/* --- CUSTOM FILE UPLOAD BTNS --- */
+// ─── File Upload Labels ──────────────────────────────────────
 .fileUploadLabel {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  background: var(--graphite);
-  color: var(--gold);
-  border: 1px dashed var(--gold-dark);
-  padding: 12px;
-  border-radius: 4px;
+  background: $input-bg;
+  color: $gold-dim;
+  border: 1px dashed rgba(0, 0, 0, 0.15);
+  padding: 14px;
+  border-radius: $radius-md;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all $transition;
   text-transform: uppercase;
-  font-size: 13px !important;
-  font-weight: 600 !important;
-  letter-spacing: 0.5px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
 
   &:hover {
-    background: var(--charcoal);
-    border-color: var(--gold);
-    box-shadow: 0 0 10px rgba(184, 150, 106, 0.2);
+    background: $gold-faint;
+    border-color: $gold-border;
   }
 
   &.hasFile {
     border-style: solid;
-    background: rgba(184, 150, 106, 0.1);
-    color: var(--cream) !important;
+    background: $gold-faint;
+    color: $gold-dim;
   }
+
+  svg { color: $gold; flex-shrink: 0; }
 }
 
 .fileName {
-  font-size: 13px;
+  font-size: 12px;
   margin-top: 4px;
-  color: var(--gold);
+  color: $gold-dim;
   font-style: italic;
   white-space: nowrap;
   overflow: hidden;
@@ -205,100 +221,96 @@
   max-width: 100%;
 }
 
-/* --- SUGGESTIONS LIST --- */
+// ─── Suggestions List ────────────────────────────────────────
 .suggestionList {
   position: absolute;
   top: 100%;
   left: 0;
-  background: var(--graphite);
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  background: $card-bg;
+  border: $border;
+  border-radius: $radius-md;
   width: 100%;
-  margin-top: 5px;
+  margin-top: 4px;
   list-style: none;
   z-index: 100;
-  padding: 5px 0;
+  padding: 4px 0;
   max-height: 160px;
   overflow-y: auto;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  box-shadow: 0 4px 16px rgba(26, 22, 18, 0.1);
 
-  /* Scrollbar */
-  &::-webkit-scrollbar { width: 6px; }
-  &::-webkit-scrollbar-track { background: transparent; }
-  &::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
 
   li {
-    padding: 8px 15px;
+    padding: 8px 14px;
     cursor: pointer;
-    font-size: 14px;
-    color: var(--cream);
-    transition: background 0.2s ease;
+    font-size: 13px;
+    color: $ink;
+    transition: background $transition;
     display: flex;
     align-items: center;
     gap: 4px;
 
     .hashMark {
-      color: var(--gold);
+      color: $gold;
       font-weight: bold;
     }
 
     &:hover {
-      background: var(--charcoal);
-      color: var(--gold);
+      background: $gold-faint;
     }
   }
 }
 
-/* --- FOOTER & BUTTONS --- */
+// ─── Footer & Buttons ────────────────────────────────────────
 .footer {
   display: flex;
   justify-content: flex-end;
-  gap: 15px;
-  margin-top: 10px;
-  padding-top: 20px;
-  border-top: 1px dashed var(--border);
+  gap: 10px;
+  margin-top: 6px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .cancelBtn, .submitBtn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 20px;
-  border-radius: 4px;
-  font-size: 14px;
+  padding: 9px 20px;
+  border-radius: $radius-md;
+  font-size: 12px;
   font-weight: 600;
-  font-family: var(--ff-body);
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  font-family: inherit;
+  letter-spacing: 0.05em;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all $transition;
 }
 
 .cancelBtn {
   background: transparent;
-  color: var(--text-dim);
-  border: 1px solid var(--text-dim);
+  color: #888;
+  border: 1px solid rgba(0, 0, 0, 0.1);
 
   &:hover:not(:disabled) {
-    color: var(--cream);
-    border-color: var(--cream);
+    background: $input-bg;
+    color: $ink;
+    border-color: rgba(0, 0, 0, 0.15);
   }
 }
 
 .submitBtn {
-  background: var(--gold);
-  color: var(--black);
-  border: 1px solid var(--gold);
+  background: $gold;
+  color: $ink;
+  border: none;
+  font-weight: 700;
 
   &:hover:not(:disabled) {
-    background: var(--cream);
-    border-color: var(--cream);
-    box-shadow: 0 0 15px rgba(184, 150, 106, 0.4);
+    background: $gold-hover;
   }
 }
 
 .cancelBtn:disabled, .submitBtn:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
@@ -309,4 +321,9 @@
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+// ─── Position relative for suggestion list ───────────────────
+:global(.formGroup) {
+  position: relative;
 }

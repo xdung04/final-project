@@ -1,104 +1,294 @@
+/* AppointmentCard.module.scss
+   NOULE Barber — Appointment Card
+   Design System: Editorial · Luxury Barber · Dark-Gold (ledger style)
+--------------------------------------------------------------- */
+
+// ─── Tokens ──────────────────────────────────────────────────
+$gold:        #C9A84C;
+$gold-hover:  #BA9A3E;
+$gold-dim:    #8A6A28;
+$gold-faint:  rgba(201, 168, 76, 0.15);
+$gold-border: rgba(201, 168, 76, 0.3);
+
+$ink:         #1A1612;
+$ink-2:       #2C2720;
+
+$card-bg:     #FFFFFF;
+$input-bg:    #F9F6F1;
+
+$border:       1px solid rgba(0, 0, 0, 0.07);
+$border-hover: 1px solid rgba(201, 168, 76, 0.5);
+
+$radius-sm:   6px;
+$radius-md:   10px;
+$radius-lg:   14px;
+
+$transition:  0.15s;
+
+// status colors
+$green:   #3B9B5E; $green-bg:   #E6F4EA;
+$danger:  #D93025; $danger-bg:  #FCE8E6;
+$amber:   #C97C2A; $amber-bg:   #FAEEDA;
+$blue:    #1A73E8; $blue-bg:    #E8F0FE;
+
+@function status-color($type) {
+  @if $type == pending    { @return $amber; }
+  @if $type == inprogress { @return $blue; }
+  @if $type == completed  { @return $green; }
+  @if $type == cancelled  { @return $danger; }
+  @return $gold;
+}
+
+// ─── Card ────────────────────────────────────────────────────
 .card {
+  position: relative;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  border: 1px solid #e5e5e5;
-  border-radius: 8px;
-  padding: 12px;
-  background: #fff;
-  transition: background 0.2s;
+  border: $border;
+  border-radius: $radius-lg;
+  padding: 14px 16px 14px 20px;
+  background: $card-bg;
+  transition: border $transition, box-shadow $transition, transform $transition;
+
+  // subtle status accent on the left edge — reads at a glance
+  &::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 12px;
+    bottom: 12px;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: rgba(0, 0, 0, 0.08);
+  }
 
   &:hover {
-    background: #f9f9f9;
+    border: $border-hover;
+    box-shadow: 0 6px 18px rgba(26, 22, 18, 0.06);
+    transform: translateY(-1px);
   }
+
+  &.pending::before    { background: $amber; }
+  &.inprogress::before { background: $blue; }
+  &.completed::before  { background: $green; }
+  &.cancelled::before  { background: $danger; }
 }
 
 .weekCard {
   flex-direction: column;
   align-items: flex-start;
   gap: 6px;
+  padding: 10px 10px 10px 14px;
 }
 
+// ─── Rail dot (ledger timeline marker, day view only) ────────
+// Positioned to line up with the vertical rail drawn by the
+// parent list container. Adjust the parent's `left` offset if
+// you change timeBox width / info margin below.
+.railDot {
+  position: absolute;
+  top: 50%;
+  left: -6px;
+  transform: translateY(-50%);
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: $card-bg;
+  border: 2px solid $gold-dim;
+
+  &.pending    { border-color: $amber; }
+  &.inprogress { border-color: $blue; }
+  &.completed  { border-color: $green; }
+  &.cancelled  { border-color: $danger; }
+}
+
+// ─── Time Box ────────────────────────────────────────────────
 .timeBox {
-  min-width: 70px;
+  min-width: 68px;
+  flex-shrink: 0;
   text-align: center;
 
   .time {
-    font-weight: bold;
-    color: #333;
+    font-weight: 700;
+    color: $ink;
+    font-size: 15px;
+    font-family: Georgia, 'Times New Roman', serif;
   }
 
   .duration {
-    font-size: 12px;
-    color: #666;
-  }
-}
-
-.info {
-  flex: 1;
-  margin-left: 12px;
-
-  .name {
-    font-weight: 600;
-    color: #222;
-  }
-
-  .service {
-    font-size: 14px;
-    color: #444;
-  }
-
-  .guest,
-  .note {
-    font-size: 13px;
-    color: #555;
+    font-size: 11px;
+    color: #999;
     margin-top: 2px;
   }
+}
 
-  .phone {
-    font-size: 12px;
-    color: #666;
-  }
+// ─── Info ────────────────────────────────────────────────────
+.info {
+  flex: 1;
+  margin-left: 14px;
+  min-width: 0;
+}
 
-  .timeSmall {
-    font-size: 13px;
-    color: #555;
+.nameRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.avatar {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: $gold-faint;
+  border: 1px solid $gold-border;
+  color: $gold-dim;
+  font-weight: 700;
+  font-size: 11px;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.name {
+  font-weight: 600;
+  color: $ink;
+  font-size: 15px;
+  margin: 0;
+}
+
+.phone {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #888;
+  margin: 0 0 8px;
+
+  &.walkIn {
+    font-style: italic;
+    color: #aaa;
   }
 }
 
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.service {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: $gold-dim;
+  background: $gold-faint;
+  padding: 4px 9px;
+  border-radius: $radius-sm;
+}
+
+.weekService {
+  display: block;
+  background: none;
+  padding: 0;
+  color: $gold-dim;
+  font-weight: 500;
+}
+
+.guest {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #888;
+}
+
+.notes {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.note {
+  font-size: 12px;
+  color: #777;
+  margin: 0;
+
+  strong {
+    color: $ink-2;
+    font-weight: 600;
+  }
+}
+
+.silentNote {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: $gold-dim;
+  font-weight: 500;
+}
+
+// ─── Actions ─────────────────────────────────────────────────
 .actions {
   display: flex;
   align-items: center;
+  flex-shrink: 0;
+  margin-left: 12px;
+}
 
-  .completeBtn {
-    background: #555;
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    padding: 6px 12px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: 0.2s;
+// ─── Complete Button ─────────────────────────────────────────
+.completeBtn {
+  background: $gold;
+  color: $ink;
+  border: none;
+  border-radius: $radius-md;
+  padding: 8px 18px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  transition: background $transition;
 
-    &:hover {
-      background: #333;
-    }
+  &:hover {
+    background: $gold-hover;
   }
+}
 
-  .statusLabel {
-    font-size: 14px;
-    font-weight: 600;
-    padding: 4px 8px;
-    border-radius: 6px;
-  }
+// ─── Status Labels ───────────────────────────────────────────
+.statusLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+}
 
-  .cancelled {
-    color: #d93025;
-    background: #fdecea;
-  }
+.statusLabel {
+  &.pending    { color: $amber;  background: $amber-bg; }
+  &.inprogress { color: $blue;   background: $blue-bg; }
+  &.completed  { color: $green;  background: $green-bg; }
+  &.cancelled  { color: $danger; background: $danger-bg; }
+}
 
-  .completed {
-    color: #0f9d58;
-    background: #e6f4ea;
-  }
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+
+  &.pending    { background: $amber; }
+  &.inprogress { background: $blue; }
+  &.completed  { background: $green; }
+  &.cancelled  { background: $danger; }
 }
