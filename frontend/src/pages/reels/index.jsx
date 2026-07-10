@@ -3,17 +3,18 @@ import styles from "./reels.module.scss";
 import ReelPlayer from "~/components/ReelPlayer";
 import VideoDetailDialog from "~/components/VideoDetailDialog";
 import VideoCard from "~/components/VideoCard";
-import { fetchReelsPaged, searchReels } from "~/services/reelService";
+import { fetchReelsPaged, fetchReelById, searchReels } from "~/services/reelService";
 import { getHashtags, getTopHashtags } from "~/services/hashtagService";
 import { useAuth } from "~/context/AuthContext";
 import { useToast } from "~/context/ToastContext";
-import { useLocation } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 
 const PAGE_SIZE = 3;
 const SCROLL_COOLDOWN_MS = 1500;
 
 function Reel() {
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { isLogin, loading: isAuthLoading } = useAuth();
   const { showToast } = useToast();
 
@@ -42,6 +43,7 @@ function Reel() {
   const isFetchingRef = useRef(false);
 
   const [pendingOpenId, setPendingOpenId] = useState(null);
+  const deepLinkHandledRef = useRef(false);
 
   const loadMore = async () => {
     if (loading || !hasMore || isFetchingRef.current) return;
@@ -66,6 +68,26 @@ function Reel() {
     }
   };
 
+  // Đọc params từ URL khi mount (chỉ chạy 1 lần khi component mount)
+  useEffect(() => {
+    const urlKeyword = searchParams.get("keyword");
+    const urlId = searchParams.get("id");
+
+    const init = async () => {
+      if (urlKeyword) {
+        setKeyword(urlKeyword);
+        // Chờ search hoàn tất trước, để performSearch không ghi đè mất id
+        await performSearch(urlKeyword);
+      }
+      if (urlId) {
+        setPendingOpenId(urlId);
+      }
+    };
+    init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Xử lý location.state (khi được navigate từ component khác)
   useEffect(() => {
     const tag = location.state?.keyword;
     const openId = location.state?.openReelId;
@@ -73,13 +95,13 @@ function Reel() {
     if (tag) {
       setKeyword(tag);
       performSearch(tag);
-    } else {
+    } else if (!searchParams.get("keyword")) {
+      // Chỉ clear nếu không có keyword từ URL
       setIsSearching(false);
       setSearchResults([]);
       setKeyword("");
     }
 
-    // Nếu có openReelId → đợi reels load xong rồi mở đúng video
     if (openId) {
       setPendingOpenId(openId);
     }
@@ -90,14 +112,40 @@ function Reel() {
     }
   }, [location.state]);
 
-  // Chỉ cuộn đến đúng video
+  // Cuộn đến đúng video khi có pendingOpenId
+  // Nếu không tìm thấy trong danh sách đã load => fetch riêng reel đó, chèn vào đầu
   useEffect(() => {
-    if (!pendingOpenId || reels.length === 0) return;
+    if (!pendingOpenId) return;
 
-    const idx = reels.findIndex((r) => r.idReel === pendingOpenId);
-    if (idx !== -1) {
-      setCurrentIndex(idx);
-      setPendingOpenId(null);
+    const tryFindAndScroll = () => {
+      const idx = reels.findIndex((r) => r.idReel === pendingOpenId);
+      if (idx !== -1) {
+        setCurrentIndex(idx);
+        setPendingOpenId(null);
+        deepLinkHandledRef.current = true;
+        return true;
+      }
+      return false;
+    };
+
+    // Nếu chưa có reels hoặc chưa tìm thấy, thử fetch riêng
+    if (reels.length === 0 || !tryFindAndScroll()) {
+      fetchReelById(pendingOpenId)
+        .then((reel) => {
+          if (!reel) return;
+          setReels((prev) => {
+            const already = prev.some((r) => r.idReel === reel.idReel);
+            if (already) return prev;
+            return [reel, ...prev];
+          });
+          setCurrentIndex(0);
+          setPendingOpenId(null);
+          deepLinkHandledRef.current = true;
+        })
+        .catch((err) => {
+          console.error("Không tìm thấy reel với id:", pendingOpenId, err);
+          setPendingOpenId(null);
+        });
     }
   }, [reels, pendingOpenId]);
 
@@ -126,7 +174,14 @@ function Reel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthLoading]);
 
+  // Helper: lấy keyword hiện tại để giữ lại khi cập nhật URL
+  const getCurrentKeyword = () => searchParams.get("keyword") || "";
+
   useEffect(() => {
+    // KHÔNG reset reels khi đang xử lý deep-link từ URL (tránh race condition với fetchReelById)
+    // hoặc đã xử lý deep-link xong (tránh reset reels sau khi đã chèn đúng video)
+    if (pendingOpenId || deepLinkHandledRef.current) return;
+
     if (isLogin && page === 1 && reels.length > 0) {
       setReels([]);
       setPage(1);
@@ -137,7 +192,7 @@ function Reel() {
       loadMore();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentIndex, isLogin, loading]);
+  }, [currentIndex, isLogin, loading, pendingOpenId]);
 
   const handleLike = (idReel, liked, count) => {
     if (!isLogin) {
@@ -163,6 +218,15 @@ function Reel() {
     }
     setDetailIndex(i);
     setShowDetail(true);
+    // Cập nhật URL với id của reel khi mở detail (giống TikTok)
+    const currentReel = isSearching ? searchResults[i] : reels[i];
+    if (currentReel) {
+      const kw = getCurrentKeyword();
+      const params = {};
+      if (kw) params.keyword = kw;
+      params.id = currentReel.idReel;
+      setSearchParams(params);
+    }
   };
 
   const scrollToVideo = (index) => {
@@ -172,7 +236,12 @@ function Reel() {
   };
 
   const handleNext = () => {
-    if (currentIndex + 1 >= reels.length) return;
+    if (currentIndex + 1 >= reels.length) {
+      if (hasMore && !loading) {
+        loadMore();
+      }
+      return;
+    }
     const next = currentIndex + 1;
     setCurrentIndex(next);
     scrollToVideo(next);
@@ -189,7 +258,19 @@ function Reel() {
     setTimeout(() => setCanScroll(true), SCROLL_COOLDOWN_MS);
   };
 
-  const handleChangeVideo = (newIndex) => setDetailIndex(newIndex);
+  const handleChangeVideo = (newIndex) => {
+    setDetailIndex(newIndex);
+    // Cập nhật URL với id reel mới khi chuyển video trong detail
+    const reelList = isSearching ? searchResults : reels;
+    const newReel = reelList[newIndex];
+    if (newReel) {
+      const kw = getCurrentKeyword();
+      const params = {};
+      if (kw) params.keyword = kw;
+      params.id = newReel.idReel;
+      setSearchParams(params);
+    }
+  };
 
   const handleHashtagSearch = (tag) => {
     const q = `#${tag.trim()}`;
@@ -204,6 +285,11 @@ function Reel() {
       const data = await searchReels(q);
       setSearchResults(data || []);
       setIsSearching(true);
+      // Cập nhật URL với keyword, giữ lại id nếu có (tránh ghi đè mất id)
+      const urlId = searchParams.get("id");
+      const params = { keyword: q };
+      if (urlId) params.id = urlId;
+      setSearchParams(params);
       setTimeout(() => {
         if (rightColumnRef.current) {
           rightColumnRef.current.scrollTo({ top: 0, behavior: "smooth" });
@@ -214,7 +300,6 @@ function Reel() {
       showToast({ text: "Lỗi tìm kiếm video, vui lòng thử lại", type: "error" });
     } finally {
       setSearchLoading(false);
-      window.history.replaceState({}, document.title);
     }
   };
 
@@ -224,6 +309,7 @@ function Reel() {
     if (!q) {
       setIsSearching(false);
       setSearchResults([]);
+      setSearchParams({});
       return;
     }
     performSearch(q);
@@ -341,6 +427,7 @@ function Reel() {
               setKeyword("");
               setIsSearching(false);
               setSearchResults([]);
+              setSearchParams({});
             }}
           >
             <span>XÓA TÌM KIẾM</span>
@@ -391,6 +478,8 @@ function Reel() {
                           }
                           setDetailIndex(i);
                           setShowDetail(true);
+                          // Cập nhật URL chỉ với id reel (không giữ keyword) khi mở detail từ search grid
+                          setSearchParams({ id: searchResults[i].idReel });
                         }}
                       />
                     </div>
@@ -423,7 +512,7 @@ function Reel() {
                     onNavDown={handleNext}
                     onHashtagClick={handleHashtagSearch}
                     hasPrev={currentIndex > 0}
-                    hasNext={currentIndex + 1 < reels.length}
+                    hasNext={currentIndex + 1 < reels.length || (hasMore && !loading)}
                   />
                 </div>
               </div>
@@ -435,7 +524,16 @@ function Reel() {
             <VideoDetailDialog
               reels={isSearching ? searchResults : reels}
               currentIndex={detailIndex}
-              onClose={() => setShowDetail(false)}
+              onClose={() => {
+                setShowDetail(false);
+                // Xóa id khỏi URL khi đóng detail, giữ keyword nếu có
+                const kw = getCurrentKeyword();
+                if (kw) {
+                  setSearchParams({ keyword: kw });
+                } else {
+                  setSearchParams({});
+                }
+              }}
               onToggleLike={handleLike}
               onChangeVideo={handleChangeVideo}
               globalMuted={globalMuted}

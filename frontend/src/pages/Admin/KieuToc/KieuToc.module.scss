@@ -98,7 +98,6 @@ $r-xl:         18px;
 
 // ── Content wrapper ────────────────────────────────────────────────────────────
 .content {
-  padding: 28px 32px 56px;
   max-width: 1280px;
   margin: 0 auto;
 }
@@ -1155,8 +1154,6 @@ $r-xl:         18px;
 
 // ── Responsive ─────────────────────────────────────────────────────────────────
 @media (max-width: 768px) {
-  .content { padding: 20px 16px 40px; }
-
   .statsStrip {
     grid-template-columns: repeat(2, 1fr);
   }

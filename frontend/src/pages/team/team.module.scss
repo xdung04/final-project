@@ -1,198 +1,36 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;700&family=Bebas+Neue&display=swap');
-
-:root {
-  --bg-white:  #ffffff;
-  --bg-cream:  #fdfbf8;
-  --gold:      #b8966a;
-  --gold-dark: #967a54;
-  --charcoal:  #2c2c2c;
-  --text-dim:  #666666;
-  --border:    #e0d7cc;
-
-  --ff-serif:  'Playfair Display', serif;
-  --ff-display:'Bebas Neue', sans-serif;
-  --ff-body:   'DM Sans', sans-serif;
-}
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Cormorant+Garamond:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap');
 
 .page {
+  --black: #0a0a0a;
+  --charcoal: #1a1a1a;
+  --graphite: #2c2c2c;
+  --cream: #f5f0e8;
+  --gold: #b8966a;
+  --text-dim: #aaa39b;
+  --border: rgba(184, 150, 106, .25);
+  --ff-serif: 'Playfair Display', Georgia, serif;
+  --ff-elegant: 'Cormorant Garamond', Georgia, serif;
+  --ff-body: 'DM Sans', sans-serif;
   display: flex;
-  background: var(--bg-white);
   min-height: 100vh;
+  padding-top: 80px;
+  background: var(--black);
+  color: var(--cream);
   font-family: var(--ff-body);
-  position: relative;
 }
 
-/* Hiệu ứng hạt giấy mỹ thuật */
-.grainOverlay {
-  position: fixed; inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.02'/%3E%3C/svg%3E");
-  pointer-events: none; z-index: 1;
-}
+.grainOverlay { position: fixed; inset: 0; pointer-events: none; z-index: 1; opacity: .24; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.12'/%3E%3C/svg%3E"); }
 
-/* Sidebar phong cách Studio */
-.sidebar {
-  width: 300px;
-  background: var(--bg-cream);
-  border-right: 1px solid var(--border);
-  padding: 40px 30px;
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  z-index: 10;
-}
-
-.brand {
-  font-family: var(--ff-display);
-  font-size: 28px;
-  letter-spacing: 3px;
-  margin-bottom: 40px;
-  color: var(--charcoal);
-
-  span {
-    color: var(--gold);
-  }
-}
-
-.searchBox {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 15px;
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  margin-bottom: 30px;
-  color: var(--gold);
-
-  input {
-    flex: 1;
-    border: none;
-    background: transparent;
-    font-size: 14px;
-    color: var(--charcoal);
-    font-family: var(--ff-body);
-
-    &:focus { outline: none; }
-    &::placeholder { color: #bbb; }
-  }
-}
-
-.filters {
-  h4 {
-    font-family: var(--ff-display);
-    font-size: 13px;
-    letter-spacing: 2px;
-    color: var(--gold-dark);
-    margin-bottom: 20px;
-    text-transform: uppercase;
-  }
-}
-
-.filterBtn, .filterActive {
-  width: 100%;
-  padding: 12px 15px;
-  border: none;
-  background: transparent;
-  margin-bottom: 5px;
-  cursor: pointer;
-  text-align: left;
-  font-size: 14px;
-  font-family: var(--ff-body);
-  transition: 0.3s;
-  border-left: 2px solid transparent;
-  color: var(--text-dim);
-
-  &:hover {
-    color: var(--gold);
-    padding-left: 20px;
-  }
-}
-
-.filterActive {
-  color: var(--charcoal);
-  font-weight: 700;
-  border-left: 2px solid var(--gold);
-  background: rgba(184, 150, 106, 0.05);
-}
-
-.branchFilter {
-  margin-top: 30px;
-  label {
-    font-family: var(--ff-display);
-    font-size: 12px;
-    letter-spacing: 1px;
-    color: var(--gold-dark);
-    display: block;
-    margin-bottom: 10px;
-  }
-  select {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid var(--border);
-    background: white;
-    font-family: var(--ff-body);
-    font-size: 14px;
-    color: var(--charcoal);
-    border-radius: 4px;
-    outline: none;
-    &:focus { border-color: var(--gold); }
-  }
-}
-
-.quickInfo {
-  position: absolute;
-  bottom: 40px;
-  left: 30px;
-  h5 {
-    font-family: var(--ff-display);
-    font-size: 12px;
-    color: var(--gold-dark);
-    margin-bottom: 5px;
-  }
-  p {
-    font-size: 13px;
-    color: var(--charcoal);
-    strong { color: var(--gold); }
-  }
-}
-
-/* Main Content */
-.main {
-  flex: 1;
-  padding: 60px 50px;
-  position: relative;
-  z-index: 2;
-}
-
-.headerMain {
-  margin-bottom: 50px;
-  h1 {
-    font-family: var(--ff-serif);
-    font-size: 48px;
-    color: var(--charcoal);
-    letter-spacing: -1px;
-    
-    &::after {
-      content: "";
-      display: block;
-      width: 60px;
-      height: 3px;
-      background: var(--gold);
-      margin-top: 15px;
-    }
-  }
-}
-
-.listGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 30px;
-}
-
-.emptyState {
-  font-family: var(--ff-serif);
-  font-style: italic;
-  color: var(--text-dim);
-  font-size: 18px;
-  margin-top: 50px;
-}
+.sidebar { width: 285px; flex: 0 0 285px; min-height: calc(100vh - 80px); padding: 46px 30px; background: #111; border-right: 1px solid var(--border); position: sticky; top: 80px; align-self: flex-start; }
+.brand { margin-bottom: 42px; color: var(--cream); font-family: var(--ff-serif); font-size: 24px; letter-spacing: 3px; span { color: var(--gold); font-style: italic; } }
+.searchBox { display: flex; align-items: center; gap: 10px; padding: 12px 13px; color: var(--gold); background: rgba(245,240,232,.04); border: 1px solid var(--border); input { min-width: 0; flex: 1; border: 0; outline: 0; color: var(--cream); background: transparent; font: 300 13px var(--ff-body); &::placeholder { color: #77716c; } } }
+.filters { margin-top: 32px; h4, label { display: block; margin: 0 0 15px; color: var(--gold); font: 600 11px var(--ff-body); letter-spacing: 2px; } }
+.filterBtn, .filterActive { width: 100%; padding: 12px 13px; border: 0; border-left: 2px solid transparent; color: var(--text-dim); background: transparent; cursor: pointer; text-align: left; font: 400 13px var(--ff-body); transition: .25s; &:hover { color: var(--cream); } }
+.filterActive { color: var(--cream); border-left-color: var(--gold); background: rgba(184,150,106,.1); }
+.branchFilter { margin-top: 28px; select { width: 100%; padding: 11px; border: 1px solid var(--border); outline: 0; color: var(--cream); background: var(--charcoal); font: 13px var(--ff-body); } }
+.quickInfo { margin-top: 52px; padding-top: 22px; border-top: 1px solid var(--border); h5 { margin: 0 0 7px; color: var(--gold); font: 11px var(--ff-body); letter-spacing: 2px; } p { margin: 0; color: var(--text-dim); font-size: 12px; strong { color: var(--cream); font-weight: 400; } } }
+.main { position: relative; z-index: 2; flex: 1; padding: 66px clamp(25px, 5vw, 76px) 90px; background: radial-gradient(circle at 78% 8%, rgba(107,76,53,.2), transparent 30%), var(--black); }
+.headerMain { margin-bottom: 48px; h1 { margin: 0; color: var(--cream); font: 700 clamp(38px, 5vw, 62px)/1.1 var(--ff-serif); &::before { content: 'THE CRAFTSMEN'; display: block; margin-bottom: 16px; color: var(--gold); font: 600 11px var(--ff-body); letter-spacing: 4px; } &::after { content: ''; display: block; width: 60px; height: 1px; margin-top: 22px; background: var(--gold); } } }
+.listGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 22px; }
+.emptyState { color: var(--text-dim); font: italic 21px var(--ff-elegant); }
+@media (max-width: 800px) { .page { display: block; } .sidebar { width: 100%; min-height: auto; padding: 30px 22px; position: static; } .quickInfo { display: none; } .main { padding: 46px 22px 70px; } }

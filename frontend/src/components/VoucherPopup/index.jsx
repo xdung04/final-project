@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import classNames from "classnames/bind";
 import * as voucherService from "~/services/voucherService";
 import { useAuth } from "~/context/AuthContext";
+import { useToast } from "~/context/ToastContext";
 import styles from "./VoucherPopup.module.scss";
 
 const cx = classNames.bind(styles);
@@ -307,6 +308,7 @@ function ConfirmExchange({ voucher, onConfirm, onCancel, loading }) {
  */
 function VoucherPopup({ onClose, onSelect, defaultVoucher, invoiceAmount = 0 }) {
   const { isLogin } = useAuth();
+  const { showToast } = useToast();
 
   const [availableVouchers,    setAvailableVouchers]    = useState([]);
   const [exchangeableVouchers, setExchangeableVouchers] = useState([]);
@@ -380,7 +382,13 @@ function VoucherPopup({ onClose, onSelect, defaultVoucher, invoiceAmount = 0 }) 
       setExchangeableVouchers(updatedExchange || []);
       setConfirmVoucher(null);
     } catch (error) {
-      console.error(error.response?.data?.message || "Đổi voucher thất bại!");
+      const errorMsg = error.response?.data?.message || error.message || "Đổi voucher thất bại!";
+      showToast({ text: errorMsg, type: "error" });
+      setConfirmVoucher(null);
+      // Load lại danh sách exchangeable để loại bỏ voucher đã bị xóa/không còn hiệu lực
+      voucherService.fetchExchangeableVouchers().then((updated) => {
+        if (updated) setExchangeableVouchers(updated);
+      }).catch(() => {});
     } finally {
       setExchanging(false);
     }

@@ -99,7 +99,6 @@ $cat-promo-text: #854F0B;
 
 // ── Content wrapper ───────────────────────────────────────────────────────────
 .content {
-  padding: 28px 32px 48px;
   max-width: 1280px;
   margin: 0 auto;
 }
@@ -978,8 +977,6 @@ $cat-promo-text: #854F0B;
 
 // ── Responsive ────────────────────────────────────────────────────────────────
 @media (max-width: 768px) {
-  .content { padding: 20px 16px 40px; }
-
   .statsStrip {
     grid-template-columns: repeat(3, 1fr);
     gap: 8px;
