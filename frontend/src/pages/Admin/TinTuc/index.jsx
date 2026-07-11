@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import styles from "./TinTuc.module.scss";
 import { NewsAPI } from "~/apis/newsAPI";
 import { useAuth } from "~/context/AuthContext";
@@ -164,6 +165,19 @@ function FormModal({ initial, onClose, onSave, loading }) {
   const [form, setForm] = useState(initial ? { ...initial } : { ...EMPTY_FORM });
   const [thumbnailFile, setThumbnailFile] = useState(null);
 
+  // Khóa scroll nền + đóng modal bằng phím Esc
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKeyDown = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const set = (key, val) => setForm((f) => ({ ...f, [key]: val }));
 
   const handleTitleChange = (val) => {
@@ -183,7 +197,10 @@ function FormModal({ initial, onClose, onSave, loading }) {
     onSave({ ...form, status: publish ? "PUBLISHED" : form.status }, thumbnailFile);
   };
 
-  return (
+  // Render qua Portal thẳng vào document.body: tránh bug modal bị lệch
+  // khi có ancestor nào đó (layout/animation) đang set transform/filter,
+  // vốn phá vỡ containing block của position: fixed.
+  return createPortal(
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
 
@@ -354,13 +371,27 @@ function FormModal({ initial, onClose, onSave, loading }) {
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
 // ── Delete Modal ──────────────────────────────────────────────────────────────
 function DeleteModal({ article, onClose, onConfirm, loading }) {
-  return (
+  // Khóa scroll nền + đóng modal bằng phím Esc
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKeyDown = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return createPortal(
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.delBox} onClick={(e) => e.stopPropagation()} role="alertdialog" aria-modal="true">
         <h3 className={styles.delBox__title}>Xoá bài viết này?</h3>
@@ -375,7 +406,8 @@ function DeleteModal({ article, onClose, onConfirm, loading }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -616,7 +648,7 @@ export default function QuanLyTinTuc() {
         )}
       </div>
 
-      {/* Modals */}
+      {/* Modals — FormModal / DeleteModal tự render bằng Portal vào document.body */}
       {showForm && (
         <FormModal initial={editItem} onClose={closeForm} onSave={handleSave} loading={loadingSave} />
       )}

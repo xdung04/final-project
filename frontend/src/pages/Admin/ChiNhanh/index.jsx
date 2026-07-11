@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import classNames from "classnames/bind";
 import styles from "./ChiNhanh.module.scss";
 import BranchCard from "~/components/BranchCard";
@@ -423,7 +424,8 @@ function ChiNhanh() {
         ))}
       </div>
 
-      {showForm && (
+      {/* ── Modal Thêm/Sửa chi nhánh — portal ra document.body ──────── */}
+      {showForm && createPortal(
         <div className={cx("modalOverlay")}>
           <div className={cx("modal")}>
             <div className={cx("modalHeader")}>
@@ -720,10 +722,12 @@ function ChiNhanh() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {showSuspendForm && (
+      {/* ── Modal lịch tạm ngưng / mở cửa lại — portal ─────────────── */}
+      {showSuspendForm && createPortal(
         <div className={cx("modalOverlay")}>
           <div className={cx("modal", "modalSuspendForm")}>
             <div className={cx("modalHeader")}>
@@ -766,10 +770,12 @@ function ChiNhanh() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {showReceptionistInfo && selectedReceptionist && (
+      {/* ── Modal thông tin / chỉnh sửa lễ tân — portal ────────────── */}
+      {showReceptionistInfo && selectedReceptionist && createPortal(
         <div className={cx("modalOverlay")}>
           <div className={cx("modal")} style={{ maxWidth: "520px" }}>
             {/* Header */}
@@ -913,15 +919,17 @@ function ChiNhanh() {
               </div>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* 🟢 OVERLAY LOADING KHI SUBMIT CHUẨN SCSS */}
-      {isSubmitting && (
+      {/* ── Overlay loading khi submit — portal ────────────────────── */}
+      {isSubmitting && createPortal(
         <div className={cx("loadingOverlay")}>
           <div className={cx("spinner")} />
           <h3>Đang xử lý dữ liệu...</h3>
-        </div>
+        </div>,
+        document.body
       )}
 
       {toast && <Toast type={toast.type} text={toast.text} duration={toast.duration} onClose={() => setToast(null)} />}

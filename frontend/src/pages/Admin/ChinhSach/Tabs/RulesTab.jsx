@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import classNames from "classnames/bind";
 import styles from "../ChinhSach.module.scss";
 import {
@@ -108,6 +109,7 @@ function BonusCard({ bonus, onEdit, onRemove }) {
 }
 
 // ─── BonusModal ───────────────────────────────────────────────────
+// Đẩy ra document.body bằng createPortal để không bị khung tab "nhốt" lại
 function BonusModal({ data, onSave, onClose }) {
   const isEdit = !!data.bonus;
   const [form, setForm] = useState({
@@ -122,7 +124,7 @@ function BonusModal({ data, onSave, onClose }) {
 
   const upd = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
-  return (
+  return createPortal(
     <div className={cx("modalOverlay")} onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className={cx("modalBox")}>
         <div className={cx("modalHeader")}>
@@ -175,7 +177,8 @@ function BonusModal({ data, onSave, onClose }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

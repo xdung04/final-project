@@ -609,42 +609,77 @@ try {
                 ))}
               </div>
             )}
-            {branches.length > 0 && (
-              <div className={styles.branchCardList}>
-                {branches.map((b, idx) => {
-                  const isNearest = hasLocation && b.distanceM != null && idx === 0;
-                  const isSelected = booking.branchId === b.idBranch;
-                  const status = getBranchStatus(b);
-                  return (
-                    <div
-                      key={b.idBranch}
-                      className={`${styles.branchCard} ${
-                        isSelected ? styles.branchCardSelected : ""
-                      } ${isNearest ? styles.branchCardNearest : ""}`}
-                      onClick={() => handleBranchCardClick(b.idBranch)}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => e.key === "Enter" && handleBranchCardClick(b.idBranch)}
-                    >
-                      {isNearest && <span className={styles.nearestBadge}>Gần nhất</span>}
-                      {isSelected && <span className={styles.selectedBadge}>✓ Đã chọn</span>}
-                      <div className={styles.branchCardName}>{b.name}</div>
-                      {b.address && <div className={styles.branchCardAddr}>📍 {b.address}</div>}
-                      <div className={styles.branchCardMeta}>
-                        {b.distanceText && <span className={styles.chipDist}>📏 {b.distanceText}</span>}
-                        {b.durationText && <span className={styles.chipTime}>🚗 {b.durationText}</span>}
-                        {!b.distanceText && !locationLoading && <span className={styles.chipNoLoc}>— km</span>}
-                        {status && (
-                          <span className={status.type === "warn" ? styles.chipWarn : styles.chipPause}>
-                            {status.label}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+{branches.length > 0 && (
+  <div className={styles.branchResultsWrap}>
+    {hasLocation && branches[0]?.distanceM != null && (
+      <div
+        className={`${styles.nearestBranchCard} ${
+          booking.branchId === branches[0].idBranch ? styles.nearestBranchCardSelected : ""
+        }`}
+        onClick={() => handleBranchCardClick(branches[0].idBranch)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => e.key === "Enter" && handleBranchCardClick(branches[0].idBranch)}
+      >
+        <span className={styles.nearestBranchTag}>📍 Gần bạn nhất</span>
+        {booking.branchId === branches[0].idBranch && (
+          <span className={styles.selectedBadge}>✓ Đã chọn</span>
+        )}
+        <div className={styles.nearestBranchName}>{branches[0].name}</div>
+        {branches[0].address && (
+          <div className={styles.nearestBranchAddr}>📍 {branches[0].address}</div>
+        )}
+        <div className={styles.nearestBranchMeta}>
+          {branches[0].distanceText && (
+            <span className={styles.chipDist}>📏 {branches[0].distanceText}</span>
+          )}
+          {branches[0].durationText && (
+            <span className={styles.chipTime}>🚗 {branches[0].durationText}</span>
+          )}
+          {(() => {
+            const status = getBranchStatus(branches[0]);
+            return status ? (
+              <span className={status.type === "warn" ? styles.chipWarn : styles.chipPause}>
+                {status.label}
+              </span>
+            ) : null;
+          })()}
+        </div>
+      </div>
+    )}
+
+    <div className={styles.branchCardGrid}>
+      {branches.slice(hasLocation && branches[0]?.distanceM != null ? 1 : 0).map((b) => {
+        const isSelected = booking.branchId === b.idBranch;
+        const status = getBranchStatus(b);
+        return (
+          <div
+            key={b.idBranch}
+            className={`${styles.branchCard} ${isSelected ? styles.branchCardSelected : ""}`}
+            onClick={() => handleBranchCardClick(b.idBranch)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => e.key === "Enter" && handleBranchCardClick(b.idBranch)}
+          >
+            {isSelected && <span className={styles.selectedBadge}>✓ Đã chọn</span>}
+            <div className={styles.branchCardName}>{b.name}</div>
+            {b.address && <div className={styles.branchCardAddr}>📍 {b.address}</div>}
+            <div className={styles.branchCardMeta}>
+              {b.distanceText && <span className={styles.chipDist}>📏 {b.distanceText}</span>}
+              {b.durationText && <span className={styles.chipTime}>🚗 {b.durationText}</span>}
+              {!b.distanceText && !locationLoading && <span className={styles.chipNoLoc}>— km</span>}
+              {status && (
+                <span className={status.type === "warn" ? styles.chipWarn : styles.chipPause}>
+                  {status.label}
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+)}
           </div>
 
           <form onSubmit={handleSubmit}>

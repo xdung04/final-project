@@ -12,6 +12,9 @@ $text-muted: #888888;
 .listWrapper {
   width: 100%;
   max-width: 100%; // Ép căng hết không gian màn hình lớn
+  height: 100%; // Nhận đủ chiều cao từ .container cha để có thể chia cho tableContainer
+  display: flex;
+  flex-direction: column;
   animation: fadeIn 0.4s ease-in-out;
 }
 
@@ -22,6 +25,7 @@ $text-muted: #888888;
   margin-bottom: 16px;
   text-transform: uppercase;
   letter-spacing: 1px;
+  flex-shrink: 0; // Tiêu đề không bị co lại khi tableContainer cần chỗ
 }
 
 .loading {
@@ -38,7 +42,9 @@ $text-muted: #888888;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
   border: 1px solid $border-color;
   width: 100%;
-  overflow-x: auto; /* Phòng hờ màn hình quá bé, còn lại sẽ tự fit */
+  flex: 1; // Chiếm hết phần chiều cao còn lại sau .title
+  min-height: 0; // Bắt buộc để flex item tôn trọng giới hạn cha thay vì phình theo nội dung
+  overflow: auto; // Bật scroll cả dọc lẫn ngang khi nội dung dài/rộng hơn khung
 
   table {
     width: 100%;
@@ -48,6 +54,12 @@ $text-muted: #888888;
     table-layout: auto; /* Để trình duyệt tự tính toán phân bổ độ rộng cột */
     
     // ❌ BỎ white-space: nowrap toàn cục ở đây để chống tràn dòng
+  }
+
+  thead {
+    position: sticky; // Giữ header cố định khi cuộn dọc
+    top: 0;
+    z-index: 1;
   }
 
   th {

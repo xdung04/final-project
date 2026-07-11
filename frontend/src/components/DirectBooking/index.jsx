@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import styles from "./DirectBooking.module.scss";
 import { fetchBookedSlots } from "~/services/bookingService";
 import { useToast } from "~/context/ToastContext";
@@ -343,7 +344,7 @@ const handleBranchChange = (e) => {
   const totalPrice = form.services.reduce((sum, s) => sum + Number(s.price), 0);
   const bookedTimes = form.date ? bookedTimesByDate[form.date] || [] : [];
 
-  return (
+  return createPortal(
     <div className={styles.overlay}>
       <div className={styles.form}>
         <button className={styles.closeBtn} onClick={onClose}>✕</button>
@@ -558,6 +559,7 @@ const handleBranchChange = (e) => {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

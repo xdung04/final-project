@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { createPortal } from "react-dom";
 import classNames from "classnames/bind";
 import {
   Search, Plus, Tag, Edit, Trash2, X, Check,
@@ -95,6 +96,25 @@ export default function KieuToc() {
   };
 
   useEffect(() => { loadInitialData(); }, []);
+
+  // Khóa scroll nền + đóng modal bằng phím Esc khi có modal đang mở
+  useEffect(() => {
+    if (!modal) return;
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") closeModal();
+    };
+    window.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modal]);
 
   // ── Derived state ──
   const catCounts = useMemo(() => {
@@ -508,8 +528,11 @@ export default function KieuToc() {
         )}
       </div>
 
-      {/* ── MODAL: ADD / EDIT ── */}
-      {(modal === "add" || modal === "edit") && (
+      {/* ── MODAL: ADD / EDIT ──
+          Render bằng Portal thẳng vào document.body để tránh bug modal bị lệch
+          khi có ancestor nào đó (layout/animation) đang set transform/filter,
+          vốn sẽ phá vỡ containing block của position: fixed. */}
+      {(modal === "add" || modal === "edit") && createPortal(
         <div className={cx("overlay")} onClick={closeModal}>
           <div className={cx("modal")} onClick={(e) => e.stopPropagation()}>
             <div className={cx("modal__head")}>
@@ -613,11 +636,12 @@ export default function KieuToc() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ── MODAL: DELETE / RESTORE ── */}
-      {modal === "delete" && (
+      {modal === "delete" && createPortal(
         <div className={cx("overlay")} onClick={closeModal}>
           <div className={cx("delBox")} onClick={(e) => e.stopPropagation()}>
             <div className={cx("delBox__icon", { "delBox__icon--restore": deleteIsInactive })}>
@@ -645,11 +669,12 @@ export default function KieuToc() {
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ── MODAL: CATEGORY ── */}
-      {modal === "category" && (
+      {modal === "category" && createPortal(
         <div className={cx("overlay")} onClick={closeModal}>
           <div className={cx("modal", "modalSm")} onClick={(e) => e.stopPropagation()}>
             <div className={cx("modal__head")}>
@@ -699,7 +724,8 @@ export default function KieuToc() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

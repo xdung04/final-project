@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
+import { createPortal } from "react-dom";
 import classNames from "classnames/bind";
 import styles from "../ThoCatToc.module.scss";
 import Toast from "~/components/Toast";
@@ -517,8 +518,10 @@ function BarberTab() {
 
       {/* ══════════════════════════════════════════════════════════════
           MODAL THÊM THỢ MỚI — đầy đủ tất cả fields
+          (đẩy ra document.body bằng createPortal để không bị khung tab
+          "nhốt" lại — luôn căn giữa theo toàn màn hình)
       ══════════════════════════════════════════════════════════════ */}
-      {showAddModal && (
+      {showAddModal && createPortal(
         <div className={cx("modalOverlay")}>
           <div className={cx("modal")}>
             <h3>Thêm thợ cắt tóc mới</h3>
@@ -686,13 +689,14 @@ function BarberTab() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ══════════════════════════════════════════════════════════════
           MODAL SỬA HỒ SƠ THỢ
       ══════════════════════════════════════════════════════════════ */}
-      {showEditModal && (
+      {showEditModal && createPortal(
         <div className={cx("modalOverlay")}>
           <div className={cx("modal")}>
             <h3>Cập nhật hồ sơ thợ</h3>
@@ -827,13 +831,14 @@ function BarberTab() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ══════════════════════════════════════════════════════════════
           MODAL ĐỔI CHI NHÁNH
       ══════════════════════════════════════════════════════════════ */}
-      {showChangeBranch && (
+      {showChangeBranch && createPortal(
         <div className={cx("modalOverlay")}>
           <div className={cx("modal", "smallModal")}>
             <h3>Đổi chi nhánh</h3>
@@ -864,7 +869,8 @@ function BarberTab() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ══════════════════════════════════════════════════════════════

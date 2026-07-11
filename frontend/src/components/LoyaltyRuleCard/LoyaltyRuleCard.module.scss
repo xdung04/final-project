@@ -1,147 +1,236 @@
 // LoyaltyRuleCard.module.scss
-// Component — Loyalty Rule Card | NOULE Barber
-// Design: NOULE gold/dark — đồng bộ DichVu / TongQuan
+// Component — Loyalty Rule "Membership Card" | NOULE Barber
+// Design: thẻ hội viên vàng khắc nổi — đồng bộ DichVu (ticket) / TongQuan
 
-$gold:        #C9A84C;
-$gold-hover:  #BA9A3E;
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=optional');
+
+$gold:        #C9A24A;
+$gold-light:  #E8CC7F;
 $gold-dim:    #8A6A28;
-$gold-faint:  rgba(201, 168, 76, 0.12);
-$gold-border: rgba(201, 168, 76, 0.3);
+$gold-faint:  rgba(201, 162, 74, 0.14);
+$gold-border: rgba(201, 162, 74, 0.35);
 
-$ink:         #1A1612;
-$ink-soft:    #4A3728;
-$ink-muted:   #8a7060;
+$ink:         #17140F;
+$ink-2:       #221D15;
+$ink-text:    #F6F1E7;
+$ink-muted:   rgba(246, 241, 231, 0.5);
+$ink-faint:   rgba(246, 241, 231, 0.08);
 
-$page-bg:     #F7F4EF;
 $card-bg:     #FFFFFF;
 $surface-2:   #F9F6F1;
+$muted:       #9A9186;
 
-$divider:     rgba(0, 0, 0, 0.06);
-$border:      1px solid rgba(0, 0, 0, 0.07);
-
-$red:         #c0392b;
-$red-bg:      rgba(192, 57, 43, 0.06);
-$red-border:  rgba(192, 57, 43, 0.2);
+$red:         #B4402F;
+$red-bg:      rgba(180, 64, 47, 0.06);
+$red-border:  rgba(180, 64, 47, 0.22);
 
 $radius-sm:   6px;
-$radius-md:   10px;
-$radius-lg:   14px;
+$radius-md:   12px;
+$radius-lg:   18px;
 
-// ── Card ──────────────────────────────────────────────────────────────────────
+$display: 'Fraunces', Georgia, 'Times New Roman', serif;
+$body:    'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+// ── Card wrapper ─────────────────────────────────────────────────────────
 .card {
-  background: $card-bg;
-  border: $border;
-  border-radius: $radius-md;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: box-shadow 0.15s, transform 0.15s;
+  border-radius: $radius-lg;
+  overflow: hidden;
+  background: $card-bg;
+  border: 1px solid rgba(23, 20, 15, 0.08);
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+  font-family: $body;
 
   &:hover {
-    box-shadow: 0 4px 18px rgba(26, 22, 18, 0.07);
-    transform: translateY(-1px);
+    transform: translateY(-3px);
+    box-shadow: 0 16px 32px -16px rgba(23, 20, 15, 0.28);
   }
 
-  // Quy tắc mặc định — left accent gold
-  &.default {
-    border-left: 3px solid $gold;
+  &.default .plate { border-color: $gold-border; }
+  &.default .plate::after { opacity: 1; }
+}
 
-    .defaultLabel {
-      background: $gold-faint;
-      border: 1px solid $gold-border;
-      color: $gold-dim;
-    }
+// ── The dark "plate" — physical card face ─────────────────────────────────
+.plate {
+  position: relative;
+  background:
+    radial-gradient(120% 140% at 100% 0%, rgba(201, 162, 74, 0.16), transparent 55%),
+    linear-gradient(155deg, $ink 0%, $ink-2 100%);
+  padding: 20px 20px 18px;
+  border: 1px solid rgba(201, 162, 74, 0.14);
+  border-bottom: none;
+  overflow: hidden;
+
+  // faint engraved diagonal texture
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.02) 0px,
+      rgba(255, 255, 255, 0.02) 1px,
+      transparent 1px,
+      transparent 7px
+    );
+    pointer-events: none;
+  }
+
+  // gold corner glow shown only for default rule
+  &::after {
+    content: '';
+    position: absolute;
+    top: -40%;
+    right: -20%;
+    width: 60%;
+    height: 90%;
+    background: radial-gradient(circle, rgba(201, 162, 74, 0.22), transparent 70%);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
   }
 }
 
-// ── Card header (dark bar) ────────────────────────────────────────────────────
-.cardHead {
-  background: $ink;
-  padding: 11px 16px;
+// ── Chip (skeuomorphic EMV chip) ────────────────────────────────────────
+.chip {
+  position: relative;
+  z-index: 1;
+  width: 34px;
+  height: 26px;
+  border-radius: 5px;
+  background: linear-gradient(155deg, #E8CC7F 0%, #B8923F 55%, #8A6A28 100%);
+  margin-bottom: 14px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 1px;
+  padding: 4px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+
+  span {
+    background: rgba(23, 20, 15, 0.22);
+    border-radius: 1px;
+  }
+}
+
+// ── Head row: name + default badge ──────────────────────────────────────
+.plateHead {
+  position: relative;
+  z-index: 1;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  border-bottom: 1px solid $gold-border;
+  gap: 10px;
+  margin-bottom: 18px;
 }
 
-.cardHead__left {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.cardHead__name {
-  font-size: 13px;
+.plateName {
+  font-family: $display;
+  font-size: 15px;
   font-weight: 600;
-  color: #F5F0E8;
-  font-family: Georgia, 'Times New Roman', serif;
+  color: $ink-text;
+  line-height: 1.3;
   letter-spacing: 0.01em;
 }
 
 .defaultLabel {
+  flex-shrink: 0;
   display: inline-flex;
   align-items: center;
-  padding: 2px 9px;
+  gap: 4px;
+  padding: 3px 9px;
   border-radius: 20px;
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  background: $gold-faint;
+  border: 1px solid $gold-border;
+  color: $gold-light;
+  white-space: nowrap;
+}
+
+// ── Hero: multiplier, the reason this rule exists ──────────────────────
+.plateHero {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.plateHero__value {
+  font-family: $display;
+  font-size: 38px;
+  font-weight: 600;
+  color: $gold-light;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.plateHero__label {
   font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: $ink-muted;
+  padding-bottom: 3px;
+}
+
+// ── Stat row (printed like card details) ────────────────────────────────
+.plateStats {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 22px;
+  padding-top: 14px;
+  border-top: 1px solid $ink-faint;
+}
+
+.plateStat {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.plateStat__label {
+  font-size: 9px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-}
-
-// ── Card body ─────────────────────────────────────────────────────────────────
-.cardBody {
-  padding: 16px;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-  gap: 16px;
-  background: $card-bg;
-}
-
-// ── Stat item ─────────────────────────────────────────────────────────────────
-.stat {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.stat__label {
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.09em;
-  color: #aaa;
-}
-
-.stat__value {
-  font-size: 18px;
-  font-weight: 600;
-  color: $gold-dim;
-  font-family: Georgia, 'Times New Roman', serif;
-  line-height: 1.15;
-}
-
-.stat__unit {
-  font-size: 11px;
   color: $ink-muted;
-  margin-top: 1px;
 }
 
-// ── Time range row ────────────────────────────────────────────────────────────
-.timeRange {
-  grid-column: 1 / -1;
-  padding-top: 12px;
-  border-top: 1px dashed rgba(0, 0, 0, 0.06);
-  font-size: 12px;
+.plateStat__value {
+  font-size: 13px;
+  font-weight: 600;
+  color: $ink-text;
+  font-family: $display;
+  white-space: nowrap;
+}
+
+// ── Validity range, printed like a card's valid-thru line ──────────────
+.validity {
+  position: relative;
+  z-index: 1;
+  margin-top: 12px;
+  font-size: 10.5px;
   color: $ink-muted;
-  font-style: italic;
+  letter-spacing: 0.03em;
+
+  strong { color: $gold-light; font-weight: 500; }
 }
 
-// ── Card footer (actions) ─────────────────────────────────────────────────────
+// ── Footer actions — the ticket stub below the card ─────────────────────
 .cardFooter {
   padding: 10px 16px;
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
   background: $surface-2;
+  border: 1px solid rgba(23, 20, 15, 0.08);
+  border-top: none;
+  border-bottom-left-radius: $radius-lg;
+  border-bottom-right-radius: $radius-lg;
   display: flex;
   justify-content: flex-end;
   gap: 8px;
@@ -156,19 +245,15 @@ $radius-lg:   14px;
   border-radius: $radius-sm;
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
   cursor: pointer;
-  font-family: inherit;
-  transition: all 0.12s;
+  font-family: $body;
+  transition: all 0.14s ease;
   background: $gold-faint;
   border: 1px solid $gold-border;
   color: $gold-dim;
 
-  &:hover {
-    background: $gold;
-    border-color: $gold;
-    color: $ink;
-  }
+  &:hover { background: $gold; border-color: $gold; color: $ink; }
 }
 
 .btnDelete {
@@ -180,17 +265,13 @@ $radius-lg:   14px;
   border-radius: $radius-sm;
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
   cursor: pointer;
-  font-family: inherit;
-  transition: all 0.12s;
+  font-family: $body;
+  transition: all 0.14s ease;
   background: transparent;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  color: #bbb;
+  border: 1px solid rgba(23, 20, 15, 0.1);
+  color: $muted;
 
-  &:hover {
-    background: $red-bg;
-    border-color: $red-border;
-    color: $red;
-  }
+  &:hover { background: $red-bg; border-color: $red-border; color: $red; }
 }

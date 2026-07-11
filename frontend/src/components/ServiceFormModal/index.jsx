@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import classNames from "classnames/bind";
 import styles from "./ServiceFormModal.module.scss";
 import { X, ToggleLeft, ToggleRight, UploadCloud, ImageIcon } from "lucide-react";
@@ -69,17 +70,26 @@ export default function ServiceFormModal({ show, onClose, serviceId, branches, o
     loadDetail();
   }, [show, serviceId]);
 
-  if (!show) return null;
+  // Khóa scroll nền + đóng bằng phím Esc khi modal đang hiển thị
+  useEffect(() => {
+    if (!show) return;
 
-  if (loadingDetail)
-    return (
-      <div className={cx("overlay")}>
-        <div className={cx("modal", "loadingModal")}>
-          <div className={cx("spinner")}></div>
-          <p>Đang tải dữ liệu...</p>
-        </div>
-      </div>
-    );
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") handleClose();
+    };
+    window.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [show, editMode]);
+
+  if (!show) return null;
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -181,15 +191,36 @@ export default function ServiceFormModal({ show, onClose, serviceId, branches, o
     }
   };
 
-  return (
-    <>
+  // ── Loading state ──
+  // Render qua Portal thẳng vào document.body để tránh bug modal bị lệch khi
+  // có ancestor nào đó (layout/animation) đang set transform/filter, vốn phá vỡ
+  // containing block của position: fixed — đồng bộ cách làm với KieuToc & TinTuc.
+  if (loadingDetail) {
+    return createPortal(
       <div className={cx("overlay")}>
-        <div className={cx("modal")}>
+        <div className={cx("modal", "loadingModal")}>
+          <div className={cx("spinner")}></div>
+          <p>Đang tải dữ liệu...</p>
+        </div>
+      </div>,
+      document.body
+    );
+  }
+
+  return createPortal(
+    <>
+      <div className={cx("overlay")} onClick={handleClose}>
+        <div className={cx("modal")} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
           {/* HEADER */}
           <div className={cx("header")}>
-            <h3>{serviceId ? "Chi tiết dịch vụ" : "Thêm dịch vụ mới"}</h3>
-            <button className={cx("closeBtn")} onClick={handleClose}>
-              <X size={24} strokeWidth={1.5} />
+            <div>
+              <h3>{serviceId ? "Chi tiết dịch vụ" : "Thêm dịch vụ mới"}</h3>
+              <p className={cx("headerSub")}>
+                {serviceId ? (editMode ? "Đang chỉnh sửa thông tin" : "Xem thông tin dịch vụ") : "Điền thông tin để tạo dịch vụ"}
+              </p>
+            </div>
+            <button className={cx("closeBtn")} onClick={handleClose} aria-label="Đóng">
+              <X size={18} strokeWidth={2} />
             </button>
           </div>
 
@@ -208,13 +239,13 @@ export default function ServiceFormModal({ show, onClose, serviceId, branches, o
                   />
                 ) : (
                   <div className={cx("noImage")}>
-                    <ImageIcon size={48} strokeWidth={1} />
+                    <ImageIcon size={44} strokeWidth={1} />
                     <span>Chưa có ảnh</span>
                   </div>
                 )}
               </div>
               <label className={cx("fileButton", { disabled: !editMode })}>
-                <UploadCloud size={18} /> Chọn ảnh tải lên
+                <UploadCloud size={16} /> Chọn ảnh tải lên
                 <input
                   type="file"
                   hidden
@@ -302,9 +333,9 @@ export default function ServiceFormModal({ show, onClose, serviceId, branches, o
                   }
                 >
                   {form.status === "Active" ? (
-                    <ToggleRight size={32} className={cx("iconActive")} strokeWidth={1.5} />
+                    <ToggleRight size={30} className={cx("iconActive")} strokeWidth={1.5} />
                   ) : (
-                    <ToggleLeft size={32} className={cx("iconInactive")} strokeWidth={1.5} />
+                    <ToggleLeft size={30} className={cx("iconInactive")} strokeWidth={1.5} />
                   )}
                   <span className={cx(form.status === "Active" ? "textActive" : "textInactive")}>
                     {form.status === "Active" ? "Đang hoạt động" : "Ngừng hoạt động"}
@@ -316,6 +347,7 @@ export default function ServiceFormModal({ show, onClose, serviceId, branches, o
 
           {/* FOOTER */}
           <div className={cx("footer")}>
+            <button className={cx("btnGhost")} onClick={handleClose}>Huỷ</button>
             <button
               className={cx(editMode ? "saveBtn" : "editBtn")}
               onClick={editMode ? handleSubmit : handleEditClick}
@@ -336,10 +368,10 @@ export default function ServiceFormModal({ show, onClose, serviceId, branches, o
         )}
       </div>
 
-      {/* Xác nhận đóng */}
+      {/* Xác nhận đóng — cũng cần Portal riêng vì nó là overlay độc lập */}
       {showConfirmClose && (
-        <div className={cx("confirmOverlay")}>
-          <div className={cx("confirmModal")}>
+        <div className={cx("confirmOverlay")} onClick={() => setShowConfirmClose(false)}>
+          <div className={cx("confirmModal")} onClick={(e) => e.stopPropagation()}>
             <h4>Xác nhận thoát</h4>
             <p>Bạn có những thay đổi chưa lưu. Bạn có chắc chắn muốn thoát không?</p>
             <div className={cx("confirmButtons")}>
@@ -359,6 +391,7 @@ export default function ServiceFormModal({ show, onClose, serviceId, branches, o
           </div>
         </div>
       )}
-    </>
+    </>,
+    document.body
   );
 }

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import classNames from "classnames/bind";
 import styles from "./CreateRuleModal.module.scss";
 import { Check } from "lucide-react";
@@ -98,7 +99,7 @@ const handleSubmit = async (e) => {
   }
 };
 
-  return (
+  return createPortal(
     <div className={cx("overlay")} onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className={cx("modal")}>
 
@@ -225,6 +226,7 @@ const handleSubmit = async (e) => {
 </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
