@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { HairAnalysisAPI } from '~/apis/hairAnalysisAPI';
 import { useToast } from '~/context/ToastContext';
 
@@ -8,6 +9,7 @@ const HairConsultResult = ({ recommendation, onReset, error, onRetake }) => {
   const matched = recommendation?.matchedStyles || [];
   const isFlowB = !!rec?.top_picks;
 
+  const navigate = useNavigate();
   const { showToast } = useToast();
 
   const [activePreviewStyle, setActivePreviewStyle] = useState(null);
@@ -61,6 +63,16 @@ const HairConsultResult = ({ recommendation, onReset, error, onRetake }) => {
       const res = await HairAnalysisAPI.saveAnalysis({ _saveToken });
       setSavedAnalysisId(res.data.idAnalysis);
       showToast({ text: "Đã lưu kết quả vào hồ sơ!", type: "success" });
+
+      // Lưu 2 kiểu tóc gợi ý top đầu vào localStorage để chuyển sang profile
+      if (matched.length > 0) {
+        const topPicks = matched.slice(0, 3).map((s) => ({
+          name: s.dbName || s.aiName,
+          coverImage: s.coverImage || "",
+        }));
+        localStorage.setItem("pendingTryOnStyles", JSON.stringify(topPicks));
+      }
+
       setShowRatingForm(true);
     } catch (err) {
       showToast({ text: "Lưu thất bại, vui lòng thử lại", type: "error" });
@@ -78,7 +90,7 @@ const HairConsultResult = ({ recommendation, onReset, error, onRetake }) => {
       setRatingDone(true);
       setShowRatingForm(false);
       showToast({ text: "Cảm ơn bạn đã đánh giá!", type: "success" });
-      onReset();
+      navigate("/profile", { state: { fromConsult: true } });
       return;
     }
 
@@ -88,7 +100,7 @@ const HairConsultResult = ({ recommendation, onReset, error, onRetake }) => {
       setRatingDone(true);
       setShowRatingForm(false);
       showToast({ text: "Cảm ơn bạn đã đánh giá!", type: "success" });
-      onReset();
+      navigate("/profile", { state: { fromConsult: true } });
     } catch (err) {
       showToast({ text: "Gửi đánh giá thất bại", type: "error" });
     } finally {
@@ -100,7 +112,7 @@ const HairConsultResult = ({ recommendation, onReset, error, onRetake }) => {
   const handleSkipRating = () => {
     setShowRatingForm(false);
     setRatingDone(true);
-    onReset(); // ← fix
+    navigate("/profile", { state: { fromConsult: true } });
   };
 
   // ── Exit prompt: Có lưu ──
