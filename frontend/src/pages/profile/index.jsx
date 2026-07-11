@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import classNames from "classnames/bind";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "~/context/AuthContext";
 import { ProfileAPI } from "~/apis/profileApi";
 import { HairAnalysisAPI } from "~/apis/hairAnalysisAPI";
@@ -34,6 +35,8 @@ const ratingLabel = {
 
 function Profile() {
   const { isLogin, setUser } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const { showToast } = useToast();
 
   const [profile, setProfile] = useState(null);
@@ -69,6 +72,17 @@ function Profile() {
     newPassword: "",
     confirmPassword: "",
   });
+
+  // Tự động chuyển sang tab "analysis" nếu navigate từ HairConsult
+  useEffect(() => {
+    if (location.state?.fromConsult) {
+      setActiveTab("analysis");
+      // Scroll lên đầu trang để tránh bị lệch
+      window.scrollTo({ top: 0, behavior: "instant" });
+      // Xoá state để không bị trigger lại khi re-render
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     if (!isLogin) return;
@@ -211,6 +225,23 @@ function Profile() {
     setSelectedHairstyles([]);
     setTryOnResults([]);
     setShowTryOnModal(true);
+
+    // Đọc 2 kiểu tóc gợi ý từ localStorage (nếu có)
+    const pending = localStorage.getItem("pendingTryOnStyles");
+    if (pending) {
+      try {
+        const topPicks = JSON.parse(pending);
+        const matched = suggestedHairstyles.filter((s) =>
+          topPicks.some((p) => p.name === s.name)
+        );
+        if (matched.length > 0) {
+          setSelectedHairstyles(matched.slice(0, 3));
+        }
+      } catch (e) {
+        console.error("Parse pendingTryOnStyles error:", e);
+      }
+      localStorage.removeItem("pendingTryOnStyles");
+    }
   };
 
   const closeTryOnModal = () => {
