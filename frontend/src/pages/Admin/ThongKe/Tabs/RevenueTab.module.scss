@@ -19,6 +19,7 @@ $ink:          #1C1814;
 $ink-2:        #2C2720;
 $ink-text:     #F5F0E8;
 $ink-muted:    rgba(245, 240, 232, 0.55);
+$ink-bright:   rgba(255, 255, 255, 0.90); 
 
 $page-bg:      #F4F1EB;      // nền tổng — kem ấm
 $card-bg:      #FFFFFF;
@@ -186,11 +187,11 @@ button.aiTriggerBtn {
 }
 
 .chartTitle {
-  font-size: 11px;
+  font-size: 12.5px;
   font-weight: 700;
   color: $text-primary;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0em;
   margin: 0;
   display: flex;
   align-items: center;
@@ -267,9 +268,9 @@ button.aiTriggerBtn {
   }
 
   p {
-    font-size: 12.5px;
+    font-size: 13px;
     line-height: 1.75;
-    color: $ink-muted;
+    color: $ink-bright; 
     margin: 0;
     font-weight: 400;
     position: relative;

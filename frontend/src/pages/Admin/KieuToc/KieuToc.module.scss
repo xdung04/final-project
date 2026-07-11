@@ -807,6 +807,9 @@ $r-xl:         18px;
 }
 
 // ── Modal overlay ──────────────────────────────────────────────────────────────
+// LƯU Ý: overlay được render qua React Portal thẳng vào <body>,
+// nên position: fixed + inset: 0 luôn tính theo viewport, không bị lệch
+// dù cây component cha có transform/filter hay không.
 .overlay {
   position: fixed;
   inset: 0;

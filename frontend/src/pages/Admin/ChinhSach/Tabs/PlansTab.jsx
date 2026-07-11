@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import classNames from "classnames/bind";
 import styles from "../ChinhSach.module.scss";
 import {
@@ -93,6 +94,7 @@ function PlanCard({ plan, isSelected, onClick, onEdit, onDelete }) {
 }
 
 // ─── PlanModal ────────────────────────────────────────────────────
+// Đẩy ra document.body bằng createPortal để không bị khung tab "nhốt" lại
 function PlanModal({ plan, onSave, onClose }) {
   const isEdit = !!plan.idCompensationPlan;
   const [form, setForm] = useState({
@@ -108,7 +110,7 @@ function PlanModal({ plan, onSave, onClose }) {
 
   const upd = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
-  return (
+  return createPortal(
     <div className={cx("modalOverlay")} onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className={cx("modalBox")}>
         <div className={cx("modalHeader")}>
@@ -162,7 +164,8 @@ function PlanModal({ plan, onSave, onClose }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

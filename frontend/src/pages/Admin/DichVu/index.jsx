@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import classNames from "classnames/bind";
 import styles from "./DichVu.module.scss";
-import { Plus, Edit2, Scissors } from "lucide-react";
+import { Plus, Edit2, Scissors, Clock3, PackageOpen } from "lucide-react";
 import ServiceAPI from "~/apis/serviceAPI";
 import { BranchAPI } from "~/apis/branchAPI";
 import ServiceFormModal from "~/components/ServiceFormModal";
@@ -32,8 +32,6 @@ function DichVu() {
 
   useEffect(() => { fetchAll(); }, []);
 
-  if (loading) return <div className={cx("loading")}>Đang tải dữ liệu...</div>;
-
   return (
     <div className={cx("serviceList")}>
 
@@ -45,70 +43,71 @@ function DichVu() {
             Danh sách <em>Dịch vụ</em>
           </h2>
         </div>
-        <button
-          className={cx("addButton")}
-          onClick={() => { setSelectedService(null); setFormVisible(true); }}
-        >
-          <Plus size={15} strokeWidth={2} /> Thêm dịch vụ
-        </button>
+        <div className={cx("headActions")}>
+          <span className={cx("countPill")}>{services.length} dịch vụ</span>
+          <button
+            className={cx("addButton")}
+            onClick={() => { setSelectedService(null); setFormVisible(true); }}
+          >
+            <Plus size={15} strokeWidth={2} /> Thêm dịch vụ
+          </button>
+        </div>
       </div>
 
-      {/* ── SECTION CARD (khớp TongQuan) ─────────────────────────────── */}
-      <div className={cx("sectionCard")}>
-
-        {/* Dark header */}
-        <div className={cx("sectionHead")}>
-          <div className={cx("sectionHead__left")}>
-            <Scissors size={16} strokeWidth={1.5} className={cx("sectionHead__icon")} />
-            <span className={cx("sectionHead__title")}>Dịch vụ đang hoạt động</span>
-          </div>
-          <span style={{ fontSize: 11, color: "rgba(245,240,232,0.4)" }}>
-            {services.length} dịch vụ
-          </span>
+      {/* ── SECTION ──────────────────────────────────────────────────── */}
+      <div className={cx("sectionFrame")}>
+        <div className={cx("sectionLabel")}>
+          <Scissors size={14} strokeWidth={1.5} className={cx("sectionLabel__icon")} />
+          <span className={cx("sectionLabel__text")}>Bảng giá dịch vụ</span>
+          <span className={cx("sectionLabel__rule")} />
         </div>
 
-        {/* Table */}
-        <div className={cx("tableWrap")}>
-          <table className={cx("table")}>
-            <thead>
-              <tr>
-                <th>Tên dịch vụ</th>
-                <th>Mô tả</th>
-                <th>Giá</th>
-                <th>Thời lượng</th>
-                <th>Trạng thái</th>
-                <th className={cx("textCenter")}>Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              {services.length > 0 ? services.map((s) => (
-                <tr key={s.idService}>
-                  <td><span className={cx("serviceName")}>{s.name}</span></td>
-                  <td><span className={cx("desc")}>{s.description}</span></td>
-                  <td><span className={cx("price")}>{parseInt(s.price).toLocaleString()}đ</span></td>
-                  <td>{s.duration} phút</td>
-                  <td>
+        <div className={cx("grid")}>
+          {loading ? (
+            <div className={cx("loading")}>Đang tải dữ liệu...</div>
+          ) : services.length > 0 ? (
+            services.map((s) => (
+              <div
+                key={s.idService}
+                className={cx("ticket", { inactiveTicket: s.status !== "Active" })}
+              >
+                <button
+                  className={cx("ticket__editBtn")}
+                  onClick={() => { setSelectedService(s.idService); setFormVisible(true); }}
+                  title="Chỉnh sửa dịch vụ"
+                >
+                  <Edit2 size={13} strokeWidth={2} />
+                </button>
+
+                <div className={cx("ticket__top")}>
+                  <span className={cx("ticket__name")}>{s.name}</span>
+                  <span className={cx("ticket__desc")}>{s.description}</span>
+                </div>
+
+                <div className={cx("perforation")} />
+
+                <div className={cx("ticket__bottom")}>
+                  <div className={cx("priceBlock")}>
+                    <span className={cx("priceBlock__label")}>Giá</span>
+                    <span className={cx("price")}>{parseInt(s.price).toLocaleString()}đ</span>
+                  </div>
+                  <div className={cx("metaBlock")}>
+                    <span className={cx("duration")}>
+                      <Clock3 size={12} strokeWidth={2} /> {s.duration} phút
+                    </span>
                     <span className={cx("statusBadge", s.status === "Active" ? "active" : "inactive")}>
                       {s.status === "Active" ? "Hoạt động" : "Ngừng"}
                     </span>
-                  </td>
-                  <td className={cx("textCenter")}>
-                    <button
-                      className={cx("editBtn")}
-                      onClick={() => { setSelectedService(s.idService); setFormVisible(true); }}
-                      title="Chỉnh sửa dịch vụ"
-                    >
-                      <Edit2 size={14} strokeWidth={2} />
-                    </button>
-                  </td>
-                </tr>
-              )) : (
-                <tr>
-                  <td colSpan={6}><div className={cx("empty")}>Chưa có dịch vụ nào</div></td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className={cx("empty")}>
+              <PackageOpen size={22} strokeWidth={1.5} className={cx("emptyIcon")} />
+              Chưa có dịch vụ nào
+            </div>
+          )}
         </div>
       </div>
 

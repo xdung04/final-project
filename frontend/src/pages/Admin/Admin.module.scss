@@ -20,6 +20,11 @@
   --border-sharp:   #DDDDDD;
   --border-dark:    #2A2A2A;
 
+  /* ── Sidebar text on dark background — sáng hơn để dễ đọc ── */
+  --nav-text:        #B8B3A8;
+  --nav-text-hover:  #F5F0E8;
+  --nav-group-label: #8A8478;
+
   --ff-serif:   'Playfair Display', serif;
   --ff-display: 'Bebas Neue', sans-serif;
   --ff-body:    'DM Sans', sans-serif;
@@ -85,24 +90,30 @@
   justify-content: center;
   flex-shrink: 0;
   border-radius: 0;
-  color: var(--black);
+  color: #FFFFFF;
   font-weight: 900;
+
+  svg {
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
+  }
 }
 
 .brandTitle {
   font-family: var(--ff-serif);
   font-size: 17px;
   font-weight: 900;
-  color: #F5F0E8;
+  color: #FFFFFF;
   margin: 0;
   white-space: nowrap;
   line-height: 1.1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .brandSubtitle {
   font-family: var(--ff-display);
   font-size: 10px;
-  color: #555555;
+  color: var(--nav-group-label);
   letter-spacing: 4px;
   text-transform: uppercase;
   white-space: nowrap;
@@ -120,7 +131,7 @@
 .navGroupLabel {
   font-family: var(--ff-display);
   font-size: 10px;
-  color: #555555;
+  color: var(--nav-group-label);
   letter-spacing: 2px;
   text-transform: uppercase;
   padding: 8px 14px;
@@ -136,7 +147,7 @@
   border: none;
   border-left: 2px solid transparent;
   border-radius: 0;
-  color: #666666;
+  color: var(--nav-text);
   font-size: 12.5px;
   font-weight: 500;
   font-family: var(--ff-body);
@@ -146,8 +157,8 @@
 
   &:hover {
     background: var(--black-soft);
-    color: #F5F0E8;
-    border-left-color: #333333;
+    color: var(--nav-text-hover);
+    border-left-color: #4A4A4A;
   }
 
   &.active {
@@ -174,7 +185,7 @@
   background: var(--black);
   border: none;
   border-top: 1px solid var(--border-dark);
-  color: #555555;
+  color: var(--nav-group-label);
   cursor: pointer;
   display: flex;
   align-items: center;

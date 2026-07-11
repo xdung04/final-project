@@ -1,33 +1,42 @@
 // DichVu.module.scss
 // Admin — Dịch Vụ | NOULE Barber
-// Design: NOULE gold/dark — đồng bộ TongQuan
+// Design: "Price Ticket" — thẻ dịch vụ dạng vé cắt tóc cổ điển, gold/dark luxury
 
-$gold:        #C9A84C;
-$gold-hover:  #BA9A3E;
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=optional');
+
+$gold:        #C9A24A;
+$gold-hover:  #B8923F;
 $gold-dim:    #8A6A28;
-$gold-faint:  rgba(201, 168, 76, 0.15);
-$gold-border: rgba(201, 168, 76, 0.3);
+$gold-light:  #E2C77E;
+$gold-faint:  rgba(201, 162, 74, 0.12);
+$gold-border: rgba(201, 162, 74, 0.32);
 
-$ink:         #1A1612;
-$ink-text:    #F5F0E8;
-$ink-muted:   rgba(245, 240, 232, 0.5);
+$ink:         #17140F;
+$ink-soft:    #26211A;
+$ink-text:    #F6F1E7;
+$ink-muted:   rgba(246, 241, 231, 0.48);
 
-$page-bg:     #F7F4EF;
+$page-bg:     #F8F5EF;
 $card-bg:     #FFFFFF;
-$surface-2:   #F9F6F1;
+$surface-2:   #F3EFE6;
 
-$border:      1px solid rgba(0, 0, 0, 0.07);
-$border-md:   rgba(0, 0, 0, 0.1);
+$border:      1px solid rgba(23, 20, 15, 0.07);
+
+$text:        #1E1A14;
+$muted:       #9A9186;
 
 $green:       #3B6D11;
 $green-bg:    #EAF3DE;
 $green-bd:    rgba(59, 109, 17, 0.25);
 
 $radius-sm:   6px;
-$radius-md:   10px;
-$radius-lg:   14px;
+$radius-md:   12px;
+$radius-lg:   16px;
 
-// ── Wrapper (khớp TongQuan .dashboardWrapper) ─────────────────────────────────
+$display: 'Fraunces', Georgia, 'Times New Roman', serif;
+$body:    'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+// ── Wrapper ─────────────────────────────────────────────────────────────────
 .serviceList {
   display: flex;
   flex-direction: column;
@@ -35,7 +44,8 @@ $radius-lg:   14px;
   background: $page-bg;
   min-height: 100vh;
   padding-bottom: 48px;
-  color: $ink;
+  color: $text;
+  font-family: $body;
   animation: fadeInPage 0.4s ease forwards;
 }
 
@@ -44,161 +54,269 @@ $radius-lg:   14px;
   to   { opacity: 1; transform: translateY(0); }
 }
 
-// ── Page heading (khớp TongQuan .pageHead) ────────────────────────────────────
+// ── Page heading ───────────────────────────────────────────────────────────
 .pageHead {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   padding-bottom: 22px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid rgba(23, 20, 15, 0.08);
 
   &__eyebrow {
     font-size: 10px;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
     color: $gold-dim;
-    margin-bottom: 6px;
-    font-weight: 500;
+    margin-bottom: 7px;
+    font-weight: 600;
   }
 
   &__title {
-    font-size: 28px;
+    font-size: 30px;
     font-weight: 600;
     color: $ink;
     line-height: 1.1;
-    font-family: Georgia, 'Times New Roman', serif;
+    font-family: $display;
     margin: 0;
+    letter-spacing: -0.01em;
 
-    em { color: $gold; font-style: italic; }
+    em { color: $gold-dim; font-style: italic; font-weight: 500; }
   }
 }
 
-// ── Section card (khớp TongQuan .sectionCard) ─────────────────────────────────
-.sectionCard {
-  background: $card-bg;
-  border: $border;
-  border-radius: $radius-lg;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-// ── Section head dark (khớp TongQuan .sectionHead) ────────────────────────────
-.sectionHead {
-  background: $ink;
-  padding: 13px 18px;
+.headActions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid $gold-border;
-  flex-shrink: 0;
-
-  &__left {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-  }
-
-  &__icon { color: $gold; }
-
-  &__title {
-    font-size: 13px;
-    font-weight: 600;
-    color: $ink-text;
-    font-family: Georgia, 'Times New Roman', serif;
-    letter-spacing: 0.01em;
-  }
+  gap: 12px;
 }
 
-// ── Add Button ────────────────────────────────────────────────────────────────
+.countPill {
+  font-size: 11px;
+  font-weight: 600;
+  color: $gold-dim;
+  background: $gold-faint;
+  border: 1px solid $gold-border;
+  padding: 6px 12px;
+  border-radius: 20px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+// ── Add Button ────────────────────────────────────────────────────────────
 .addButton {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 8px 18px;
+  gap: 8px;
+  padding: 10px 20px;
   font-size: 12px;
   font-weight: 600;
-  background: $gold;
-  color: $ink;
-  border: none;
+  letter-spacing: 0.02em;
+  background: $ink;
+  color: $gold-light;
+  border: 1px solid $ink;
   border-radius: $radius-sm;
   cursor: pointer;
-  font-family: inherit;
-  transition: background 0.15s;
+  font-family: $body;
+  transition: all 0.18s ease;
 
-  &:hover { background: $gold-hover; }
+  &:hover {
+    background: $gold;
+    color: $ink;
+    border-color: $gold;
+  }
 }
 
-// ── Table (khớp TongQuan .table) ──────────────────────────────────────────────
-.tableWrap { overflow-x: auto; }
+// ── Section frame (label above the grid, no boxed card — lets tickets breathe) ─
+.sectionFrame {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
 
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  font-family: inherit;
+.sectionLabel {
+  display: flex;
+  align-items: center;
+  gap: 9px;
 
-  th, td {
-    padding: 12px 18px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-    text-align: left;
-  }
+  &__icon { color: $gold-dim; }
 
-  th {
-    font-size: 10px;
+  &__text {
+    font-size: 12px;
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.09em;
-    color: #888;
-    padding-top: 16px;
-    padding-bottom: 10px;
-    background: $surface-2;
+    color: $ink;
+    font-family: $display;
+    letter-spacing: 0.01em;
   }
 
-  tbody tr {
-    transition: background 0.1s;
-
-    &:hover td      { background: #faf8f4; }
-    &:last-child td { border-bottom: none; }
+  &__rule {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, rgba(201, 162, 74, 0.35), transparent);
   }
-
-  td { font-size: 13px; color: $ink; }
-
-  .textCenter { text-align: center; }
 }
 
-// ── Cells ─────────────────────────────────────────────────────────────────────
-.serviceName {
-  font-size: 13px;
+// ── Ticket Grid ───────────────────────────────────────────────────────────
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(272px, 1fr));
+  gap: 18px;
+}
+
+// ── Service Ticket Card ──────────────────────────────────────────────────
+.ticket {
+  position: relative;
+  background: $card-bg;
+  border: 1px solid rgba(23, 20, 15, 0.08);
+  border-radius: $radius-md;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 28px -14px rgba(23, 20, 15, 0.22);
+    border-color: $gold-border;
+
+    .ticket__editBtn { opacity: 1; transform: translateY(0); }
+  }
+
+  &.inactiveTicket {
+    opacity: 0.6;
+
+    &:hover { opacity: 0.85; }
+  }
+}
+
+.ticket__top {
+  padding: 18px 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ticket__name {
+  font-family: $display;
+  font-size: 17px;
   font-weight: 600;
   color: $ink;
+  line-height: 1.25;
+  padding-right: 30px;
 }
 
-.desc {
-  max-width: 240px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: #888;
+.ticket__desc {
   font-size: 12px;
+  color: $muted;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 34px;
+}
+
+.ticket__editBtn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid $gold-border;
+  background: $ink;
+  color: $gold-light;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: all 0.18s ease;
+  z-index: 2;
+
+  &:hover { background: $gold; color: $ink; }
+}
+
+// ── Perforation divider (the ticket "tear line") ───────────────────────────
+.perforation {
+  position: relative;
+  height: 1px;
+  margin: 0 0 0;
+  border-top: 1.5px dashed rgba(23, 20, 15, 0.16);
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 15px;
+    height: 15px;
+    background: $page-bg;
+    border-radius: 50%;
+    transform: translateY(-50%);
+  }
+  &::before { left: -9px; }
+  &::after  { right: -9px; }
+}
+
+.ticket__bottom {
+  padding: 15px 20px 18px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.priceBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.priceBlock__label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: $muted;
+  font-weight: 600;
 }
 
 .price {
-  font-size: 14px;
+  font-size: 19px;
   font-weight: 600;
   color: $gold-dim;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: $display;
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+}
+
+.metaBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 7px;
+}
+
+.duration {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  color: $muted;
+  font-weight: 500;
   white-space: nowrap;
 }
 
-// ── Status Badge ──────────────────────────────────────────────────────────────
+// ── Status Badge ─────────────────────────────────────────────────────────
 .statusBadge {
   display: inline-flex;
   align-items: center;
   gap: 5px;
   padding: 3px 10px;
   border-radius: 20px;
-  font-size: 11px;
-  font-weight: 500;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
   white-space: nowrap;
 
   &::before {
@@ -219,52 +337,40 @@ $radius-lg:   14px;
 
   &.inactive {
     background: $surface-2;
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    color: #aaa;
+    border: 1px solid rgba(23, 20, 15, 0.08);
+    color: #a39a8c;
 
     &::before { background: #C0BDB6; }
   }
 }
 
-// ── Edit Button ───────────────────────────────────────────────────────────────
-.editBtn {
-  width: 30px;
-  height: 30px;
-  border-radius: $radius-sm;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  background: transparent;
-  color: #aaa;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.12s;
-
-  &:hover {
-    background: $gold-faint;
-    border-color: $gold-border;
-    color: $gold-dim;
-  }
-}
-
-// ── Loading / Empty ───────────────────────────────────────────────────────────
+// ── Loading / Empty ─────────────────────────────────────────────────────
 .loading, .empty {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 48px 24px;
+  gap: 10px;
+  padding: 64px 24px;
   font-size: 13px;
-  color: #bbb;
+  color: $muted;
   font-style: italic;
+  grid-column: 1 / -1;
 }
 
-// ── Responsive ────────────────────────────────────────────────────────────────
+.emptyIcon { color: $gold-border; }
+
+// ── Responsive ───────────────────────────────────────────────────────────
 @media (max-width: 768px) {
   .pageHead {
     flex-direction: column;
     align-items: flex-start;
     gap: 14px;
 
-    &__title { font-size: 22px; }
+    &__title { font-size: 24px; }
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
   }
 }

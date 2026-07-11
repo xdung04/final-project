@@ -25,50 +25,48 @@ export default function LoyaltyRuleCard({ rule, onEdit, onDelete }) {
   return (
     <div className={cx("card", { default: isDefault })}>
 
-  {/* ── Dark header ─────────────────────────────────────────── */}
-<div className={cx("cardHead")}>
-  <div className={cx("cardHead__left")}>
-    <span className={cx("cardHead__name")}>
-      {/* HIỂN THỊ TÊN TỪ DB */}
-      {rule.name || (isDefault ? "Quy tắc mặc định" : "Chiến dịch đặc biệt")}
-    </span>
-    {isDefault && (
-      <span className={cx("defaultLabel")}>Mặc định</span>
-    )}
-  </div>
-</div>
-
-      {/* ── Body stats ──────────────────────────────────────────── */}
-      <div className={cx("cardBody")}>
-        <div className={cx("stat")}>
-          <span className={cx("stat__label")}>Giá trị 1 điểm</span>
-          <span className={cx("stat__value")}>{formatVND(rule.money_per_point)}</span>
+      {/* ── Dark plate — mặt trước thẻ hội viên ─────────────────────── */}
+      <div className={cx("plate")}>
+        <div className={cx("chip")}>
+          <span /><span /><span />
+          <span /><span /><span />
         </div>
 
-        <div className={cx("stat")}>
-          <span className={cx("stat__label")}>Hệ số nhân</span>
-          <span className={cx("stat__value")}>×{rule.point_multiplier ?? 1}</span>
+        <div className={cx("plateHead")}>
+          <span className={cx("plateName")}>
+            {rule.name || (isDefault ? "Quy tắc mặc định" : "Chiến dịch đặc biệt")}
+          </span>
+          {isDefault && <span className={cx("defaultLabel")}>Mặc định</span>}
         </div>
 
-        <div className={cx("stat")}>
-          <span className={cx("stat__label")}>Đơn tối thiểu</span>
-          <span className={cx("stat__value")}>{formatVND(rule.min_order_amount)}</span>
+        <div className={cx("plateHero")}>
+          <span className={cx("plateHero__value")}>×{rule.point_multiplier ?? 1}</span>
+          <span className={cx("plateHero__label")}>Hệ số nhân điểm</span>
+        </div>
+
+        <div className={cx("plateStats")}>
+          <div className={cx("plateStat")}>
+            <span className={cx("plateStat__label")}>Giá trị 1 điểm</span>
+            <span className={cx("plateStat__value")}>{formatVND(rule.money_per_point)}</span>
+          </div>
+          <div className={cx("plateStat")}>
+            <span className={cx("plateStat__label")}>Đơn tối thiểu</span>
+            <span className={cx("plateStat__value")}>{formatVND(rule.min_order_amount)}</span>
+          </div>
         </div>
 
         {hasDateRange && (
-          <div className={cx("timeRange")}>
-            Thời gian áp dụng:{" "}
-            {formatDate(rule.start_date)} — {formatDate(rule.end_date)}
+          <div className={cx("validity")}>
+            Hiệu lực: <strong>{formatDate(rule.start_date)} — {formatDate(rule.end_date)}</strong>
           </div>
         )}
       </div>
 
-      {/* ── Footer actions ──────────────────────────────────────── */}
+      {/* ── Footer actions ──────────────────────────────────────────── */}
       <div className={cx("cardFooter")}>
         <button className={cx("btnEdit")} onClick={() => onEdit(rule)} title="Chỉnh sửa">
           <Edit2 size={12} strokeWidth={2} /> Sửa
         </button>
-        {/* ✅ FIX: Dùng rule.id thay vì rule.idRule */}
         <button className={cx("btnDelete")} onClick={() => onDelete(rule.id)} title="Xoá quy tắc">
           <Trash2 size={12} strokeWidth={2} /> Xoá
         </button>

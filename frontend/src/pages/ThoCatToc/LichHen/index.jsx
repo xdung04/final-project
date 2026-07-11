@@ -112,11 +112,10 @@ function LichHen() {
   const isToday = formatDate(currentDate) === formatDate(new Date());
   const now = new Date();
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
-  const getApptMinutes = (appt) => {
-    const d = new Date(appt.bookingDate);
-    return d.getHours() * 60 + d.getMinutes();
-  };
-
+const getApptMinutes = (appt) => {
+  const d = new Date(appt.bookingDate);
+  return d.getUTCHours() * 60 + d.getUTCMinutes();  // ← đổi getHours/getMinutes → getUTCHours/getUTCMinutes
+};
   // index of the next upcoming appointment today (first one starting after "now")
   const nextIdx = isToday
     ? filteredAppointments.findIndex((appt) => getApptMinutes(appt) > nowMinutes)

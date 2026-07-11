@@ -106,27 +106,70 @@
   }
 }
 
-/* Card Gần nhất - Làm nổi bật hẳn lên */
-.branchCardNearest {
-  border-color: rgba(184, 150, 106, 0.5);
-  background: linear-gradient(145deg, #ffffff, #fffdfa);
-  
-  &::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: 12px;
-    border: 2px solid transparent;
-    background: linear-gradient(var(--gold), var(--gold-dark)) border-box;
-    -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: destination-out;
-    mask-composite: exclude;
-    opacity: 0.3; // Viền gradient mờ ảo
-  }
+/* ─── Kết quả chi nhánh: card gần nhất nổi bật + grid các chi nhánh còn lại ── */
+.branchResultsWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
 
-  .branchCardName {
-    color: var(--gold-dark);
+.nearestBranchCard {
+  position: relative;
+  padding: 18px 20px 16px;
+  background: linear-gradient(145deg, #fffdfa, #ffffff);
+  border: 1.5px solid var(--gold);
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(184, 150, 106, 0.15);
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(184, 150, 106, 0.22);
   }
+}
+.nearestBranchCardSelected {
+  border-color: var(--charcoal);
+  box-shadow: 0 10px 30px rgba(44, 44, 44, 0.2);
+}
+
+.nearestBranchTag {
+  display: inline-block;
+  font-family: var(--ff-display);
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  color: #ffffff;
+  background: linear-gradient(to right, var(--gold-dark), var(--gold));
+  padding: 5px 14px;
+  border-radius: 20px;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.nearestBranchName {
+  font-family: var(--ff-serif);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--charcoal);
+  margin-bottom: 5px;
+}
+.nearestBranchAddr {
+  font-size: 12.5px;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+.nearestBranchMeta {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.branchCardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+  gap: 12px;
 }
 
 /* Card đã được chọn */
@@ -137,22 +180,7 @@
   transform: translateY(-5px);
 }
 
-/* Badge "Gần nhất" - Thiết kế lại như một cái tag sang trọng */
-.nearestBadge {
-  position: absolute;
-  top: -12px;
-  left: 12px;
-  background: var(--gold);
-  background: linear-gradient(to right, var(--gold-dark), var(--gold));
-  color: #ffffff;
-  font-size: 10px;
-  font-weight: 700;
-  font-family: var(--ff-display);
-  font-size: 14px;
-  letter-spacing: 2px;
-  color: var(--charcoal);
-  text-transform: uppercase;
-}
+
 /* Nút cập nhật vị trí */
 .locationBtn {
   display: flex;
@@ -224,33 +252,10 @@
   font-style: italic;
 }
 
-/* ─── Danh sách card chi nhánh (scroll ngang) ─────────────────────────────── */
-.branchCardList {
-  display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  padding-bottom: 6px;
-  scroll-snap-type: x mandatory;
-
-  /* Ẩn scrollbar nhưng vẫn scroll được */
-  scrollbar-width: thin;
-  scrollbar-color: var(--border) transparent;
-  &::-webkit-scrollbar {
-    height: 4px;
-  }
-  &::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border-radius: 2px;
-  }
-}
 
 /* ─── Card mỗi chi nhánh ─────────────────────────────────────────────────── */
 .branchCard {
   position: relative;
-  min-width: 175px;
-  max-width: 190px;
-  flex-shrink: 0;
-  scroll-snap-align: start;
   padding: 14px 14px 12px;
   background: var(--bg-cream);
   border: 1px solid var(--border);
@@ -285,18 +290,29 @@
   border-color: #b8966a80;
 }
 
-
+.branchCard.branchCardSelected,
+.nearestBranchCard.nearestBranchCardSelected {
+  padding-top: 34px; // chừa chỗ cho badge góc trên
+}
 /* Badge "✓ Đã chọn" */
 .selectedBadge {
   position: absolute;
-  top: -9px;
+  top: 10px;
   right: 10px;
-  background: var(--charcoal);
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--gold);
   color: #ffffff;
-  font-size: 10px;
-  font-weight: 500;
-  padding: 2px 9px;
+  font-family: var(--ff-body);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  padding: 4px 10px;
   border-radius: 20px;
+  box-shadow: 0 3px 8px rgba(184, 150, 106, 0.35);
+  white-space: nowrap;
 }
 
 .branchCardName {

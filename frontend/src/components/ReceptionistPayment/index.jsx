@@ -1,5 +1,6 @@
 // File: src/components/ReceptionistPayment/index.jsx
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import styles from "./PaymentModal.module.scss";
 import monitorStyles from "./MonitoringView.module.scss";
 import Step1_BookingInfo from "./BookingInfo";
@@ -275,7 +276,7 @@ export default function ReceptionistPayment({
 
   if (!formData) return null;
 
-  return (
+  return createPortal(
     <div className={styles.overlay}>
       <div className={styles.modal}>
         {mode === "EDIT" && (
@@ -298,6 +299,7 @@ export default function ReceptionistPayment({
           />
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

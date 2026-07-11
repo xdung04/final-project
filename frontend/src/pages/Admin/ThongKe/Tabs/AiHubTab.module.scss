@@ -13,7 +13,7 @@ $ink:         #1A1612;
 $ink-2:       #2C2720;
 $ink-text:    #F5F0E8;
 $ink-muted:   rgba(245, 240, 232, 0.5);
-
+$ink-bright:   rgba(255, 255, 255, 0.90); 
 $card-bg:     #FFFFFF;
 $border:      1px solid rgba(0, 0, 0, 0.07);
 $border-hover: 1px solid rgba(201, 168, 76, 0.5);
@@ -143,11 +143,11 @@ $transition:  0.15s;
   p {
     font-size: 13px;
     line-height: 1.65;
-    color: $ink-muted;
+    color: $ink-bright; 
     margin: 0;
 
     strong {
-      color: $ink-text;
+      color:$ink-bright; 
       font-weight: 600;
     }
   }

@@ -155,12 +155,13 @@ $radius-lg:   14px;
   }
 }
 
-// ── Rule list ─────────────────────────────────────────────────────────────────
+// ── Rule list — lưới thẻ hội viên, không còn xếp dọc từng dòng ────────────────
 .ruleList {
-  display: flex;
-  flex-direction: column;
-  padding: 16px;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  gap: 18px;
+  padding: 18px;
+  background: $surface-2;
 }
 
 // ── Loading / Empty ───────────────────────────────────────────────────────────
@@ -173,6 +174,7 @@ $radius-lg:   14px;
   font-size: 13px;
   color: #bbb;
   font-style: italic;
+  grid-column: 1 / -1;
 }
 
 // ── Responsive ────────────────────────────────────────────────────────────────
@@ -183,5 +185,9 @@ $radius-lg:   14px;
     gap: 14px;
 
     &__title { font-size: 22px; }
+  }
+
+  .ruleList {
+    grid-template-columns: 1fr;
   }
 }

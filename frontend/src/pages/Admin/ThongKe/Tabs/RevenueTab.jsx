@@ -384,17 +384,17 @@ function RevenueTab() {
         <div className={cx("chartContent")}>
           <div className={cx("chartWrapper")}>
             <ResponsiveContainer width="100%" height={barberChartHeight}>
-              <BarChart data={mergedBarberData} layout="vertical" margin={{ top: 8, right: 110, left: 8, bottom: 8 }} barCategoryGap="30%" maxBarSize={barSize}>
+            <BarChart data={mergedBarberData} layout="vertical" margin={{ top: 28, right: 110, left: 8, bottom: 8 }} barCategoryGap="30%" maxBarSize={barSize}>
                 <CartesianGrid strokeDasharray="3 3" stroke={COLOR.gridLine} horizontal={false} />
                 <YAxis type="category" dataKey="shortName" width={90} tick={{ fontSize: 12, fill: COLOR.ink2, fontWeight: 500 }} axisLine={false} tickLine={false} interval={0} />
                 <XAxis type="number" stroke={COLOR.axisText} tick={{ fontSize: 10, fill: COLOR.axisText }} tickFormatter={(v) => `${(v / 1_000_000).toFixed(0)}M`} axisLine={{ stroke: COLOR.gridLine }} tickLine={false} />
                 <Tooltip content={<BarberTooltip />} cursor={{ fill: "rgba(201,168,76,0.06)" }} />
                 <Legend wrapperStyle={{ fontSize: 11, paddingTop: 12, color: COLOR.axisText }} iconType="circle" iconSize={8} />
                 <ReferenceLine x={avgBarberRevenue} stroke={COLOR.gold} strokeDasharray="5 4" strokeWidth={1.5} label={{ value: `TB: ${(avgBarberRevenue / 1_000_000).toFixed(1)}M`, position: "top", fill: COLOR.gold, fontSize: 10, fontWeight: 600 }} />
-                <Bar dataKey="baseSalary" stackId="a" fill="#2C2420" name="Lương cố định" radius={[4,0,0,4]} />
-                <Bar dataKey="tips"       stackId="a" fill="#7B5C52" name="Tiền tip" />
-                <Bar dataKey="commission" stackId="a" fill="#B08878" name="Hoa hồng" />
-                <Bar dataKey="bonus"      stackId="a" fill={COLOR.gold} name="Thưởng" radius={[0,4,4,0]}>
+<Bar dataKey="baseSalary" stackId="a" fill="#3D3530" name="Lương cố định" radius={[4,0,0,4]} />
+<Bar dataKey="tips"       stackId="a" fill="#8D6E63" name="Tiền tip" />
+<Bar dataKey="commission" stackId="a" fill="#C4A265" name="Hoa hồng" />
+<Bar dataKey="bonus"      stackId="a" fill={COLOR.gold} name="Thưởng" radius={[0,4,4,0]}>
                   <LabelList content={(props) => <GrowthLabel {...props} data={mergedBarberData} />} />
                 </Bar>
               </BarChart>
@@ -441,7 +441,7 @@ function RevenueTab() {
         <div className={cx("chartContent")}>
           <div className={cx("chartWrapper")}>
             <ResponsiveContainer width="100%" height={Math.max(340, satisfactionData.length * 44)}>
-              <BarChart data={satisfactionData} layout="vertical" margin={{ top: 8, right: 80, left: 8, bottom: 8 }} barCategoryGap="30%">
+<BarChart data={satisfactionData} layout="vertical" margin={{ top: 28, right: 80, left: 8, bottom: 8 }} barCategoryGap="30%">
                 <CartesianGrid strokeDasharray="3 3" stroke={COLOR.gridLine} horizontal={false} />
                 <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 12, fill: COLOR.ink2, fontWeight: 500 }} tickFormatter={shortName} axisLine={false} tickLine={false} interval={0} />
                 <XAxis type="number" domain={[0, 5]} ticks={[0, 1, 2, 3, 4, 5]} stroke={COLOR.axisText} tick={{ fontSize: 10, fill: COLOR.axisText }} axisLine={{ stroke: COLOR.gridLine }} tickLine={false} />
