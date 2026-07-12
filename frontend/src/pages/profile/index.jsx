@@ -656,7 +656,7 @@ function Profile() {
             <div className={cx("modal-content")} style={{ maxWidth: tryOnResults.length > 0 ? 960 : 1100 }}>
               <div className={cx("modal-header")}>
                 <h3>Thử Kiểu Tóc AI</h3>
-                <button className={cx("modal-close")} onClick={closeTryOnModal}>
+                <button className={cx("modal-close")} onClick={closeTryOnModal} disabled={tryOnLoading}>
                   ×
                 </button>
               </div>
@@ -699,13 +699,14 @@ function Profile() {
                                 setFacePreview(null);
                               }}
                               title="Xoá ảnh"
+                              disabled={tryOnLoading}
                             >
                               ×
                             </button>
                           )}
                         </div>
-                        <input type="file" accept="image/*" onChange={handleFaceUpload} hidden id="faceUploadModal" />
-                        <label htmlFor="faceUploadModal" className={cx("upload-btn")}>
+                        <input type="file" accept="image/*" onChange={handleFaceUpload} hidden id="faceUploadModal" disabled={tryOnLoading} />
+                        <label htmlFor="faceUploadModal" className={cx("upload-btn", { disabled: tryOnLoading })}>
                           {faceImage ? "Đổi ảnh khác" : "Tải ảnh khuôn mặt"}
                         </label>
                       </div>
@@ -719,7 +720,7 @@ function Profile() {
                             {selectedHairstyles.map((s) => (
                               <span key={s.id} className={cx("chip")}>
                                 {s.name}
-                                <button type="button" onClick={() => removeHairstyle(s.id)}>
+                                <button type="button" onClick={() => removeHairstyle(s.id)} disabled={tryOnLoading}>
                                   ×
                                 </button>
                               </span>
@@ -751,6 +752,7 @@ function Profile() {
                                     className={cx("styleCardWrap")}
                                     onClick={() =>
                                       !isDisabled &&
+                                      !tryOnLoading &&
                                       (isSelected ? removeHairstyle(style.id) : handleSelectHairstyle(style))
                                     }
                                   >
@@ -830,7 +832,7 @@ function Profile() {
               <div className={cx("modal-footer")}>
                 {tryOnResults.length === 0 ? (
                   <>
-                    <button className={cx("reset-btn")} onClick={resetTryOnInModal}>
+                    <button className={cx("reset-btn")} onClick={resetTryOnInModal} disabled={tryOnLoading}>
                       Đặt lại
                     </button>
                     <button

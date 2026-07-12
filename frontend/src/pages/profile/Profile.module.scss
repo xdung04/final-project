@@ -433,6 +433,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
 }
 
 .modal-body {
@@ -552,8 +557,13 @@
   transition: background 0.2s;
   z-index: 2;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: rgba(255, 60, 60, 0.75);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
   }
 }
 
@@ -579,6 +589,12 @@
   &:hover {
     background: var(--gold);
     color: var(--black);
+  }
+
+  &.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
   }
 }
 
@@ -612,7 +628,12 @@
     opacity: 0.7;
     transition: opacity 0.2s;
 
-    &:hover { opacity: 1; }
+    &:hover:not(:disabled) { opacity: 1; }
+
+    &:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
   }
 }
 
@@ -734,6 +755,11 @@
   border: 1px solid rgba(255,255,255,0.3);
   border-radius: 4px;
   cursor: pointer;
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
 }
 
 .try-btn {
