@@ -825,23 +825,37 @@
 }
 
 .hairGrid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  display: flex;
+  flex-wrap: nowrap;
   gap: 2px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 4px; /* chỗ cho scrollbar */
 
-  @media (max-width: 1024px) { grid-template-columns: repeat(2, 1fr); }
-  @media (max-width: 600px)  { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+  /* Tùy chỉnh scrollbar */
+  &::-webkit-scrollbar { height: 4px; }
+  &::-webkit-scrollbar-track { background: rgba(245, 240, 232, 0.05); border-radius: 2px; }
+  &::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 2px; }
+
+  @media (max-width: 1024px) { gap: 6px; }
+  @media (max-width: 600px)  { gap: 6px; }
 }
 
 /* ====================== HAIR CARD - Cập nhật mới ====================== */
 .hairCard {
   position: relative;
+  flex: 0 0 auto;
+  width: calc(25% - 1.5px);
+  min-width: 220px;
   aspect-ratio: 3/4;
   overflow: hidden;
   cursor: pointer;
   background: var(--charcoal);
   border: 1px solid transparent;
   transition: transform 0.45s ease, border-color 0.3s;
+  scroll-snap-align: start;
 
   &:hover {
     transform: translateY(-8px);
@@ -863,11 +877,16 @@
   }
 
   &.hairFeatured {
-    grid-column: span 2;
+    width: calc(50% - 1px);
     aspect-ratio: auto;
     min-height: 420px;
 
     .hairName { font-size: 30px; }
+  }
+
+  @media (max-width: 768px) {
+    width: calc(50% - 3px);
+    min-width: 160px;
   }
 }
 

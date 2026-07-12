@@ -154,8 +154,8 @@ const HairCatalog = ({ onBook }) => {
           });
 
           setCategories(dynamicCats);
-          // Chỉ lấy 6 kiểu tóc như đã thống nhất
-          setHairstyles(dynamicHairstyles.slice(0, 6));
+          // Load toàn bộ kiểu tóc, hiển thị scroll ngang nếu nhiều hơn 4
+          setHairstyles(dynamicHairstyles);
         }
       } catch (error) {
         console.error("Lỗi khi load danh sách kiểu tóc:", error);
