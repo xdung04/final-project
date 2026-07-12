@@ -368,6 +368,28 @@
   position: relative;
 }
 
+.errorBanner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 32px;
+  background: #fff0f0;
+  border-bottom: 1px solid #f0d0d0;
+  color: #c0392b;
+  font-size: 13px;
+  font-weight: 500;
+
+  svg { flex-shrink: 0; color: #e74c3c; }
+}
+
+.breadcrumbError {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #c0392b;
+  font-weight: 500;
+}
+
 .notifBtn {
   position: relative;
   width: 40px;
@@ -386,6 +408,11 @@
     background: var(--black);
     border-color: var(--black);
     color: var(--gold-main);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 }
 
