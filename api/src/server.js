@@ -35,7 +35,7 @@ import startSalaryCron from "./cron/salaryCron.js";
 import startBarberLockCron from "./cron/barberStatusCron.js";
 import startExpireVouchersCron from "./cron/expireVouchersCron.js";
 import hairAnalysisRoutes from "./routes/hairAnalysis.js";
-
+import { initRabbitMQ } from "./config/rabbitmq.js";
 import { authenticate, authorize } from "./middlewares/authMiddleware.js";
 import notificationRoute from "./routes/notification.js";
 import newsRouter from "./routes/news.js";
@@ -125,7 +125,8 @@ startBranchStatusCron();
 startSalaryCron();
 startBarberLockCron();
 startExpireVouchersCron();
-
+// await initRabbitMQ();
+// app.listen(PORT, () => console.log(`Server chạy port ${PORT}`));
 const PORT = process.env.PORT || 8088;
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`Backend Node.js & Socket is running on http://0.0.0.0:${PORT}`);
