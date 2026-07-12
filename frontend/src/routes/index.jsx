@@ -68,12 +68,6 @@ export const publicRouter = [
   { path: config.routes.news, component: NewsPage },
   { path: config.routes.newsDetail, component: NewsDetail },
   {
-    path: config.routes.receptionist,
-    component: Receptionist, // Dùng trực tiếp component này, không qua bọc Protected nữa
-    layout: null,
-
-  },
-  {
     path: config.routes.kiosk, // (Hoặc ghi thẳng chuỗi "/kiosk" nếu lười vào file config sửa)
     component: CustomerKiosk,
     layout: null, // TUYỆT ĐỐI QUAN TRỌNG: Để null để nó không hiện Header/Footer của web

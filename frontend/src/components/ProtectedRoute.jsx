@@ -3,35 +3,43 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Modal from "~/components/Modal";
 
+const LoadingSpinner = () => (
+  <div style={{
+    display: "flex", justifyContent: "center", alignItems: "center",
+    height: "100vh", color: "#888", fontFamily: "sans-serif", fontSize: 14
+  }}>
+    Đang tải...
+  </div>
+);
+
 export function ProtectedRoute({ children, requiredRole }) {
   const { isLogin, user, loading } = useAuth();
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
 
-  console.log("ProtectedRoute", { isLogin, user, loading });
-
   useEffect(() => {
-    console.log("useEffect ProtectedRoute", { isLogin, user });
     if (loading) return;
 
+    // Chưa đăng nhập → hiển thị modal login
     if (!isLogin) {
-      console.log("Chưa login → show modal");
       setShowModal(true);
       return;
     }
 
+    // Sai role → redirect về trang chủ
     if (requiredRole && user?.role !== requiredRole) {
-      console.log("Không đủ quyền → redirect /");
-      navigate("/");
+      navigate("/", { replace: true });
     }
   }, [isLogin, user, requiredRole, loading, navigate]);
 
-  if (loading) return null;
+  // Đang kiểm tra auth → loading
+  if (loading) return <LoadingSpinner />;
 
+  // Đã login và đúng role → render nội dung
   if (isLogin && (!requiredRole || user?.role === requiredRole)) {
     return children;
   }
 
-  console.log("Chưa login → render modal");
+  // Chưa login → render modal
   return <Modal isOpen={showModal} />;
 }

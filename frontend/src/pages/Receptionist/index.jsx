@@ -4,7 +4,7 @@ import classNames from "classnames/bind";
 import {
   LayoutDashboard, MessageSquare, History,
   Bell, MapPin, X, Clock, CheckCheck,
-  CalendarCheck, DollarSign, Megaphone, Inbox
+  CalendarCheck, DollarSign, Megaphone, Inbox, AlertTriangle
 } from "lucide-react";
 
 import styles from "./Receptionist.module.scss";
@@ -14,6 +14,7 @@ import LichSuGiaoDich   from "./LichSuGiaoDich";
 
 import { fetchMyBranch }                                 from "~/services/bookingService";
 import { fetchMyNotifications, markNotificationAsRead }  from "~/services/notificationService";
+import { useAuth } from "~/context/AuthContext";
 
 const cx = classNames.bind(styles);
 
@@ -24,44 +25,80 @@ const menuItems = [
 ];
 
 function Receptionist() {
+  const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [branchInfo,       setBranchInfo]       = useState(null);
   const [loadingBranch,    setLoadingBranch]    = useState(true);
+  const [branchError,      setBranchError]      = useState(null);
 
   // ── Notification ──────────────────────────────────────────────────────────
   const [showNotify,           setShowNotify]           = useState(false);
   const [notifications,        setNotifications]        = useState([]);
   const [unreadCount,          setUnreadCount]          = useState(0);
   const [selectedNotification, setSelectedNotification] = useState(null);
+  const [notifyError,          setNotifyError]          = useState(null);
 
   const notifyRef = useRef(null);
   const dialogRef = useRef(null);
+
+  // ── Fallback: tự kiểm tra role trong component (bảo vệ kép) ───────────────
+  useEffect(() => {
+    if (user && user.role !== "receptionist") {
+      console.warn("❌ Role không phải receptionist, redirect về trang chủ");
+      navigate("/", { replace: true });
+    }
+  }, [user, navigate]);
 
   const currentMenuItem = menuItems.find((i) => i.path === location.pathname) || menuItems[0];
   const activeId        = currentMenuItem.id;
 
   // ── Load branch + notifications ───────────────────────────────────────────
   useEffect(() => {
+    let isMounted = true;
     const loadData = async () => {
       setLoadingBranch(true);
+      setBranchError(null);
+      setNotifyError(null);
       try {
         const [branchData, notifyData] = await Promise.all([
           fetchMyBranch(),
           fetchMyNotifications(),
         ]);
+        if (!isMounted) return;
         setBranchInfo(branchData);
         setUnreadCount(notifyData.unreadCount    || 0);
         setNotifications(notifyData.notifications || []);
       } catch (err) {
+        if (!isMounted) return;
         console.error("Lỗi tải dữ liệu receptionist:", err);
+
+        // Kiểm tra nếu là lỗi 401 (token hết hạn) → không cần hiển thị lỗi,
+        // vì interceptor ở httpRequest.js đã tự động refresh hoặc logout + reload
+        if (err?.response?.status === 401) {
+          // Interceptor đã xử lý, không cần làm gì thêm
+          return;
+        }
+
+        // Lỗi khác (network, server error...) → hiển thị cho user biết
+        if (err?.response?.status === 403) {
+          setBranchError("Bạn không có quyền truy cập dữ liệu này.");
+        } else if (err?.response?.status >= 500) {
+          setBranchError("Máy chủ đang gặp sự cố, vui lòng thử lại sau.");
+        } else if (err?.code === "ERR_NETWORK") {
+          setBranchError("Mất kết nối máy chủ, vui lòng kiểm tra mạng.");
+        } else {
+          setBranchError("Không thể tải dữ liệu, vui lòng thử lại.");
+        }
+        setNotifyError("Không thể tải thông báo.");
       } finally {
-        setLoadingBranch(false);
+        if (isMounted) setLoadingBranch(false);
       }
     };
     loadData();
+    return () => { isMounted = false; };
   }, []);
 
   // ── Click outside đóng dropdown ───────────────────────────────────────────
@@ -102,12 +139,17 @@ function Receptionist() {
   const handleNotificationClick = async (noti) => {
     setSelectedNotification(noti);
     if (!noti.isRead) {
-      const ok = await markNotificationAsRead(noti.idNotification);
-      if (ok) {
-        setNotifications((prev) =>
-          prev.map((n) => n.idNotification === noti.idNotification ? { ...n, isRead: true } : n)
-        );
-        setUnreadCount((prev) => Math.max(0, prev - 1));
+      try {
+        const ok = await markNotificationAsRead(noti.idNotification);
+        if (ok) {
+          setNotifications((prev) =>
+            prev.map((n) => n.idNotification === noti.idNotification ? { ...n, isRead: true } : n)
+          );
+          setUnreadCount((prev) => Math.max(0, prev - 1));
+        }
+      } catch (err) {
+        // 401 đã được interceptor xử lý, bỏ qua
+        console.warn("markNotificationAsRead error:", err);
       }
     }
   };
@@ -115,12 +157,16 @@ function Receptionist() {
   const handleMarkRead = async (e, noti) => {
     e.stopPropagation();
     if (!noti.isRead) {
-      const ok = await markNotificationAsRead(noti.idNotification);
-      if (ok) {
-        setNotifications((prev) =>
-          prev.map((n) => n.idNotification === noti.idNotification ? { ...n, isRead: true } : n)
-        );
-        setUnreadCount((prev) => Math.max(0, prev - 1));
+      try {
+        const ok = await markNotificationAsRead(noti.idNotification);
+        if (ok) {
+          setNotifications((prev) =>
+            prev.map((n) => n.idNotification === noti.idNotification ? { ...n, isRead: true } : n)
+          );
+          setUnreadCount((prev) => Math.max(0, prev - 1));
+        }
+      } catch (err) {
+        console.warn("handleMarkRead error:", err);
       }
     }
   };
@@ -167,14 +213,22 @@ function Receptionist() {
           <div className={cx("headerLeft")}>
             <h1 className={cx("pageTitle")}>{currentMenuItem.label}</h1>
             <div className={cx("breadcrumb")}>
-              <span>{loadingBranch ? "Đang tải..." : (branchInfo?.branchName || "Chưa xác định")}</span>
-              <span className={cx("separator")}>/</span>
-              <span className={cx("current")}>{currentMenuItem.label}</span>
+              {branchError ? (
+                <span className={cx("breadcrumbError")}>
+                  <AlertTriangle size={12} /> Lỗi kết nối
+                </span>
+              ) : (
+                <>
+                  <span>{loadingBranch ? "Đang tải..." : (branchInfo?.branchName || "Chưa xác định")}</span>
+                  <span className={cx("separator")}>/</span>
+                  <span className={cx("current")}>{currentMenuItem.label}</span>
+                </>
+              )}
             </div>
           </div>
 
           <div className={cx("headerRight")}>
-            {!loadingBranch && branchInfo?.address && (
+            {!loadingBranch && !branchError && branchInfo?.address && (
               <div className={cx("branchBadge")}>
                 <MapPin size={14} /><span>{branchInfo.address}</span>
               </div>
@@ -185,6 +239,7 @@ function Receptionist() {
               <button
                 className={cx("notifBtn")}
                 onClick={() => setShowNotify((p) => !p)}
+                disabled={!!notifyError}
               >
                 <Bell size={20} strokeWidth={1.5} />
                 {unreadCount > 0 && (
@@ -201,7 +256,12 @@ function Receptionist() {
                     {unreadCount > 0 && <span className={cx("notifyHeaderBadge")}>{unreadCount} mới</span>}
                   </div>
                   <div className={cx("notifyList")}>
-                    {notifications.length === 0 ? (
+                    {notifyError ? (
+                      <div className={cx("notifyEmpty")}>
+                        <AlertTriangle size={32} />
+                        <p>{notifyError}</p>
+                      </div>
+                    ) : notifications.length === 0 ? (
                       <div className={cx("notifyEmpty")}>
                         <Inbox size={32} />
                         <p>Không có thông báo</p>
@@ -240,6 +300,14 @@ function Receptionist() {
 
           </div>
         </header>
+
+        {/* ── Error banner ──────────────────────────────────────────────── */}
+        {branchError && (
+          <div className={cx("errorBanner")}>
+            <AlertTriangle size={16} />
+            <span>{branchError}</span>
+          </div>
+        )}
 
         <main className={cx("contentArea")}>
           {activeId === "operations" && <div className="fade-in"><DatLichThanhToan /></div>}

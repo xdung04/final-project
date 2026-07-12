@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import classNames from "classnames/bind";
-import { 
+import {
   LayoutDashboard, 
   TrendingUp, 
   Store, 
@@ -20,7 +20,8 @@ import {
   CalendarCheck,
   DollarSign,
   Megaphone,
-  Inbox
+  Inbox,
+  AlertTriangle
 } from "lucide-react";
 
 import styles from "./Admin.module.scss";
@@ -87,6 +88,7 @@ function Admin() {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [selectedNotification, setSelectedNotification] = useState(null);
+  const [notifyError, setNotifyError] = useState(null);
 
   const notifyRef = useRef(null);
   const dialogRef = useRef(null);
@@ -114,6 +116,7 @@ function Admin() {
   useEffect(() => {
     let isMounted = true;
     const loadData = async () => {
+      setNotifyError(null);
       try {
         const notifyData = await fetchMyNotifications();
         if (notifyData && isMounted) {
@@ -121,7 +124,12 @@ function Admin() {
           setNotifications(notifyData.notifications || []);
         }
       } catch (error) {
+        if (!isMounted) return;
         console.error("Lỗi tải thông báo:", error);
+        // 401 đã được interceptor xử lý, chỉ hiển thị lỗi cho các trường hợp khác
+        if (error?.response?.status !== 401) {
+          setNotifyError("Không thể tải thông báo.");
+        }
       }
     };
     loadData();
@@ -234,7 +242,12 @@ function Admin() {
                     {unreadCount > 0 && <span className={cx("notifyHeaderBadge")}>{unreadCount} mới</span>}
                   </div>
                   <div className={cx("notifyList")}>
-                    {notifications.length === 0 ? (
+                    {notifyError ? (
+                      <div className={cx("notifyEmpty")}>
+                        <AlertTriangle size={32} />
+                        <p>{notifyError}</p>
+                      </div>
+                    ) : notifications.length === 0 ? (
                       <div className={cx("notifyEmpty")}>
                         <Inbox size={32} />
                         <p>Không có thông báo</p>

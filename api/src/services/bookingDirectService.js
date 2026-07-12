@@ -126,6 +126,21 @@ export const createBookingDirectService = async ({
     throw new Error("Tài khoản thợ đã bị khóa, không thể đặt lịch.");
   }
 
+  // ====== KIỂM TRA LỊCH NGHỈ BARBER ======
+  const dayOff = await db.BarberDayOff.findOne({
+    where: {
+      idBarber,
+      startDate: { [Op.lte]: bookingDay },
+      endDate: { [Op.gte]: bookingDay },
+    },
+  });
+
+  if (dayOff) {
+    throw new Error(
+      `Thợ đã được xếp lịch nghỉ từ ${formatDDMMYYYY(dayOff.startDate)} đến ${formatDDMMYYYY(dayOff.endDate)}${dayOff.reason ? ` (lý do: ${dayOff.reason})` : ""}. Vui lòng chọn ngày khác hoặc chọn thợ khác.`,
+    );
+  }
+
   // ====== KIỂM TRA DỊCH VỤ ======
   const serviceIds = services.map((s) => s.idService);
   const foundServices = await db.Service.findAll({
