@@ -187,7 +187,7 @@ export const createBookingService = async ({
   const svcIds = services.map((s) => s.idService);
   const foundServices = await db.Service.findAll({
     where: { idService: { [Op.in]: svcIds } },
-    attributes: ["idService", "name", "status"],
+    attributes: ["idService", "name", "price", "status"],
   });
 
   for (const s of services) {
@@ -197,6 +197,14 @@ export const createBookingService = async ({
     }
     if (match.status !== "Active") {
       throw new Error(`Dịch vụ "${match.name}" hiện không khả dụng. Vui lòng chọn dịch vụ khác.`);
+    }
+    // Kiểm tra giá từ frontend có khớp với giá trong DB không
+    const dbPrice = parseFloat(match.price);
+    const sentPrice = parseFloat(s.price);
+    if (sentPrice !== dbPrice) {
+      throw new Error(
+        `Giá dịch vụ "${match.name}" đã thay đổi từ ${sentPrice.toLocaleString("vi-VN")}₫ thành ${dbPrice.toLocaleString("vi-VN")}₫. Vui lòng tải lại trang để cập nhật giá mới.`,
+      );
     }
   }
 
