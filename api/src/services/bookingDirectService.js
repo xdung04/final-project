@@ -1,5 +1,5 @@
 import db from "../models/index.js";
-import { Sequelize } from "sequelize";
+import { Op, Sequelize } from "sequelize";
 import { sendBookingEmail } from "./mailService.js";
 
 /**
@@ -104,6 +104,43 @@ export const createBookingDirectService = async ({
 
   if (!barber) {
     throw new Error("Không tìm thấy barber!");
+  }
+
+  // ====== KIỂM TRA BARBER ======
+  // Kiểm tra lockDate — nếu ngày đặt >= lockDate thì barber không làm việc nữa
+  if (barber.lockDate) {
+    const lockDay = new Date(barber.lockDate);
+    lockDay.setHours(0, 0, 0, 0);
+    const selectedDay = new Date(bookingDate);
+    selectedDay.setHours(0, 0, 0, 0);
+
+    if (selectedDay >= lockDay) {
+      throw new Error(
+        `Thợ này sẽ nghỉ từ ngày ${new Date(barber.lockDate).toLocaleDateString("vi-VN")}. Vui lòng chọn ngày trước đó hoặc chọn thợ khác.`,
+      );
+    }
+  }
+
+  // Kiểm tra barber có bị khóa không
+  if (barber.isLocked) {
+    throw new Error("Tài khoản thợ đã bị khóa, không thể đặt lịch.");
+  }
+
+  // ====== KIỂM TRA DỊCH VỤ ======
+  const serviceIds = services.map((s) => s.idService);
+  const foundServices = await db.Service.findAll({
+    where: { idService: { [Op.in]: serviceIds } },
+    attributes: ["idService", "name", "status"],
+  });
+
+  for (const s of services) {
+    const match = foundServices.find((fs) => fs.idService === s.idService);
+    if (!match) {
+      throw new Error(`Dịch vụ ID ${s.idService} không tồn tại.`);
+    }
+    if (match.status !== "Active") {
+      throw new Error(`Dịch vụ "${match.name}" hiện không khả dụng. Vui lòng chọn dịch vụ khác.`);
+    }
   }
 
   // Tính tổng tiền

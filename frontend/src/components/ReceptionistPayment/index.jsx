@@ -202,7 +202,8 @@ export default function ReceptionistPayment({
         booking.services?.map((s) => ({
           id: s.id,
           name: s.name,
-          price: parseFloat(s.price) || 0,
+          price: parseFloat(s.price) || 0,          // Giá gốc lúc đặt
+          currentPrice: parseFloat(s.currentPrice || s.price) || 0, // Giá hiện tại
           selected: true,
         })) || [],
       voucher: booking.voucher || null,

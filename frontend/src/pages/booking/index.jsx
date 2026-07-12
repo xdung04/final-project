@@ -740,8 +740,7 @@ try {
             <div className={styles.formGroup}>
               <label>Ngày hẹn</label>
               <div className={styles.dateList}>
-                {[...Array(14)].map((_, i) => {
-                  // [FIX] Tăng lên 14 ngày để thấy rõ hiệu ứng block lockDate
+                {[...Array(7)].map((_, i) => {
                   const d = new Date();
                   d.setDate(today.getDate() + i);
                   const value = d.toISOString().split("T")[0];

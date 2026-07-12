@@ -34,10 +34,9 @@ export const createBookingDirect = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Lỗi khi tạo booking trực tiếp:", error);
-    return res.status(500).json({
+    return res.status(400).json({
       success: false,
-      message: "Lỗi khi tạo booking trực tiếp!",
-      error: error.message,
+      message: error.message,
     });
   }
 };

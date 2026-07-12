@@ -46,8 +46,8 @@ export async function up(queryInterface, Sequelize) {
     {
       idBarber: 36,
       title: "Uốn xoăn sóng nước - Tạo kiểu tự nhiên bồng bềnh #WavyHair #LayerCut #FunBarber",
-      url: "https://res.cloudinary.com/xuandung/video/upload/v1761365338/reels/qgpm8q5hmnkkps8nnusl.mp4",
-      thumbnail: "https://res.cloudinary.com/xuandung/video/upload/so_1/v1761365338/reels/qgpm8q5hmnkkps8nnusl.jpg",
+      url: "https://res.cloudinary.com/xuandung/video/upload/v1783835178/Download_fpam8r.mp4",
+      thumbnail: "https://res.cloudinary.com/xuandung/image/upload/v1783835221/1bcb160f-9902-4a69-b62f-0a4ebb22d6b9.png",
       description: "Uốn xoăn sóng nước tự nhiên, bồng bềnh cuốn hút.",
       createdAt: new Date(),
       updatedAt: new Date(),

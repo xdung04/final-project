@@ -34,11 +34,15 @@ function calcDiscount(voucher, subtotal) {
 export default function BookingInfo({ data, setData, onNext }) {
   const { booking, services, voucher: initialVoucher } = data;
 
+  // Lưu danh sách id service gốc (đã có trong booking lúc đặt)
+  const originalServiceIdsRef = useRef(new Set((services || []).map((s) => s.id)));
+
   const [branchServices, setBranchServices] = useState(() =>
     (services || []).map((s) => ({
       id: s.id,
       name: s.name,
-      price: s.price,
+      price: s.price,          // Giá gốc lúc đặt (từ booking_details)
+      currentPrice: s.currentPrice || s.price, // Giá hiện tại (nếu backend trả về)
       selected: true,
     })),
   );
@@ -65,14 +69,23 @@ export default function BookingInfo({ data, setData, onNext }) {
         );
         const result = await res.json();
         if (result?.services) {
-          const allServices = result.services.map((s) => ({
-            id: s.idService,
-            name: s.name,
-            price: parseFloat(s.price),
-            selected: branchServices.some(
-              (bs) => bs.id === s.idService && bs.selected,
-            ),
-          }));
+          const allServices = result.services.map((s) => {
+            const existing = branchServices.find(
+              (bs) => bs.id === s.idService,
+            );
+            return {
+              id: s.idService,
+              name: s.name,
+              // Hybrid pricing:
+              // - Service đã có trong booking gốc → giữ price gốc
+              // - Service mới (chưa có trong booking) → dùng currentPrice từ branch
+              price: existing
+                ? existing.price
+                : parseFloat(s.price),
+              currentPrice: parseFloat(s.price), // Giá hiện tại
+              selected: existing ? existing.selected : false,
+            };
+          });
           setBranchServices(allServices);
         }
       } catch (err) {
@@ -85,9 +98,17 @@ export default function BookingInfo({ data, setData, onNext }) {
   }, [booking.branchId]);
 
   const handleToggleService = (id) => {
-    const updated = branchServices.map((s) =>
-      s.id === id ? { ...s, selected: !s.selected } : s,
-    );
+    const updated = branchServices.map((s) => {
+      if (s.id !== id) return s;
+      // Khi toggle chọn service mới (chưa có trong booking gốc)
+      // → dùng currentPrice (giá hiện tại)
+      const isNew = !originalServiceIdsRef.current.has(id);
+      return {
+        ...s,
+        selected: !s.selected,
+        price: !s.selected && isNew ? s.currentPrice : s.price,
+      };
+    });
     setBranchServices(updated);
     setData({ ...data, services: updated.filter((s) => s.selected) });
   };

@@ -38,40 +38,65 @@ export const finalizePayment = async (idBooking, paymentData, transaction) => {
 
   let serviceTotal = 0;
 
-  // 2. Cập nhật Dịch vụ & Tính Total (Cực kỳ quan trọng)
-  // Nếu iPad gửi về danh sách dịch vụ (có thể đã thêm mới/thay đổi)
+  // 2. Cập nhật Dịch vụ & Tính Total (Hybrid Pricing)
   if (Array.isArray(services) && services.length > 0) {
-    // A. Xóa sạch detail cũ của booking này
-    await BookingDetail.destroy({ where: { idBooking }, transaction });
-
-    // B. Lấy thông tin giá mới nhất từ bảng Service để tính tiền
-    const serviceIds = services.map((s) =>
-      typeof s === "object" ? s.idService : s,
-    );
-    const dbServices = await Service.findAll({
-      where: { idService: serviceIds },
+    // A. Lấy booking_details cũ
+    const oldDetails = await BookingDetail.findAll({
+      where: { idBooking },
       transaction,
     });
 
-    const newDetails = [];
-    for (const srv of dbServices) {
-      // Tìm lại quantity từ data iPad gửi lên (nếu có), không thì mặc định 1
-      const input = services.find((s) => (s.idService || s) === srv.idService);
+    // Build map: { [idService]: { price, quantity } }
+    const oldMap = {};
+    oldDetails.forEach((d) => {
+      oldMap[d.idService] = { price: parseFloat(d.price), quantity: d.quantity };
+    });
+
+    // B. Xử lý từng service từ request
+    for (const input of services) {
+      const idService = typeof input === "object" ? input.idService : input;
       const quantity = input?.quantity || 1;
-      const priceAtTime = Number(srv.price);
 
-      serviceTotal += priceAtTime * quantity;
+      if (oldMap[idService]) {
+        // Service cũ → giữ nguyên price gốc từ booking_details
+        const oldPrice = oldMap[idService].price;
+        serviceTotal += oldPrice * quantity;
 
-      newDetails.push({
-        idBooking: idBooking,
-        idService: srv.idService,
-        quantity: quantity,
-        price: priceAtTime, // Lưu giá lúc thanh toán
-      });
+        // Cập nhật quantity (có thể thay đổi)
+        await BookingDetail.update(
+          { quantity },
+          { where: { idBooking, idService }, transaction },
+        );
+
+        // Đánh dấu đã xử lý
+        delete oldMap[idService];
+      } else {
+        // Service mới → lấy price hiện tại từ Service.price
+        const srv = await Service.findByPk(idService, { transaction });
+        if (!srv) continue;
+        const currentPrice = Number(srv.price);
+        serviceTotal += currentPrice * quantity;
+
+        await BookingDetail.create(
+          {
+            idBooking,
+            idService,
+            quantity,
+            price: currentPrice,
+          },
+          { transaction },
+        );
+      }
     }
 
-    // C. Lưu lại danh sách dịch vụ mới vào DB
-    await BookingDetail.bulkCreate(newDetails, { transaction });
+    // C. Xóa service cũ không còn trong danh sách mới
+    const removedIds = Object.keys(oldMap);
+    if (removedIds.length > 0) {
+      await BookingDetail.destroy({
+        where: { idBooking, idService: { [Op.in]: removedIds } },
+        transaction,
+      });
+    }
   } else {
     // Nếu iPad không gửi services (không đổi gì), lấy total cũ trong booking
     serviceTotal = totalServicePrice;
@@ -113,26 +138,22 @@ export const finalizePayment = async (idBooking, paymentData, transaction) => {
   }
 
   // 5. Cập nhật trạng thái Booking & Total mới
-  // Ở đây Total CHỈ lưu tiền dịch vụ như ông yêu cầu
   await booking.update(
     {
       isPaid: true,
       status: "Completed",
-      total: total ?? serviceTotal, // ưu tiên total; fallback serviceTotal nếu null
+      total: total ?? serviceTotal,
       paymentMethod: paymentMethod || "Cash",
     },
     { transaction },
   );
 
-  // 6. Cộng điểm Loyalty (Sử dụng hàm của ông)
-  // Lưu ý: serviceTotal là số tiền thực tế khách trả cho các dịch vụ
-
+  // 6. Cộng điểm Loyalty
   await addLoyaltyPoints(booking.idCustomer, serviceTotal, transaction);
 
   if (voucherReverted && customerVoucherId) {
     const VoucherService = (await import("./voucherService.js")).default;
     await VoucherService.revertVoucher(customerVoucherId, transaction);
-    // Xóa liên kết voucher khỏi booking
     await booking.update({ idCustomerVoucher: null }, { transaction });
   }
 
@@ -140,7 +161,7 @@ export const finalizePayment = async (idBooking, paymentData, transaction) => {
     idBooking: booking.idBooking,
     serviceTotal,
     tipAmount,
-    amountPaid: (total ?? serviceTotal) + tipAmount, // Tổng tiền khách đã thanh toán
+    amountPaid: (total ?? serviceTotal) + tipAmount,
     isPaid: true,
   };
 };

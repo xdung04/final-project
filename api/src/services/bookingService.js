@@ -183,6 +183,23 @@ export const createBookingService = async ({
     include: [{ model: db.User, as: "user", attributes: ["fullName"] }],
   });
 
+  // ====== KIỂM TRA DỊCH VỤ ======
+  const svcIds = services.map((s) => s.idService);
+  const foundServices = await db.Service.findAll({
+    where: { idService: { [Op.in]: svcIds } },
+    attributes: ["idService", "name", "status"],
+  });
+
+  for (const s of services) {
+    const match = foundServices.find((fs) => fs.idService === s.idService);
+    if (!match) {
+      throw new Error(`Dịch vụ ID ${s.idService} không tồn tại.`);
+    }
+    if (match.status !== "Active") {
+      throw new Error(`Dịch vụ "${match.name}" hiện không khả dụng. Vui lòng chọn dịch vụ khác.`);
+    }
+  }
+
   // Tính tổng giá
   const originalTotal = services.reduce(
     (sum, s) => sum + s.price * (s.quantity || 1),
@@ -730,7 +747,8 @@ export const getBookingsByBranchService = async (idBranch, date) => {
           services: details.map((d) => ({
             id: d.service?.idService,
             name: d.service?.name,
-            price: parseFloat(d.service?.price || d.price),
+            price: parseFloat(d.price),                           // Giá gốc lúc đặt (từ booking_details)
+            currentPrice: parseFloat(d.service?.price || d.price), // Giá hiện tại của service
             quantity: d.quantity,
           })),
 
