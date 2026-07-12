@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
-import { Search, ArrowLeft, Send, User, Camera } from "lucide-react";
+import { Search, ArrowLeft, Send, User, Camera, Bot } from "lucide-react";
 import classNames from "classnames/bind";
 import socket from "~/utils/socket";
 import * as chatLiveService from "~/services/chatLiveService";
@@ -612,7 +612,9 @@ const ChatKhachHang = () => {
               ) : (
                 messagesMap[activeConversationId].map((msg, idx) => {
                   const isSystem = msg.senderType === "system" || msg.messageType === "system";
-                  const isSent = msg.senderType === "receptionist";
+                  const isSent   = msg.senderType === "receptionist";
+                  // 🔥 Tách riêng AI (bot) khỏi khách hàng thật — chỉnh lại "ai"/"bot" nếu tên field bên backend khác
+                  const isAI       = msg.senderType === "ai" || msg.senderType === "bot";
                   const isReceived = msg.senderType === "customer";
 
                   return (
@@ -621,12 +623,13 @@ const ChatKhachHang = () => {
                       className={cx("msgRow", {
                         sent:     isSent,
                         received: isReceived,
+                        ai:       isAI,
                         system:   isSystem,
                       })}
                     >
-                      {isReceived && (
+                      {(isReceived || isAI) && (
                         <div className={cx("msgAvatar")}>
-                          <User size={14} />
+                          {isAI ? <Bot size={14} /> : <User size={14} />}
                         </div>
                       )}
 
@@ -648,7 +651,11 @@ const ChatKhachHang = () => {
                       ) : (
                         <div className={cx("msgBubbleWrapper")}>
                           <span className={cx("senderName")}>
-                            {isSent ? "Lễ tân" : "Khách hàng"}
+                            {isSent
+                              ? "Lễ tân"
+                              : isAI
+                              ? (<>Trợ lý AI <span className={cx("aiTag")}>AI</span></>)
+                              : "Khách hàng"}
                           </span>
                           <div className={cx("msgBubble")}>
                             {msg.content}

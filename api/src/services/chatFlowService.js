@@ -243,3 +243,99 @@ export async function closeConversationOnLogout({ customerId }) {
   }
   return { success: true, closedRooms: updatedCount };
 }
+// ─────────────────────────────────────────────────────────────
+// clearAiConversation — Khách xoá lịch sử chat AI (guest: Redis / khách: DB)
+// Không xoá row Conversation (đang được tái sử dụng theo customerId),
+// chỉ xoá các Message senderType "customer"/"ai", giữ lại "receptionist"/"system".
+// ─────────────────────────────────────────────────────────────
+export async function clearAiConversation({ customerId }) {
+  const isStrictLoggedIn =
+    customerId && customerId !== "null" && customerId !== "undefined" && customerId !== "";
+
+  if (isStrictLoggedIn) {
+    const conversation = await Conversation.findOne({ where: { customerId } });
+    if (!conversation) {
+      return { success: true, cleared: false }; // chưa từng chat gì cả
+    }
+
+    if (conversation.status === "in_progress") {
+      const err = new Error("Không thể xoá khi đang chat trực tiếp với Lễ tân.");
+      err.statusCode = 409;
+      throw err;
+    }
+
+    const wasWaiting = conversation.status === "waiting";
+
+    await db.Message.destroy({
+      where: { conversationId: conversation.id, senderType: ["customer", "ai"] },
+    });
+
+    if (wasWaiting) {
+      await conversation.update({ mode: "ai", status: "ai_active", bookingState: null });
+      const io = getIO();
+      if (io) {
+        io.emit("conversation_updated");
+        io.emit("conversation_closed", { conversationId: conversation.id });
+      }
+    }
+
+    return { success: true, cleared: true };
+  }
+
+  // Guest — không cần chạm Redis, TTL tự lo phần dọn dẹp.
+  return { success: true, cleared: true };
+}
+
+// ─────────────────────────────────────────────────────────────
+// cancelWaitingSupport — Khách huỷ khi đang chờ lễ tân (chưa ai nhận phòng)
+// Giữ nguyên lịch sử chat AI, chỉ đưa conversation về lại chế độ AI.
+// ─────────────────────────────────────────────────────────────
+export async function cancelWaitingSupport({ customerId }) {
+  if (!customerId) throw new Error("Thiếu customerId");
+
+  const conversation = await Conversation.findOne({ where: { customerId, status: "waiting" } });
+  if (!conversation) {
+    return { success: true, cancelled: false }; // có thể lễ tân đã join trước đó rồi
+  }
+
+  await conversation.update({ mode: "ai", status: "ai_active" });
+
+  const io = getIO();
+  if (io) {
+    io.emit("conversation_updated");
+    io.emit("conversation_closed", { conversationId: conversation.id });
+  }
+
+  return { success: true, cancelled: true };
+}
+
+// ─────────────────────────────────────────────────────────────
+// leaveLiveChat — Khách chủ động rời chat đang LIVE với lễ tân
+// Giữ nguyên lịch sử để lễ tân xem lại; báo phòng đóng cho lễ tân qua room.
+// ─────────────────────────────────────────────────────────────
+export async function leaveLiveChat({ customerId }) {
+  if (!customerId) throw new Error("Thiếu customerId");
+
+  const conversation = await Conversation.findOne({ where: { customerId, status: "in_progress" } });
+  if (!conversation) {
+    return { success: true, left: false };
+  }
+
+  await saveMessage({
+    conversationId: conversation.id,
+    senderType: "system",
+    messageType: "system",
+    eventType: "leave",
+    content: "Khách hàng đã rời cuộc trò chuyện trực tiếp.",
+  });
+
+  await conversation.update({ mode: "ai", status: "ai_active" });
+
+  const io = getIO();
+  if (io) {
+    io.to(`chat_conv_${conversation.id}`).emit("conversation_closed", { conversationId: conversation.id });
+    io.emit("conversation_updated");
+  }
+
+  return { success: true, left: true };
+}

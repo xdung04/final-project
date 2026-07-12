@@ -1,58 +1,82 @@
 // ChatKhachHang.module.scss
 // Admin — Chat Khách Hàng | NOULE Barber
-// Design: NOULE gold/dark system — v2 (improved readability + responsive)
+// Design v3 — "Ticket & Blade" | thẻ khách như phiếu hẹn barbershop, đường nét gọn, gold tinh giản hơn
 
-$gold:        #C9A84C;
-$gold-hover:  #BA9A3E;
-$gold-dim:    #8A6A28;
-$gold-faint:  rgba(201, 168, 76, 0.12);
-$gold-border: rgba(201, 168, 76, 0.3);
+// Nếu dự án dùng Google Fonts, thêm 2 dòng sau vào index.html hoặc _document:
+// <link rel="preconnect" href="https://fonts.googleapis.com">
+// <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-$ink:         #1A1612;
-$ink-2:       #2C2720;
-$ink-text:    #F5F0E8;
-$ink-muted:   rgba(245, 240, 232, 0.55);
+// ── TOKENS ─────────────────────────────────────────────────────────────────
+$ink:         #16130F;   // nền tối chính — ấm hơn đen thuần
+$ink-2:       #241F17;   // lớp tối phụ (input, select)
+$ink-text:    #F6F1E7;
+$ink-muted:   rgba(246, 241, 231, 0.5);
 
-$page-bg:     #F2EEE8;
+$gold:        #C6A15B;   // gold chủ đạo — dịu hơn bản cũ
+$gold-bright: #E4C888;   // gold sáng cho hover/nhấn
+$gold-dim:    #8C7237;
+$gold-faint:  rgba(198, 161, 91, 0.1);
+$gold-border: rgba(198, 161, 91, 0.28);
+
+$rust:        #9C4B3E;   // thay cho đỏ gắt — dùng cho cảnh báo/huy hiệu, hợp tông vàng-nâu
+$rust-soft:   rgba(156, 75, 62, 0.12);
+
+$page-bg:     #EFEAE1;
 $card-bg:     #FFFFFF;
-$surface-2:   #F9F6F1;
+$surface-2:   #F8F4EC;
 
-// Màu bubble phân biệt rõ AI vs khách
-$bubble-customer-bg:      #FFFFFF;
-$bubble-customer-border:  rgba(0, 0, 0, 0.1);
-$bubble-customer-text:    #1A1612;
+$bubble-customer-bg:     #FFFFFF;
+$bubble-customer-border: rgba(22, 19, 15, 0.09);
+$bubble-customer-text:   #201B14;
 
-$bubble-receptionist-bg:  #1A1612;
-$bubble-receptionist-text: #F5F0E8;
-$bubble-receptionist-border: rgba(201, 168, 76, 0.35);
+$bubble-ai-bg:           #FBF7EE;   // kem nhạt, ngả gold — phân biệt rõ với bubble khách (trắng thuần)
+$bubble-ai-border:       rgba(198, 161, 91, 0.4);
+$bubble-ai-text:         #201B14;
 
-$border:      rgba(0, 0, 0, 0.07);
-$border-md:   rgba(0, 0, 0, 0.1);
+$bubble-receptionist-bg:     #16130F;
+$bubble-receptionist-text:   #F6F1E7;
+$bubble-receptionist-border: rgba(198, 161, 91, 0.32);
 
-$radius-sm:   6px;
-$radius-md:   10px;
-$radius-lg:   14px;
-$radius-xl:   16px;
+$border:    rgba(22, 19, 15, 0.07);
+$border-md: rgba(22, 19, 15, 0.1);
 
-// ── FONT SIZE BASE (dễ scale) ─────────────────────────────────────────────────
+$radius-sm: 7px;
+$radius-md: 11px;
+$radius-lg: 15px;
+$radius-xl: 18px;
+
+$font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+$font-body:    'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
 $fs-xs:   11px;
-$fs-sm:   13px;
-$fs-base: 14px;   // tăng từ 13 → 14
+$fs-sm:   12.5px;
+$fs-base: 14px;
 $fs-md:   15px;
-$fs-lg:   16px;
+$fs-lg:   17px;
+
+@keyframes msgIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 
 // ── CONTAINER CHÍNH ──────────────────────────────────────────────────────────
 .chatContainer {
   display: grid;
-  grid-template-columns: clamp(220px, 22%, 280px) 1fr; // 🔥 sidebar tự co theo màn hình
-  height: clamp(480px, calc(100vh - 60px), 820px);     // 🔥 scale theo viewport, không cố định cứng
+  grid-template-columns: clamp(240px, 23%, 300px) 1fr;
+  height: clamp(480px, calc(100vh - 60px), 820px);
   background: $card-bg;
   border: 1px solid $border-md;
   border-radius: $radius-xl;
   overflow: hidden;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.07);
+  box-shadow: 0 12px 32px rgba(22, 19, 15, 0.09);
   margin: 12px auto;
-  width: clamp(600px, 97%, 1300px); // 🔥 responsive rộng hẹp theo màn hình
+  width: clamp(600px, 97%, 1300px);
+  font-family: $font-body;
+
+  @media (max-width: 860px) {
+    grid-template-columns: 1fr;
+    height: calc(100vh - 40px);
+  }
 }
 
 // ── SIDEBAR ──────────────────────────────────────────────────────────────────
@@ -66,10 +90,10 @@ $fs-lg:   16px;
 }
 
 .chatSearch {
-  padding: 12px 14px;
+  padding: 14px 16px;
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 10px;
   background: $ink;
   border-bottom: 1px solid $gold-border;
   flex-shrink: 0;
@@ -82,7 +106,7 @@ $fs-lg:   16px;
     outline: none;
     font-size: $fs-sm;
     width: 100%;
-    font-family: inherit;
+    font-family: $font-body;
     color: $ink-text;
     &::placeholder { color: $ink-muted; }
   }
@@ -90,6 +114,8 @@ $fs-lg:   16px;
 
 .sidebarTabs {
   display: flex;
+  gap: 4px;
+  padding: 8px;
   border-bottom: 1px solid $border-md;
   flex-shrink: 0;
   background: $surface-2;
@@ -97,37 +123,38 @@ $fs-lg:   16px;
 
 .sidebarTab {
   flex: 1;
-  padding: 10px 4px;
+  padding: 8px 4px;
   background: transparent;
   border: none;
-  border-bottom: 2px solid transparent;
-  color: #999;
+  border-radius: $radius-sm;
+  color: #9A9084;
   font-size: $fs-xs;
-  font-weight: 500;
-  font-family: inherit;
+  font-weight: 600;
+  font-family: $font-body;
+  letter-spacing: 0.02em;
   cursor: pointer;
   text-align: center;
-  transition: all 0.15s;
+  transition: background 0.15s, color 0.15s;
   white-space: nowrap;
 
-  &:hover { color: $ink; background: $gold-faint; }
+  &:hover { color: $gold-dim; background: $gold-faint; }
 
   &.active {
-    color: $gold-dim;
-    border-bottom-color: $gold;
+    color: $ink;
     background: $card-bg;
-    font-weight: 600;
+    box-shadow: 0 1px 0 0 $gold inset, 0 2px 6px rgba(22, 19, 15, 0.08);
+    font-weight: 700;
   }
 }
 
 .searchResultsHeader {
-  padding: 7px 14px;
+  padding: 8px 16px;
   background: $surface-2;
   font-size: $fs-xs;
-  font-weight: 600;
-  color: #999;
+  font-weight: 700;
+  color: #9A9084;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   border-bottom: 1px solid $border;
 }
 
@@ -142,8 +169,8 @@ $fs-lg:   16px;
 
 .conversationItem {
   display: flex;
-  padding: 12px 14px;
-  gap: 10px;
+  padding: 13px 16px;
+  gap: 11px;
   cursor: pointer;
   transition: background 0.12s;
   border-bottom: 1px solid $border;
@@ -153,14 +180,13 @@ $fs-lg:   16px;
 
   &.active {
     background: $gold-faint;
-    border-left: 3px solid $gold;
-    padding-left: 11px;
+    box-shadow: 2px 0 0 0 $gold inset;
   }
 }
 
 .avatar {
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   background: $gold-faint;
   border: 1px solid $gold-border;
   border-radius: 50%;
@@ -172,23 +198,24 @@ $fs-lg:   16px;
 }
 
 .convInfo   { flex: 1; overflow: hidden; }
-.convHeader { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; }
-.name       { font-size: $fs-sm; font-weight: 600; color: $ink; }
-.time       { font-size: $fs-xs; color: #bbb; }
-.lastMsg    { font-size: $fs-xs; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.convHeader { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 3px; gap: 6px; }
+.name       { font-size: $fs-sm; font-weight: 600; color: $ink; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.time       { font-size: $fs-xs; color: #BDB4A6; flex-shrink: 0; }
+.lastMsg    { font-size: $fs-xs; color: #948C7E; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .unreadBadge {
   position: absolute;
-  right: 10px;
-  top: 10px;
-  background: #A32D2D;
-  color: #fff;
-  border-radius: 10px;
-  padding: 2px 6px;
+  right: 12px;
+  top: 13px;
+  background: $rust;
+  color: #FBF3EE;
+  border-radius: 9px;
+  padding: 1px 6px;
   font-size: 10px;
-  font-weight: 600;
-  min-width: 18px;
+  font-weight: 700;
+  min-width: 17px;
   text-align: center;
+  line-height: 1.5;
 }
 
 // ── CHAT WINDOW ───────────────────────────────────────────────────────────────
@@ -203,7 +230,7 @@ $fs-lg:   16px;
 
 .windowHeader {
   flex-shrink: 0;
-  padding: 12px 16px;
+  padding: 13px 18px;
   background: $ink;
   border-bottom: 1px solid $gold-border;
   display: flex;
@@ -212,10 +239,11 @@ $fs-lg:   16px;
   gap: 10px;
 
   strong {
-    font-size: $fs-md;
+    font-size: $fs-lg;
     font-weight: 600;
     color: $ink-text;
-    font-family: Georgia, 'Times New Roman', serif;
+    font-family: $font-display;
+    letter-spacing: 0.01em;
   }
 }
 
@@ -225,34 +253,35 @@ $fs-lg:   16px;
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 5px 11px;
+  padding: 6px 12px;
   font-size: $fs-xs;
   font-weight: 600;
+  letter-spacing: 0.02em;
   border-radius: $radius-sm;
   border: 1px solid $gold-border;
   background: transparent;
   color: $ink-muted;
   cursor: pointer;
-  font-family: inherit;
+  font-family: $font-body;
   transition: all 0.15s;
 
-  &:hover { background: $gold-faint; color: $gold; }
+  &:hover { background: $gold-faint; color: $gold-bright; border-color: $gold; }
 
   &.danger {
-    border-color: rgba(163, 45, 45, 0.4);
-    color: rgba(240, 149, 149, 0.9);
-    &:hover { background: rgba(163, 45, 45, 0.2); color: #F09595; }
+    border-color: rgba(156, 75, 62, 0.45);
+    color: #E3AA9E;
+    &:hover { background: $rust-soft; color: #F0C4BB; border-color: $rust; }
   }
 }
 
 .transferSelect {
-  padding: 5px 9px;
+  padding: 6px 10px;
   font-size: $fs-sm;
   background: $ink-2;
   border: 1px solid $gold-border;
   border-radius: $radius-sm;
   color: $ink-text;
-  font-family: inherit;
+  font-family: $font-body;
   outline: none;
   cursor: pointer;
   option { background: $ink; color: $ink-text; }
@@ -266,11 +295,11 @@ $fs-lg:   16px;
   border: 1px solid $gold-border;
   color: $gold;
   cursor: pointer;
-  padding: 5px 10px;
+  padding: 6px 12px;
   border-radius: $radius-sm;
   transition: all 0.15s;
   font-size: $fs-sm;
-  font-family: inherit;
+  font-family: $font-body;
   &:hover { background: $gold-faint; }
 }
 
@@ -279,24 +308,26 @@ $fs-lg:   16px;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 18px 20px;
+  padding: 20px 22px;
   display: flex;
   flex-direction: column;
   gap: 14px;
 
   &::-webkit-scrollbar       { width: 4px; }
-  &::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.12); border-radius: 10px; }
+  &::-webkit-scrollbar-thumb { background: rgba(22, 19, 15, 0.14); border-radius: 10px; }
 }
 
 // ── HÀNG TIN NHẮN ─────────────────────────────────────────────────────────────
 .msgRow {
   display: flex;
-  align-items: flex-end; // căn chỉnh avatar với đáy bubble
+  align-items: flex-end;
   gap: 8px;
   max-width: 70%;
   width: fit-content;
+  animation: msgIn 0.18s ease-out;
 
-  // Lễ tân gửi → phải
+  @media (max-width: 860px) { max-width: 86%; }
+
   &.sent {
     align-self: flex-end;
     flex-direction: row-reverse;
@@ -311,29 +342,54 @@ $fs-lg:   16px;
     }
   }
 
-  // Khách hàng → trái
   &.received {
     align-self: flex-start;
 
-    .senderName { text-align: left; color: #999; }
+    .senderName { text-align: left; color: #A79C8B; }
 
     .msgBubble {
       background: $bubble-customer-bg;
       color: $bubble-customer-text;
       border: 1px solid $bubble-customer-border;
       border-radius: $radius-lg $radius-lg $radius-lg 4px;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+      box-shadow: 0 1px 5px rgba(22, 19, 15, 0.05);
     }
   }
 
-  // Tin hệ thống → căn giữa
+  // Trợ lý AI — cùng phía với khách (trái) nhưng tách biệt màu + avatar riêng
+  &.ai {
+    align-self: flex-start;
+
+    .senderName {
+      text-align: left;
+      color: $gold-dim;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .msgBubble {
+      background: $bubble-ai-bg;
+      color: $bubble-ai-text;
+      border: 1px dashed $bubble-ai-border;
+      border-radius: $radius-lg $radius-lg $radius-lg 4px;
+      box-shadow: 0 1px 5px rgba(22, 19, 15, 0.04);
+    }
+
+    .msgAvatar {
+      background: $ink;
+      border-color: $gold-border;
+      color: $gold;
+    }
+  }
+
   &.system {
     align-self: center;
-    max-width: 80%;
+    max-width: 82%;
     width: 100%;
     display: flex;
     justify-content: center;
-    margin: 8px 0;
+    margin: 6px 0;
   }
 }
 
@@ -347,12 +403,24 @@ $fs-lg:   16px;
   font-size: $fs-xs;
   font-weight: 600;
   padding: 0 4px;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.aiTag {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: $ink;
+  background: $gold;
+  border-radius: 4px;
+  padding: 1px 5px;
+  text-transform: uppercase;
 }
 
 .msgBubble {
   padding: 10px 14px;
-  font-size: $fs-base;   // 🔥 14px thay vì 13px
+  font-size: $fs-base;
   line-height: 1.6;
   word-break: break-word;
   border-radius: $radius-lg;
@@ -369,18 +437,18 @@ $fs-lg:   16px;
   background: $gold-faint;
   border: 1px solid $gold-border;
   color: $gold-dim;
-  margin-bottom: 2px; // căn với đáy bubble
+  margin-bottom: 2px;
 }
 
-// ── KHỐI TÓM TẮT HỆ THỐNG / AI ───────────────────────────────────────────────
-// Thiết kế lại: gọn hơn, màu rõ hơn, dễ scan
+// ── THẺ HỆ THỐNG / TÓM TẮT AI — "phiếu hẹn" (điểm nhấn thiết kế) ─────────────
 .systemSummary {
   background: $ink;
   border: 1px solid $gold-border;
   border-radius: $radius-md;
-  padding: 14px 16px;
+  padding: 0;
   width: 100%;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  box-shadow: 0 6px 20px rgba(22, 19, 15, 0.22);
 }
 
 .systemEventText {
@@ -388,25 +456,25 @@ $fs-lg:   16px;
   font-weight: 700;
   color: $gold;
   text-align: center;
-  margin-bottom: 10px;
-  letter-spacing: 0.04em;
-  padding-bottom: 8px;
-  border-bottom: 1px solid $gold-border;
+  letter-spacing: 0.05em;
+  padding: 11px 16px;
+  border-bottom: 1px dashed $gold-border;
+  background: linear-gradient(180deg, rgba(198,161,91,0.08), transparent);
 }
 
 .aiSummaryBlock {
-  background: rgba(201, 168, 76, 0.07);
+  background: transparent;
   border-left: 3px solid $gold;
-  padding: 10px 14px;
+  margin: 12px 14px;
+  padding: 8px 12px;
   border-radius: 4px;
   color: $ink-text;
-  font-size: $fs-base;    // 🔥 14px — dễ đọc hơn
+  font-size: $fs-base;
   line-height: 1.65;
   white-space: pre-wrap;
 
-  // Label "TÓM TẮT TỪ AI" nếu có **bold** markdown từ backend
   strong {
-    color: $gold;
+    color: $gold-bright;
     font-weight: 700;
   }
 }
@@ -414,7 +482,7 @@ $fs-lg:   16px;
 // ── INPUT AREA ────────────────────────────────────────────────────────────────
 .inputArea {
   flex-shrink: 0;
-  padding: 12px 16px;
+  padding: 13px 18px;
   background: $card-bg;
   border-top: 1px solid $border-md;
   display: flex;
@@ -424,22 +492,22 @@ $fs-lg:   16px;
   input {
     flex: 1;
     border: 1px solid $border-md;
-    border-radius: 20px;
-    padding: 9px 16px;
-    font-family: inherit;
-    font-size: $fs-base;   // 🔥 14px
+    border-radius: 22px;
+    padding: 10px 17px;
+    font-family: $font-body;
+    font-size: $fs-base;
     background: $surface-2;
     color: $ink;
     outline: none;
     transition: border-color 0.15s, background 0.15s;
 
     &:focus { border-color: $gold; background: $card-bg; }
-    &::placeholder { color: #bbb; }
+    &::placeholder { color: #B7AE9F; }
   }
 }
 
 .attachBtn {
-  color: #aaa;
+  color: #B0A896;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -451,16 +519,17 @@ $fs-lg:   16px;
   background: $gold;
   color: $ink;
   border: none;
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s, transform 0.1s;
   flex-shrink: 0;
-  &:hover { background: $gold-hover; }
+  &:hover  { background: $gold-bright; }
+  &:active { transform: scale(0.92); }
 }
 
 // ── MISC ──────────────────────────────────────────────────────────────────────
@@ -468,7 +537,7 @@ $fs-lg:   16px;
   text-align: center;
   padding: 32px;
   font-size: $fs-sm;
-  color: #bbb;
+  color: #B7AE9F;
   font-style: italic;
 }
 
@@ -479,7 +548,7 @@ $fs-lg:   16px;
   justify-content: center;
   flex-direction: column;
   gap: 10px;
-  color: #ccc;
+  color: #C7BFB0;
   font-size: $fs-sm;
   font-style: italic;
 }
