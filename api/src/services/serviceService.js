@@ -12,31 +12,11 @@ export const getLatestServices = async (limit = 8) => {
 };
 export const checkAndHideService = async (idService) => {
   const service = await Service.findByPk(idService);
-  if (!service) throw new Error("Service not found");
 
- 
-  const futureBooking = await BookingDetail.findOne({
-    where: { idService },
-    include: [
-      {
-        model: Booking,
-        as: "booking",
-        where: {
-          bookingDate: { [Op.gte]: new Date() },
-        },
-      },
-    ],
-  });
-
-  if (futureBooking) {
-    return {
-      success: false,
-      message: "Dịch vụ này đang có booking, không thể chỉnh sửa!",
-      statusUpdated: false,
-    };
+  if (!service) {
+    throw new Error("Service not found");
   }
 
-  
   await service.update({ status: "Inactive" });
 
   return {
