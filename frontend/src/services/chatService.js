@@ -1,4 +1,3 @@
-// src/services/chatService.js
 import * as chatAPI from "~/apis/chatAPI";
 
 /**
@@ -7,11 +6,11 @@ import * as chatAPI from "~/apis/chatAPI";
  */
 export const sendMessage = async ({ message, image, sessionId, customerId }) => {
   try {
-    const res = await chatAPI.sendMessage({ 
-      message, 
-      image, 
-      sessionId, 
-      customerId 
+    const res = await chatAPI.sendMessage({
+      message,
+      image,
+      sessionId,
+      customerId,
     });
     return res; // Trả data kết quả từ backend về cho component nhận
   } catch (err) {
@@ -25,15 +24,16 @@ export const sendMessage = async ({ message, image, sessionId, customerId }) => 
  */
 export const syncPostLogin = async ({ sessionId, customerId }) => {
   try {
-    const res = await chatAPI.syncPostLogin({ 
-      sessionId, 
-      customerId 
+    const res = await chatAPI.syncPostLogin({
+      sessionId,
+      customerId,
     });
     return res;
   } catch (err) {
     throw err;
   }
 };
+
 export const requestHumanSupport = async () => {
   try {
     const res = await chatAPI.requestHumanSupport();
@@ -42,9 +42,40 @@ export const requestHumanSupport = async () => {
     throw err;
   }
 };
+
 export const closeConversationOnLogout = async () => {
   try {
     const res = await chatAPI.closeConversationOnLogout();
+    return res;
+  } catch (err) {
+    throw err;
+  }
+};
+
+// ✅ MỚI: dùng cho nút "Xoá cuộc trò chuyện" trong AIChat.jsx (handleClearConversation)
+export const clearConversation = async () => {
+  try {
+    const res = await chatAPI.clearConversation();
+    return res;
+  } catch (err) {
+    throw err;
+  }
+};
+
+// ✅ dùng cho nút "Huỷ chờ lễ tân" (handleCancelWaiting)
+export const cancelWaiting = async () => {
+  try {
+    const res = await chatAPI.cancelWaiting();
+    return res;
+  } catch (err) {
+    throw err;
+  }
+};
+
+// ✅ dùng cho nút "Rời chat live" (handleLeaveLiveChat)
+export const leaveLiveChat = async () => {
+  try {
+    const res = await chatAPI.leaveLiveChat();
     return res;
   } catch (err) {
     throw err;

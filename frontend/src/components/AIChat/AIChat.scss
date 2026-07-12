@@ -465,3 +465,144 @@
     opacity: 0.7;
   }
 }
+// ==========================================================================
+// ✅ BỔ SUNG cho tính năng Xoá / Huỷ chờ / Rời chat live
+// Dán thêm đoạn này vào cuối file AIChat.scss hiện có — không cần sửa gì ở phần cũ.
+// Yêu cầu: .chat-card cần có `position: relative` để overlay xác nhận định vị đúng
+// (nếu .chat-card đã có position khác none, đổi luôn giá trị đó thành relative).
+// ==========================================================================
+
+.chat-card {
+  position: relative;
+}
+
+// Nút Xoá / Kết thúc trên header
+.clear-chat-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  transition: background 0.15s ease;
+  margin-left: 6px;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// Banner "đang chờ lễ tân" — giữ đúng tông màu cảnh báo cũ, thêm nút Huỷ
+.suggestion.waiting-reconnect {
+  background-color: #fef3c7;
+  border-color: #f59e0b;
+  padding: 10px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+
+  .waiting-dot {
+    background-color: #d97706;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+
+  .waiting-text {
+    color: #b45309;
+    font-weight: 500;
+    font-size: 14px;
+    flex: 1;
+  }
+
+  .cancel-waiting-btn {
+    background: none;
+    border: 1px solid #d97706;
+    color: #b45309;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s ease;
+
+    &:hover {
+      background: rgba(217, 119, 6, 0.12);
+    }
+  }
+}
+
+// Overlay xác nhận (dùng chung cho cả xoá cuộc trò chuyện AI và rời chat live)
+.clear-confirm-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  border-radius: inherit;
+}
+
+.clear-confirm-box {
+  background: #fff;
+  padding: 16px;
+  border-radius: 10px;
+  max-width: 260px;
+  text-align: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+
+  p {
+    font-size: 13px;
+    color: #374151;
+    margin-bottom: 12px;
+    line-height: 1.5;
+  }
+
+  .clear-confirm-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+
+    button {
+      flex: 1;
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: none;
+      font-size: 13px;
+      cursor: pointer;
+      transition: opacity 0.15s ease;
+
+      &:hover {
+        opacity: 0.85;
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+
+    .confirm-yes {
+      background: #dc2626;
+      color: #fff;
+    }
+
+    .confirm-no {
+      background: #e5e7eb;
+      color: #374151;
+    }
+  }
+}

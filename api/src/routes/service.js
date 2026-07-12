@@ -31,6 +31,6 @@ router.put(
 );
 router.delete("/:id", deleteService);
 router.get("/", getAllServices);
-router.post("/:id/check-hide", checkAndHideController );
+router.post("/:id/check-hide", checkAndHideController);
 router.post("/sync", syncServices);
 export default router;

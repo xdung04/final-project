@@ -1,5 +1,7 @@
 // src/controllers/chatController.js
-import { processChatFlow, syncPostLogin,requestHumanSupport,closeConversationOnLogout } from "../services/chatFlowService.js";
+import { processChatFlow, syncPostLogin,requestHumanSupport,closeConversationOnLogout,clearAiConversation,
+  cancelWaitingSupport,
+  leaveLiveChat, } from "../services/chatFlowService.js";
 
 export async function handleChat(req, res) {
   try {
@@ -89,5 +91,41 @@ export async function handleCloseConversationOnLogout(req, res) {
     return res.status(500).json({ 
       error: "Hệ thống gặp sự cố trong quá trình dọn dẹp dữ liệu chat khi logout!" 
     });
+  }
+}
+export async function handleClearConversation(req, res) {
+  try {
+    const customerId = req.user?.idUser || null;
+    const result = await clearAiConversation({ customerId });
+    return res.json(result);
+  } catch (err) {
+    console.error("❌ handleClearConversation error:", err.message);
+    return res.status(err.statusCode || 500).json({
+      error: err.message || "Xoá cuộc trò chuyện thất bại.",
+    });
+  }
+}
+
+export async function handleCancelWaiting(req, res) {
+  try {
+    const customerId = req.user?.idUser || null;
+    if (!customerId) return res.status(401).json({ error: "Bạn cần đăng nhập." });
+    const result = await cancelWaitingSupport({ customerId });
+    return res.json(result);
+  } catch (err) {
+    console.error("❌ handleCancelWaiting error:", err.message);
+    return res.status(500).json({ error: "Không thể huỷ yêu cầu chờ." });
+  }
+}
+
+export async function handleLeaveLiveChat(req, res) {
+  try {
+    const customerId = req.user?.idUser || null;
+    if (!customerId) return res.status(401).json({ error: "Bạn cần đăng nhập." });
+    const result = await leaveLiveChat({ customerId });
+    return res.json(result);
+  } catch (err) {
+    console.error("❌ handleLeaveLiveChat error:", err.message);
+    return res.status(500).json({ error: "Không thể rời cuộc trò chuyện." });
   }
 }

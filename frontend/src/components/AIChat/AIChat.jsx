@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Send, Bot, User, Camera, Headphones, X, ShieldAlert } from "lucide-react";
+import { Send, Bot, User, Camera, Headphones, X, ShieldAlert, Trash2 } from "lucide-react";
 import "./AIChat.scss";
 import * as chatService from "~/services/chatService";
 import { useAuth } from "~/context/AuthContext";
@@ -15,8 +15,8 @@ const STORAGE_KEYS = {
   messages: "chatMessages",
   sessionId: "chatSessionId",
   sessionOwner: "chatSessionOwner",
-  conversationId: "chatConversationId", 
-  chatMode: "chatMode",                 
+  conversationId: "chatConversationId",
+  chatMode: "chatMode",
 };
 
 function createNewSession(userId = "guest") {
@@ -56,14 +56,14 @@ export default function AIChat({ onSwitchToLive, onRequestLogin }) {
   const [inputMessage, setInputMessage] = useState("");
   const [selectedImage, setSelectedImage] = useState(null);
   const [loading, setLoading] = useState(false);
-  
+
   // Trạng thái hiển thị banner: false | "login" | "receptionist"
   const [showLiveBtn, setShowLiveBtn] = useState(false);
 
   const [conversationId, setConversationId] = useState(() => {
     return sessionStorage.getItem(STORAGE_KEYS.conversationId) || null;
-  }); 
-  
+  });
+
   const [chatMode, setChatMode] = useState(() => {
     return sessionStorage.getItem(STORAGE_KEYS.chatMode) || "ai";
   });
@@ -72,9 +72,16 @@ export default function AIChat({ onSwitchToLive, onRequestLogin }) {
     return sessionStorage.getItem(STORAGE_KEYS.chatMode) === "human";
   });
 
+  // ===== State cho 2 popover xác nhận (xoá cuộc trò chuyện AI / rời chat live) =====
+  const [confirmClearOpen, setConfirmClearOpen] = useState(false);
+  const [clearing, setClearing] = useState(false);
+  const [confirmLeaveLiveOpen, setConfirmLeaveLiveOpen] = useState(false);
+  const [leavingLive, setLeavingLive] = useState(false);
+  const [cancellingWaiting, setCancellingWaiting] = useState(false);
+
   const bodyRef = useRef(null);
   const prevUserIdRef = useRef(isLogin && user?.idUser ? String(user.idUser) : "guest");
-  const pendingConversationIdRef = useRef(null); 
+  const pendingConversationIdRef = useRef(null);
 
   const activeConversationIdRef = useRef(conversationId);
   useEffect(() => {
@@ -118,6 +125,19 @@ export default function AIChat({ onSwitchToLive, onRequestLogin }) {
     const prevOwner = prevUserIdRef.current;
     if (prevOwner !== currentOwner) {
       console.log(`[AIChat] User thay đổi: ${prevOwner} → ${currentOwner}. Reset session.`);
+
+      // ✅ FIX: gọi thẳng closeConversationOnLogout (REST) thay vì emit socket event
+      // "customer_cancel_conversation" — event này backend không hề lắng nghe (đã kiểm
+      // tra socket.js, không tồn tại listener tương ứng) nên trước đây không có tác dụng gì.
+      // closeConversationOnLogout tự xử lý đúng mọi trạng thái dở dang (ai_active/waiting/
+      // in_progress) cùng lúc dựa trên customerId lấy từ token, không cần phân biệt case.
+      // ⚠️ Phải gọi TRƯỚC khi token bị xoá khỏi AuthContext, nếu không customerId sẽ rỗng.
+      if (activeConversationIdRef.current && prevOwner !== "guest") {
+        chatService.closeConversationOnLogout().catch((err) => {
+          console.error("Lỗi đóng conversation dở dang khi đổi user:", err);
+        });
+      }
+
       clearChatSession();
       setMessages([INITIAL_MESSAGE]);
       setConversationId(null);
@@ -160,18 +180,17 @@ export default function AIChat({ onSwitchToLive, onRequestLogin }) {
     };
 
     const handleReceiveMessage = (msg) => {
-       if (msg.senderType === "customer") return;
-  if (Number(msg.conversationId) !== Number(activeConversationIdRef.current)) return;
+      if (msg.senderType === "customer") return;
+      if (Number(msg.conversationId) !== Number(activeConversationIdRef.current)) return;
 
-  if (msg.senderType === "system" && msg.eventType === "leave") {
-    console.log("🔄 [Socket] Lễ tân đã rời phòng. Đưa khách về trạng thái Chờ...");
-    setChatMode("ai");     
-    setWantsLive(true);    
-  }
+      if (msg.senderType === "system" && msg.eventType === "leave") {
+        console.log("🔄 [Socket] Lễ tân đã rời phòng. Đưa khách về trạng thái Chờ...");
+        setChatMode("ai");
+        setWantsLive(true);
+      }
       let msgType = "receptionist";
       if (msg.senderType === "system") msgType = "system";
       else if (msg.senderType === "ai") msgType = "ai";
-
 
       setMessages((prev) => [
         ...prev,
@@ -185,15 +204,15 @@ export default function AIChat({ onSwitchToLive, onRequestLogin }) {
 
     const handleConversationClosed = ({ conversationId: closedId }) => {
       if (Number(closedId) !== Number(activeConversationIdRef.current)) return;
-      
+
       console.log("🏁 [Socket Realtime] Lễ tân đã đóng phòng. Đang chuyển khách về với AI...");
       sessionStorage.removeItem(STORAGE_KEYS.conversationId);
       sessionStorage.removeItem(STORAGE_KEYS.chatMode);
-      
+
       setChatMode("ai");
       setWantsLive(false);
       setConversationId(null);
-      
+
       setMessages((prev) => [
         ...prev,
         {
@@ -213,13 +232,13 @@ export default function AIChat({ onSwitchToLive, onRequestLogin }) {
       socket.off("receptionist_joined", handleReceptionistJoined);
       socket.off("receive_message", handleReceiveMessage);
       socket.off("conversation_closed", handleConversationClosed);
-      
+
       if (activeConversationIdRef.current) {
         socket.emit("leave_conversation", { conversationId: String(activeConversationIdRef.current) });
       }
     };
   }, [conversationId]);
-  
+
   useEffect(() => {
     // Nếu bỗng dưng login mà trạng thái cũ đang đòi gặp lễ tân, tự động dẫn luồng đi tiếp
     if (isLogin && showLiveBtn === "receptionist" && !conversationId && !wantsLive) {
@@ -307,108 +326,215 @@ export default function AIChat({ onSwitchToLive, onRequestLogin }) {
     }
 
     setWantsLive(true);
-    await handleSyncAndRedirect(); 
+    await handleSyncAndRedirect();
   };
 
   const handleDismissLiveBanner = () => {
     setShowLiveBtn(false);
     pendingConversationIdRef.current = null;
   };
-const handleSend = async () => {
-  if (isSendingRef.current) return;
-  if (loading || (!inputMessage.trim() && !selectedImage)) return;
 
-  isSendingRef.current = true; // ← lock ngay từ đầu, trước mọi nhánh
+  // ================== 3 hành động liên quan tới xoá / rời cuộc trò chuyện ==================
 
-  const newMsg = {
-    id: Date.now().toString(),
-    type: "user",
-    content: inputMessage || "📷 Đã gửi ảnh",
-    image: selectedImage,
-  };
+  // 1) Xoá SẠCH cuộc trò chuyện AI (chỉ dùng khi chatMode === "ai", kể cả lúc đang chờ lễ tân).
+  //    Xoá lịch sử tin nhắn (Redis với guest / DB với khách đăng nhập — xử lý ở backend),
+  //    đồng thời huỷ luôn conversationId đang chờ (nếu có) để tránh phòng "mồ côi".
+  //    Backend (clearAiConversation) đã tự lo việc này, không cần emit gì thêm qua socket.
+const handleClearConversation = async () => {
+  setClearing(true);
 
-  setMessages((prev) => [...prev, newMsg]);
-  setInputMessage("");
-  setSelectedImage(null);
-
-  if (chatMode === "human" && conversationId) {
-    console.log("🚀 [Socket] Khách gửi realtime:", newMsg.content);
-
-    socket.emit("send_message", {
-      conversationId: conversationId,
-      senderType: "customer",
-      senderId: user?.idUser || "guest",
-      messageType: "text",
-      content: newMsg.content,
-      image: newMsg.image,
-      createdAt: new Date(),
-    });
-    setTimeout(() => {
-      isSendingRef.current = false;
-    }, 100);
-    return;
+  try {
+    await chatService.clearConversation();
+  } catch (err) {
+    console.error("Lỗi xoá cuộc trò chuyện trên server:", err);
+    // Vẫn tiếp tục xoá UI để trải nghiệm khách mượt, lỗi đã log lại để theo dõi
   }
 
-  setLoading(true);
-  try {
-    const currentSessionId =
-      sessionStorage.getItem(STORAGE_KEYS.sessionId) || sessionId.current;
+  clearChatSession();
+  setMessages([INITIAL_MESSAGE]);
+  setConversationId(null);
+  setChatMode("ai");
+  setShowLiveBtn(false);
+  setWantsLive(false);
+  setInputMessage("");
+  setSelectedImage(null);
+  pendingConversationIdRef.current = null;
 
-    const res = await chatService.sendMessage({
-      message: newMsg.content,
-      image: newMsg.image,
-      sessionId: currentSessionId,
-    });
+  const currentOwner = isLogin && user?.idUser ? String(user.idUser) : "guest";
+  sessionId.current = createNewSession(currentOwner); // ← cấp session mới, session cũ "bỏ rơi" tự hết hạn theo TTL
 
-    if (res.conversationId) {
-      pendingConversationIdRef.current = res.conversationId;
+  setClearing(false);
+  setConfirmClearOpen(false);
+};
+
+  // 2) Huỷ khi đang CHỜ lễ tân (chưa ai nhận phòng) — GIỮ NGUYÊN lịch sử chat AI,
+  //    chỉ đóng conversationId đang chờ trong hàng đợi.
+  //    ✅ FIX: trước đây chỉ emit socket "customer_cancel_conversation" (backend không
+  //    lắng nghe event này) nên conversation kẹt ở status "waiting" mãi mãi dù UI đã
+  //    coi như xong. Giờ gọi đúng REST chatService.cancelWaiting() đã có sẵn.
+  const handleCancelWaiting = async () => {
+    if (!conversationId) return;
+    setCancellingWaiting(true);
+
+    try {
+      await chatService.cancelWaiting();
+    } catch (err) {
+      console.error("Lỗi huỷ chờ lễ tân trên server:", err);
+      // vẫn dọn UI để khách không bị kẹt, lỗi đã log lại theo dõi
     }
 
-    if (res.reply) {
+    sessionStorage.removeItem(STORAGE_KEYS.conversationId);
+    sessionStorage.removeItem(STORAGE_KEYS.chatMode);
+
+    setConversationId(null);
+    setWantsLive(false);
+    setShowLiveBtn(false);
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: Date.now().toString(),
+        type: "ai",
+        content: "Đã huỷ yêu cầu kết nối Lễ tân. Bạn có thể tiếp tục hỏi Trợ lý AI. 🤖",
+      },
+    ]);
+
+    setCancellingWaiting(false);
+  };
+
+  // 3) Rời chat khi đang LIVE với lễ tân — GIỮ NGUYÊN lịch sử để lễ tân xem lại sau này.
+  //    ✅ FIX: cùng lỗi như trên — trước đây chỉ emit socket event chết, conversation
+  //    kẹt ở status "in_progress", lễ tân vẫn tưởng đang chat với khách. Giờ gọi đúng
+  //    REST chatService.leaveLiveChat().
+  const handleLeaveLiveChat = async () => {
+    if (!conversationId) return;
+    setLeavingLive(true);
+
+    try {
+      await chatService.leaveLiveChat();
+    } catch (err) {
+      console.error("Lỗi rời chat live trên server:", err);
+      // vẫn dọn UI để khách không bị kẹt, lỗi đã log lại theo dõi
+    }
+
+    sessionStorage.removeItem(STORAGE_KEYS.conversationId);
+    sessionStorage.removeItem(STORAGE_KEYS.chatMode);
+
+    setConversationId(null);
+    setWantsLive(false);
+    setChatMode("ai");
+    setShowLiveBtn(false);
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: Date.now().toString(),
+        type: "ai",
+        content: "Bạn đã rời cuộc trò chuyện với Lễ tân. Trợ lý AI đã quay lại hỗ trợ bạn! 🤖",
+      },
+    ]);
+
+    setLeavingLive(false);
+    setConfirmLeaveLiveOpen(false);
+  };
+
+  // ============================================================================================
+
+  const handleSend = async () => {
+    if (isSendingRef.current) return;
+    if (loading || (!inputMessage.trim() && !selectedImage)) return;
+
+    isSendingRef.current = true; // ← lock ngay từ đầu, trước mọi nhánh
+
+    const newMsg = {
+      id: Date.now().toString(),
+      type: "user",
+      content: inputMessage || "📷 Đã gửi ảnh",
+      image: selectedImage,
+    };
+
+    setMessages((prev) => [...prev, newMsg]);
+    setInputMessage("");
+    setSelectedImage(null);
+
+    if (chatMode === "human" && conversationId) {
+      console.log("🚀 [Socket] Khách gửi realtime:", newMsg.content);
+
+      socket.emit("send_message", {
+        conversationId: conversationId,
+        senderType: "customer",
+        senderId: user?.idUser || "guest",
+        messageType: "text",
+        content: newMsg.content,
+        image: newMsg.image,
+        createdAt: new Date(),
+      });
+      setTimeout(() => {
+        isSendingRef.current = false;
+      }, 100);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const currentSessionId =
+        sessionStorage.getItem(STORAGE_KEYS.sessionId) || sessionId.current;
+
+      const res = await chatService.sendMessage({
+        message: newMsg.content,
+        image: newMsg.image,
+        sessionId: currentSessionId,
+      });
+
+      if (res.conversationId) {
+        pendingConversationIdRef.current = res.conversationId;
+      }
+
+      if (res.reply) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: (Date.now() + 1).toString(),
+            type: "ai",
+            content: formatMessage(res.reply),
+          },
+        ]);
+      }
+
+      if (res.needLogin) {
+        setShowLiveBtn("login");
+      } else if (res.needReceptionist) {
+        setShowLiveBtn("receptionist");
+      } else {
+        setShowLiveBtn(false);
+      }
+
+      if (!res.needLogin && !res.needReceptionist && res.systemMessage) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: res.systemMessage.id,
+            type: "system",
+            content: res.systemMessage.content || "Lễ tân đã tham gia cuộc hội thoại.",
+          },
+        ]);
+        setChatMode("human");
+      }
+    } catch (err) {
+      console.error("Lỗi gửi tin nhắn AI:", err);
       setMessages((prev) => [
         ...prev,
         {
           id: (Date.now() + 1).toString(),
           type: "ai",
-          content: formatMessage(res.reply),
+          content: "Kết nối máy chủ gián đoạn, vui lòng gửi lại sau ít phút. 😅",
         },
       ]);
+    } finally {
+      setLoading(false);
+      isSendingRef.current = false; // ← unlock sau khi AI flow hoàn tất
     }
-
-    if (res.needLogin) {
-      setShowLiveBtn("login");
-    } else if (res.needReceptionist) {
-      setShowLiveBtn("receptionist");
-    } else {
-      setShowLiveBtn(false);
-    }
-
-    if (!res.needLogin && !res.needReceptionist && res.systemMessage) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: res.systemMessage.id,
-          type: "system",
-          content: res.systemMessage.content || "Lễ tân đã tham gia cuộc hội thoại.",
-        },
-      ]);
-      setChatMode("human");
-    }
-  } catch (err) {
-    console.error("Lỗi gửi tin nhắn AI:", err);
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: (Date.now() + 1).toString(),
-        type: "ai",
-        content: "Kết nối máy chủ gián đoạn, vui lòng gửi lại sau ít phút. 😅",
-      },
-    ]);
-  } finally {
-    setLoading(false);
-    isSendingRef.current = false; // ← unlock sau khi AI flow hoàn tất
-  }
-};
+  };
 
   return (
     <div className="chat-card">
@@ -436,6 +562,30 @@ const handleSend = async () => {
         <div className={`chat-header-badge ${chatMode === "human" ? "live" : ""}`}>
           {chatMode === "ai" ? "AI" : "LIVE"}
         </div>
+
+        {/* Nút Xoá cuộc trò chuyện — chỉ hiện ở chế độ AI (kể cả đang chờ lễ tân) */}
+        {chatMode === "ai" && messages.length > 1 && (
+          <button
+            className="clear-chat-btn"
+            title="Xoá cuộc trò chuyện"
+            onClick={() => setConfirmClearOpen(true)}
+            disabled={clearing}
+          >
+            <Trash2 size={16} />
+          </button>
+        )}
+
+        {/* Nút Kết thúc — chỉ hiện khi đang chat LIVE với lễ tân */}
+        {chatMode === "human" && (
+          <button
+            className="clear-chat-btn"
+            title="Kết thúc trò chuyện với Lễ tân"
+            onClick={() => setConfirmLeaveLiveOpen(true)}
+            disabled={leavingLive}
+          >
+            <X size={16} />
+          </button>
+        )}
       </div>
 
       <div className="chat-body" ref={bodyRef}>
@@ -489,13 +639,13 @@ const handleSend = async () => {
         )}
       </div>
 
-      {/* 🔥 HIỂN THỊ BANNER ĐÃ ĐƯỢC PHÂN TÁCH ĐÚNG NGỮ CẢNH HỘI THOẠI */}
+      {/* Banner đã được phân tách đúng ngữ cảnh hội thoại */}
       {showLiveBtn && chatMode === "ai" && (
         <div className={`suggestion ${showLiveBtn === "login" ? "suggestion-login" : "suggestion-live"}`}>
           <Headphones size={15} />
           <span>
-            {showLiveBtn === "login" 
-              ? "Anh vui lòng đăng nhập để hệ thống lưu giữ lịch hẹn chính thức nhé!" 
+            {showLiveBtn === "login"
+              ? "Anh vui lòng đăng nhập để hệ thống lưu giữ lịch hẹn chính thức nhé!"
               : "Anh muốn kết nối nói chuyện trực tiếp với Lễ tân bên em không ạ?"}
           </span>
           <button onClick={handleSwitchToLive}>
@@ -507,12 +657,16 @@ const handleSend = async () => {
         </div>
       )}
 
+      {/* Banner đang chờ lễ tân, kèm nút "Huỷ" */}
       {chatMode === "ai" && wantsLive && conversationId && (
-        <div className="suggestion waiting-reconnect" style={{ backgroundColor: "#fef3c7", borderColor: "#f59e0b", padding: "10px", borderRadius: "8px", display: "flex", alignItems: "center", gap: "10px", margin: "10px 0" }}>
-          <span className="typing-dot" style={{ backgroundColor: "#d97706", width: "8px", height: "8px", borderRadius: "50%", display: "inline-block" }} /> 
-          <span style={{ color: "#b45309", fontWeight: 500, fontSize: "14px" }}>
+        <div className="suggestion waiting-reconnect">
+          <span className="typing-dot waiting-dot" />
+          <span className="waiting-text">
             Hệ thống đang kết nối bạn với Lễ tân mới, vui lòng đợi trong giây lát...
           </span>
+          <button className="cancel-waiting-btn" onClick={handleCancelWaiting} disabled={cancellingWaiting}>
+            {cancellingWaiting ? "Đang huỷ..." : "Huỷ"}
+          </button>
         </div>
       )}
 
@@ -530,10 +684,9 @@ const handleSend = async () => {
           onChange={(e) => setInputMessage(e.target.value)}
           onKeyDown={(e) => {
             if (e.nativeEvent.isComposing || e.keyCode === 229) {
-      return; 
-    }
+              return;
+            }
             if (e.key === "Enter" && !e.shiftKey) {
-              
               e.preventDefault();
               e.stopPropagation();
               handleSend();
@@ -550,6 +703,44 @@ const handleSend = async () => {
           </button>
         </div>
       </div>
+
+      {/* Popover xác nhận Xoá cuộc trò chuyện AI */}
+      {confirmClearOpen && (
+        <div className="clear-confirm-overlay">
+          <div className="clear-confirm-box">
+            <p>
+              {wantsLive && conversationId
+                ? "Bạn đang chờ kết nối Lễ tân. Xoá cuộc trò chuyện sẽ huỷ luôn yêu cầu hỗ trợ này. Tiếp tục?"
+                : "Xoá toàn bộ cuộc trò chuyện với AI? Hành động này không thể hoàn tác."}
+            </p>
+            <div className="clear-confirm-actions">
+              <button className="confirm-yes" onClick={handleClearConversation} disabled={clearing}>
+                {clearing ? "Đang xoá..." : "Xoá"}
+              </button>
+              <button className="confirm-no" onClick={() => setConfirmClearOpen(false)} disabled={clearing}>
+                Huỷ
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Popover xác nhận Rời chat live với lễ tân */}
+      {confirmLeaveLiveOpen && (
+        <div className="clear-confirm-overlay">
+          <div className="clear-confirm-box">
+            <p>Kết thúc cuộc trò chuyện với Lễ tân? Lịch sử vẫn được lưu lại.</p>
+            <div className="clear-confirm-actions">
+              <button className="confirm-yes" onClick={handleLeaveLiveChat} disabled={leavingLive}>
+                {leavingLive ? "Đang kết thúc..." : "Kết thúc"}
+              </button>
+              <button className="confirm-no" onClick={() => setConfirmLeaveLiveOpen(false)} disabled={leavingLive}>
+                Huỷ
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
