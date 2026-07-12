@@ -465,7 +465,7 @@ const handleBranchChange = (e) => {
               <label>Ngày:</label>
               <select value={form.date} onChange={handleDateChange}>
                 <option value="">-- Chọn ngày --</option>
-                {[...Array(14)].map((_, i) => {
+                {[...Array(7)].map((_, i) => {
                   const d = new Date();
                   d.setDate(today.getDate() + i);
                   const value = d.toISOString().split("T")[0];

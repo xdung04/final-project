@@ -90,6 +90,12 @@ export const createBooking = async (bookingData) => {
     return res;
   } catch (error) {
     console.error("Error creating booking:", error);
-    throw error;
+    // Trích xuất message từ backend response (vd: "Thợ này sẽ nghỉ từ ngày...")
+    const message =
+      error?.response?.data?.message ||
+      error?.response?.data?.error ||
+      error.message ||
+      "Không thể kết nối server!";
+    throw new Error(message);
   }
 };
